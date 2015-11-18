@@ -1,0 +1,24 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Terradue.Tep</id>
+    <version>0.0.1</version>
+    <title>Terradue.Tep</title>
+    <authors>Terradue</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Terradue.Tep is a library targeting .NET 4.0 and above with base for all Terradue Teps</description>
+    <summary>Tep library for .Net</summary>
+    <dependencies>
+      <dependency id="ServiceStack" version="3.9.71" />
+      <dependency id="ServiceStack.Common" version="3.9.71" />
+      <dependency id="Terradue.Portal" version="[2.6,2.7)" />
+      <dependency id="Terradue.OpenSearch" version="[1.11,1.12)" />
+      <dependency id="log4net" version="[2.0.0,)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Terradue.Tep/bin/Terradue.Tep.dll" target="lib/net40/Terradue.Tep.dll" />
+  </files>
+
+</package>
+
