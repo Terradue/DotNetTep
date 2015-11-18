@@ -47,7 +47,7 @@ namespace Terradue.Tep.WebServer.Services {
      [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure   | EndpointAttributes.External | EndpointAttributes.Json)]
-    public class ProxyServicesTep : ServiceStack.ServiceInterface.Service {
+    public class ProxyServiceTep : ServiceStack.ServiceInterface.Service {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);

@@ -13,7 +13,7 @@ namespace Terradue.Tep.WebServer.Services {
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
-    public class OneWPSServiceTep : ServiceStack.ServiceInterface.Service {
+    public class OneWpsServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Get(OneGetWPSRequestTep request) {
             List<WpsProvider> result = new List<WpsProvider>();

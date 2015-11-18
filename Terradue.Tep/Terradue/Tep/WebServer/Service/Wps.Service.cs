@@ -18,7 +18,7 @@ using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
-namespace Terradue.Tep.WebServer {
+namespace Terradue.Tep.WebServer.Services {
 
      [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json | EndpointAttributes.Xml,

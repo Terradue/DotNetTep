@@ -36,7 +36,7 @@ namespace Terradue.Tep.WebServer.Services {
      [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure   | EndpointAttributes.External | EndpointAttributes.Json)]
-    public class ShareServicesTep : ServiceStack.ServiceInterface.Service {
+    public class ShareServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Post(ShareCreateRequestTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);

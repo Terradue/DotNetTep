@@ -11,7 +11,7 @@ namespace Terradue.Tep.WebServer.Services {
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
-    public class OneService : ServiceStack.ServiceInterface.Service {
+    public class OneServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Get(OneGetConfigRequestTep request) {
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
