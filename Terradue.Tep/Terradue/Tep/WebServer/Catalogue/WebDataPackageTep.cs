@@ -1,0 +1,155 @@
+﻿using System;
+using System.Collections.Generic;
+using ServiceStack.Common.Web;
+using ServiceStack.ServiceHost;
+using Terradue.Portal;
+using Terradue.Tep.Controller;
+using Terradue.WebService.Model;
+
+namespace Terradue.Tep.WebServer {
+
+    [Route("/data/package/default", "PUT", Summary = "PUT a datapackage", Notes = "Update a datapackage in database")]
+    public class DataPackageUpdateDefaultRequestTep : WebDataPackage, IReturn<WebDataPackage>{}
+
+    [Route("/data/package/default/item", "POST", Summary = "POST item to default datapackage", Notes = "datapackage item is contained in the body")]
+    public class DataPackageAddItemToDefaultRequestTep : WebDataPackageItem, IReturn<WebDataPackage>
+    {
+    }
+
+    [Route("/data/package/default/search", "GET", Summary = "GET default datapackage search", Notes = "datapackage item is contained in the body")]
+    public class DataPackageSearchDefaultRequestTep : IReturn<HttpResult>
+    {
+    }
+
+    [Route("/data/package/default/description", "GET", Summary = "GET default datapackage description", Notes = "datapackage item is contained in the body")]
+    public class DataPackageDescriptionDefaultRequestTep : IReturn<HttpResult>
+    {
+    }
+
+    [Route("/data/package/default/items", "POST", Summary = "POST item to default datapackage", Notes = "datapackage item is contained in the body")]
+    public class DataPackageAddItemsToDefaultRequestTep : List<WebDataPackageItem>, IReturn<WebDataPackage>
+    {
+    }
+
+    [Route("/data/package/default", "POST", Summary = "POST item to default datapackage", Notes = "datapackage item is contained in the body")]
+    public class DataPackageSaveDefaultRequestTep : WebDataPackage, IReturn<WebDataPackage>
+    {
+        [ApiMember(Name = "Overwrite", Description = "indicates if we overwrite the dp", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool Overwrite { get; set; }
+    }
+
+    [Route("/data/package/default", "DELETE", Summary = "DELETE item to default datapackage", Notes = "datapackage item is contained in the body")]
+    public class DataPackageClearDefaultRequestTep : IReturn<WebDataPackage>
+    {
+    }
+
+    [Route("/data/package/default/item", "DELETE", Summary = "DELETE item to default datapackage", Notes = "datapackage item is contained in the body")]
+    public class DataPackageRemoveItemFromDefaultRequestTep : IReturn<WebDataPackage>
+    {
+        [ApiMember(Name = "url", Description = "item url", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Url { get; set; }
+    }
+
+    [Route("/data/package/{Identifier}", "DELETE", Summary = "DELETE datapackage", Notes = "datapackage is contained in the body")]
+    public class DataPackageDeleteRequestTep : IReturn<WebDataPackage>{
+        [ApiMember(Name="Identifier", Description = "DELETE datapackage", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/data/package", "POST", Summary = "POST a datapackage", Notes = "Add a new datapackage in database")]
+    public class DataPackageCreateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}
+
+    [Route("/data/package", "PUT", Summary = "PUT a datapackage", Notes = "Update a datapackage in database")]
+    public class DataPackageUpdateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}
+
+    [Route("/data/package/export", "PUT", Summary = "PUT a datapackage", Notes = "export a datapackage as series")]
+    public class DataPackageExportRequestTep : WebDataPackageTep, IReturn<WebSeries>{}
+
+    [Route("/data/package/{dpId}/group", "GET", Summary = "GET list of groups that can access a datapackage", Notes = "")]
+    public class DataPackageGetGroupsRequestTep : IReturn<List<WebGroup>>
+    {
+        [ApiMember(Name = "dpId", Description = "identifier of the datapackage", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string DpId { get; set; }
+    }
+
+    [Route("/data/package/{dpId}/group", "POST", Summary = "POST group to datapackage", Notes = "")]
+    public class DataPackageAddGroupRequestTep : WebGroup, IReturn<List<WebGroup>>
+    {
+        [ApiMember(Name = "dpId", Description = "identifier of the datapackage", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string DpId { get; set; }
+    }
+
+    [Route("/data/package/{dpId}/group", "PUT", Summary = "PUT group to datapackage", Notes = "")]
+    public class DataPackageUpdateGroupsRequestTep : List<int>, IReturn<List<WebGroup>>
+    {
+        [ApiMember(Name = "dpId", Description = "identifier of the datapackage", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string DpId { get; set; }
+    }
+
+    [Route("/data/package/{dpId}/group/{Id}", "DELETE", Summary = "DELETE group to datapackage", Notes = "")]
+    public class DataPackageDeleteGroupRequestTep : IReturn<List<WebGroup>>
+    {
+        [ApiMember(Name = "dpId", Description = "identifier of the datapackage", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string DpId { get; set; }
+
+        [ApiMember(Name = "Id", Description = "id of the group", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+    }
+
+    public class WebDataPackageTep : Terradue.WebService.Model.WebDataPackage {
+
+        [ApiMember(Name="AccessKey", Description = "Remote resource AccessKey", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string AccessKey { get; set; }
+
+        [ApiMember(Name="IsPublic", Description = "Remote resource IsPublic", ParameterType = "path", DataType = "bool", IsRequired = false)]
+        public bool IsPublic { get; set; }
+
+        [ApiMember(Name="NbItems", Description = "Remote resource NbItems", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int NbItems { get; set; }
+
+        public WebDataPackageTep() {}
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebDataPackageTep"/> class.
+        /// </summary>
+        /// <param name="entity">Entity.</param>
+        public WebDataPackageTep(DataPackage entity)
+        {
+            this.Id = entity.Id;
+            this.Name = entity.Name;
+            this.Identifier = entity.Identifier;
+            this.IsDefault = entity.IsDefault;
+            this.AccessKey = entity.AccessKey;
+            this.IsPublic = entity.IsPublic();
+            this.Items = new List<WebDataPackageItem>();
+            foreach (RemoteResource item in entity.Resources) this.Items.Add(new WebDataPackageItem(item));
+            this.NbItems = this.Items.Count;
+        }
+
+        /// <summary>
+        /// To the entity.
+        /// </summary>
+        /// <returns>The entity.</returns>
+        /// <param name="context">Context.</param>
+        public new DataPackage ToEntity(IfyContext context, DataPackage input){
+            DataPackage result = (input == null ? new DataPackage(context) : input);
+
+            result.Name = this.Name;
+            result.Identifier = this.Identifier;
+            result.IsDefault = this.IsDefault;
+            result.Items = new EntityList<RemoteResource>(context);
+            result.Items.Template.ResourceSet = result;
+            if (this.Items != null) {
+                foreach (WebDataPackageItem item in this.Items) {
+                    RemoteResource res = (item.Id == 0) ? new RemoteResource(context) : RemoteResource.FromId(context, item.Id);
+                    res = item.ToEntity(context, res);
+                    result.Items.Include(res);
+                }
+            }
+
+            return result;
+        }
+    }
+}
+
+
