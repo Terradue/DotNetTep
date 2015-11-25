@@ -6,6 +6,21 @@ using System.Net;
 using System.IO;
 using ServiceStack.Common.Web;
 
+
+/*!
+\defgroup TepService Service
+@{
+
+This component controls the processing services registered in the platform.
+
+\xrefitem dep "Dependencies" "Dependencies" uses \ref CloudWpsFactory to discover the dynamic WPS providers in the Cloud.
+
+\xrefitem dep "Dependencies" "Dependencies" uses \ref CoreWPS to analyse and manage the WPS services.
+
+@}
+
+*/
+
 namespace Terradue.Tep.Controller {
     public class WpsFactory {
 

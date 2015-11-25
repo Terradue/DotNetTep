@@ -9,6 +9,11 @@ using System.Collections.Generic;
 
 namespace Terradue.Tep.Controller {
 
+    /// <summary>
+    /// Collection.
+    /// </summary>
+    /// \ingroup TepData
+    /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     [EntityTable(null, EntityTableConfiguration.Custom, HasPrivilegeManagement = true, Storage = EntityTableStorage.Above)]
     public class Collection : Series, IProxiedOpenSearchable {
 

@@ -9,17 +9,20 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 
 /*! 
-\defgroup DataPackage Data Package
+\defgroup TepData Data
 @{
 
-This component defines a container for datasets, defined by a user. This container manages remote resources in static (predefined datasets)
-or dynamic (search url). A Data Package is OpenSearchable" and can be queried via an opensearch interface.
+This component is in charge of all the data management in the platform.
 
 \ingroup Tep
 
-\xrefitem dep "Dependencies" "Dependencies" uses \ref Series to define the datasets resources
+\xrefitem dep "Dependencies" "Dependencies" implements \ref OpenSearchable to query the Data Packages and Collection
 
-\xrefitem dep "Dependencies" "Dependencies" implements \ref OpenSearchable to be queryable and act as a catalogue subset
+User Data Packages
+------------------
+
+Each user of the platform may define a \ref DataPackage to save a set of dataset that he preselected.
+The 2 following state diagram shows the lifecycle of those data packages in creation and update.
 
 \startuml
 
@@ -33,7 +36,7 @@ WebServer -> WebPortal: Return new data package
 WebPortal -> User: Data package successfully created
 
 footer
-GeoHazards TEP Data Package creation state diagram
+TEP Data Package creation state diagram
 (c) Terradue Srl
 endfooter
 
@@ -56,22 +59,7 @@ WebPortal -> User: Displays an error message to the user
 end
 
 footer
-GeoHazards TEP Data Package update state diagram
-(c) Terradue Srl
-endfooter
-
-\enduml
-
-\startuml
-
-User -> WebPortal: Delete a data package
-WebPortal -> WebServer: Request the suppression of the data package
-WebServer -> Database: Deletes the data package
-WebServer -> WebPortal: Confirm
-WebPortal -> User: Data package successfully deleted
-
-footer
-GeoHazards TEP Data Package suppression state diagram
+TEP Data Package update state diagram
 (c) Terradue Srl
 endfooter
 
@@ -89,7 +77,13 @@ namespace Terradue.Tep.Controller {
     /// <summary>
     /// Data package.
     /// </summary>
-    /// \ingroup modules_contest_DataPackage
+    /// <description>
+    /// It represents a container for datasets, owned by a user. This container manages remote resources by reference. 
+    /// Therefore, it can represent static datasets list or a dynamic set via search query.
+    /// A Data Package is OpenSearchable and thus can be queried via an opensearch interface.
+    /// </description>
+    /// \ingroup TepData
+    /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
     public class DataPackage : RemoteResourceSet, IAtomizable {
 
@@ -111,9 +105,21 @@ namespace Terradue.Tep.Controller {
         public EntityList<RemoteResource> Items { get;	set; }
 
         /// <summary>
+        /// Owner of the data package
+        /// </summary>
+        /// <value>The owner.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public UserTep Owner {
+            get;
+            set;
+        }
+            
+
+        /// <summary>
         /// Gets or sets the resources.
         /// </summary>
         /// <value>The resources.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public override EntityList<RemoteResource> Resources {
             get {
                 EntityList<RemoteResource> result = new EntityList<RemoteResource>(context);

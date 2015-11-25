@@ -7,12 +7,12 @@ using Terradue.Cloud;
 
 
 /*!
-\defgroup CloudWpsFactory CloudWpsFactory
+\defgroup CloudWpsFactory WPS Factory
 @{
 
 This component enables Cloud Appliance that exposes a WPS service to be exposed as a processing service automatically.
 
-\ingroup Tep
+\ingroup Cloud
 
 \xrefitem dep "Dependencies" "Dependencies" calls \ref CloudProvider to retrieve the computing appliances
 
@@ -105,7 +105,6 @@ DIAG_NAME
 (c) Terradue Srl
 endfooter
 \enduml
-\ingroup core
 
 
 @}

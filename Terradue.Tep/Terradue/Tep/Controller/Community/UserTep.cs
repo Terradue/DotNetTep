@@ -5,85 +5,54 @@ using Terradue.Github;
 using Terradue.Util;
 using Terradue.Cloud;
 
-/*! 
-\defgroup TepUser Tep User
-@{
 
-This component defines a user in the TEP GeoHazards platform. A user has a basic profile (defined in the platform) but is also linked to different external application with specific user profile (EO-SSO, Github, Cloud).
-
-\ingroup Tep
-
-\xrefitem dep "Dependencies" "Dependencies" uses \ref Context to define the basic user profile (username, email, first name, last name, ...)
-
-\xrefitem dep "Dependencies" "Dependencies" uses \ref GithubProfile to define the github profile and link the user to his Github account
-
-\xrefitem dep "Dependencies" "Dependencies" calls \ref Authentication to identify the user using EO-SSO
-
-\xrefitem dep "Dependencies" "Dependencies" belongs to a \ref Group to associate a user to existing groups
-
-\xrefitem dep "Dependencies" "Dependencies" calls \ref GithubClient to contact Github interface in order to authenticate the user on Github and associate his public key
-
-\xrefitem dep "Dependencies" "Dependencies" calls \ref OneClient to contact OpenNebula interface and associate the cloud user with the Tep user
-
-\startuml
-
-[*] --> PendingActivation : first time login
-PendingActivation : User must confirm his UM-SSO email
-PendingActivation : User cannot access secured services
-
-PendingActivation --> Enabled : email confirmation
-Enabled : User can access secured services
-
-footer
-GeoHazards TEP User state diagram
-(c) Terradue Srl
-endfooter
-\enduml
-
-\startuml
-
-start
-if (secured service?) then (yes)
-  if (UM-SSO logged?) then (yes)
-    if (user in DB?) then (yes)
-      if (user pending activation?) then (yes)
-        :reinvite user to confirm email;
-        stop
-      endif
-    else (no)
-      :create user account in db;
-      :set account status to **Pending Activation**;
-      :send confirmation email to user;
-      :invite user to confirm email;
-      stop
-    endif
-  else (no)
-    :redirect user to UM-SSO IDP;
-    stop
-  endif
-endif
-:process service;
-stop
-
-footer
-GeoHazards TEP User account activity diagram
-(c) Terradue Srl
-endfooter
-\enduml
-
-@}
-*/
 using System.Collections.Generic;
 
 namespace Terradue.Tep.Controller {
 
 
-
+    /// <summary>
+    /// TEP User
+    /// </summary>
+    /// <description>
+    /// A user in the TEP platform has a basic profile (defined in the platform) 
+    /// It can also be integrated with third party profiles (Github, Terradue Cloud Platform).
+    /// </description>
+    /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+    /// \ingroup Community
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
     public class UserTep : User {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        /// <summary>
+        /// Thematic groups the user belongs to.
+        /// </summary>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public List<GroupTep> Groups {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Github profile of the user
+        /// </summary>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public GithubProfile GithubProfile {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Terradue Cloud Platform identifier
+        /// </summary>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public string TerradueCloudPlatformId {
+            get;
+            set;
+        }
+
 
         #region T2Certificate
 
