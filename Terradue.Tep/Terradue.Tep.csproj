@@ -208,6 +208,9 @@
     <Compile Include="Terradue\Tep\Controller\Data\DataPackage.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\MasterCatalogue.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\UrlBasedOpenSearchable.cs" />
+    <Compile Include="Terradue\Tep\Controller\Contents\Contents.cs" />
+    <Compile Include="Terradue\Tep\Controller\Accounting\Accounting.cs" />
+    <Compile Include="Terradue\Tep\External\Apel\ApelServer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -216,5 +219,9 @@
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
     <Folder Include="Terradue\Tep\Controller\Application\" />
+    <Folder Include="Terradue\Tep\Controller\Contents\" />
+    <Folder Include="Terradue\Tep\Controller\Accounting\" />
+    <Folder Include="Terradue\Tep\External\" />
+    <Folder Include="Terradue\Tep\External\Apel\" />
   </ItemGroup>
 </Project>

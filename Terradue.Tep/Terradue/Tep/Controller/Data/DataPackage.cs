@@ -20,6 +20,8 @@ It implements the mechanism to search for Collection and Data Packages via an \r
 
 \xrefitem dep "Dependencies" "Dependencies" uses \ref Authorisation to manage the users in the groups with their roles and their access accordingly.
 
+\xrefitem dep "Dependencies" "Dependencies" uses \ref Series to delegates the dataset series persistence and search mechanism.
+
 User Data Packages
 ------------------
 
