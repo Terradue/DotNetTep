@@ -90,3 +90,12 @@ using System.Runtime.CompilerServices;
 
 @}
 */
+
+/*!
+
+\defgroup Community Community
+@{
+
+@}
+
+*/
