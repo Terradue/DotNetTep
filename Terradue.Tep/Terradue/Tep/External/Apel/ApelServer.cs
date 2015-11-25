@@ -16,7 +16,7 @@
 
     \xrefitem int "Interfaces" "Interfaces" implements \ref ApelReporting interface
 
-    \ingroup APEL
+    \ingroup Apel
 
 @}
 
@@ -29,7 +29,7 @@
 
     \xrefitem norm "Normative References" "Normative References" [OGC Web Processing Service 1.0](http://portal.opengeospatial.org/files/?artifact_id=24151)
 
-    \ingroup APEL
+    \ingroup Apel
 @}
 
 
@@ -42,7 +42,7 @@
 
     \xrefitem norm "Normative References" "Normative References" [OGC Web Processing Service 1.0](http://portal.opengeospatial.org/files/?artifact_id=24151)
 
-    \ingroup APEL
+    \ingroup Apel
 
 @}
 */
