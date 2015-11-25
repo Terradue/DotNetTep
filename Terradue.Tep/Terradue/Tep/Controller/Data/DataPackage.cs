@@ -12,11 +12,13 @@ using Terradue.Portal;
 \defgroup TepData Data
 @{
 
-This component is in charge of all the data management in the platform.
-
 \ingroup Tep
 
-\xrefitem dep "Dependencies" "Dependencies" implements \ref OpenSearchable to query the Data Packages and Collection
+This component is in charge of all the data management in the platform.
+
+It implements the mechanism to search for Collection and Data Packages via an \ref OpenSearchable interface.
+
+\xrefitem dep "Dependencies" "Dependencies" uses \ref Authorisation to manage the users in the groups with their roles and their access accordingly.
 
 User Data Packages
 ------------------
