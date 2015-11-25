@@ -17,6 +17,8 @@ This component controls the processing services registered in the platform.
 
 \xrefitem dep "Dependencies" "Dependencies" uses \ref CoreWPS to analyse and manage the WPS services.
 
+\ingroup Tep
+
 @}
 
 */
