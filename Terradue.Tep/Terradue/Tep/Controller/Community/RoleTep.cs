@@ -23,7 +23,7 @@ namespace Terradue.Tep.Controller {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public RoleTep() {
+        public RoleTep() : base(null) {
         }
 
         /// <summary>

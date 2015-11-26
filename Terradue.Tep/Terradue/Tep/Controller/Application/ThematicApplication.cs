@@ -28,7 +28,7 @@ namespace Terradue.Tep.Controller {
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
     public class ThematicApplication : Entity {
-        public ThematicApplication() {
+        public ThematicApplication() : base(null){
         }
 
         /// <summary>
