@@ -26,6 +26,11 @@ namespace Terradue.Tep.Controller {
         public RoleTep() {
         }
 
+        /// <summary>
+        /// Name of the Role
+        /// </summary>
+        /// <value>The name.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         public string Name {
             get;
             set;
