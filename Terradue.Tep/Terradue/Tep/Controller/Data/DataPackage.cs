@@ -69,6 +69,29 @@ endfooter
 
 \enduml
 
+Persistence
+-----------
+
+When a dataset is processed with a remote processing (e.g. WPS), the results of this data may be located in a temporary storage. The user would want to keep that result
+and its metadata. The \ref TepData components integrates the function to "copy" the results and its metadata to a persistent storage on one for the files and on a catalogue
+index for the metadata.
+
+
+Analysis and  Visualization
+---------------------------
+
+When a dataset is processed with a remote processing (e.g. WPS), the results of this data may be located in a place where there is no other function than downloading the data
+directly on its local machine to visualize or analyze it.
+The \ref TepData components integrates functions to "export" the results and its metadata to an external tools or server that shall enhance the results for better visualization and analysis.
+The following export capabilities are implemented:
+
+- *GeoServer* raster and vector import. If the results include standard vector files (e.g. shapefile, geojson, csv with WKT, ...) or raster files such as geolocated images (geotiff, png with world files...),
+the \refTepData components shall propose to the user to export them to geoserver that will resturn a new WS layer that the web visualization widget shall display
+- *GeoNode* ???
+
+\xrefitem trace_req "Requirement" "Requirement traceability" TS-FUN-010 The GeoNode export function allows user to upload their data to PUMA.
+    
+
 @}
 */
 
