@@ -1,4 +1,5 @@
 ﻿using System;
+using Terradue.Portal;
 
 namespace Terradue.Tep.Controller {
 
@@ -17,12 +18,17 @@ namespace Terradue.Tep.Controller {
     /// </description>
     /// \ingroup TepCommunity
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-    public class RoleTep {
+    public class RoleTep : Entity {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public RoleTep() {
+        }
+
+        public string Name {
+            get;
+            set;
         }
     }
 }

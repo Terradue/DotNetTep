@@ -16,7 +16,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <value>The open search parameters.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        Uri OpenSearchParameters {
+        string OpenSearchParameters {
             get;
             set;
         }
