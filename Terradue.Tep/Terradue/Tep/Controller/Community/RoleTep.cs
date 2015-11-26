@@ -15,7 +15,7 @@ namespace Terradue.Tep.Controller {
     /// - Software Vendor. As an software vendore, the user can propose commercial software to the group
     /// - Manager. As the manager of the group, the user grants or revokes roles to user within the group
     /// </description>
-    /// \ingroup Community
+    /// \ingroup TepCommunity
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
     public class RoleTep {
 

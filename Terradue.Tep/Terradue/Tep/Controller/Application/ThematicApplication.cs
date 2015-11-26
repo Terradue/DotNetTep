@@ -18,13 +18,35 @@ It specifies togheter the form of the application, its features such as the map 
 @}
 */
 using System.Collections.Generic;
+using Terradue.Portal;
 
 namespace Terradue.Tep.Controller {
+
+    /// <summary>
+    /// Thematic application.
+    /// </summary>
+    /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+    /// \ingroup TepApplication
     public class ThematicApplication {
         public ThematicApplication() {
         }
 
+        /// <summary>
+        /// Collections
+        /// </summary>
+        /// <value>The collections.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<Collection> Collections {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// WPS Services
+        /// </summary>
+        /// <value>The WPS services.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public List<WpsProcessOffering> WPSServices {
             get;
             set;
         }

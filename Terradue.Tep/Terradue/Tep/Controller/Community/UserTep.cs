@@ -19,7 +19,7 @@ namespace Terradue.Tep.Controller {
     /// It can also be integrated with third party profiles (Github, Terradue Cloud Platform).
     /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    /// \ingroup Community
+    /// \ingroup TepCommunity
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
     public class UserTep : User {
 

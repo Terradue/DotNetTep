@@ -36,7 +36,7 @@ namespace Terradue.Tep.Controller {
     /// 
     /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    /// \ingroup Tep
+    /// \ingroup TepCommunity
     public class GroupTep : Group {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
