@@ -211,6 +211,7 @@
     <Compile Include="Terradue\Tep\Controller\Contents\Contents.cs" />
     <Compile Include="Terradue\Tep\Controller\Accounting\Accounting.cs" />
     <Compile Include="Terradue\Tep\External\Apel\ApelServer.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\Filters.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

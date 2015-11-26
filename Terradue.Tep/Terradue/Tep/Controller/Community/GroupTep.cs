@@ -54,6 +54,16 @@ namespace Terradue.Tep.Controller {
             get;
             set;
         }
+
+        /// <summary>
+        /// Value indicating whether this <see cref="Terradue.Tep.Controller.GroupTep"/> is public.
+        /// </summary>
+        /// <value><c>true</c> if public; otherwise, <c>false</c>.</value>
+        ///  \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        bool Public {
+            get;
+            set;
+        }
     }
 }
 

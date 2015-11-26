@@ -27,7 +27,7 @@ namespace Terradue.Tep.Controller {
     /// </summary>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
-    public class ThematicApplication {
+    public class ThematicApplication : Entity {
         public ThematicApplication() {
         }
 
@@ -47,6 +47,25 @@ namespace Terradue.Tep.Controller {
         /// <value>The WPS services.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<WpsProcessOffering> WPSServices {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Title
+        /// </summary>
+        /// <value>The title.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public string Description {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Features and widgets defining the application
+        /// </summary>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public List<string> Features {
             get;
             set;
         }

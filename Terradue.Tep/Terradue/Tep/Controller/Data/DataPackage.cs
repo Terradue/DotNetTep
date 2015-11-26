@@ -117,13 +117,22 @@ namespace Terradue.Tep.Controller {
             get;
             set;
         }
+
+        /// <summary>
+        /// Collections included in the Data Package
+        /// </summary>
+        /// <value>The colelctions.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public List<Collection> Collections {
+            get;
+            set;
+        }
             
 
         /// <summary>
         /// Gets or sets the resources.
         /// </summary>
         /// <value>The resources.</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public override EntityList<RemoteResource> Resources {
             get {
                 EntityList<RemoteResource> result = new EntityList<RemoteResource>(context);
