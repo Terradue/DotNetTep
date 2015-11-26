@@ -12,6 +12,8 @@ the user accounts with credits.
 
 \xrefitem int "Interfaces" "Interfaces" connects \ref ApelReporting to retrieve the aggregated usage records.
 
+\xrefitem dep "Dependencies" "Dependencies" \ref Persistence stores the user accounts in the database
+
 \ingroup Tep
 
 @}
