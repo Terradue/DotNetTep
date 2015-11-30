@@ -1,7 +1,7 @@
 ﻿using System;
 using Terradue.Portal;
 
-namespace Terradue.Tep {
+namespace Terradue.Tep.Controller {
 
     /// <summary>
     /// Rates
