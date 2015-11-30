@@ -48,7 +48,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Members of the thematic group
         /// </summary>
-        /// <value>The members.</value>
+        /// <value>contains members</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         List<UserTep> Members {
             get;

@@ -55,7 +55,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// User the account belongs to.
         /// </summary>
-        /// <value>The user owner.</value>
+        /// <value>can be owned by a User</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public UserTep UserOwner {
             get;
@@ -65,7 +65,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Group the account belongs to.
         /// </summary>
-        /// <value>The group owner.</value>
+        /// <value>can be owned by a Group</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public GroupTep GroupOwner {
             get;

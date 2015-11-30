@@ -18,7 +18,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Service the rate is applicable to.
         /// </summary>
-        /// <value>The service.</value>
+        /// <value>gives a price to the Service</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public Entity Service {
             get;

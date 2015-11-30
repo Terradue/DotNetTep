@@ -29,6 +29,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Thematic groups the user belongs to.
         /// </summary>
+        /// <value>belongs to a Group</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<GroupTep> Groups {
             get;

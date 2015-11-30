@@ -103,7 +103,8 @@ namespace Terradue.Tep.Controller {
     /// Data package.
     /// </summary>
     /// <description>
-    /// It represents a container for datasets, owned by a user. This container manages remote resources by reference. 
+    /// It represents a container for datasets, owned by a user. This container manages remote datasets by reference. 
+    /// It acts as a view over the \ref Collection.
     /// Therefore, it can represent static datasets list or a dynamic set via search query.
     /// A Data Package is OpenSearchable and thus can be queried via an opensearch interface.
     /// </description>
@@ -132,7 +133,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Owner of the data package
         /// </summary>
-        /// <value>The owner.</value>
+        /// <value>is owned by a \ref User</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public UserTep Owner {
             get;
@@ -142,7 +143,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Collections included in the Data Package
         /// </summary>
-        /// <value>The colelctions.</value>
+        /// <value>is a view over one or more collections</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<Collection> Collections {
             get;

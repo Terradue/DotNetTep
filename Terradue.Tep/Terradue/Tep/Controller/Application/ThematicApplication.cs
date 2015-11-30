@@ -34,7 +34,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// Collections
         /// </summary>
-        /// <value>The collections.</value>
+        /// <value>contians \ref Collection</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<Collection> Collections {
             get;
@@ -44,7 +44,7 @@ namespace Terradue.Tep.Controller {
         /// <summary>
         /// WPS Services
         /// </summary>
-        /// <value>The WPS services.</value>
+        /// <value>contains \ref WpsProcessOffering</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<WpsProcessOffering> WPSServices {
             get;
