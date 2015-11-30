@@ -43,7 +43,8 @@ namespace Terradue.Tep.Controller {
     /// Account.
     /// </summary>
     /// <description>
-    /// This object represent an account per one user or one group
+    /// This object represents an account owned by a user or a group. Each account has a balance value to represent the credit
+    /// avaialable for the owner.
     /// </description>
     /// \ingroup TepAccounting
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 

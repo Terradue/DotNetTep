@@ -10,8 +10,12 @@ using System.Collections.Generic;
 namespace Terradue.Tep.Controller {
 
     /// <summary>
-    /// Collection.
+    /// Collection object
     /// </summary>
+    /// <description>
+    /// A Collection is the extension of dataset \ref Series for the TEP. It can be an item defined in a \ref ThematicApplication
+    /// as input dataset for the service or for visualization.
+    /// </description>
     /// \ingroup TepData
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     [EntityTable(null, EntityTableConfiguration.Custom, HasPrivilegeManagement = true, Storage = EntityTableStorage.Above)]
