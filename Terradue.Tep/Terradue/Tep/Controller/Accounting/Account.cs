@@ -8,8 +8,8 @@
 This component makes the integrated accounting of the TEP.
 
 
-Apel Accounting to user/group accounts
---------------------------------------
+Accounting to user/group accounts
+---------------------------------
 
 Periodically, it collects the usage records from the \ref ApelServer and use them to balance
 the user accounts with credits.
