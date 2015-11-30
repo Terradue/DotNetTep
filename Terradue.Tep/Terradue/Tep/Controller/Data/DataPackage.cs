@@ -87,9 +87,7 @@ The following export capabilities are implemented:
 
 - *GeoServer* raster and vector import. If the results include standard vector files (e.g. shapefile, geojson, csv with WKT, ...) or raster files such as geolocated images (geotiff, png with world files...),
 the \refTepData components shall propose to the user to export them to geoserver that will resturn a new WS layer that the web visualization widget shall display
-- *GeoNode* ???
 
-\xrefitem trace_req "Requirement" "Requirement traceability" TS-FUN-010 The GeoNode export function allows user to upload their data to PUMA.
     
 
 @}
