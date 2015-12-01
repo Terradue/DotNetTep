@@ -85,13 +85,43 @@ directly on its local machine to visualize or analyze it.
 The \ref TepData components integrates functions to "export" the results and its metadata to an external tools or server that shall enhance the results for better visualization and analysis.
 The following export capabilities are implemented:
 
-- *GeoServer* raster and vector import. If the results include standard vector files (e.g. shapefile, geojson, csv with WKT, ...) or raster files such as geolocated images (geotiff, png with world files...),
-the \refTepData components shall propose to the user to export them to geoserver that will resturn a new WS layer that the web visualization widget shall display
+- *GeoServer* raster and vector export. If the results include standard vector files (e.g. shapefile, geojson, csv with WKT, ...) or raster files such as geolocated images (geotiff, png with world files...),
+the \refTepData components shall propose to the user to export them to geoserver that will resturn a new WMS layer that the web visualization widget shall display
 
-    
+- *GeoNode* from an existing WMS layer, the \refTepData components shall propose to the user to export them to geonode that will return a link to the geonode map for the visualisation.
+
+
+\xrefitem int "Interfaces" "Interfaces" connects \ref GeoServerAPI to export vector or raster data.
+
+\xrefitem int "Interfaces" "Interfaces" connects \ref GeoNodeAPI to export WMS.
 
 @}
+
+\defgroup GeoServerAPI GeoServer API
+@{
+
+ GeoServer provides a RESTful interface through which clients can retrieve information about an instance and make configuration changes. Using the REST interface’s simple HTTP calls, clients can configure GeoServer without needing to use the Web Administration Interface. 
+
+ \xrefitem cptype_int "Interfaces" "Interfaces"
+
+ \xrefitem api "API" "API" [GeoServer REST configuration API](http://docs.geoserver.org/stable/en/user/rest/api/)
+
+@}
+
+\defgroup GeoNodeAPI GeoNode API
+@{
+
+ GeoNode provides JSON API which currently support the GET method. The API are also used as main serch engine.
+
+ \xrefitem cptype_int "Interfaces" "Interfaces"
+
+ \xrefitem api "API" "API" [GeoNode ah-hoc API](http://docs.geonode.org/en/master/reference/api.html)
+
+@}
+
 */
+
+
 
 using Terradue.OpenSearch.Result;
 using Terradue.ServiceModel.Syndication;
