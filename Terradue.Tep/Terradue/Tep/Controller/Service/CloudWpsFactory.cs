@@ -20,11 +20,6 @@ Using the interface to the cloud controller, it retrieves the VMs that exposes a
 
 \xrefitem int "Interfaces" "Interfaces" connects \ref OpenNebulaXMLRPC to discover the dynamic WPS providers in the Cloud.
 
-footer
-DIAG_NAME
-(c) Terradue Srl
-endfooter
-\enduml
 
 
 @}
