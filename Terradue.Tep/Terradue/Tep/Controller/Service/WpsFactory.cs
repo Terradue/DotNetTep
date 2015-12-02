@@ -13,6 +13,8 @@ using ServiceStack.Common.Web;
 
 This component controls the processing services registered in the platform.
 
+WPS discovery is enabled by loading the services using the \ref CoreWPS component.
+
 \xrefitem dep "Dependencies" "Dependencies" uses \ref CloudWpsFactory to discover the dynamic WPS providers in the Cloud.
 
 \xrefitem dep "Dependencies" "Dependencies" uses \ref CoreWPS to analyse and manage the WPS services.
