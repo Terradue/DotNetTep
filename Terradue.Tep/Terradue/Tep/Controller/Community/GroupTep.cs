@@ -16,6 +16,18 @@ to gather users around a specific aspect or an organization ot the thematic.
 For instance, an instituion may create its own thematic group with its selected members and experts. It may also
 have business relationship with a data or ICT provider that are representated as a role within the group.
 
+User notifications
+------------------
+
+This component notifies users about status change for the following items:
+- The completion of a job in a service
+- The modification of dataset in a data package
+- The arrival in new dataset in a dynamic data package
+
+The notification is configurable in the user profile and can be enabled as the following:
+- Email notification
+- Web notification (a box is deplayed during the navigation on the site)
+
 \xrefitem dep "Dependencies" "Dependencies" uses \ref Authorisation to manage the users in the groupswith their roles and their access accordingly.
 
 \ingroup Tep
