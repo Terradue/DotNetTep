@@ -25,7 +25,7 @@ WPS discovery is enabled by loading the services using the \ref CoreWPS componen
 
 */
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
     public class WpsFactory {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger

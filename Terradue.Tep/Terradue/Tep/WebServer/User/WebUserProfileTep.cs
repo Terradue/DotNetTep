@@ -2,7 +2,6 @@
 using System.Text;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 
 namespace Terradue.Tep.WebServer {

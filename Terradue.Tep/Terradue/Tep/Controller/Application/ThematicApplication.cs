@@ -25,7 +25,7 @@ Thematic Application over OWS data model
 using System.Collections.Generic;
 using Terradue.Portal;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// Thematic application.

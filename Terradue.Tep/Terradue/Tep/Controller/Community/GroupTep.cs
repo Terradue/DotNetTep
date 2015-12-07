@@ -35,7 +35,7 @@ The notification is configurable in the user profile and can be enabled as the f
 @}
 */
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// TEP Group

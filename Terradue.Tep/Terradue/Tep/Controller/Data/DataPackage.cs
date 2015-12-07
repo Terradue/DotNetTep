@@ -120,7 +120,7 @@ using Terradue.OpenSearch.Result;
 using Terradue.ServiceModel.Syndication;
 using System.Linq;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// Data package.

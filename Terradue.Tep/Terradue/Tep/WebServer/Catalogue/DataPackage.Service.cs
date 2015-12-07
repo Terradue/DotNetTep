@@ -13,7 +13,6 @@ using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
@@ -362,7 +361,7 @@ namespace Terradue.Tep.WebServer.Services
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                Terradue.Tep.Controller.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
+                Terradue.Tep.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
                 datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
@@ -394,7 +393,7 @@ namespace Terradue.Tep.WebServer.Services
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                Terradue.Tep.Controller.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
+                Terradue.Tep.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
                 datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
                 OpenSearchDescription osd = datapackage.GetLocalOpenSearchDescription();
 

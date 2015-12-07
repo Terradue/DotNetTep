@@ -4,7 +4,6 @@ using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.Authentication.Umsso;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 

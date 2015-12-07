@@ -25,7 +25,7 @@ Using the interface to the cloud controller, it retrieves the VMs that exposes a
 @}
  */
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// \ingroup CloudWpsFactory
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"

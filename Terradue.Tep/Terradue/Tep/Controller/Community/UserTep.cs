@@ -8,7 +8,7 @@ using Terradue.Cloud;
 
 using System.Collections.Generic;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
 
     /// <summary>

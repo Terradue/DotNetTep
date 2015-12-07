@@ -37,7 +37,7 @@ The quota restriction is implemented using the balance of the user or group acco
 @}
 */
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// Account.

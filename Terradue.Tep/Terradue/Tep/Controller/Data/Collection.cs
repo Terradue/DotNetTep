@@ -7,7 +7,7 @@ using Terradue.OpenSearch.Schema;
 using Terradue.OpenSearch.Result;
 using System.Collections.Generic;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// Collection object

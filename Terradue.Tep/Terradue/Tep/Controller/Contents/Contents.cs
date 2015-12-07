@@ -13,7 +13,7 @@ This component manage the editorial contents of the portal
 @}
 */
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
     public class Contents {
         public Contents() {
         }

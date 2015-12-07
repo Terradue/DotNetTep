@@ -20,7 +20,6 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.ServiceModel.Ogc.OwsContext;
 using Terradue.ServiceModel.Syndication;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 

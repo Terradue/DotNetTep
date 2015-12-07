@@ -1,7 +1,7 @@
 ﻿using System;
 using Terradue.Portal;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// TEP Role
