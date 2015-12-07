@@ -28,7 +28,7 @@ User Data Packages
 Each user of the platform may define a \ref DataPackage to save a set of dataset that he preselected.
 The 2 following state diagram shows the lifecycle of those data packages in creation and update.
 
-\startuml
+\startuml "Data package lifecycle #1 state diagram"
 
 User -> WebPortal: Select data
 WebPortal -> WebServer: Stores in a temporary data package
@@ -39,14 +39,9 @@ WebServer -> Database: Save the data package \nwith associated opensearch urls
 WebServer -> WebPortal: Return new data package
 WebPortal -> User: Data package successfully created
 
-footer
-TEP Data Package creation state diagram
-(c) Terradue Srl
-endfooter
-
 \enduml
 
-\startuml
+\startuml "Data package lifecycle #2 state diagram"
 
 User -> WebPortal: Load existing data package
 WebPortal -> WebServer: Stores the data package in the temporary data package
@@ -62,9 +57,7 @@ else user is not the owner of the data package
 WebPortal -> User: Displays an error message to the user
 end
 
-footer
-TEP Data Package update state diagram
-(c) Terradue Srl
+
 endfooter
 
 \enduml
