@@ -58,8 +58,6 @@ WebPortal -> User: Displays an error message to the user
 end
 
 
-endfooter
-
 \enduml
 
 Persistence
