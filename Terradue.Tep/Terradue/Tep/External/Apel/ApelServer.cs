@@ -33,7 +33,7 @@ We use this system in TEP to record the usage on the different resources provide
 
     \xrefitem cptype_int "Interfaces" "Interfaces"
 
-    \xrefitem norm "Normative References" "Normative References" [OGC Web Processing Service 1.0](http://portal.opengeospatial.org/files/?artifact_id=24151)
+    \xrefitem norm "Normative References" "Normative References" [APEL](https://wiki.egi.eu/wiki/APEL/MessageFormat)
 
 @}
 
@@ -45,7 +45,7 @@ We use this system in TEP to record the usage on the different resources provide
 
     \xrefitem cptype_int "Interfaces" "Interfaces"
 
-    \xrefitem norm "Normative References" "Normative References" [OGC Web Processing Service 1.0](http://portal.opengeospatial.org/files/?artifact_id=24151)
+    \xrefitem norm "Normative References" "Normative References" [APEL](https://wiki.egi.eu/wiki/APEL/MessageFormat)
 
     \ingroup Apel
 
