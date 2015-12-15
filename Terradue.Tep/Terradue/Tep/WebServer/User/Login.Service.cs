@@ -55,5 +55,60 @@ namespace Terradue.Tep.WebServer.Services
 			}
             return response;
 		}
+
+        public object Post(AuthLogin request) 
+        {
+            TepWebContext context = new TepWebContext(PagePrivileges.EverybodyView);
+            Terradue.WebService.Model.WebUser response = null;
+            Terradue.Portal.User user = null;
+            try{
+                context.Open();
+
+                user = TepWebContext.passwordAuthenticationType.AuthenticateUser(context, request.username, request.password);
+                response = new Terradue.WebService.Model.WebUser(user);
+
+                context.Close();
+            }
+            catch (Exception e){
+                context.Close();
+                throw e;
+            }
+            return response;
+        }
+
+        /// <summary>
+        /// Get the specified request.
+        /// </summary>
+        /// <param name="request">Request.</param>
+        public object Get(Logout request) 
+        {
+            TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
+            try{
+                wsContext.Open();
+                log.Info(String.Format("Log out from user '{0}'", wsContext.Username));
+                wsContext.EndSession();
+                wsContext.Close();
+            }
+            catch (Exception e){
+                wsContext.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        public object Delete(AuthLogout request) 
+        {
+            TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
+            try{
+                wsContext.Open();
+                wsContext.EndSession();
+                wsContext.Close();
+            }
+            catch (Exception e){
+                wsContext.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
 	}
 }
