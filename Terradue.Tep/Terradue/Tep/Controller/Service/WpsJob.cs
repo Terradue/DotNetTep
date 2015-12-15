@@ -9,7 +9,7 @@ using Terradue.ServiceModel.Syndication;
 using System.Xml;
 using System.IO;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPrivilegeManagement = true)]
     /// <summary>
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.

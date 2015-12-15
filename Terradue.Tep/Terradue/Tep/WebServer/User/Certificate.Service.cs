@@ -6,7 +6,6 @@ using Terradue.Certification.WebService;
 using Terradue.OpenNebula;
 using Terradue.Portal;
 using Terradue.Security.Certification;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 

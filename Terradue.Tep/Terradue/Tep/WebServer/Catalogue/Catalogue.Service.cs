@@ -12,7 +12,6 @@ using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.ServiceModel.Syndication;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
@@ -40,7 +39,7 @@ namespace Terradue.Tep.WebServer.Services
 				if ( request.serieId == null )
                     throw new ArgumentNullException(Terradue.Tep.WebServer.CustomErrorMessages.WRONG_IDENTIFIER);
 					
-                Terradue.Tep.Controller.Collection serie = Terradue.Tep.Controller.Collection.FromIdentifier(context,request.serieId);
+                Terradue.Tep.Collection serie = Terradue.Tep.Collection.FromIdentifier(context,request.serieId);
 
 				// The new URL template list 
 				Hashtable newUrls = new Hashtable();
@@ -117,7 +116,7 @@ namespace Terradue.Tep.WebServer.Services
               	if ( request.serieId == null )
                     throw new ArgumentNullException(Terradue.Tep.WebServer.CustomErrorMessages.WRONG_IDENTIFIER);
 
-                Terradue.Tep.Controller.Collection serie = Terradue.Tep.Controller.Collection.FromIdentifier(context,request.serieId);
+                Terradue.Tep.Collection serie = Terradue.Tep.Collection.FromIdentifier(context,request.serieId);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 ose.DefaultTimeOut = 60000;
@@ -177,7 +176,7 @@ namespace Terradue.Tep.WebServer.Services
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                Terradue.Tep.Controller.DataPackage datapackage;
+                Terradue.Tep.DataPackage datapackage;
 
                 try{
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
@@ -241,8 +240,8 @@ namespace Terradue.Tep.WebServer.Services
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                EntityList<Terradue.Tep.Controller.DataPackage> tmp_datapackages = new EntityList<DataPackage>(context);
-                EntityList<Terradue.Tep.Controller.DataPackage> datapackages = new EntityList<DataPackage>(context);
+                EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage>(context);
+                EntityList<Terradue.Tep.DataPackage> datapackages = new EntityList<DataPackage>(context);
                 tmp_datapackages.Load();
 
                 foreach(DataPackage dp in tmp_datapackages)
@@ -278,7 +277,7 @@ namespace Terradue.Tep.WebServer.Services
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
-                Terradue.Tep.Controller.DataPackage datapackage;
+                Terradue.Tep.DataPackage datapackage;
                 if(request.Key != null) {
                     context.RestrictedMode = false;
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);

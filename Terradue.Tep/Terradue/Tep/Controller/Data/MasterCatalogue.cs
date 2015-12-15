@@ -30,7 +30,7 @@ using Terradue.OpenSearch.RdfEO.Extensions;
 
 
 
-namespace Terradue.Tep.Controller
+namespace Terradue.Tep
 {
 
     /// <summary>

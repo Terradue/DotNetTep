@@ -6,7 +6,26 @@ using System.Net;
 using System.IO;
 using ServiceStack.Common.Web;
 
-namespace Terradue.Tep.Controller {
+
+/*!
+\defgroup TepService Service
+@{
+
+This component controls the processing services registered in the platform.
+
+WPS discovery is enabled by loading the services using the \ref CoreWPS component.
+
+\xrefitem dep "Dependencies" "Dependencies" uses \ref CloudWpsFactory to discover the dynamic WPS providers in the Cloud.
+
+\xrefitem dep "Dependencies" "Dependencies" uses \ref CoreWPS to analyse and manage the WPS services.
+
+\ingroup Tep
+
+@}
+
+*/
+
+namespace Terradue.Tep {
     public class WpsFactory {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger

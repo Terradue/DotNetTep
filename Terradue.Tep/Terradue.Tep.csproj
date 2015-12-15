@@ -159,14 +159,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Terradue\Tep\Controller\Catalogue\Collection.cs" />
-    <Compile Include="Terradue\Tep\Controller\Catalogue\DataPackage.cs" />
-    <Compile Include="Terradue\Tep\Controller\Catalogue\MasterCatalogue.cs" />
-    <Compile Include="Terradue\Tep\Controller\Catalogue\UrlBasedOpenSearchable.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\CloudWpsFactory.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\WpsFactory.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\WpsJob.cs" />
-    <Compile Include="Terradue\Tep\Controller\User\UserTep.cs" />
     <Compile Include="Terradue\Tep\WebServer\Activity\Activity.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Activity\Report.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Catalogue\Catalogue.Service.cs" />
@@ -205,6 +200,19 @@
     <Compile Include="Terradue\Tep\WebServer\User\EmailConfirmServiceTep.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\User\Certificate.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\User\WebUserProfileTep.cs" />
+    <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
+    <Compile Include="Terradue\Tep\Controller\Community\UserTep.cs" />
+    <Compile Include="Terradue\Tep\Controller\Community\GroupTep.cs" />
+    <Compile Include="Terradue\Tep\Controller\Community\RoleTep.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\Collection.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\DataPackage.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\MasterCatalogue.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\UrlBasedOpenSearchable.cs" />
+    <Compile Include="Terradue\Tep\Controller\Contents\Contents.cs" />
+    <Compile Include="Terradue\Tep\External\Apel\ApelServer.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\Filters.cs" />
+    <Compile Include="Terradue\Tep\Controller\Accounting\Account.cs" />
+    <Compile Include="Terradue\Tep\Controller\Accounting\Rates.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -212,5 +220,10 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
+    <Folder Include="Terradue\Tep\Controller\Application\" />
+    <Folder Include="Terradue\Tep\Controller\Contents\" />
+    <Folder Include="Terradue\Tep\Controller\Accounting\" />
+    <Folder Include="Terradue\Tep\External\" />
+    <Folder Include="Terradue\Tep\External\Apel\" />
   </ItemGroup>
 </Project>

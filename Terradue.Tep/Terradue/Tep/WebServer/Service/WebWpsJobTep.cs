@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer {

@@ -9,19 +9,26 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 
 /*! 
-\defgroup DataPackage Data Package
+\defgroup TepData Data
 @{
-
-This component defines a container for datasets, defined by a user. This container manages remote resources in static (predefined datasets)
-or dynamic (search url). A Data Package is OpenSearchable" and can be queried via an opensearch interface.
 
 \ingroup Tep
 
-\xrefitem dep "Dependencies" "Dependencies" uses \ref Series to define the datasets resources
+This component is in charge of all the data management in the platform.
 
-\xrefitem dep "Dependencies" "Dependencies" implements \ref OpenSearchable to be queryable and act as a catalogue subset
+It implements the mechanism to search for Collection and Data Packages via an \ref OpenSearchable interface.
 
-\startuml
+\xrefitem dep "Dependencies" "Dependencies" uses \ref Authorisation to manage the users in the groups with their roles and their access accordingly.
+
+\xrefitem dep "Dependencies" "Dependencies" uses \ref Series to delegates the dataset series persistence and search mechanism.
+
+User Data Packages
+------------------
+
+Each user of the platform may define a \ref DataPackage to save a set of dataset that he preselected.
+The 2 following state diagram shows the lifecycle of those data packages in creation and update.
+
+\startuml "Data package lifecycle #1 state diagram"
 
 User -> WebPortal: Select data
 WebPortal -> WebServer: Stores in a temporary data package
@@ -32,14 +39,9 @@ WebServer -> Database: Save the data package \nwith associated opensearch urls
 WebServer -> WebPortal: Return new data package
 WebPortal -> User: Data package successfully created
 
-footer
-GeoHazards TEP Data Package creation state diagram
-(c) Terradue Srl
-endfooter
-
 \enduml
 
-\startuml
+\startuml "Data package lifecycle #2 state diagram"
 
 User -> WebPortal: Load existing data package
 WebPortal -> WebServer: Stores the data package in the temporary data package
@@ -55,41 +57,80 @@ else user is not the owner of the data package
 WebPortal -> User: Displays an error message to the user
 end
 
-footer
-GeoHazards TEP Data Package update state diagram
-(c) Terradue Srl
-endfooter
 
 \enduml
 
-\startuml
+Persistence
+-----------
 
-User -> WebPortal: Delete a data package
-WebPortal -> WebServer: Request the suppression of the data package
-WebServer -> Database: Deletes the data package
-WebServer -> WebPortal: Confirm
-WebPortal -> User: Data package successfully deleted
+When a dataset is processed with a remote processing (e.g. WPS), the results of this data may be located in a temporary storage. The user would want to keep that result
+and its metadata. The \ref TepData components integrates the function to "copy" the results and its metadata to a persistent storage on one for the files and on a catalogue
+index for the metadata.
 
-footer
-GeoHazards TEP Data Package suppression state diagram
-(c) Terradue Srl
-endfooter
 
-\enduml
+Analysis and  Visualization
+---------------------------
+
+When a dataset is processed with a remote processing (e.g. WPS), the results of this data may be located in a place where there is no other function than downloading the data
+directly on its local machine to visualize or analyze it.
+The \ref TepData components integrates functions to "export" the results and its metadata to an external tools or server that shall enhance the results for better visualization and analysis.
+The following export capabilities are implemented:
+
+- *GeoServer* raster and vector export. If the results include standard vector files (e.g. shapefile, geojson, csv with WKT, ...) or raster files such as geolocated images (geotiff, png with world files...),
+the \refTepData components shall propose to the user to export them to geoserver that will resturn a new WMS layer that the web visualization widget shall display
+
+- *GeoNode* from an existing WMS layer, the \refTepData components shall propose to the user to export them to geonode that will return a link to the geonode map for the visualisation.
+
+
+\xrefitem int "Interfaces" "Interfaces" connects \ref GeoServerAPI to export vector or raster data.
+
+\xrefitem int "Interfaces" "Interfaces" connects \ref GeoNodeAPI to export WMS.
 
 @}
+
+\defgroup GeoServerAPI GeoServer API
+@{
+
+ GeoServer provides a RESTful interface through which clients can retrieve information about an instance and make configuration changes. Using the REST interface’s simple HTTP calls, clients can configure GeoServer without needing to use the Web Administration Interface. 
+
+ \xrefitem cptype_int "Interfaces" "Interfaces"
+
+ \xrefitem api "API" "API" [GeoServer REST configuration API](http://docs.geoserver.org/stable/en/user/rest/api/)
+
+@}
+
+\defgroup GeoNodeAPI GeoNode API
+@{
+
+ GeoNode provides JSON API which currently support the GET method. The API are also used as main serch engine.
+
+ \xrefitem cptype_int "Interfaces" "Interfaces"
+
+ \xrefitem api "API" "API" [GeoNode ah-hoc API](http://docs.geonode.org/en/master/reference/api.html)
+
+@}
+
 */
+
+
 
 using Terradue.OpenSearch.Result;
 using Terradue.ServiceModel.Syndication;
 using System.Linq;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     /// <summary>
     /// Data package.
     /// </summary>
-    /// \ingroup modules_contest_DataPackage
+    /// <description>
+    /// It represents a container for datasets, owned by a user. This container manages remote datasets by reference. 
+    /// It acts as a view over the \ref Collection.
+    /// Therefore, it can represent static datasets list or a dynamic set via search query.
+    /// A Data Package is OpenSearchable and thus can be queried via an opensearch interface.
+    /// </description>
+    /// \ingroup TepData
+    /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
     public class DataPackage : RemoteResourceSet, IAtomizable {
 
@@ -109,6 +150,27 @@ namespace Terradue.Tep.Controller {
         /// </summary>
         /// <value>The items.</value>
         public EntityList<RemoteResource> Items { get;	set; }
+
+        /// <summary>
+        /// Owner of the data package
+        /// </summary>
+        /// <value>is owned by a \ref User</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public UserTep Owner {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Collections included in the Data Package
+        /// </summary>
+        /// <value>is a view over one or more collections</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        public List<Collection> Collections {
+            get;
+            set;
+        }
+            
 
         /// <summary>
         /// Gets or sets the resources.
