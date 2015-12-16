@@ -4,7 +4,6 @@ using System.Linq;
 using System.Web.Routing;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 

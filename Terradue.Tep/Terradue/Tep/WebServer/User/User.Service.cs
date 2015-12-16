@@ -5,7 +5,6 @@ using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using Terradue.OpenNebula;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 

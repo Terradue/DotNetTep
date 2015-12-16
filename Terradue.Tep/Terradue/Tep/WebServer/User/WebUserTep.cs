@@ -10,7 +10,6 @@ using ServiceStack.ServiceInterface.ServiceModel;
 using Terradue.Authentication.Umsso;
 using Terradue.Certification.WebService;
 using Terradue.Portal;
-using Terradue.Tep.Controller;
 using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer {

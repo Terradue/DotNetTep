@@ -15,7 +15,7 @@ using Terradue.OpenSearch.Request;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal.OpenSearch;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
 
     public class UrlBasedOpenSearchable : IOpenSearchable {
         IfyContext context;
