@@ -176,9 +176,9 @@ namespace Terradue.Tep {
         /// Gets or sets the resources.
         /// </summary>
         /// <value>The resources.</value>
-        public override EntityList<RemoteResource> Resources {
+        public override RemoteResourceEntityCollection Resources {
             get {
-                EntityList<RemoteResource> result = new EntityList<RemoteResource>(context);
+                RemoteResourceEntityCollection result = new RemoteResourceEntityCollection(context);
                 result.Template.ResourceSet = this;
                 if (Items == null)
                     LoadItems();
@@ -189,7 +189,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Terradue.Contest.DataPackage"/> class.
+        /// Initializes a new instance of the <see cref="Terradue.Tep.DataPackage"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
         public DataPackage(IfyContext context) : base(context) {
@@ -327,8 +327,6 @@ namespace Terradue.Tep {
         public void RemoveUser(int usrId) {
             String sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_usr={1};", this.Id, usrId);
             context.Execute(sql);
-
-            //\todo: Problem if user need to access data package from another contest
         }
 
         public bool IsPublic(){
