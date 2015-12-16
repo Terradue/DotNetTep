@@ -94,8 +94,10 @@ namespace Terradue.Tep.WebServer.Services {
                 var resultType = match.Groups[1].Value.Trim('/');
                 if (resultType.Equals(EntityType.GetEntityType(typeof(Series)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(Series)).Keyword;
-                } else if (resultType.Contains(EntityType.GetEntityType(typeof(DataPackage)).Keyword)){
+                } else if (resultType.Equals(EntityType.GetEntityType(typeof(DataPackage)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(DataPackage)).Keyword;
+                } else if (resultType.Contains(EntityType.GetEntityType(typeof(DataPackage)).Keyword)){
+                    redirectUrl += "resultType=" + "data";//in this case it is a search (over a data package) so we use data keyword
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsJob)).Keyword)){
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsJob)).Keyword;
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProvider)).Keyword)){

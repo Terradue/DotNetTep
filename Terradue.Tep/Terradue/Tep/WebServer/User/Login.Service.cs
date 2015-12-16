@@ -55,7 +55,7 @@ namespace Terradue.Tep.WebServer.Services
             return response;
 		}
 
-        public object Post(AuthLogin request) 
+        public object Post(LoginAuthRequestTep request) 
         {
             TepWebContext context = new TepWebContext(PagePrivileges.EverybodyView);
             Terradue.WebService.Model.WebUser response = null;
@@ -79,7 +79,7 @@ namespace Terradue.Tep.WebServer.Services
         /// Get the specified request.
         /// </summary>
         /// <param name="request">Request.</param>
-        public object Get(Logout request) 
+        public object Get(LogoutRequestTep request) 
         {
             TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
             try{
@@ -95,7 +95,7 @@ namespace Terradue.Tep.WebServer.Services
             return new WebResponseBool(true);
         }
 
-        public object Delete(AuthLogout request) 
+        public object Delete(LogoutAuthRequestTep request) 
         {
             TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
             try{
