@@ -40,7 +40,7 @@ The quota restriction is implemented using the balance of the user or group acco
 namespace Terradue.Tep {
 
     /// <summary>
-    /// Account.
+    /// Account
     /// </summary>
     /// <description>
     /// This object represents an account owned by a user or a group. Each account has a balance value to represent the credit

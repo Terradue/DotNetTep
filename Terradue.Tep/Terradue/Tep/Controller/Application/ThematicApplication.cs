@@ -28,8 +28,12 @@ using Terradue.Portal;
 namespace Terradue.Tep {
 
     /// <summary>
-    /// Thematic application.
+    /// Thematic Application
     /// </summary>
+    /// <description>
+    /// Thematic Application object represent a set of features, of \ref Collection and \ref WpsProcessOffering to make a specific
+    /// application dedicated to scope or a purpose
+    /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
     public class ThematicApplication : Entity {
@@ -37,7 +41,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Collections
+        /// Collections available in the application
         /// </summary>
         /// <value>contains \ref Collection</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
@@ -47,7 +51,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// WPS Services
+        /// Processing Services available in the application
         /// </summary>
         /// <value>contains \ref WpsProcessOffering</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
@@ -57,7 +61,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Title
+        /// Title of the application
         /// </summary>
         /// <value>The title.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
@@ -67,7 +71,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Features and widgets defining the application
+        /// Features and widgets defining the application maps, layers, features.
         /// </summary>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<string> Features {
