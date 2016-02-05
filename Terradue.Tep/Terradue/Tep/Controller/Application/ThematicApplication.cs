@@ -12,7 +12,13 @@ It specifies togheter the form of the application, its features such as the map 
 Thematic Application over OWS data model
 ----------------------------------------
 
-<em>This section shall further describe how the component uses the OWS Context model to represent the dataset collections, the services, maps, features layers...</em>
+This component uses extensively \ref OWSContext model to represent the dataset collections, the services, maps, features layers and combine them together fefining therefore:
+
+- data AOI and limits
+- data constraints with the processing services
+- processing services predefintion (default values, massive processing extent...)
+- map backgroungs, feature layers and other functions
+- special functions such as benchmarking or special widgets
 
 \xrefitem dep "Dependencies" "Dependencies" delegates \ref TepData for the data management in the application with the definition of the collection and data packages references.
 
