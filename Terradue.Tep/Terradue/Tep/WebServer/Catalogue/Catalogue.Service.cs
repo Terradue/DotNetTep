@@ -31,7 +31,7 @@ namespace Terradue.Tep.WebServer.Services
 		public object Get(GetOpensearchDescription request)
 		{
 			OpenSearchDescription OSDD;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
 			try{
 				context.Open();
 				UriBuilder baseUrl = new UriBuilder ( context.BaseUrl );
@@ -85,7 +85,7 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
 		public object Get(GetOpensearchDescriptions request){
 			OpenSearchDescription OSDD;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
 			try{
 				context.Open();
 

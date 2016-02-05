@@ -27,7 +27,7 @@ namespace Terradue.Tep.WebServer.Services {
     public class ActivityServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Get(ActivitySearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             context.RestrictedMode = false;
             object result;
             context.Open();

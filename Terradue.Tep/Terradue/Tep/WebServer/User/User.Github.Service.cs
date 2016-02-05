@@ -19,7 +19,7 @@ namespace Terradue.Tep.WebServer.Services {
             if (request.Code == null)
                 throw new Exception("Code is empty");
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
@@ -40,7 +40,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(AddGithubSSHKeyToCurrentUser request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
@@ -62,7 +62,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetGithubUser request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
@@ -80,7 +80,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(UpdateGithubUser request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {

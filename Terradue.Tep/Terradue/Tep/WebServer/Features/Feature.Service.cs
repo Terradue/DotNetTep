@@ -54,7 +54,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -74,7 +74,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -94,7 +94,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(SortFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -113,7 +113,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteFeature request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Terradue.Portal.Feature feat = Terradue.Portal.Feature.FromId(context,request.Id);
@@ -128,7 +128,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(UploadFeatureImage request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             string img = "";
             string uid = Guid.NewGuid().ToString();
             string extension = ".png";

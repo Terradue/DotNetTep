@@ -16,7 +16,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetConfigRequestTep request) {
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
