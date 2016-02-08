@@ -171,6 +171,24 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Put(UserUpdateLevelRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebUserTep result;
+            try {
+                context.Open();
+                UserTep user = (request.Id == 0 ? null : UserTep.FromId(context, request.Id));
+
+                user.Level = request.Level;
+                user.Store();
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
         public object Put(UserUpdateAdminRequestTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebUserTep result;
