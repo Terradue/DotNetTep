@@ -263,7 +263,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         public object Get(UserCurrentIsLoggedRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
             } catch (Exception e) {
