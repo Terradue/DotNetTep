@@ -12,7 +12,13 @@ It specifies togheter the form of the application, its features such as the map 
 Thematic Application over OWS data model
 ----------------------------------------
 
-<em>This section shall further describe how the component uses the OWS Context model to represent the dataset collections, the services, maps, features layers...</em>
+This component uses extensively \ref OWSContext model to represent the dataset collections, the services, maps, features layers and combine them together fefining therefore:
+
+- data AOI and limits
+- data constraints with the processing services
+- processing services predefintion (default values, massive processing extent...)
+- map backgroungs, feature layers and other functions
+- special functions such as benchmarking or special widgets
 
 \xrefitem dep "Dependencies" "Dependencies" delegates \ref TepData for the data management in the application with the definition of the collection and data packages references.
 
@@ -28,8 +34,12 @@ using Terradue.Portal;
 namespace Terradue.Tep {
 
     /// <summary>
-    /// Thematic application.
+    /// Thematic Application
     /// </summary>
+    /// <description>
+    /// Thematic Application object represent a set of features, of \ref Collection and \ref WpsProcessOffering to make a specific
+    /// application dedicated to scope or a purpose
+    /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
     public class ThematicApplication : Entity {
@@ -37,7 +47,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Collections
+        /// Collections available in the application
         /// </summary>
         /// <value>contains \ref Collection</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
@@ -47,7 +57,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// WPS Services
+        /// Processing Services available in the application
         /// </summary>
         /// <value>contains \ref WpsProcessOffering</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
@@ -57,7 +67,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Title
+        /// Title of the application
         /// </summary>
         /// <value>The title.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
@@ -67,7 +77,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Features and widgets defining the application
+        /// Features and widgets defining the application maps, layers, features.
         /// </summary>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
         public List<string> Features {

@@ -10,7 +10,7 @@ using System.Collections.Generic;
 namespace Terradue.Tep {
 
     /// <summary>
-    /// Collection object
+    /// Data Collection
     /// </summary>
     /// <description>
     /// A Collection is the extension of dataset \ref Series for the TEP. It can be an item defined in a \ref ThematicApplication

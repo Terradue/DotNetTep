@@ -17,8 +17,8 @@ using System.Runtime.CompilerServices;
 // The form "{Major}.{Minor}.*" will automatically update the build and revision,
 // and "{Major}.{Minor}.{Build}.*" will update just the revision.
 
-[assembly: AssemblyVersion("1.0.1.*")]
-[assembly: AssemblyInformationalVersion("1.0.1")]
+[assembly: AssemblyVersion("1.0.2.*")]
+[assembly: AssemblyInformationalVersion("1.0.2")]
 
 // The following attributes are used to specify the signing key for the assembly,
 // if desired. See the Mono documentation for more information about signing.
@@ -85,8 +85,8 @@ using System.Runtime.CompilerServices;
 \defgroup Tep Tep Modules
 @{
 
-    This is a super component that encloses all Thematic Exploitation Platform related functional compoenents. 
-    Their main functionnalities are targeted to ebhance the basic \ref Core functionalities for the thematic usage of the plaform.
+    This is a super component that encloses all Thematic Exploitation Platform related functional components. 
+    Their main functionnalities are targeted to enhance the basic \ref Core functionalities for the thematic usage of the plaform.
 
 
 @}

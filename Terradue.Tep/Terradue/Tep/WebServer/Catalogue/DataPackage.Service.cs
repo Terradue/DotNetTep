@@ -415,7 +415,7 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
         public object Delete(DataPackageDeleteRequestTep request)
 		{
-            IfyWebContext context = new TepWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			try{
 				context.Open();
                 DataPackage tmp = DataPackage.FromIdentifier(context,request.Identifier);
