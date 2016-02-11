@@ -27,15 +27,23 @@ namespace Terradue.Tep.WebServer.Services {
     public class ActivityServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Get(ActivitySearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.RestrictedMode = false;
-            object result;
             context.Open();
 
             List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
             EntityList<Activity> activities = new EntityList<Activity>(context);
             activities.Load();
+
+            List<Activity> tmplist = new List<Activity>();
+            tmplist = activities.GetItemsAsList();
+            tmplist.Sort();
+            tmplist.Reverse();
+
+            activities = new EntityList<Activity>(context);
+            activities.Identifier = "activity";
+            foreach (Activity item in tmplist) activities.Include(item);
             osentities.Add(activities);
 
             // Load the complete request
