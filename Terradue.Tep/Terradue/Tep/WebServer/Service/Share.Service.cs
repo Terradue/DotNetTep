@@ -38,7 +38,7 @@ namespace Terradue.Tep.WebServer.Services {
     public class ShareServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Post(ShareCreateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             object result;
             context.Open();
 

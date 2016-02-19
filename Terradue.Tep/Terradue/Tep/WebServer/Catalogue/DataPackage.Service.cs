@@ -282,6 +282,7 @@ namespace Terradue.Tep.WebServer.Services
                     foreach(RemoteResource res in def.Resources){
                         res.Delete();
                     }
+                    def.LoadItems();
                     var tmp = DataPackage.FromIdentifier(context, request.Identifier);
                     foreach(RemoteResource res in tmp.Resources){
                         RemoteResource tmpres = new RemoteResource(context);

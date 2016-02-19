@@ -44,7 +44,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetOneUser request) {
             WebOneUser result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
@@ -63,7 +63,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetOneCurrentUser request) {
             WebOneUser result = new WebOneUser();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
@@ -96,7 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Put(UpdateOneUser request) {
             bool result;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
@@ -112,7 +112,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(CreateOneUser request){
             WebOneUser result;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));

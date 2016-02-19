@@ -17,7 +17,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetWPSRequestTep request) {
             List<WpsProvider> result = new List<WpsProvider>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
