@@ -17,7 +17,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetImageRequestTep request) {
             string result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));

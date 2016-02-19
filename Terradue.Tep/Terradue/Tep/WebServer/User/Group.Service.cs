@@ -19,7 +19,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetGroup request) {
             WebGroup result;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Group grp = Group.FromId(context, request.Id);
@@ -40,7 +40,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetGroups request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 EntityList<Group> grps = new EntityList<Group>(context);
@@ -61,7 +61,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the group</returns>
         public object Put(UpdateGroup request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGroup result;
             try {
                 context.Open();
@@ -83,7 +83,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(CreateGroup request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGroup result;
             try{
                 context.Open();
@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(DeleteGroup request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Group grp = Group.FromId(context, request.Id);
@@ -125,7 +125,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(AddUserToGroup request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGroup result;
             try{
                 context.Open();
@@ -146,7 +146,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Delete(RemoveUserFromGroup request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGroup result;
             try{
                 context.Open();
@@ -163,7 +163,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Put(SaveExacltyUsersToGroup request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGroup result = null;
             try{
                 context.Open();
@@ -182,7 +182,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetUsersFromGroup request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             List<WebUser> result = new List<WebUser>();;
             try{
                 context.Open();

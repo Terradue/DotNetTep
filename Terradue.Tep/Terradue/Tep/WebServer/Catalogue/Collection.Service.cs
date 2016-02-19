@@ -39,7 +39,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(SerieGetRequestTep request) {
             WebDataCollectionTep result;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Collection serie = Collection.FromId(context, request.Id);

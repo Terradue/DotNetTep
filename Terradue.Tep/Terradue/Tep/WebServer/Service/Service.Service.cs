@@ -17,7 +17,7 @@ namespace Terradue.Tep.WebServer.Services {
     public class ServiceServiceTep : ServiceStack.ServiceInterface.Service {
         
         public object Get(ServiceServiceTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             object result;
             context.Open();
             EntityList<Terradue.Portal.Service> services = new EntityList<Terradue.Portal.Service>(context);

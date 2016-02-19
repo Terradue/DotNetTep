@@ -52,7 +52,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateImage request) {
             WebImage result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -72,7 +72,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateImage request) {
             WebImage result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -90,7 +90,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteImage request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Image img = Image.FromId(context,request.Id);
@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(UploadImage request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             string img = "";
             try {
                 context.Open();
