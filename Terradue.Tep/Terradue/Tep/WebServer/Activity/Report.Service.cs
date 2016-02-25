@@ -186,7 +186,7 @@ namespace Terradue.Tep.WebServer.Services {
                         if (reader.GetValue(0) != DBNull.Value) {
                             var aff = reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "";
                             var pem = reader.GetValue(3) != DBNull.Value ? reader.GetValue(3) : "";
-                            csv.Append(String.Format("{0},{1},{2},{3}", reader.GetString(0), aff, reader.GetDateTime(2), pem != DBNull.Value ? "yes" : "no"));
+                            csv.Append(String.Format("{0},{1},{2},{3}", reader.GetString(0), aff.Replace(",","\\,"), reader.GetDateTime(2), pem != DBNull.Value ? "yes" : "no"));
                             csv.Append(Environment.NewLine);
                         }
                     }
@@ -249,7 +249,7 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsname = job.ProcessId;
                     }
                     string ispublic = job.IsPublic() ? "yes" : "no";
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname, ispublic, Environment.NewLine));
+                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace(",","\\,"), job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",","\\,"), ispublic, Environment.NewLine));
                 }
             }
             csv.Append(Environment.NewLine);
@@ -268,7 +268,7 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsname = job.ProcessId;
                     }
                     string ispublic = job.IsPublic() ? "yes" : "no";
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname, ispublic, Environment.NewLine));
+                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace(",","\\,"), job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",","\\,"), ispublic, Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
 
@@ -330,7 +330,7 @@ namespace Terradue.Tep.WebServer.Services {
                         context.LogDebug(this,"Wps name (key) = " + kv.Key);
                         wpsname = kv.Key;
                     }
-                    csv.Append(String.Format("{0},{1}{2}", wpsname, kv.Value, Environment.NewLine));
+                    csv.Append(String.Format("{0},{1}{2}", wpsname.Replace(",","\\,"), kv.Value, Environment.NewLine));
                 }
             }
             csv.Append(Environment.NewLine);
@@ -356,7 +356,7 @@ namespace Terradue.Tep.WebServer.Services {
             while (reader.Read()) {
                 if (reader.GetValue(0) != DBNull.Value) {
                     ids.Add(reader.GetInt32(0));
-                    lines.Add(string.Format("{0},{1},{2}",reader.GetString(1), reader.GetString(2), reader.GetDateTime(3)));
+                    lines.Add(string.Format("{0},{1},{2}",reader.GetString(1), reader.GetString(2).Replace(",","\\,"), reader.GetDateTime(3)));
                 }
             }
             reader.Close();
@@ -427,7 +427,7 @@ namespace Terradue.Tep.WebServer.Services {
                         dpname = dp.Name;
                         dpdate = dp.CreationTime.ToString("yyyy-MM-dd");
                     }catch(Exception){}
-                    csv.Append(string.Format("{0},{1},{2},{3}{4}",user.Username,dpname,dpdate,activity.CreationTime.ToString("yyyy-MM-dd"),Environment.NewLine));
+                    csv.Append(string.Format("{0},{1},{2},{3}{4}",user.Username,dpname.Replace(",","\\,"),dpdate,activity.CreationTime.ToString("yyyy-MM-dd"),Environment.NewLine));
                 }
             }
             csv.Append(Environment.NewLine);
