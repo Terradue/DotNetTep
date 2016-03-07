@@ -487,6 +487,9 @@ namespace Terradue.Tep.WebServer.Services {
                 wpsProvider = request.ToEntity(context, wpsProvider);
                 wpsProvider.Store();
 
+                //Make it public, the authorizations will then be done on the services
+                wpsProvider.StoreGlobalPrivileges();
+
                 wpsProvider.StoreProcessOfferings();
 
                 result = new WebWpsProvider(wpsProvider);
