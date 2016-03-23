@@ -24,7 +24,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(UploadCertificate request) {
             CertificateUser user;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebUserCertificate userCert;
             try {
                 context.Open();
@@ -55,7 +55,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(RequestCertificate request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             CertificateUser certUser;
             WebUserCertificate userCert = null;
 
@@ -96,7 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteUserCertificate request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             UserTep user;
 
             try {
@@ -169,7 +169,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetUserCertificate request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             CertificateUser certUser;
             WebUserCertificate userCert;
 

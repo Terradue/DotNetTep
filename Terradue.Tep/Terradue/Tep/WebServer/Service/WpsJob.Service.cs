@@ -23,7 +23,7 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Get(WpsJobsGetRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             List<WebWpsJobTep> result = new List<WebWpsJobTep>();
             try {
                 context.Open();
@@ -100,7 +100,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(WpsJobCreateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             HttpResult result = null;
             context.Open();
 
@@ -142,7 +142,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(WpsJobUpdateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             HttpResult result = null;
             context.Open();
 
@@ -199,7 +199,7 @@ namespace Terradue.Tep.WebServer.Services {
 //        }
 
         public object Delete(WpsJobDeleteRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             bool result = false;
             try {
                 context.Open();

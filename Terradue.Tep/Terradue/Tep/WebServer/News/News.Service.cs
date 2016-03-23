@@ -146,7 +146,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateNews request) {
             WebNews result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -187,7 +187,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateNews request) {
             WebNews result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -226,7 +226,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Terradue.Portal.Article news = Terradue.Portal.Article.FromId(context,request.Id);

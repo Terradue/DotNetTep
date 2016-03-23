@@ -282,6 +282,7 @@ namespace Terradue.Tep.WebServer.Services
                     foreach(RemoteResource res in def.Resources){
                         res.Delete();
                     }
+                    def.LoadItems();
                     var tmp = DataPackage.FromIdentifier(context, request.Identifier);
                     foreach(RemoteResource res in tmp.Resources){
                         RemoteResource tmpres = new RemoteResource(context);
@@ -415,7 +416,7 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
         public object Delete(DataPackageDeleteRequestTep request)
 		{
-            IfyWebContext context = new TepWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			try{
 				context.Open();
                 DataPackage tmp = DataPackage.FromIdentifier(context,request.Identifier);

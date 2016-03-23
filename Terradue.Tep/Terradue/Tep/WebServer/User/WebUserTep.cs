@@ -37,6 +37,9 @@ namespace Terradue.Tep.WebServer {
     [Route("/user", "PUT", Summary = "Update user", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
     public class UserUpdateRequestTep : WebUserTep, IReturn<WebUserTep> {}
 
+    [Route("/user/level", "PUT", Summary = "Update user level", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
+    public class UserUpdateLevelRequestTep : WebUserTep, IReturn<WebUserTep> {}
+
     [Route("/user", "POST", Summary = "Create a new user", Notes = "User is contained in the POST data.")]
     public class UserCreateRequestTep : WebUserTep, IReturn<WebUserTep> {}
 

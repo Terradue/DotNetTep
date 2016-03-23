@@ -39,7 +39,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(SerieGetRequestTep request) {
             WebDataCollectionTep result;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 Collection serie = Collection.FromId(context, request.Id);
@@ -205,7 +205,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Series serie = Series.FromId(context, request.CollId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM series_priv WHERE id_series={0} AND id_grp={1};",request.CollId, request.CollId);
+                string sql = String.Format("DELETE FROM series_priv WHERE id_series={0} AND id_grp={1};",request.CollId, request.Id);
                 context.Execute(sql);
 
                 context.Close();

@@ -91,9 +91,6 @@
     <Reference Include="Terradue.Authentication.Umsso">
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.7\lib\net40\Terradue.Authentication.Umsso.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Cloud">
-      <HintPath>..\packages\Terradue.Cloud.1.2.14\lib\net40\Terradue.Cloud.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Certification">
       <HintPath>..\packages\Terradue.Certification.1.4.7\lib\net40\Terradue.Certification.dll</HintPath>
     </Reference>
@@ -103,23 +100,11 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.6.43\lib\net40\Terradue.Portal.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.6.43\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.6.43\lib\net40\Terradue.Portal.Agent.exe</HintPath>
-    </Reference>
     <Reference Include="Terradue.News">
       <HintPath>..\packages\Terradue.News.1.0.11\lib\net40\Terradue.News.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.Tumblr">
       <HintPath>..\packages\Terradue.OpenSearch.Tumblr.1.0.10\lib\net40\Terradue.OpenSearch.Tumblr.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.WebService.Model">
-      <HintPath>..\packages\Terradue.WebService.Model.1.1.8\lib\net40\Terradue.WebService.Model.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
@@ -141,20 +126,51 @@
       <HintPath>..\packages\NetTopologySuite.1.13.0\lib\net40-client\PowerCollections.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="Terradue.Metadata.EarthObservation">
-      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.3.4\lib\net40\Terradue.Metadata.EarthObservation.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.GeoJson">
-      <HintPath>..\packages\Terradue.GeoJson.1.5.6\lib\net40\Terradue.GeoJson.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.OpenSearch.GeoJson">
       <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.3\lib\net40\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.OpenSearch.RdfEO">
-      <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.3.5\lib\net40\Terradue.OpenSearch.RdfEO.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.11.14\lib\net40\Terradue.OpenSearch.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.6.44\lib\net40\Terradue.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.6.44\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.6.44\lib\net40\Terradue.Portal.Agent.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Cloud">
+      <HintPath>..\packages\Terradue.Cloud.1.2.15\lib\net40\Terradue.Cloud.dll</HintPath>
+    </Reference>
+    <Reference Include="NetTopologySuite.IO.GeoTools">
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.0\lib\net40-client\NetTopologySuite.IO.GeoTools.dll</HintPath>
+    </Reference>
+    <Reference Include="NetTopologySuite.IO.MsSqlSpatial">
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.0\lib\net40-client\NetTopologySuite.IO.MsSqlSpatial.dll</HintPath>
+    </Reference>
+    <Reference Include="NetTopologySuite.IO.PostGis">
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.0\lib\net40-client\NetTopologySuite.IO.PostGis.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.GeoJson">
+      <HintPath>..\packages\Terradue.GeoJson.1.5.8\lib\net40\Terradue.GeoJson.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Numerics">
+      <HintPath>..\packages\MathNet.Numerics.3.7.1\lib\net40\MathNet.Numerics.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="ProjNet">
+      <HintPath>..\packages\ProjNet.1.2\lib\net20\ProjNet.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Metadata.EarthObservation">
+      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.3.12\lib\net40\Terradue.Metadata.EarthObservation.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.WebService.Model">
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.9\lib\net40\Terradue.WebService.Model.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch.RdfEO">
+      <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.3.6\lib\net40\Terradue.OpenSearch.RdfEO.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -217,6 +233,20 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="modules\cloud\db\db-1.0#.sql" />
+    <None Include="modules\cloud\db\db-1.1#.sql" />
+    <None Include="modules\cloud\db\db-1.2#.sql" />
+    <None Include="modules\cloud\db\db-1.3#.sql" />
+    <None Include="modules\cloud\db\db-create.sql" />
+    <None Include="modules\cloud\www\admin\cloudprovider.aspx" />
+    <None Include="modules\cloud\www\admin\virtualresource.aspx" />
+    <None Include="modules\cloud\www\admin\vmtemplate.aspx" />
+    <None Include="Resources\.DS_Store" />
+    <None Include="Resources\ne_110m_land\.DS_Store" />
+    <None Include="Resources\ne_110m_land\ne_110m_land.dbf" />
+    <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
+    <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
+    <None Include="Resources\ne_110m_land\ne_110m_land.shx" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />

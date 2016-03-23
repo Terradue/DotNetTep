@@ -24,7 +24,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetRequestTep request) {
             WebUserTep result;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 UserTep user = UserTep.FromId(context, request.Id);
@@ -67,7 +67,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetPublicProfileRequestTep request) {
             WebUserProfileTep result;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 context.RestrictedMode = false;
@@ -110,7 +110,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetPublicProfilesRequestTep request) {
             List<WebUserProfileTep> result = new List<WebUserProfileTep>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 EntityList<UserTep> users = new EntityList<UserTep>(context);
@@ -131,7 +131,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the users</returns>
         public object Get(GetUsers request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             List<WebUser> result = new List<WebUser>();
             try {
                 context.Open();
@@ -154,13 +154,31 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the user</returns>
         public object Put(UserUpdateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebUserTep result;
             try {
                 context.Open();
 				UserTep user = (request.Id == 0 ? null : UserTep.FromId(context, request.Id));
 
                 user = request.ToEntity(context, user);
+                user.Store();
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(UserUpdateLevelRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebUserTep result;
+            try {
+                context.Open();
+                UserTep user = (request.Id == 0 ? null : UserTep.FromId(context, request.Id));
+
+                user.Level = request.Level;
                 user.Store();
                 result = new WebUserTep(context, user);
                 context.Close();
@@ -194,7 +212,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(UserCreateRequestTep request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebUserTep result;
             try{
                 context.Open();
@@ -262,7 +280,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetGroupsRequestTep request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -287,7 +305,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetUsageRequestTep request){
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
                 UserUsage usu = new UserUsage(context, request.Id);
