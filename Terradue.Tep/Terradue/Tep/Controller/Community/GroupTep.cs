@@ -33,6 +33,47 @@ The notification is configurable in the user profile and can be enabled as the f
 \ingroup Tep
 
 @}
+
+\addtogroup Security
+@{
+
+#### Authorisation scheme tailoring for TEP ####
+
+As described previously, the portal authorisation mechanism allows a great flexibility for managing users and groups and their permissions with the items in the system.
+In order to enable all the requirements specific to the TEP, the \ref TepCommunity uses the \ref Security components as the following:
+
+- \ref User is an \ref TEPUser registered via the \ref Authentication mechanism integrated in the portal (e.g. EO-SSO)
+- \ref Group is a \ref TEPGroup regrouping a set of \ref TEPUser put together for organisational purpose. For instance, all Terradue staff users are grouped in the Terradue Group.
+- Domain is named "Thematic Group" and englobes all users, groups and objects having a thematic scope in common. For instance, 
+there could be a "Volcanoes" thematic group that would have expert users in volcanoes monitoring, the data collections used for monitoring them (e.g. Sentinel-2 and 3),
+the features related to this domain (e.g. latest most important eruptions) and the all the processing services relative to volcanoes.
+- The inital roles are defined as \ref TEPRole.
+
+Objects identified and used in TEP are 
+- \ref Series called "Data \ref Collection"
+- \ref DataPackage
+- \ref Service also called processing services and mainly implemented as \ref WpsProcessOffering 
+- Job reprenting an instance of a processing service execution
+- \ref CloudProvider providing with \ref CloudAppliance 
+- \ref ThematicApplication that combines at user level the previous objects.
+- \ref Activity that records all the operations executed from the portal
+
+#### Additional privilege and permissions for TEP ####
+
+Specific privileges and permissions are implemented for TEP in order to control a precise operation on the platform.
+The specific operations are described in the folowing table.
+
+Object Type        | Operation Name        | Description
+------------------ | --------------------- | ----------------------------------------------------------------------------------------
+\ref Collection    | Can Search In         | Allows to search for dataset in the collection
+\ref Collection    | Can Download          | Allows to download the raw dataset in the collection directly on user desktop
+\ref Collection    | Can Process           | Allows to use the data inside processing service or for processing purpose
+\ref CloudProvider | Can Request Sandbox   | Allows to request for a Developer Cloud Sandbox via the related \ref Cloud Provider
+\ref CloudProvider | Can Provision Cluster | Allows to provision a Cluster via the related \ref Cloud Provider
+
+
+@}
+
 */
 
 namespace Terradue.Tep {
