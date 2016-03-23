@@ -34,7 +34,7 @@ The notification is configurable in the user profile and can be enabled as the f
 
 @}
 
-\addtogroup Security
+\addtogroup Authorisation
 @{
 
 #### Authorisation scheme tailoring for TEP ####
@@ -42,12 +42,12 @@ The notification is configurable in the user profile and can be enabled as the f
 As described previously, the portal authorisation mechanism allows a great flexibility for managing users and groups and their permissions with the items in the system.
 In order to enable all the requirements specific to the TEP, the \ref TepCommunity uses the \ref Security components as the following:
 
-- \ref User is an \ref TEPUser registered via the \ref Authentication mechanism integrated in the portal (e.g. EO-SSO)
-- \ref Group is a \ref TEPGroup regrouping a set of \ref TEPUser put together for organisational purpose. For instance, all Terradue staff users are grouped in the Terradue Group.
+- \ref User is an \ref UserTep registered via the \ref Authentication mechanism integrated in the portal (e.g. EO-SSO)
+- \ref Group is a \ref GroupTep regrouping a set of \ref UserTep put together for organisational purpose. For instance, all Terradue staff users are grouped in the Terradue Group.
 - Domain is named "Thematic Group" and englobes all users, groups and objects having a thematic scope in common. For instance, 
 there could be a "Volcanoes" thematic group that would have expert users in volcanoes monitoring, the data collections used for monitoring them (e.g. Sentinel-2 and 3),
 the features related to this domain (e.g. latest most important eruptions) and the all the processing services relative to volcanoes.
-- The inital roles are defined as \ref TEPRole.
+- The inital roles are defined as \ref RoleTep.
 
 Objects identified and used in TEP are 
 - \ref Series called "Data \ref Collection"
