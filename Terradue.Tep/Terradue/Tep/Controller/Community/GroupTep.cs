@@ -1,5 +1,5 @@
 ﻿using System;
-using Terradue::Portal;
+using Terradue.Portal;
 using System.Collections.Generic;
 
 
@@ -76,7 +76,7 @@ Object Type                         | Operation Name        | Description
 
 */
 
-namespace Terradue::Tep {
+namespace Terradue.Tep {
 
     /// <summary>
     /// TEP Group
