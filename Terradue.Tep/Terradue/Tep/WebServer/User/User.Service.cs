@@ -71,7 +71,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 context.RestrictedMode = false;
-                UserTep user = UserTep.GetPublicUser(context, request.username);
+                UserTep user = UserTep.GetPublicUser(context, request.id);
                 result = new WebUserProfileTep(context, user);
 
                 context.Close();
@@ -92,7 +92,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                UserTep user = (UserTep)UserTep.FromUsername(context, request.username);
+                UserTep user = (UserTep)UserTep.FromId(context, request.id);
                 result = new WebUserProfileTep(context, user);
 
                 context.Close();
