@@ -1,7 +1,7 @@
 ﻿using System;
 
 /*! 
-\defgroup TepApplication Application
+\defgroup TepApplication Thematic Application
 @{
 
 This component manages the TEP applications

@@ -6,16 +6,16 @@ using Terradue.Tep.WebServer;
 
 namespace Terradue.Tep.WebServer {
     
-    [Route("/user/{username}/public", "GET", Summary = "GET the user public info", Notes = "User is found from id")]
+    [Route("/user/{id}/public", "GET", Summary = "GET the user public info", Notes = "User is found from id")]
     public class UserGetPublicProfileRequestTep : IReturn<WebUserProfileTep> {
-        [ApiMember(Name = "username", Description = "User name", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string username { get; set; }
+        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int id { get; set; }
     }
 
-    [Route("/user/{username}/admin", "GET", Summary = "GET the user", Notes = "User is found from id")]
+    [Route("/user/{id}/admin", "GET", Summary = "GET the user", Notes = "User is found from id")]
     public class UserGetProfileAdminRequestTep : IReturn<WebUserProfileTep> {
-        [ApiMember(Name = "username", Description = "User name", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string username { get; set; }
+        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int id { get; set; }
     }
 
     [Route("/user/admin", "PUT", Summary = "PUT the user as admin", Notes = "User is found from id")]

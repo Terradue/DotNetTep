@@ -178,9 +178,9 @@ namespace Terradue.Tep {
             this.Level = user.Level;
         }
 
-        public static UserTep GetPublicUser(IfyContext context, string identifier){
+        public static UserTep GetPublicUser(IfyContext context, int id){
             context.RestrictedMode = false;
-            UserTep usr = new UserTep(context, User.FromUsername(context, identifier));
+            UserTep usr = new UserTep(context, User.FromId(context, id));
             usr.certsubject = null;
             usr.OnePassword = null;
             return usr;

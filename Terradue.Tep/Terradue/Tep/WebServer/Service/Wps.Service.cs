@@ -211,7 +211,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(WpsExecutePostRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             context.Open();
             log.Info("WPS Execute requested (POST)");
 
@@ -466,7 +466,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(CreateWPSProvider request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebWpsProvider result = null;
             try {
                 context.Open();
@@ -503,7 +503,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(CreateWPSService request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebWpsService result = null;
             try {
                 context.Open();
@@ -547,7 +547,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteWPSService request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             bool result = false;
             try {
                 context.Open();
@@ -572,7 +572,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteWPSProvider request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             bool result = false;
             try {
                 context.Open();
@@ -597,7 +597,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(UpdateWPSProvider request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebWpsProvider result = null;
             try {
                 context.Open();
@@ -622,7 +622,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(WpsServiceUpdateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebServiceTep result = null;
             try {
                 context.Open();
