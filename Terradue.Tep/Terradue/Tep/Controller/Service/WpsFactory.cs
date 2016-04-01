@@ -44,25 +44,39 @@ namespace Terradue.Tep {
         public WPSCapabilitiesType WpsGetCapabilities(){
             log.Info("WPS GetCapabilities requested");
 
+            //create GetCapabilities response
+            WPSCapabilitiesType getCapabilities = CreateGetCapabilititesTemplate(context.BaseUrl + "/wps/WebProcessingService");
+
+
             //load providers from DB
             EntityList<WpsProvider> wpsList = new EntityList<WpsProvider>(context);
             wpsList.Load();
 
-            //load providers from Cloud Provider
-            CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
-            foreach (WpsProvider prov in wpsFinder.GetWPSFromVMs())
-                wpsList.Include(prov);
-
-            //create GetCapabilities response
-            WPSCapabilitiesType getCapabilities = CreateGetCapabilititesTemplate(context.BaseUrl + "/wps/WebProcessingService");
-
             //for each provider, if proxied, get processOfferings and add it in the response
             foreach (WpsProvider process in wpsList) {
                 if (process.Proxy) {
+                    //get processings from db
                     List<ProcessBriefType> processOfferings = process.GetProcessBriefTypes();
+
                     foreach (ProcessBriefType processOff in processOfferings) {
                         getCapabilities.ProcessOfferings.Process.Add(processOff);
+                        log.Info("WPS GetCapabilities - " + processOff.Title.Value);
                     }
+                }
+            }
+                
+            //load providers from Cloud Provider
+            CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
+            foreach (WpsProvider prov in wpsFinder.GetWPSFromVMs()) {
+                try{
+                    WPSCapabilitiesType capa = WpsProvider.GetWPSCapabilitiesFromUrl(prov.BaseUrl);
+                    foreach (var oneProcess in capa.ProcessOfferings.Process) {
+                        oneProcess.Identifier.Value = prov.Identifier + "-" + oneProcess.Identifier.Value;
+                        getCapabilities.ProcessOfferings.Process.Add(oneProcess);
+                        log.Info("WPS GetCapabilities - " + oneProcess.Title.Value);
+                    }
+                }catch(Exception e){
+                    var s = e.Message;
                 }
             }
 
