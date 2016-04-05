@@ -85,7 +85,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.StartTransaction();
 
                 if(string.IsNullOrEmpty(request.Identifier) && string.IsNullOrEmpty(request.Name)) throw new Exception("No identifier set");
-                var identifier = !string.IsNullOrEmpty(request.Identifier) ? request.Identifier : request.Name.Replace(" ","");
+                var identifier = !string.IsNullOrEmpty(request.Identifier) ? DataPackage.GenerateIdentifier(request.Identifier) : DataPackage.GenerateIdentifier(request.Name);
 
                 if(request.Overwrite && tmp.OwnerId == context.UserId){
                     tmp = DataPackage.FromIdentifier(context, identifier);

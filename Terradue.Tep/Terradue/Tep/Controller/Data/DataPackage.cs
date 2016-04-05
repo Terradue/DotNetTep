@@ -221,6 +221,12 @@ namespace Terradue.Tep {
             }
         }
 
+        public static string GenerateIdentifier(string identifier){
+            if (string.IsNullOrEmpty(identifier)) return "";
+            string result = identifier.Replace(" ","").Replace(".","").Replace("?","").Replace("&","").Replace("%","");
+            return result;
+        }
+
         /// <summary>
         /// Adds the resource item.
         /// </summary>
