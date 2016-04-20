@@ -217,7 +217,6 @@
     <Compile Include="Terradue\Tep\WebServer\Global\TepContext.cs" />
     <Compile Include="Terradue\Tep\WebServer\Config\Config.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\User\EmailConfirmServiceTep.Service.cs" />
-    <Compile Include="Terradue\Tep\WebServer\User\Certificate.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\User\WebUserProfileTep.cs" />
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\UserTep.cs" />
