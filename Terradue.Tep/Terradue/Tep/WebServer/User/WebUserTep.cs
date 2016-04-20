@@ -8,7 +8,6 @@ using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using ServiceStack.ServiceInterface.ServiceModel;
 using Terradue.Authentication.Umsso;
-using Terradue.Certification.WebService;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 

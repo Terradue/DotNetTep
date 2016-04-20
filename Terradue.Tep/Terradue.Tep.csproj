@@ -84,15 +84,9 @@
     <Reference Include="Terradue.OpenNebula.WebService">
       <HintPath>..\packages\Terradue.OpenNebula.WebService.1.0.1\lib\net40\Terradue.OpenNebula.WebService.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Certification.WebService">
-      <HintPath>..\packages\Terradue.Certification.WebService.1.0.1\lib\net40\Terradue.Certification.WebService.dll</HintPath>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="Terradue.Authentication.Umsso">
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.7\lib\net40\Terradue.Authentication.Umsso.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Certification">
-      <HintPath>..\packages\Terradue.Certification.1.4.7\lib\net40\Terradue.Certification.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Github">
       <HintPath>..\packages\Terradue.Github.1.0.4\lib\net40\Terradue.Github.dll</HintPath>
