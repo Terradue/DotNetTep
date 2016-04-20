@@ -48,7 +48,7 @@ Analysis and  Visualization
 When a dataset is processed with a remote processing (e.g. WPS), the results of this data may be located in a place where there is no other function than downloading the data
 directly on its local machine to visualize or analyze it.
 This component enables export capability to GeoServer with support to raster and vector files. If the results include standard vector files (e.g. shapefile, geojson, csv with WKT, ...) or raster files such as geolocated images (geotiff, png with world files...),
-the \refTepData components shall propose to the user to export them to geoserver that will resturn a new WMS layer that the web visualization widget shall display.
+the \refTepData components shall propose to the user to export them to geoserver that will return a new WMS layer that the web visualization widget shall display.
 It also integrates functions to "manipulate" the results and its metadata with an external tools such as GIS functions.
 
 
@@ -219,6 +219,12 @@ namespace Terradue.Tep {
                 if (OwnerId != 0 && IsDefault) return String.Format("t.id_usr={0} AND t.is_default={1}",OwnerId,IsDefault); 
                 return null;
             }
+        }
+
+        public static string GenerateIdentifier(string identifier){
+            if (string.IsNullOrEmpty(identifier)) return "";
+            string result = identifier.Replace(" ","").Replace(".","").Replace("?","").Replace("&","").Replace("%","");
+            return result;
         }
 
         /// <summary>

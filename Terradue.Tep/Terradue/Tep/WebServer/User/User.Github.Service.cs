@@ -25,7 +25,6 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
-
                 //user.GetNewAuthorizationToken(request.Password, "write:public_key", "Terradue Sandboxes Application");
                 user.GetNewAuthorizationToken(request.Code);
                 result = new WebGithubProfile(user);
@@ -45,8 +44,11 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
-                user.LoadPublicKeyFromCertificate();
+                UserTep userTep = UserTep.FromId(context, context.UserId);
+                userTep.LoadSSHPubKey();
+                user.PublicSSHKey = userTep.SshPubKey;
                 GithubClient githubClient = new GithubClient(context);
                 if(!user.IsAuthorizationTokenValid()) throw new UnauthorizedAccessException("Invalid token");
                 if(user.PublicSSHKey == null) throw new UnauthorizedAccessException("No available public ssh key");
@@ -68,7 +70,9 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
-                user.LoadPublicKeyFromCertificate();
+                UserTep userTep = UserTep.FromId(context, context.UserId);
+                userTep.LoadSSHPubKey();
+                user.PublicSSHKey = userTep.SshPubKey;
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
@@ -89,7 +93,9 @@ namespace Terradue.Tep.WebServer.Services {
                 user = request.ToEntity(context, user);
                 user.Store();
                 user.Load(); //to get information from Github
-                user.LoadPublicKeyFromCertificate();
+                UserTep userTep = UserTep.FromId(context, context.UserId);
+                userTep.LoadSSHPubKey();
+                user.PublicSSHKey = userTep.SshPubKey;
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
