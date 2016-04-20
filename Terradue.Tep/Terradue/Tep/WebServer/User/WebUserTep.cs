@@ -28,6 +28,16 @@ namespace Terradue.Tep.WebServer {
     {
     }
 
+    [Route("/user/current/sso", "GET", Summary = "GET the current user", Notes = "User is the current user")]
+    public class UserGetCurrentSSORequestTep : IReturn<WebUserTep> {}
+
+//    [Route("/user/current/sso", "POST", Summary = "GET the current user", Notes = "User is the current user")]
+//    public class UserPostCurrentSSORequestTep : IReturn<WebUserTep> {
+//        [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
+//        public string T2Username { get; set; }
+//    }
+
+
     [Route("/user/{id}/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
     public class UserGetUsageRequestTep : IReturn<List<KeyValuePair<string, string>>> {
         [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
@@ -62,20 +72,14 @@ namespace Terradue.Tep.WebServer {
     /// </summary>
     public class WebUserTep : WebUser{
 
-        [ApiMember(Name = "onepassword", Description = "User password on OpenNebula", ParameterType = "query", DataType = "String", IsRequired = false)]
-        public String OnePassword { get; set; }
-
-        [ApiMember(Name = "certsubject", Description = "User certificate subject", ParameterType = "query", DataType = "String", IsRequired = false)]
-        public String CertSubject { get; set; }
-
-        [ApiMember(Name = "certstatus", Description = "User certificate status", ParameterType = "query", DataType = "int", IsRequired = false)]
-        public int CertStatus { get; set; }
-
         [ApiMember(Name = "EmailNotification", Description = "User email notification tag", ParameterType = "query", DataType = "bool", IsRequired = false)]
         public bool EmailNotification { get; set; }
 
         [ApiMember(Name = "UM-SSO Email", Description = "User email in UM-SSO", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string UmssoEmail { get; set; }
+
+        [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string T2Username { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
@@ -87,12 +91,10 @@ namespace Terradue.Tep.WebServer {
         /// </summary>
         /// <param name="entity">Entity.</param>
         public WebUserTep(IfyWebContext context, UserTep entity) : base(entity) {
-            this.OnePassword = entity.OnePassword;
-            this.CertSubject = WebUserCertificate.TransformInOpenNebulaFormat(entity.CertSubject);
             AuthenticationType umssoauthType = IfyWebContext.GetAuthenticationType(typeof(UmssoAuthenticationType));
             var umssoUser = umssoauthType.GetUserProfile(context, HttpContext.Current.Request, false);
             if (umssoUser != null) this.UmssoEmail = umssoUser.Email;
-            this.CertStatus = entity.CertStatus;
+            this.T2Username = entity.TerradueCloudUsername;
         }
 
         /// <summary>

@@ -103,11 +103,6 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 user = UserTep.FromId(context, context.UserId);
 
-                log.Info(string.Format("Certificate removal requested by user '{0}'", user.Username));
-                user.RemoveCertificate();
-                log.Debug(string.Format("Certificate removal went fine"));
-
-
                 //send an email to Support to warn them
                 string emailFrom = context.GetConfigValue("MailSenderAddress");
                 string subject = context.GetConfigValue("EmailCertificateRemovalSubject");

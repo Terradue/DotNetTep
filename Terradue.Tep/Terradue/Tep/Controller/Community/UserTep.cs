@@ -7,6 +7,9 @@ using Terradue.Cloud;
 
 
 using System.Collections.Generic;
+using System.Web;
+using System.Net;
+using System.IO;
 
 namespace Terradue.Tep {
 
@@ -54,111 +57,29 @@ namespace Terradue.Tep {
             set;
         }
 
-
-        #region T2Certificate
-
-        private const int CERTIFICATE_PENDING_STATUS = 0;
-        private const int CERTIFICATE_DEFAULT_STATUS = 1;
-
         /// <summary>
-        /// Gets the cert subject.
+        /// Gets or sets the terradue cloud username.
         /// </summary>
-        /// <value>The cert subject.</value>
-        private string certsubject { get; set; }
-        /// \xrefitem uml "UML" "UML Diagram"
-        public string CertSubject {
-            get {
-                if (certsubject == null) {
-                    try {
-                        log.Info(String.Format("Certificate loaded from CA for user {0}", this.Username));
-                        Terradue.Security.Certification.CertificateUser certUser = Terradue.Security.Certification.CertificateUser.FromId(context, Id);
-                        certsubject = certUser.CertificateSubject;
-                    } catch (EntityNotFoundException e) {
-                        log.Error(String.Format("Error loading Certificate from CA for user {0}", this.Username));
-                        certsubject = null;
-                    }
-                }
-                return certsubject;
-            }
+        /// <value>The terradue cloud username.</value>
+        public string TerradueCloudUsername {
+            get;
+            set;
         }
 
         /// <summary>
-        /// Gets the x509 certificate.
+        /// Gets or sets the ssh pub key.
         /// </summary>
-        /// <value>The x509 certificate.</value>
-        /// \xrefitem uml "UML" "UML Diagram"
-        public System.Security.Cryptography.X509Certificates.X509Certificate2 X509Certificate {
-            get {
-                try {
-                    log.Info(String.Format("Certificate X509 loaded from CA for user {0}", this.Username));
-                    Terradue.Security.Certification.CertificateUser certUser = Terradue.Security.Certification.CertificateUser.FromId(context,Id);
-                    return certUser.X509Certificate;
-                }
-                catch ( EntityNotFoundException e ){
-                    log.Error(String.Format("Error loading Certificate X509 from CA for user {0}", this.Username));
-                    return null;
-                }
-            }
+        /// <value>The ssh pub key.</value>
+        public string SshPubKey {
+            get;
+            set;
         }
-            
-        /// <summary>
-        /// Gets or sets the cert status.
-        /// </summary>
-        /// <value>The cert status.</value>
-        public int CertStatus { get; protected set; }
-
-        #endregion
-
-        #region OpenNebula
-
-        /// <summary>
-        /// Gets or sets the one password.
-        /// </summary>
-        /// <value>The one password.</value>
-        /// \xrefitem uml "UML" "UML Diagram"
-        public string OnePassword { 
-            get{ 
-                if (onepwd == null) {
-                    if (oneId == 0) {
-                        try{
-                            USER_POOL oneUsers = oneClient.UserGetPoolInfo();
-                            foreach (object item in oneUsers.Items) {
-                                if (item is USER_POOLUSER) {
-                                    USER_POOLUSER oneUser = item as USER_POOLUSER;
-                                    if (oneUser.NAME == this.Email) {
-                                        oneId = Int32.Parse(oneUser.ID);
-                                        onepwd = oneUser.PASSWORD;
-                                        break;
-                                    }
-                                }
-                            }
-                        }catch(Exception e){
-                            return null;
-                        }
-                    } else {
-                        USER oneUser = oneClient.UserGetInfo(oneId);
-                        onepwd = oneUser.PASSWORD;
-                    }
-                }
-                return onepwd;
-            } 
-            set{
-                onepwd = value;
-            } 
-        }
-        private string onepwd { get; set; }
-        private int oneId { get; set; }
-        private OneClient oneClient { get; set; }
-
-        #endregion
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
         public UserTep(IfyContext context) : base(context) {
-            OneCloudProvider oneCloud = (OneCloudProvider)CloudProvider.FromId(context, context.GetConfigIntegerValue("One-default-provider"));
-            oneClient = oneCloud.XmlRpc;
         }
 
         /// <summary>
@@ -181,14 +102,12 @@ namespace Terradue.Tep {
         public static UserTep GetPublicUser(IfyContext context, int id){
             context.RestrictedMode = false;
             UserTep usr = new UserTep(context, User.FromId(context, id));
-            usr.certsubject = null;
-            usr.OnePassword = null;
             return usr;
         }
 
         public override void Load(){
             base.Load();
-            CertStatus = context.GetQueryIntegerValue(String.Format("SELECT status from usrcert WHERE id_usr={0}", this.Id));
+            this.LoadTerradueCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
         }
 
         public override void Store(){
@@ -198,13 +117,11 @@ namespace Terradue.Tep {
                 //create github profile
                 GithubProfile github = new GithubProfile(context, this.Id);
                 github.Store();
-                //create certificate record
-                context.Execute(String.Format("INSERT INTO usrcert (id_usr) VALUES ({0});", this.Id));
                 //create cloud user profile
                 EntityList<CloudProvider> provs = new EntityList<CloudProvider>(context);
                 provs.Load();
                 foreach (CloudProvider prov in provs) {
-                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},{2});", this.Id, prov.Id, StringUtils.EscapeSql(this.Email)));
+                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},{2});", this.Id, prov.Id, DBNull.Value));
                 }
             }
         }
@@ -223,23 +140,66 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Removes the certificate.
+        /// Loads the terradue cloud username.
         /// </summary>
-        /// \xrefitem uml "UML" "UML Diagram"
-        public void RemoveCertificate() {
-            
-            string sql = String.Format("UPDATE usrcert SET cert_subject=NULL, cert_content_pem=NULL, status={1} WHERE id_usr={0};",this.Id, CERTIFICATE_PENDING_STATUS);
-            context.Execute(sql);
-            this.CertStatus = CERTIFICATE_PENDING_STATUS;
+        /// <param name="provid">Provid.</param>
+        public void LoadTerradueCloudUsername(int provid){
+            string sql = String.Format("SELECT username FROM usr_cloud WHERE id={0} AND id_provider={1};",this.Id, provid);
+            this.TerradueCloudUsername = context.GetQueryStringValue(sql);
         }
 
         /// <summary>
-        /// Resets the certificate status.
+        /// Stores the terradue cloud username.
         /// </summary>
-        public void ResetCertificateStatus(){
-            string sql = String.Format("UPDATE usrcert SET status={1} WHERE id_usr={0};",this.Id, CERTIFICATE_DEFAULT_STATUS);
+        /// <param name="provid">Provid.</param>
+        public void StoreTerradueCloudUsername(int provid){
+            string sql = String.Format("DELETE FROM usr_cloud WHERE id={0} AND id_provider={1};",this.Id, provid);
             context.Execute(sql);
-            this.CertStatus = CERTIFICATE_DEFAULT_STATUS;
+            sql = String.Format("INSERT INTO usr_cloud (id, id_provider,username) VALUES ({0},{1},{2});",this.Id, provid, StringUtils.EscapeSql(this.TerradueCloudUsername));
+            context.Execute(sql);
+        }
+
+        /// <summary>
+        /// Finds the terradue cloud username.
+        /// </summary>
+        public void FindTerradueCloudUsername(){
+            var url = string.Format("{0}?token={1}&eosso={2}&email={3}",
+                                    context.GetConfigValue("t2portal-usr-endpoint"),
+                                    context.GetConfigValue("t2portal-sso-token"),
+                                    this.Username, 
+                                    this.Email);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+            var httpResponse = (HttpWebResponse)request.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                this.TerradueCloudUsername = streamReader.ReadToEnd();
+                this.StoreTerradueCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+            }
+        }
+
+        /// <summary>
+        /// Loads the SSH pub key.
+        /// </summary>
+        public void LoadSSHPubKey(){
+            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadTerradueCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+
+            var url = string.Format("{0}?token={1}&username={2}&request=sshPublicKey",
+                                    context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                    context.GetConfigValue("t2portal-safe-token"),
+                                    this.TerradueCloudUsername);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+
+            var httpResponse = (HttpWebResponse)request.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                this.SshPubKey = streamReader.ReadToEnd();
+                this.SshPubKey = this.SshPubKey.Replace("\"", "");
+            }
         }
 
         /// <summary>

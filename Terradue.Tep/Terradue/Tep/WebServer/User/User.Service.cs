@@ -44,7 +44,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         /// <returns>the current user</returns>
-        public object Get(GetCurrentUser request) {
+        public object Get(UserGetCurrentRequestTep request) {
             WebUserTep result;
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
@@ -59,6 +59,45 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return result;
         }
+
+        /// <summary>
+        /// Get the specified request.
+        /// </summary>
+        /// <param name="request">Request.</param>
+        public object Get(UserGetCurrentSSORequestTep request) {
+            WebUserTep result;
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                UserTep user = UserTep.FromId(context, context.UserId);
+                log.Info(String.Format("Get current user '{0}'", user.Username));
+                user.FindTerradueCloudUsername();
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+//        public object Post(UserPostCurrentSSORequestTep request){
+//            WebUserTep result;
+//            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+//            try {
+//                context.Open();
+//                UserTep user = UserTep.FromId(context, context.UserId);
+//                log.Info(String.Format("Get current user '{0}'", user.Username));
+//                if(!user.E
+//                user.FindTerradueCloudUsername();
+//                result = new WebUserTep(context, user);
+//                context.Close();
+//            } catch (Exception e) {
+//                context.Close();
+//                throw e;
+//            }
+//            return result;
+//        }
 
         /// <summary>
         /// Get the specified request.
