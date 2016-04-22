@@ -48,8 +48,6 @@ using System.Runtime.CompilerServices;
 
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Authentication.Umsso
 
-    \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Certification
-
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Cloud
 
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Github
