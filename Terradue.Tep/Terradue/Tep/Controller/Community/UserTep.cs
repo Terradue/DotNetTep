@@ -121,7 +121,7 @@ namespace Terradue.Tep {
                 EntityList<CloudProvider> provs = new EntityList<CloudProvider>(context);
                 provs.Load();
                 foreach (CloudProvider prov in provs) {
-                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},{2});", this.Id, prov.Id, DBNull.Value));
+                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, prov.Id));
                 }
             }
         }
