@@ -299,7 +299,13 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.WpsId = wps.Provider.Identifier;
             wpsjob.ProcessId = wps.Identifier;
             wpsjob.CreatedTime = DateTime.Now;
-            wpsjob.StatusLocation = execResponse.statusLocation;
+
+            //in case of username:password
+            var statusuri = new UriBuilder(wps.Provider.BaseUrl);
+            var statusuri2 = new UriBuilder(execResponse.statusLocation);
+            statusuri.Query = statusuri2.Query.Substring(1); 
+            wpsjob.StatusLocation = statusuri.Uri.AbsoluteUri;
+
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
             List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
             foreach (var d in executeInput.DataInputs) {
@@ -347,7 +353,8 @@ namespace Terradue.Tep.WebServer.Services {
                 log.Info(string.Format("Get Job {0} status info",wpsjob.Identifier));
                 string executeUrl = wpsjob.StatusLocation;
 
-                HttpWebRequest executeHttpRequest = (HttpWebRequest)WebRequest.Create(executeUrl);
+                HttpWebRequest executeHttpRequest = WpsProvider.CreateWebRequest(executeUrl);
+                    //(HttpWebRequest)WebRequest.Create(executeUrl);
                 if (executeUrl.Contains("gpod.eo.esa.int")) {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }
@@ -395,6 +402,7 @@ namespace Terradue.Tep.WebServer.Services {
                         return new HttpResult(errormsg, HttpStatusCode.BadRequest);
                     }
                 }
+                if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
                 Uri uri = new Uri(execResponse.statusLocation);
                 string identifier;
                 try {
