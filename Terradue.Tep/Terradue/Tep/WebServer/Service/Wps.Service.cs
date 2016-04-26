@@ -420,23 +420,25 @@ namespace Terradue.Tep.WebServer.Services {
 
                 if (execResponse.ProcessOutputs != null) {
                     foreach (OutputDataType output in execResponse.ProcessOutputs) {
-                        if (output.Item != null && ((DataType)(output.Item)).Item != null) {
-                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                            if (item.Reference != null && output.Identifier.Value.Equals("result_osd")) {
-                                var reference = item.Reference as OutputReferenceType;
-                                reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
-                                item.Reference = reference;
-                                ((DataType)(output.Item)).Item = item;
-                            } else if (item.Any != null) {
-                                var reference = new OutputReferenceType();
-                                reference.mimeType = "application/opensearchdescription+xml";
-                                reference.href = context.BaseUrl + "/proxy/gpod/" + wpsjob.Identifier + "/description";
-                                item.Reference = reference;
-                                item.Any = null;
-                                item.mimeType = "application/xml";
-                                output.Identifier = new CodeType{ Value = "result_osd" };
+                        try{
+                            if(output.Item != null && output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                if (item.Reference != null && output.Identifier.Value.Equals("result_osd")) {
+                                    var reference = item.Reference as OutputReferenceType;
+                                    reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
+                                    item.Reference = reference;
+                                    ((DataType)(output.Item)).Item = item;
+                                } else if (item.Any != null) {
+                                    var reference = new OutputReferenceType();
+                                    reference.mimeType = "application/opensearchdescription+xml";
+                                    reference.href = context.BaseUrl + "/proxy/gpod/" + wpsjob.Identifier + "/description";
+                                    item.Reference = reference;
+                                    item.Any = null;
+                                    item.mimeType = "application/xml";
+                                    output.Identifier = new CodeType{ Value = "result_osd" };
+                                }
                             }
-                        }
+                        }catch(Exception){}
                     }
                 }
                 uri = new Uri(execResponse.serviceInstance);
