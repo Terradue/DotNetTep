@@ -61,7 +61,11 @@ namespace Terradue.Tep {
             cloudusername = cuser.CloudUsername;
         }
 
-        public void EndDelegate(string username){
+        public void StartDelegate(string username){
+            cloudusername = username;
+        }
+
+        public void EndDelegate(){
             CloudUser cuser = CloudUser.FromIdAndProvider(context, context.UserId, oneCloud.Id);
             cloudusername = cuser.CloudUsername;
         }
@@ -108,7 +112,9 @@ namespace Terradue.Tep {
         /// <returns>The wps provider</returns>
         /// <param name="id">Id of the Virtual Machine.</param>
         public WpsProvider CreateWpsProviderForOne(string id){
+            StartDelegate(oneCloud.AdminUsr);
             VM vm = oneClient.VMGetInfo(Int32.Parse(id));
+            EndDelegate();
             return CreateWpsProviderForOne(context, vm);
         }
 

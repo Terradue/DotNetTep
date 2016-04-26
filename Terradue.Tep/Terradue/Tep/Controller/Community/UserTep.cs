@@ -107,7 +107,7 @@ namespace Terradue.Tep {
 
         public override void Load(){
             base.Load();
-            this.LoadTerradueCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+            this.LoadCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
         }
 
         public override void Store(){
@@ -121,7 +121,7 @@ namespace Terradue.Tep {
                 EntityList<CloudProvider> provs = new EntityList<CloudProvider>(context);
                 provs.Load();
                 foreach (CloudProvider prov in provs) {
-                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},{2});", this.Id, prov.Id, DBNull.Value));
+                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, prov.Id));
                 }
             }
         }
@@ -140,23 +140,33 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Loads the terradue cloud username.
+        /// Gets the cloud username.
         /// </summary>
-        /// <param name="provid">Provid.</param>
-        public void LoadTerradueCloudUsername(int provid){
-            string sql = String.Format("SELECT username FROM usr_cloud WHERE id={0} AND id_provider={1};",this.Id, provid);
-            this.TerradueCloudUsername = context.GetQueryStringValue(sql);
+        /// <returns>The cloud username.</returns>
+        /// <param name="providerId">Provider identifier.</param>
+        public void LoadCloudUsername(int providerId){
+            if (providerId == 0) return;
+            Terradue.Cloud.CloudUser cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
+            this.TerradueCloudUsername = cusr.CloudUsername;
         }
 
         /// <summary>
-        /// Stores the terradue cloud username.
+        /// Stores the cloud username.
         /// </summary>
-        /// <param name="provid">Provid.</param>
-        public void StoreTerradueCloudUsername(int provid){
-            string sql = String.Format("DELETE FROM usr_cloud WHERE id={0} AND id_provider={1};",this.Id, provid);
-            context.Execute(sql);
-            sql = String.Format("INSERT INTO usr_cloud (id, id_provider,username) VALUES ({0},{1},{2});",this.Id, provid, StringUtils.EscapeSql(this.TerradueCloudUsername));
-            context.Execute(sql);
+        /// <param name="providerId">Provider identifier.</param>
+        /// <param name="cloudusername">Cloudusername.</param>
+        public void StoreCloudUsername(int providerId){
+            Terradue.Cloud.CloudUser cusr;
+            try{
+                cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
+            }catch(Exception e){
+                //record does not exist in db
+                cusr = new Terradue.Cloud.CloudUser(context);
+                cusr.ProviderId = providerId;
+                cusr.UserId = this.Id;
+            }
+            cusr.CloudUsername = this.TerradueCloudUsername;
+            cusr.Store();
         }
 
         /// <summary>
@@ -175,7 +185,7 @@ namespace Terradue.Tep {
             var httpResponse = (HttpWebResponse)request.GetResponse();
             using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                 this.TerradueCloudUsername = streamReader.ReadToEnd();
-                this.StoreTerradueCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+                this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
             }
         }
 
@@ -183,7 +193,7 @@ namespace Terradue.Tep {
         /// Loads the SSH pub key.
         /// </summary>
         public void LoadSSHPubKey(){
-            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadTerradueCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
 
             var url = string.Format("{0}?token={1}&username={2}&request=sshPublicKey",
                                     context.GetConfigValue("t2portal-usrinfo-endpoint"),

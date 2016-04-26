@@ -17,8 +17,8 @@ using System.Runtime.CompilerServices;
 // The form "{Major}.{Minor}.*" will automatically update the build and revision,
 // and "{Major}.{Minor}.{Build}.*" will update just the revision.
 
-[assembly: AssemblyVersion("1.0.8.*")]
-[assembly: AssemblyInformationalVersion("1.0.8")]
+[assembly: AssemblyVersion("1.0.9.*")]
+[assembly: AssemblyInformationalVersion("1.0.9")]
 
 // The following attributes are used to specify the signing key for the assembly,
 // if desired. See the Mono documentation for more information about signing.
@@ -47,8 +47,6 @@ using System.Runtime.CompilerServices;
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Portal
 
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Authentication.Umsso
-
-    \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Certification
 
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.Cloud
 
