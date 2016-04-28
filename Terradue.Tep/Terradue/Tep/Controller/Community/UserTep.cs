@@ -107,7 +107,7 @@ namespace Terradue.Tep {
 
         public override void Load(){
             base.Load();
-            this.LoadCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+            this.LoadCloudUsername();
         }
 
         public override void Store(){
@@ -140,14 +140,32 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Loads the cloud username.
+        /// </summary>
+        public void LoadCloudUsername(){
+            LoadCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+        }
+
+        /// <summary>
         /// Gets the cloud username.
         /// </summary>
         /// <returns>The cloud username.</returns>
         /// <param name="providerId">Provider identifier.</param>
         public void LoadCloudUsername(int providerId){
             if (providerId == 0) return;
-            Terradue.Cloud.CloudUser cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
-            this.TerradueCloudUsername = cusr.CloudUsername;
+            try{
+                Terradue.Cloud.CloudUser cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
+                this.TerradueCloudUsername = cusr.CloudUsername;
+            }catch(Exception){
+                this.TerradueCloudUsername = null;
+            }
+        }
+
+        /// <summary>
+        /// Stores the cloud username.
+        /// </summary>
+        public void StoreCloudUsername(){
+            StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
         }
 
         /// <summary>
@@ -190,10 +208,45 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Creates the SSO account.
+        /// </summary>
+        /// <param name="password">Password.</param>
+        public void CreateSSOAccount(string password){
+            var url = context.GetConfigValue("t2portal-usr-endpoint");
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "POST";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+
+            string json = "{" +
+                "\"token\":\"" + context.GetConfigValue("t2portal-sso-token") + "\"," +
+                "\"username\":\"" + this.Username + "\"," +
+                "\"eosso\":\"" + this.Username + "\"," +
+                "\"email\":\"" + this.Email + "\"," +
+                "\"password\":\"" + password + "\"" +
+                "}";
+
+            using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
+                streamWriter.Write(json);
+                streamWriter.Flush();
+                streamWriter.Close();
+
+                HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse();
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
+                    var result = streamReader.ReadToEnd();
+                    User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User>(result);
+                    this.TerradueCloudUsername = resUser.Username;
+                    this.StoreCloudUsername();
+                }
+            }
+        }
+
+        /// <summary>
         /// Loads the SSH pub key.
         /// </summary>
         public void LoadSSHPubKey(){
-            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
+            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) return;
 
             var url = string.Format("{0}?token={1}&username={2}&request=sshPublicKey",
                                     context.GetConfigValue("t2portal-usrinfo-endpoint"),

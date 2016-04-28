@@ -30,6 +30,28 @@ namespace Terradue.Tep.WebServer {
     [Route("/user/current/sso", "GET", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserGetCurrentSSORequestTep : IReturn<WebUserTep> {}
 
+    [Route("/user/sso/{id}", "GET", Summary = "GET the current user", Notes = "User is the current user")]
+    public class UserGetSSORequestTep : IReturn<WebUserTep> {
+        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+    }
+
+    [Route("/user/sso", "PUT", Summary = "GET the current user", Notes = "User is the current user")]
+    public class UserUpdateSSORequestTep : IReturn<WebUserTep> {
+        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember(Name = "T2Username", Description = "Username", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string T2Username { get; set; }
+    }
+
+    [Route("/user/current/sso", "POST", Summary = "POST the current user sso", Notes = "User is the current user")]
+    public class UserCurrentCreateSSORequestTep : IReturn<WebUserTep> {
+        [ApiMember(Name = "Password", Description = "Password", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Password { get; set; }
+    }
+
+
 //    [Route("/user/current/sso", "POST", Summary = "GET the current user", Notes = "User is the current user")]
 //    public class UserPostCurrentSSORequestTep : IReturn<WebUserTep> {
 //        [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
