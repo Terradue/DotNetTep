@@ -81,6 +81,58 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get(UserGetSSORequestTep request) {
+            WebUserTep result;
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                UserTep user = UserTep.FromId(context, request.Id);
+                log.Info(String.Format("Get current user '{0}'", user.Username));
+                user.FindTerradueCloudUsername();
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(UserUpdateSSORequestTep request) {
+            WebUserTep result;
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                UserTep user = UserTep.FromId(context, request.Id);
+                log.Info(String.Format("Get current user '{0}'", user.Username));
+                user.TerradueCloudUsername = request.T2Username;
+                user.StoreCloudUsername();
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Post(UserCurrentCreateSSORequestTep request) {
+            WebUserTep result;
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                UserTep user = UserTep.FromId(context, context.UserId);
+                log.Info(String.Format("Create SSO account for current user '{0}'", user.Username));
+                user.CreateSSOAccount(request.Password);
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
 //        public object Post(UserPostCurrentSSORequestTep request){
 //            WebUserTep result;
 //            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
