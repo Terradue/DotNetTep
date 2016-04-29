@@ -19,6 +19,9 @@ namespace Terradue.Tep.WebServer.Services {
         [ApiMember(Name="url", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string url { get; set; }
 
+        [ApiMember(Name="id", Description = "thematic applicaiton id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string id { get; set; }
+
         [ApiMember(Name="visibility", Description = "type of sharing", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string visibility { get; set; }
 
@@ -30,6 +33,9 @@ namespace Terradue.Tep.WebServer.Services {
     public class ShareGetRequestTep {
         [ApiMember(Name="url", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string url { get; set; }
+
+        [ApiMember(Name="id", Description = "thematic applicaiton id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string id { get; set; }
     }
 
      [Api("Tep Terradue webserver")]
