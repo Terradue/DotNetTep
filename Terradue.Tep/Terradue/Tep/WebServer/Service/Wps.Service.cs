@@ -264,7 +264,7 @@ namespace Terradue.Tep.WebServer.Services {
                     return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
                 }
             }catch(Exception e){
-                return new HttpError(HttpStatusCode.BadRequest, e);
+                return new HttpError(e.Message);
             }
         }
 
@@ -281,7 +281,7 @@ namespace Terradue.Tep.WebServer.Services {
                 log.Debug("identifier does not contain id=");
                 //statusLocation url is different for gpod
                 if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
-                    log.Debug("identifier taken from gpod url");
+                    log.Debug("identifier taken from gpod url : " + uri.AbsoluteUri);
                     identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
                 } else {
                     log.Error(e.Message);
@@ -289,7 +289,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
             log.Debug("identifier = " + identifier);
-            log.Debug("Provider is null ? -> " + wps.Provider == null ? "true" : "false");
+            log.Debug("Provider is null ? -> " + (wps.Provider == null ? "true" : "false"));
             WpsJob wpsjob = new WpsJob(context);
             wpsjob.Name = wps.Name;
             wpsjob.RemoteIdentifier = identifier;
@@ -300,11 +300,12 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.ProcessId = wps.Identifier;
             wpsjob.CreatedTime = DateTime.Now;
 
-            //in case of username:password
+            //in case of username:password in the provider url, we take them from provider
             var statusuri = new UriBuilder(wps.Provider.BaseUrl);
             var statusuri2 = new UriBuilder(execResponse.statusLocation);
-            statusuri.Query = statusuri2.Query.Substring(1); 
-            wpsjob.StatusLocation = statusuri.Uri.AbsoluteUri;
+            statusuri2.UserName = statusuri.UserName;
+            statusuri2.Password = statusuri.Password;
+            wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
 
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
             List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
@@ -361,6 +362,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 var remoteWpsResponseStream = new MemoryStream();
                 HttpWebResponse remoteWpsResponse = null;
+
+                log.Debug(string.Format("Status url = {0}",executeHttpRequest.RequestUri.AbsoluteUri));
 
                 try {
                     remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse();
