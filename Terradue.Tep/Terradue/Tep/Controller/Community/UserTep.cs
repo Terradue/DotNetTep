@@ -218,9 +218,11 @@ namespace Terradue.Tep {
             request.ContentType = "application/json";
             request.Accept = "application/json";
 
+            var validatedUserName = this.Username.Replace(" ", "");
+
             string json = "{" +
                 "\"token\":\"" + context.GetConfigValue("t2portal-sso-token") + "\"," +
-                "\"username\":\"" + this.Username + "\"," +
+                "\"username\":\"" + validatedUserName + "\"," +
                 "\"eosso\":\"" + this.Username + "\"," +
                 "\"email\":\"" + this.Email + "\"," +
                 "\"password\":\"" + password + "\"" +
