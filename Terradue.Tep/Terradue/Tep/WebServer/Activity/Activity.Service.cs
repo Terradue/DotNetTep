@@ -16,7 +16,10 @@ using Terradue.WebService.Model;
 namespace Terradue.Tep.WebServer.Services {
     
     [Route("/activity/search", "GET", Summary = "GET activity as opensearch", Notes = "")]
-    public class ActivitySearchRequestTep : IReturn<HttpResult>{}
+    public class ActivitySearchRequestTep : IReturn<HttpResult>{
+        [ApiMember(Name="nologin", Description = "get login activities", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool nologin { get; set; }
+    }
 
     [Route("/activity/description", "GET", Summary = "GET activity description", Notes = "")]
     public class ActivityDescriptionRequestTep : IReturn<HttpResult>{}
@@ -43,7 +46,10 @@ namespace Terradue.Tep.WebServer.Services {
 
             activities = new EntityList<Activity>(context);
             activities.Identifier = "activity";
-            foreach (Activity item in tmplist) activities.Include(item);
+            foreach (Activity item in tmplist) {
+                if(!request.nologin || (item.Privilege.EntityTypeId != EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
+                    activities.Include(item);
+            }
             osentities.Add(activities);
 
             // Load the complete request
