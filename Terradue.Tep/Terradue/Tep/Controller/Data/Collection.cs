@@ -121,7 +121,7 @@ namespace Terradue.Tep {
             string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
 
             urib = new UriBuilder(context.BaseUrl);
-            urib.Path += string.Format("/catalogue/{0}/search", this.Identifier);
+            urib.Path += string.Format("/data/collection/{0}/search", this.Identifier);
 
             query.Set("format", "atom");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));

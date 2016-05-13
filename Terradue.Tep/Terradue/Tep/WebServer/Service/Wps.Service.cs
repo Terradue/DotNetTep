@@ -141,7 +141,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             context.Open();
 
-            if (request.Service.ToLower() != "wps")
+            if (string.IsNullOrEmpty(request.Service) || string.IsNullOrEmpty(request.Request) || request.Service.ToLower() != "wps")
                 throw new Exception("Web Processing Service Request is not valid");
             WpsProcessOffering wps = null;
             switch (request.Request.ToLower()) {
