@@ -163,6 +163,12 @@
     <Reference Include="Terradue.Metadata">
       <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>
     </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.6.52\lib\net40\Terradue.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.WebService.Model">
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.10\lib\net40\Terradue.WebService.Model.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
