@@ -536,6 +536,7 @@ namespace Terradue.Tep.WebServer.Services {
                 //Create WPS provider
                 WpsProvider wpsProvider = new WpsProvider(context);
                 wpsProvider.BaseUrl = request.Url;
+                wpsProvider.Identifier = request.Identifier;
                 wpsProvider.Name = request.Name;
                 wpsProvider.Store();
 
@@ -546,7 +547,6 @@ namespace Terradue.Tep.WebServer.Services {
                 wps.Description = request.Description;
                 wps.Url = request.Url;
                 wps.Provider = wpsProvider;
-                wps.ProcessIdentifier = "None";
                 wps.Store();
 
                 result = new WebWpsService(wps);
