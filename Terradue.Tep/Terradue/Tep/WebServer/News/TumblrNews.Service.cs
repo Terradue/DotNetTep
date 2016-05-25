@@ -40,6 +40,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 
+
                 context.Close ();
             }catch(Exception e) {
                 context.Close ();
@@ -58,7 +59,12 @@ namespace Terradue.Tep.WebServer.Services {
                 List<TumblrFeed> tumblrs = TumblrNews.LoadTumblrFeeds(context);
                 List<TumblrNews> tumblrfeeds = new List<TumblrNews>();
                 foreach(TumblrFeed tumblr in tumblrs) tumblrfeeds.AddRange(TumblrNews.FromFeeds(context, tumblr.GetFeeds()));
-                foreach(TumblrNews feed in tumblrfeeds) result.Add(new WebNews(feed));
+                int i=0;
+                foreach(TumblrNews feed in tumblrfeeds){
+                    WebNews wn = new WebNews(feed);
+                    wn.Id = i++;
+                    result.Add(wn);
+                }
                 
                 context.Close ();
             }catch(Exception e) {
