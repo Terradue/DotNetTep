@@ -29,12 +29,30 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
 
                 EntityList<WpsJob> services = new EntityList<WpsJob>(context);
-                services.OwnedItemsOnly = true;
+                if(context.UserLevel != UserLevel.Administrator) services.OwnedItemsOnly = true;
                 services.Load();
 
                 foreach (WpsJob job in services) {
-                    result.Add(new WebWpsJobTep(job));
+                    result.Add(new WebWpsJobTep(job, context));
                 }
+
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Get(WpsJobGetOneRequestTep request){
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            WebWpsJobTep result = new WebWpsJobTep();
+            try {
+                context.Open();
+
+                WpsJob job = WpsJob.FromId(context, request.Id);
+                result = new WebWpsJobTep(job, context);
 
                 context.Close();
             } catch (Exception e) {

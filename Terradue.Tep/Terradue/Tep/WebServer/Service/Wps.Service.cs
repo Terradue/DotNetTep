@@ -113,15 +113,41 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetWPSServices request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            List<WebWpsService> result = new List<WebWpsService>();
+            List<WebServiceTep> result = new List<WebServiceTep>();
             try {
                 context.Open();
 
                 EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering>(context);
                 services.Load();
 
+                //+ WPS from cloud
+                List<WpsProvider> wpss = new List<WpsProvider>();
+                try {
+                    CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
+                    wpss = wpsFinder.GetWPSFromVMs();
+                } catch (Exception e) {
+                    //we do nothing, we will return the list without any WPS from the cloud
+                }
+                foreach (WpsProvider wps in wpss) {
+                    try {
+                        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromUrl(wps.BaseUrl)) {
+                            process.UserId = 0;
+                            services.Include(process);
+                        }
+                    } catch (Exception e) {
+                        //we do nothing, we just dont add the process
+                    }
+                }
+
+                int maxid =1;
                 foreach (WpsProcessOffering wps in services) {
-                    result.Add(new WebWpsService(wps));
+                    WebServiceTep wpsresult = new WebServiceTep(context, wps);
+                    wpsresult.Provider = wps.Provider.Identifier;
+                    if(wps.Id == 0) 
+                        wpsresult.Id = ++maxid;
+                    else
+                        maxid = Math.Max(maxid,wps.Id);
+                    result.Add(wpsresult);
                 }
 
                 context.Close();
@@ -536,6 +562,7 @@ namespace Terradue.Tep.WebServer.Services {
                 //Create WPS provider
                 WpsProvider wpsProvider = new WpsProvider(context);
                 wpsProvider.BaseUrl = request.Url;
+                wpsProvider.Identifier = request.Identifier;
                 wpsProvider.Name = request.Name;
                 wpsProvider.Store();
 
@@ -546,7 +573,6 @@ namespace Terradue.Tep.WebServer.Services {
                 wps.Description = request.Description;
                 wps.Url = request.Url;
                 wps.Provider = wpsProvider;
-                wps.ProcessIdentifier = "None";
                 wps.Store();
 
                 result = new WebWpsService(wps);

@@ -10,6 +10,12 @@ namespace Terradue.Tep.WebServer {
     [Route("/job/wps", "GET", Summary = "GET a list of WPS services", Notes = "")]
     public class WpsJobsGetRequestTep : IReturn<List<WebWpsJobTep>>{}
 
+    [Route("/job/wps/{id}", "GET", Summary = "GET a WPS job", Notes = "")]
+    public class WpsJobGetOneRequestTep : IReturn<WebWpsJobTep>{
+        [ApiMember(Name="id", Description = "Id of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int Id { get; set; }
+    }
+
     [Route("/job/wps", "POST", Summary = "POST a WPS job", Notes = "")]
     public class WpsJobCreateRequestTep : WebWpsJobTep, IReturn<WebWpsJobTep>{}
 
@@ -66,10 +72,16 @@ namespace Terradue.Tep.WebServer {
     }
 
     public class WebWpsJobTep : WebEntity {
+        [ApiMember(Name="RemoteIdentifier", Description = "RemoteIdentifier of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string RemoteIdentifier { get; set; }
         [ApiMember(Name="WpsId", Description = "Id of the WPS attached to the job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsId { get; set; }
+        [ApiMember(Name="Username", Description = "Name of the owner of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Username { get; set; }
         [ApiMember(Name="ProcessId", Description = "Process ID attached to the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String ProcessId { get; set; }
+        [ApiMember(Name="ProcessName", Description = "Process name attached to the job", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public String ProcessName { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String StatusLocation { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
@@ -83,12 +95,25 @@ namespace Terradue.Tep.WebServer {
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebWpsJob"/> class.
         /// </summary>
         /// <param name="entity">Entity.</param>
-        public WebWpsJobTep(WpsJob entity) : base(entity) {
+        public WebWpsJobTep(WpsJob entity, IfyContext context = null) : base(entity) {
             this.WpsId = entity.WpsId;
+            
             this.ProcessId = entity.ProcessId;
+            if (context != null) {
+                try {
+                    this.ProcessName = Service.FromIdentifier(context, entity.ProcessId).Name;
+                } catch (Exception) {
+                }
+                try{
+                    this.Username = User.FromId(context, entity.UserId).Username;
+                }catch(Exception){}
+            }
+            
             this.StatusLocation = entity.StatusLocation;
             this.Parameters = entity.Parameters;
             this.CreatedTime = entity.CreatedTime;
+            this.RemoteIdentifier = entity.RemoteIdentifier;
+                       
         }
 
         /// <summary>

@@ -52,8 +52,12 @@ namespace Terradue.Tep.WebServer {
 
     public class WebServiceTep : Terradue.WebService.Model.WebService {
 
-        [ApiMember(Name="IsPublic", Description = "Remote resource IsPublic", ParameterType = "path", DataType = "bool", IsRequired = false)]
+        [ApiMember(Name="IsPublic", Description = "IsPublic", ParameterType = "path", DataType = "bool", IsRequired = false)]
         public bool IsPublic { get; set; }
+        [ApiMember(Name="OwnerId", Description = "Owner Id", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int OwnerId { get; set; }
+        [ApiMember(Name="Provider", Description = "Provider name", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string Provider { get; set; }
 
         public WebServiceTep() {}
 
@@ -64,6 +68,7 @@ namespace Terradue.Tep.WebServer {
         public WebServiceTep(IfyContext context, Service entity) : base(entity)
         {
             this.IsPublic = entity.HasGlobalPrivilege();
+            this.OwnerId = entity.UserId;
         }
 
     }
