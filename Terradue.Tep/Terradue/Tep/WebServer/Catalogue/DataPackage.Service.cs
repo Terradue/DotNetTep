@@ -40,7 +40,7 @@ namespace Terradue.Tep.WebServer.Services
                 EntityList<DataPackage> tmpList = new EntityList<DataPackage>(context);
                 tmpList.Load();
                 foreach(DataPackage a in tmpList)
-                    result.Add(new WebDataPackageTep(a));
+                    result.Add(new WebDataPackageTep(a, context));
 				context.Close ();
 			}catch(Exception e) {
 				context.Close ();
