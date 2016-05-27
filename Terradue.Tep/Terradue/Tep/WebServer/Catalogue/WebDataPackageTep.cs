@@ -106,13 +106,16 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name="NbItems", Description = "Remote resource NbItems", ParameterType = "path", DataType = "int", IsRequired = false)]
         public int NbItems { get; set; }
 
+        [ApiMember(Name="Username", Description = "Name of the owner of the remote resource", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Username { get; set; }
+
         public WebDataPackageTep() {}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebDataPackageTep"/> class.
         /// </summary>
         /// <param name="entity">Entity.</param>
-        public WebDataPackageTep(DataPackage entity)
+        public WebDataPackageTep(DataPackage entity, IfyContext context = null)
         {
             this.Id = entity.Id;
             this.Name = entity.Name;
@@ -123,6 +126,13 @@ namespace Terradue.Tep.WebServer {
             this.Items = new List<WebDataPackageItem>();
             foreach (RemoteResource item in entity.Resources) this.Items.Add(new WebDataPackageItem(item));
             this.NbItems = this.Items.Count;
+
+            if (context != null) {
+                try {
+                    this.Username = User.FromId(context, entity.OwnerId).Username;
+                } catch (Exception) {
+                }
+            }
         }
 
         /// <summary>
