@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer {
                 } catch (Exception) {
                 }
                 try{
-                    this.Username = User.FromId(context, entity.UserId).Username;
+                    this.Username = User.FromId(context, entity.OwnerId).Username;
                 }catch(Exception){}
             }
             

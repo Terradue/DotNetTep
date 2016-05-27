@@ -119,7 +119,7 @@
       <HintPath>..\packages\ProjNet.1.2\lib\net20\ProjNet.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.WebService.Model">
-      <HintPath>..\packages\Terradue.WebService.Model.1.1.9\lib\net40\Terradue.WebService.Model.dll</HintPath>
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.10\lib\net40\Terradue.WebService.Model.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.RdfEO">
       <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.3.7\lib\net40\Terradue.OpenSearch.RdfEO.dll</HintPath>

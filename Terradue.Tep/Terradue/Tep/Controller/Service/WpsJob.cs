@@ -20,12 +20,9 @@ namespace Terradue.Tep {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private const int SERVICE_TABLE = 1;
-
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         [EntityDataField("remote_identifier")]
         public string RemoteIdentifier { get; set; }
-
 
         [EntityDataField("wps")]
         public string WpsId { get; set; }
