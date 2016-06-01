@@ -53,6 +53,8 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(ProxyGetUrlRequestTep request){
 
+            log.InfoFormat("Proxy URL {0}", request.url);
+
             var uri = new UriBuilder(request.url);
             var host = uri.Host;
             var domain = host.Substring(host.LastIndexOf('.', host.LastIndexOf('.') - 1) + 1);
@@ -91,6 +93,8 @@ namespace Terradue.Tep.WebServer.Services {
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.id);
 
+            log.InfoFormat("GPOD Proxy description for wpsjob {0}", wpsjob.Identifier);
+
             OpenSearchDescription osd = GetGpodOpenSearchDescription(context, request.id, wpsjob.Name);
 
             context.Close();
@@ -103,6 +107,8 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.id);
+
+            log.InfoFormat("GPOD Proxy search for wpsjob {0}", wpsjob.Identifier);
 
             string executeUrl = wpsjob.StatusLocation;
 

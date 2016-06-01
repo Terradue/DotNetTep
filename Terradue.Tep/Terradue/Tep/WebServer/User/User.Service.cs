@@ -50,7 +50,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 UserTep user = UserTep.FromId(context, context.UserId);
-                log.Info(String.Format("Get current user '{0}'", user.Username));
+                log.InfoFormat("Get current user '{0}'", user.Username);
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -70,7 +70,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 UserTep user = UserTep.FromId(context, context.UserId);
-                log.Info(String.Format("Get current user '{0}'", user.Username));
+                log.InfoFormat("Get cloud username for current user '{0}'", user.Username);
                 user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
@@ -87,7 +87,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 UserTep user = UserTep.FromId(context, request.Id);
-                log.Info(String.Format("Get current user '{0}'", user.Username));
+                log.InfoFormat("Get cloud username for user '{0}'", user.Username);
                 user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
@@ -104,7 +104,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 UserTep user = UserTep.FromId(context, request.Id);
-                log.Info(String.Format("Get current user '{0}'", user.Username));
+                log.InfoFormat("Update cloud username for user '{0}'", user.Username);
                 user.TerradueCloudUsername = request.T2Username;
                 user.StoreCloudUsername();
                 result = new WebUserTep(context, user);
@@ -122,7 +122,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 UserTep user = UserTep.FromId(context, context.UserId);
-                log.Info(String.Format("Create SSO account for current user '{0}'", user.Username));
+                log.InfoFormat("Create SSO account for current user '{0}'", user.Username);
                 user.CreateSSOAccount(request.Password);
                 result = new WebUserTep(context, user);
                 context.Close();
@@ -139,7 +139,7 @@ namespace Terradue.Tep.WebServer.Services {
 //            try {
 //                context.Open();
 //                UserTep user = UserTep.FromId(context, context.UserId);
-//                log.Info(String.Format("Get current user '{0}'", user.Username));
+//                log.InfoFormat("Get current user '{0}'", user.Username));
 //                if(!user.E
 //                user.FindTerradueCloudUsername();
 //                result = new WebUserTep(context, user);
@@ -164,7 +164,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.RestrictedMode = false;
                 UserTep user = UserTep.GetPublicUser(context, request.id);
                 result = new WebUserProfileTep(context, user);
-
+                log.InfoFormat("Get public profile for user '{0}'", user.Username);
                 context.Close();
             } catch (Exception e) {
                 context.Close();
@@ -183,9 +183,9 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                UserTep user = (UserTep)UserTep.FromId(context, request.id);
+                UserTep user = UserTep.FromId(context, request.id);
                 result = new WebUserProfileTep(context, user);
-
+                log.InfoFormat("Get public profile (admin view) for user '{0}'", user.Username);
                 context.Close();
             } catch (Exception e) {
                 context.Close();
@@ -207,7 +207,7 @@ namespace Terradue.Tep.WebServer.Services {
                 EntityList<UserTep> users = new EntityList<UserTep>(context);
                 users.Load();
                 foreach(UserTep u in users) result.Add(new WebUserProfileTep(context, u));
-
+                log.InfoFormat("Get public profiles for all users");
                 context.Close();
             } catch (Exception e) {
                 context.Close();
@@ -253,6 +253,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 user = request.ToEntity(context, user);
                 user.Store();
+                log.InfoFormat("User '{0}' has been updated", user.Username);
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -271,6 +272,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 user.Level = request.Level;
                 user.Store();
+                log.InfoFormat("Level of user '{0}' has been updated to Level {1}", user.Username, request.Level);
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -288,6 +290,7 @@ namespace Terradue.Tep.WebServer.Services {
                 UserTep user = (request.Id == 0 ? null : UserTep.FromId(context, request.Id));
                 user.Level = request.Level;
                 user.Store();
+                log.InfoFormat("Level of user '{0}' has been updated to Level {1}", user.Username, request.Level);
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -320,7 +323,7 @@ namespace Terradue.Tep.WebServer.Services {
                 user.Level = UserLevel.User;
 
                 user.Store();
-
+                log.InfoFormat("User '{0}' has been created", user.Username);
                 result = new WebUserTep(context , user);
                 context.Close ();
             }catch(Exception e) {
@@ -340,7 +343,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 User user = User.FromId(context, request.Id);
                 user.Delete();
-
+                log.InfoFormat("User '{0}' has been deleted", user.Username);
                 context.Close();
             } catch (Exception e) {
                 context.Close();
@@ -362,35 +365,6 @@ namespace Terradue.Tep.WebServer.Services {
             }
             context.Close();
             return new WebResponseBool(true);
-        }
-
-        /// <summary>
-        /// Get the specified request.
-        /// </summary>
-        /// <param name="request">Request.</param>
-        public object Get(UserGetGroupsRequestTep request) {
-            List<WebGroup> result = new List<WebGroup>();
-
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            try {
-                context.Open();
-
-                UserTep user = UserTep.FromId(context, request.UsrId);
-                List<int> ids = user.GetGroups();
-
-                List<Group> groups = new List<Group>();
-                foreach (int id in ids) groups.Add(Group.FromId(context, id));
-
-                foreach(Group grp in groups){
-                    result.Add(new WebGroup(grp));
-                }
-
-                context.Close();
-            } catch (Exception e) {
-                context.Close();
-                throw e;
-            }
-            return result;
         }
 
         public object Get(UserGetUsageRequestTep request){
@@ -422,6 +396,7 @@ namespace Terradue.Tep.WebServer.Services {
                 types.Add(typeof(WpsProcessOffering));
                 result.Add(new KeyValuePair<string, string>("service/wps","" + usu.GetScore(types)));
 
+                log.InfoFormat("Get User '{0}' usage", User.FromId(context, usu.UserId).Username);
 
                 context.Close();
             } catch (Exception e) {

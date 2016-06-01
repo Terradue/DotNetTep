@@ -12,6 +12,10 @@ namespace Terradue.Tep.WebServer.Services {
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class GroupServiceTep : ServiceStack.ServiceInterface.Service {
+
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        
         /// <summary>
         /// Get the specified group.
         /// </summary>
@@ -68,6 +72,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Group grp = (request.Id == 0 ? null : Group.FromId(context, request.Id));
                 grp = request.ToEntity(context, grp);
                 grp.Store();
+                log.InfoFormat("Group {0} updated by user {1}", grp.Name, User.FromId(context, context.UserId).Username);
                 result = new WebGroup(grp);
                 context.Close();
             } catch (Exception e) {
@@ -90,7 +95,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Group grp = (request.Id == 0 ? null : Group.FromId(context, request.Id));
 				grp = request.ToEntity(context, grp);
                 grp.Store();
-
+                log.InfoFormat("Group {0} created by user {1}", grp.Name, User.FromId(context, context.UserId).Username);
                 result = new WebGroup(grp);
                 context.Close ();
             }catch(Exception e) {
@@ -111,6 +116,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Group grp = Group.FromId(context, request.Id);
                 if (context.UserLevel == UserLevel.Administrator) grp.Delete();
                 else throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+                log.InfoFormat("Group {0} deleted by user {1}", grp.Name, User.FromId(context, context.UserId).Username);
                 context.Close();
             } catch (Exception e) {
                 context.Close();
@@ -130,8 +136,11 @@ namespace Terradue.Tep.WebServer.Services {
             try{
                 context.Open();
                 context.AddUserToGroup(request.Id, request.GrpId);
+
+                User usr = User.FromId(context, request.Id);
                 Group grp = Group.FromId(context, request.GrpId);
                 result = new WebGroup(grp);
+                log.InfoFormat("User {0} has been added to group {1}", usr.Username, grp.Name);
                 context.Close ();
             }catch(Exception e) {
                 context.Close ();
@@ -151,8 +160,10 @@ namespace Terradue.Tep.WebServer.Services {
             try{
                 context.Open();
                 context.RemoveUserFromGroup(request.UsrId, request.GrpId);
+                User usr = User.FromId(context, request.UsrId);
                 Group grp = Group.FromId(context, request.GrpId);
                 result = new WebGroup(grp);
+                log.InfoFormat("User {0} has been removed from group {1}", usr.Username, grp.Name);
                 context.Close ();
             }catch(Exception e) {
                 context.Close ();
@@ -170,8 +181,10 @@ namespace Terradue.Tep.WebServer.Services {
                 Group grp = Group.FromId(context, request.GrpId);
                 List<User> users = new List<User>();
                 foreach(WebUser usr in request) users.Add(User.FromId(context, usr.Id));
+                log.InfoFormat("Group {0} has been reset", grp.Name);
                 grp.SetUsers(users);
                 result = new WebGroup(grp);
+                foreach(WebUser usr in request) log.InfoFormat("User {0} has been added to group {1}", usr.Username, grp.Name);
                 context.Close ();
             }catch(Exception e) {
                 context.Close ();
@@ -191,6 +204,35 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close ();
             }catch(Exception e) {
                 context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Get the specified request.
+        /// </summary>
+        /// <param name="request">Request.</param>
+        public object Get(UserGetGroupsRequestTep request) {
+            List<WebGroup> result = new List<WebGroup>();
+
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            try {
+                context.Open();
+
+                UserTep user = UserTep.FromId(context, request.UsrId);
+                List<int> ids = user.GetGroups();
+
+                List<Group> groups = new List<Group>();
+                foreach (int id in ids) groups.Add(Group.FromId(context, id));
+
+                foreach(Group grp in groups){
+                    result.Add(new WebGroup(grp));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.Close();
                 throw e;
             }
             return result;

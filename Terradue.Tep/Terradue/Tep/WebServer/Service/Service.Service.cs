@@ -15,6 +15,9 @@ namespace Terradue.Tep.WebServer.Services {
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure   | EndpointAttributes.External | EndpointAttributes.Json)]
     public class ServiceServiceTep : ServiceStack.ServiceInterface.Service {
+
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         
         public object Get(ServiceServiceTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
