@@ -232,12 +232,6 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="item">Item.</param>
         public void AddResourceItem(RemoteResource item) {
-            if (string.IsNullOrEmpty(item.Location)) return;
-            //temporary, waiting for http://project.terradue.com/issues/13297 to be solved
-            foreach (var it in Resources) {
-                if (it.Location.Equals(item.Location))
-                    return;
-            }
             item.ResourceSet = this;
             item.Store();
             Items.Include(item);

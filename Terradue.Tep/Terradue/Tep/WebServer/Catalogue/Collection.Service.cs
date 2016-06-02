@@ -66,6 +66,10 @@ namespace Terradue.Tep.WebServer.Services {
                 serie = request.ToEntity(context, serie);
                 serie.Store();
                 serie.StoreGlobalPrivileges();
+
+                Activity activity = new Activity(context, serie, OperationPriv.CREATE);
+                activity.Store();
+
                 result = new WebSeries(serie);
                 context.Close();
             } catch (Exception e) {
@@ -91,6 +95,8 @@ namespace Terradue.Tep.WebServer.Services {
                     switch(request.Access){
                         case "public":
                             serie.StoreGlobalPrivileges();
+                            Activity activity = new Activity(context, serie, OperationPriv.MAKE_PUBLIC);
+                            activity.Store();
                             break;
                         case "private":
                             serie.RemoveGlobalPrivileges();
@@ -101,6 +107,8 @@ namespace Terradue.Tep.WebServer.Services {
                 } else {
                     serie = request.ToEntity(context, serie);
                     serie.Store();
+                    Activity activity = new Activity(context, serie, OperationPriv.MODIFY);
+                    activity.Store();
                 }
 
                 result = new WebSeries(serie);
@@ -125,6 +133,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 Series serie = Series.FromId(context, request.Id);
                 serie.Delete();
+                Activity activity = new Activity(context, serie, OperationPriv.DELETE);
+                activity.Store();
                 context.Close();
             } catch (Exception e) {
                 context.Close();
