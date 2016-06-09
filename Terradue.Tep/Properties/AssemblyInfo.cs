@@ -2,13 +2,13 @@
 
 \namespace Terradue.Tep
 @{
-    Terradue.Tep Software Package
+    Terradue.Tep Software Package provides with all the functionalities specific to the TEP.
 
     \xrefitem sw_version "Versions" "Software Package Version" 1.0.0
 
-    \xrefitem sw_link "Links" "Software Package List" [Terradue.Portal](https://git.terradue.com/sugar/Terradue.Tep)
+    \xrefitem sw_link "Links" "Software Package List" [Terradue.Tep](https://git.terradue.com/sugar/Terradue.Tep)
 
-    \xrefitem sw_license "License" "Software License" [incubating](https://git.terradue.com/sugar/Terradue.Tep)
+    \xrefitem sw_license "License" "Software License" [AGPL](https://git.terradue.com/sugar/Terradue.Tep/LICENSE)
 
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.OpenSearch
 
