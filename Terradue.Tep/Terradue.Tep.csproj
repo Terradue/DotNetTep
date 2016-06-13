@@ -130,9 +130,6 @@
     <Reference Include="Terradue.OpenSearch.GeoJson">
       <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.6\lib\net40\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.OpenNebula">
-      <HintPath>..\packages\Terradue.OpenNebula.1.0.1\lib\net40\Terradue.OpenNebula.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Github">
       <HintPath>..\packages\Terradue.Github.1.0.5\lib\net40\Terradue.Github.dll</HintPath>
     </Reference>
@@ -163,11 +160,20 @@
     <Reference Include="Terradue.Metadata">
       <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.6.54\lib\net40\Terradue.Portal.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.WebService.Model">
       <HintPath>..\packages\Terradue.WebService.Model.1.1.10\lib\net40\Terradue.WebService.Model.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenNebula">
+      <HintPath>..\packages\Terradue.OpenNebula.1.0.2\lib\net40\Terradue.OpenNebula.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.6.57\lib\net40\Terradue.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.6.57\lib\net40\Terradue.Portal.Agent.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.6.57\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
