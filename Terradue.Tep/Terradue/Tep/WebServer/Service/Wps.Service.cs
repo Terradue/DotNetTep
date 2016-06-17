@@ -311,7 +311,7 @@ namespace Terradue.Tep.WebServer.Services {
                     identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
                 } else if (uri.AbsoluteUri.Contains("pywps")) {
                     identifier = uri.AbsoluteUri;
-                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 7);
+                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
                     identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
                 } else {
                     log.Error(e.Message);
@@ -443,10 +443,15 @@ namespace Terradue.Tep.WebServer.Services {
                 } catch (Exception e) {
                     if (executeUrl.Contains("gpod.eo.esa.int")) {
                         identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
+                    } else if (uri.AbsoluteUri.Contains("pywps")) {
+                        identifier = uri.AbsoluteUri;
+                        identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
+                        identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
                     } else {
                         log.Error(e.Message);
                         return new HttpResult(e.Message, HttpStatusCode.BadRequest);
                     }
+
                 }
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
