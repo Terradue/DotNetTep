@@ -309,6 +309,10 @@ namespace Terradue.Tep.WebServer.Services {
                 if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
                     log.Debug("identifier taken from gpod url : " + uri.AbsoluteUri);
                     identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
+                } else if (uri.AbsoluteUri.Contains("pywps")) {
+                    identifier = uri.AbsoluteUri;
+                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 7);
+                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
                 } else {
                     log.Error(e.Message);
                     throw e;
