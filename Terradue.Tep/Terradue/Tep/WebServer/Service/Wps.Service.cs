@@ -328,7 +328,7 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.UserId = context.UserId;
             wpsjob.WpsId = wps.Provider.Identifier;
             wpsjob.ProcessId = wps.Identifier;
-            wpsjob.CreatedTime = DateTime.Now;
+            wpsjob.CreatedTime = DateTime.UtcNow;
 
             //in case of username:password in the provider url, we take them from provider
             var statusuri = new UriBuilder(wps.Provider.BaseUrl);
