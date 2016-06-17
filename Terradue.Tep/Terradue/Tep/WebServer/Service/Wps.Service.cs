@@ -650,8 +650,19 @@ namespace Terradue.Tep.WebServer.Services {
                 if (!string.IsNullOrEmpty(request.Mode) && request.Mode.Equals("synchro"))
                     wps.UpdateProcessOfferings();
                 else {
+                    var namebefore = wps.Identifier;
                     wps = request.ToEntity(context, wps);
                     wps.Store();
+
+                    //update wpsjob if name has changed
+                    if(!namebefore.Equals(wps.Identifier)){
+                        EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                        wpsjobs.Load();
+                        foreach(var job in wpsjobs){
+                            job.WpsId = wps.Identifier;
+                            job.Store();
+                        }
+                    }
                 }
 
                 result = new WebWpsProvider(wps);
