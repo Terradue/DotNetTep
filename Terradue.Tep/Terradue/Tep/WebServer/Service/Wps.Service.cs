@@ -309,6 +309,10 @@ namespace Terradue.Tep.WebServer.Services {
                 if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
                     log.Debug("identifier taken from gpod url : " + uri.AbsoluteUri);
                     identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
+                } else if (uri.AbsoluteUri.Contains("pywps")) {
+                    identifier = uri.AbsoluteUri;
+                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 7);
+                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
                 } else {
                     log.Error(e.Message);
                     throw e;
@@ -324,7 +328,7 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.UserId = context.UserId;
             wpsjob.WpsId = wps.Provider.Identifier;
             wpsjob.ProcessId = wps.Identifier;
-            wpsjob.CreatedTime = DateTime.Now;
+            wpsjob.CreatedTime = DateTime.UtcNow;
 
             //in case of username:password in the provider url, we take them from provider
             var statusuri = new UriBuilder(wps.Provider.BaseUrl);
@@ -646,8 +650,19 @@ namespace Terradue.Tep.WebServer.Services {
                 if (!string.IsNullOrEmpty(request.Mode) && request.Mode.Equals("synchro"))
                     wps.UpdateProcessOfferings();
                 else {
+                    var namebefore = wps.Identifier;
                     wps = request.ToEntity(context, wps);
                     wps.Store();
+
+                    //update wpsjob if name has changed
+                    if(!namebefore.Equals(wps.Identifier)){
+                        EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                        wpsjobs.Load();
+                        foreach(var job in wpsjobs){
+                            job.WpsId = wps.Identifier;
+                            job.Store();
+                        }
+                    }
                 }
 
                 result = new WebWpsProvider(wps);
