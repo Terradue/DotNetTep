@@ -235,6 +235,7 @@
     <Compile Include="Terradue\Tep\Controller\Accounting\Account.cs" />
     <Compile Include="Terradue\Tep\Controller\Accounting\Rates.cs" />
     <Compile Include="Terradue\Tep\WebServer\Activity\Logs.Service.cs" />
+    <Compile Include="Terradue\Tep\WebServer\News\Discourse.Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
