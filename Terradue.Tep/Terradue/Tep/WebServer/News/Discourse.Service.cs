@@ -12,7 +12,7 @@ namespace Terradue.Tep.WebServer.Services {
     public class DiscourseServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Get(GetDiscourseTopicsPerCategory request){
-            return GetDiscourseRequest(string.Format("c/{0}.json?page={1}", request.catId, request.page));
+            return GetDiscourseRequest(string.Format("c/{0}.json?page={1}&order={2}", request.catId, request.page, request.order ?? "activity")); 
         }
 
         public object Get(GetDiscourseLatestTopicsPerCategory request){
@@ -50,6 +50,9 @@ namespace Terradue.Tep.WebServer.Services {
 
         [ApiMember(Name="page", Description = "request", ParameterType = "query", DataType = "int", IsRequired = false)]
         public int page{ get; set; }
+
+        [ApiMember(Name="order", Description = "request", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string order{ get; set; }
     }
 
     [Route("/discourse/t/{topicId}", "GET", Summary = "", Notes = "")]
