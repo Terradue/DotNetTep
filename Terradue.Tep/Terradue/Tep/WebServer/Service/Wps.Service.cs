@@ -436,23 +436,6 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
-                Uri uri = new Uri(execResponse.statusLocation);
-                string identifier;
-                try {
-                    identifier = uri.Query.Substring(uri.Query.IndexOf("id=") + 3);
-                } catch (Exception e) {
-                    if (executeUrl.Contains("gpod.eo.esa.int")) {
-                        identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-                    } else if (uri.AbsoluteUri.Contains("pywps")) {
-                        identifier = uri.AbsoluteUri;
-                        identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
-                        identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
-                    } else {
-                        log.Error(e.Message);
-                        return new HttpResult(e.Message, HttpStatusCode.BadRequest);
-                    }
-
-                }
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
@@ -466,10 +449,18 @@ namespace Terradue.Tep.WebServer.Services {
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
+                                } else if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
+                                    var reference = new OutputReferenceType();
+                                    reference.mimeType = "application/opensearchdescription+xml";
+                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                                    item.Reference = reference;
+                                    item.Any = null;
+                                    item.mimeType = "application/xml";
+                                    output.Identifier = new CodeType{ Value = "result_osd" };
                                 } else if (item.Any != null) {
                                     var reference = new OutputReferenceType();
                                     reference.mimeType = "application/opensearchdescription+xml";
-                                    reference.href = context.BaseUrl + "/proxy/gpod/" + wpsjob.Identifier + "/description";
+                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
                                     item.Reference = reference;
                                     item.Any = null;
                                     item.mimeType = "application/xml";
@@ -479,7 +470,7 @@ namespace Terradue.Tep.WebServer.Services {
                         }catch(Exception){}
                     }
                 }
-                uri = new Uri(execResponse.serviceInstance);
+                Uri uri = new Uri(execResponse.serviceInstance);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
                 new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
                 context.Close();
