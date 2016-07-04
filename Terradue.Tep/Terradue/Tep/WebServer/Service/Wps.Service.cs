@@ -449,6 +449,14 @@ namespace Terradue.Tep.WebServer.Services {
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
+                                } else if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
+                                    var reference = new OutputReferenceType();
+                                    reference.mimeType = "application/opensearchdescription+xml";
+                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                                    item.Reference = reference;
+                                    item.Any = null;
+                                    item.mimeType = "application/xml";
+                                    output.Identifier = new CodeType{ Value = "result_osd" };
                                 } else if (item.Any != null) {
                                     var reference = new OutputReferenceType();
                                     reference.mimeType = "application/opensearchdescription+xml";

@@ -136,10 +136,11 @@ namespace Terradue.Tep.WebServer.Services {
                     if(output.Identifier != null){
                         if (output.Item != null && ((DataType)(output.Item)).Item != null) {
                             var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                            if (item.Any != null && item.Any[0].LocalName != null) {
-                                if (item.Any[0].LocalName.Equals("reference") && output.Identifier.Value.Equals("result_metadata")) {
-                                    feed = CreateFeedForMetadata(item.Any[0]);
-                                } else if (item.Any[0].LocalName.Equals("RDF")) {
+                            if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
+                                var reference = item.Reference as OutputReferenceType;
+                                feed = CreateFeedForMetadata(reference.href);
+                            } else if (item.Any != null && item.Any[0].LocalName != null) {
+                                if (item.Any[0].LocalName.Equals("RDF")) {
                                     feed = CreateFeedForRDF(item.Any[0], request.id, context.BaseUrl);
                                 } else if (item.Any[0].LocalName.Equals("metalink")) {
                                     feed = CreateFeedForMetalink(item.Any[0], request.id, context.BaseUrl);
@@ -154,21 +155,20 @@ namespace Terradue.Tep.WebServer.Services {
             var type = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
             var ext = ose.GetFirstExtensionByTypeAbility(type);
 
-            var result = ext.CreateOpenSearchResultFromOpenSearchResult(feed);
+            var osfeed = new AtomFeedOpenSearchable(feed);
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query(osfeed, httpRequest.QueryString, responseType);
+
             context.Close ();
-            return new HttpResult(result.SerializeToString(), result.ContentType);
+            return new HttpResult(osr.SerializeToString(), osr.ContentType);
 
         }
 
-        private AtomFeed CreateFeedForMetadata(XmlNode any){
+        private AtomFeed CreateFeedForMetadata(string url){
             log.Debug("Wps proxy - metadata");
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(any.OuterXml);
-            XmlNamespaceManager xmlns = new XmlNamespaceManager(doc.NameTable);
-            xmlns.AddNamespace("ns", "http://www.opengis.net/wps/1.0.0");
 
-            var onlineResource = doc.SelectSingleNode("ns:Reference@href",xmlns).InnerText;
-            HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(onlineResource);
+            HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
             HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
 
             Stream atomResponseStream = new MemoryStream();
