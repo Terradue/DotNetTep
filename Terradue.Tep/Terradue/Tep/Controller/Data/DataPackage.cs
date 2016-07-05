@@ -199,8 +199,12 @@ namespace Terradue.Tep {
         }
 
         public static DataPackage GetTemporaryForCurrentUser(IfyContext context){
+            return GetTemporaryForUser(context, context.UserId);
+        }
+
+        public static DataPackage GetTemporaryForUser(IfyContext context, int id){
             DataPackage result = new DataPackage(context);
-            result.OwnerId = context.UserId;
+            result.OwnerId = id;
             result.IsDefault = true;
             try {
                 result.Load();
