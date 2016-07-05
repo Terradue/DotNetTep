@@ -124,7 +124,7 @@ namespace Terradue.Tep.WebServer.Services
             return result;
         }
 
-        public object Delete(DataPackageClearDefaultRequestTep request)
+        public object Delete(DataPackageClearCurrentDefaultRequestTep request)
         {
             //Get all requests from database
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
@@ -132,6 +132,29 @@ namespace Terradue.Tep.WebServer.Services
             try{
                 context.Open();
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
+
+                foreach(RemoteResource res in def.Resources){
+                    res.Delete();
+                }
+
+                result = new WebDataPackageTep(def);
+                context.Close ();
+            }catch(Exception e) {
+                context.Close ();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Delete(DataPackageClearDefaultRequestTep request)
+        {
+            //Get all requests from database
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebDataPackageTep result;
+            try{
+                context.Open();
+                DataPackage def = DataPackage.GetTemporaryForUser(context, request.userId);
 
                 foreach(RemoteResource res in def.Resources){
                     res.Delete();
