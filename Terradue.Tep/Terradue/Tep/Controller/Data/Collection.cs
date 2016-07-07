@@ -112,7 +112,7 @@ namespace Terradue.Tep {
             OSDD.Language = "en-us";
             OSDD.OutputEncoding = "UTF-8";
             OSDD.InputEncoding = "UTF-8";
-            OSDD.Description = "This Search Service performs queries in the available data series of E-CEO catalogue. There are several URL templates that return the results in different formats (RDF, ATOM or KML). This search service is in accordance with the OGC 10-032r3 specification.";
+            OSDD.Description = "This Search Service performs queries in the available data series of Terradue catalogue. There are several URL templates that return the results in different formats (RDF, ATOM or KML). This search service is in accordance with the OGC 10-032r3 specification.";
 
             // The new URL template list 
             Hashtable newUrls = new Hashtable();
@@ -121,7 +121,7 @@ namespace Terradue.Tep {
             string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
 
             urib = new UriBuilder(context.BaseUrl);
-            urib.Path += string.Format("/catalogue/{0}/search", this.Identifier);
+            urib.Path += string.Format("/data/collection/{0}/search", this.Identifier);
 
             query.Set("format", "atom");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
