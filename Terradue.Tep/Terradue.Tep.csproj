@@ -176,7 +176,7 @@
       <HintPath>..\packages\Terradue.GeoJson.1.7.5\lib\net40\Terradue.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.12.7\lib\net40\Terradue.OpenSearch.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.1.12.9\lib\net40\Terradue.OpenSearch.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
