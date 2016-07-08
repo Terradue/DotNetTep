@@ -79,7 +79,7 @@ namespace Terradue.Tep
             OSDD.Language = "en-us";
             OSDD.OutputEncoding = "UTF-8";
             OSDD.InputEncoding = "UTF-8";
-            OSDD.Description = "This Search Service performs queries in the available data packages of TepQw catalogue. There are several URL templates that return the results in different formats (RDF, ATOM or KML). This search service is in accordance with the OGC 10-032r3 specification.";
+            OSDD.Description = "This Search Service performs queries in the available data packages of Tep catalogue. There are several URL templates that return the results in different formats (RDF, ATOM or KML). This search service is in accordance with the OGC 10-032r3 specification.";
 
             // The new URL template list 
             Hashtable newUrls = new Hashtable();
@@ -88,7 +88,7 @@ namespace Terradue.Tep
             string[] queryString;
 
             urib = new UriBuilder(context.BaseUrl);
-            urib.Path = "/catalogue/search";
+            urib.Path = "/data/collection/search";
             query.Add(OpenSearchFactory.GetBaseOpenSearchParameter());
 
             query.Set("format", "atom");
@@ -118,7 +118,7 @@ namespace Terradue.Tep
 
             OSDD.Url = new OpenSearchDescriptionUrl[1];
             UriBuilder uri = new UriBuilder(context.BaseUrl);
-            uri.Path = "/catalogue/search";
+            uri.Path = "/data/collection/search";
             OpenSearchDescriptionUrl osdu = new OpenSearchDescriptionUrl("application/atom+xml", uri.ToString(), "search");
             OSDD.Url[0] = osdu;
 
@@ -152,7 +152,7 @@ namespace Terradue.Tep
         public OpenSearchRequest Create(string type, NameValueCollection parameters) {
 
             UriBuilder url = new UriBuilder(context.BaseUrl);
-            url.Path += "/catalogue/";
+            url.Path += "/data/collection/";
             var array = (from key in parameters.AllKeys
                          from value in parameters.GetValues(key)
                          select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value)))
@@ -182,12 +182,12 @@ namespace Terradue.Tep
         /// <value>The name.</value>
         public string Name {
             get {
-                return "catalogue";
+                return "data/collection";
             }
         }
         public string Identifier {
             get {
-                return "catalogue";
+                return "data/collection";
             }
         }
 
@@ -267,7 +267,7 @@ namespace Terradue.Tep
 
             pds.StartIndex = startIndex;
 
-            feed.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", "catalogue");
+            feed.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", "data/collection");
 
             foreach (Series s in pds.GetCurrentPage()) {
 
@@ -278,6 +278,9 @@ namespace Terradue.Tep
 
                 entry.Summary = new TextSyndicationContent(s.Name);
                 entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", s.Identifier);
+
+                UriBuilder search = new UriBuilder(context.BaseUrl + "/" + Name + "/" + s.Identifier + "/description");
+                entry.Links.Add(new SyndicationLink(search.Uri, "search", s.Name, "application/atom+xml", 0));
 
                 items.Add(entry);
             }

@@ -50,7 +50,7 @@ namespace Terradue.Tep.WebServer.Services
 				urib = new UriBuilder( baseUrl.ToString() );
 
                 OSDD = serie.GetOpenSearchDescription();
-				urib.Path = baseUrl.Path + "/catalogue/" + serie.Identifier + "/search";
+				urib.Path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/search";
 				query.Set("format","atom");
                 query.Add(serie.GetOpenSearchParameters("application/atom+xml"));
 
