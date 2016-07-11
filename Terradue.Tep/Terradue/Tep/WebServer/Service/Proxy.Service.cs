@@ -227,8 +227,8 @@ namespace Terradue.Tep.WebServer.Services {
                 //we build the OWS context
                 entry.Id = node.InnerText;
                 entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
-                entry.PublishDate = Convert.ToDateTime(createddate);
-                entry.LastUpdatedTime = Convert.ToDateTime(createddate);
+                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(createddate), new TimeSpan(0));
+                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(createddate), new TimeSpan(0));
                 entry.Date = new DateTimeInterval {
                     StartDate = Convert.ToDateTime(createddate),
                     EndDate = Convert.ToDateTime(createddate)
@@ -318,8 +318,8 @@ namespace Terradue.Tep.WebServer.Services {
                 OwsContextAtomEntry entry = new OwsContextAtomEntry();
                 entry.Id = remoteUri.AbsoluteUri;
                 entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
-                entry.PublishDate = Convert.ToDateTime(modifieddate);
-                entry.LastUpdatedTime = Convert.ToDateTime(modifieddate);
+                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(modifieddate), new TimeSpan(0));
+                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(modifieddate), new TimeSpan(0));
                 entry.Date = new DateTimeInterval {
                     StartDate = Convert.ToDateTime(modifieddate),
                     EndDate = Convert.ToDateTime(modifieddate)

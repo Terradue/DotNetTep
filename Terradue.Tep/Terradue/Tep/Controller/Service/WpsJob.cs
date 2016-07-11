@@ -204,7 +204,7 @@ namespace Terradue.Tep {
             result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             result.Summary = new TextSyndicationContent(name);
             result.ReferenceData = this;
-            result.PublishDate = this.CreatedTime;
+            result.PublishDate = new DateTimeOffset(this.CreatedTime, new TimeSpan(0));
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";
             string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username ;
@@ -369,7 +369,7 @@ namespace Terradue.Tep {
 
             OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
-            entry.PublishDate = new DateTimeOffset(this.CreatedTime);
+            entry.PublishDate = new DateTimeOffset(this.CreatedTime, new TimeSpan(0));
             entry.Publisher = Owner.Username;
 
             entry.Offerings = new List<OwcOffering>{ offering };

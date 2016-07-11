@@ -430,7 +430,7 @@ namespace Terradue.Tep {
             Uri share = new Uri(context.BaseUrl + "/share?url=" +id.AbsoluteUri);
             atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             atomEntry.ReferenceData = this;
-            atomEntry.PublishDate = this.CreationTime;
+            atomEntry.PublishDate = new DateTimeOffset(this.CreationTime, new TimeSpan(0));
             User owner = User.FromId(context, this.OwnerId);
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";
