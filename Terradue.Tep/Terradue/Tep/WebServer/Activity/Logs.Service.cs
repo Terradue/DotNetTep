@@ -6,6 +6,7 @@ using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.IO;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -56,8 +57,19 @@ namespace Terradue.Tep.WebServer.Services {
                 if(!path.EndsWith("/")) path += "/";
                 var filepath = string.Format("{1}../logs/{0}",request.filename,path);
 
-//                System.IO.File.WriteAllText(string.Format("{1}../logs/{0}",request.filename,path), csv.ToString());
-                string[] lines = System.IO.File.ReadAllLines(filepath);
+
+                List<string> lines = new List<string>();
+                using (var csv = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(csv))
+                {
+                    while (!sr.EndOfStream)
+                    {
+                        lines.Add(sr.ReadLine());
+                    }
+
+                    return lines.ToArray();
+                }
+
 
                 foreach (string line in lines){
                     text.Append(line);
