@@ -227,8 +227,15 @@ namespace Terradue.Tep.WebServer.Services {
                 //we build the OWS context
                 entry.Id = node.InnerText;
                 entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
-                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(createddate), new TimeSpan(0));
-                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(createddate), new TimeSpan(0));
+
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(createddate), DateTimeKind.Utc));
+//                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(createddate));
+
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.LastUpdatedTime = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(createddate), DateTimeKind.Utc));
+//                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(createddate));
+
                 entry.Date = new DateTimeInterval {
                     StartDate = Convert.ToDateTime(createddate),
                     EndDate = Convert.ToDateTime(createddate)
@@ -318,8 +325,15 @@ namespace Terradue.Tep.WebServer.Services {
                 OwsContextAtomEntry entry = new OwsContextAtomEntry();
                 entry.Id = remoteUri.AbsoluteUri;
                 entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
-                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(modifieddate), new TimeSpan(0));
-                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(modifieddate), new TimeSpan(0));
+
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(modifieddate), DateTimeKind.Utc));
+//                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(modifieddate));
+
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.LastUpdatedTime = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(modifieddate), DateTimeKind.Utc));
+//                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(modifieddate));
+
                 entry.Date = new DateTimeInterval {
                     StartDate = Convert.ToDateTime(modifieddate),
                     EndDate = Convert.ToDateTime(modifieddate)

@@ -60,16 +60,10 @@ namespace Terradue.Tep.WebServer.Services {
 
                 List<string> lines = new List<string>();
                 using (var csv = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (var sr = new StreamReader(csv))
-                {
-                    while (!sr.EndOfStream)
-                    {
-                        lines.Add(sr.ReadLine());
-                    }
-
+                using (var sr = new StreamReader(csv)){
+                    while (!sr.EndOfStream) lines.Add(sr.ReadLine());
                     return lines.ToArray();
                 }
-
 
                 foreach (string line in lines){
                     text.Append(line);
@@ -83,7 +77,6 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-//            Response.AddHeader("Content-Disposition", string.Format("attachment;filename={0}",request.filename));
             return text.ToString();
         }
 
