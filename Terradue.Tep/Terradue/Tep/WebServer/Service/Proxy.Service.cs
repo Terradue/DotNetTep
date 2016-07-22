@@ -31,16 +31,16 @@ namespace Terradue.Tep.WebServer.Services {
         public string url { get; set; }
     }
 
-    [Route("/proxy/wps/{id}/description", "GET", Summary = "proxy a wps result description", Notes = "")]
+    [Route("/proxy/wps/{jobid}/description", "GET", Summary = "proxy a wps result description", Notes = "")]
     public class ProxyWpsJobDescriptionRequestTep {
-        [ApiMember(Name="id", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string id { get; set; }
+        [ApiMember(Name="jobid", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string jobid { get; set; }
     }
 
-    [Route("/proxy/wps/{id}/search", "GET", Summary = "proxy a wps result search", Notes = "")]
+    [Route("/proxy/wps/{jobid}/search", "GET", Summary = "proxy a wps result search", Notes = "")]
     public class ProxyWpsJobSearchRequestTep {
-        [ApiMember(Name="id", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string id { get; set; }
+        [ApiMember(Name="jobid", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string jobid { get; set; }
     }
 
      [Api("Tep Terradue webserver")]
@@ -91,11 +91,11 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
 
-            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.id);
+            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
             log.InfoFormat("Wps Proxy description for wpsjob {0}", wpsjob.Identifier);
 
-            OpenSearchDescription osd = GetWpsOpenSearchDescription(context, request.id, wpsjob.Name);
+            OpenSearchDescription osd = GetWpsOpenSearchDescription(context, request.jobid, wpsjob.Name);
 
             context.Close();
             return new HttpResult(osd, "application/opensearchdescription+xml");
@@ -106,7 +106,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
 
-            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.id);
+            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
             log.InfoFormat("Wps Proxy search for wpsjob {0}", wpsjob.Identifier);
 
@@ -141,9 +141,9 @@ namespace Terradue.Tep.WebServer.Services {
                                 feed = CreateFeedForMetadata(reference.href);
                             } else if (item.Any != null && item.Any[0].LocalName != null) {
                                 if (item.Any[0].LocalName.Equals("RDF")) {
-                                    feed = CreateFeedForRDF(item.Any[0], request.id, context.BaseUrl);
+                                    feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
                                 } else if (item.Any[0].LocalName.Equals("metalink")) {
-                                    feed = CreateFeedForMetalink(item.Any[0], request.id, context.BaseUrl);
+                                    feed = CreateFeedForMetalink(item.Any[0], request.jobid, context.BaseUrl);
                                 }
                             }       
                         }
