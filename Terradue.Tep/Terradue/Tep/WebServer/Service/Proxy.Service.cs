@@ -151,6 +151,16 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
 
+            /* Proxy id + add self */
+            foreach (var item in feed.Items) {
+                var self = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/search?uid=" + HttpUtility.UrlEncode(item.Id);
+                var search = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                item.Id = self;
+                item.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateSelfLink(new Uri(self), "application/atom+xml"));
+                item.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(new Uri(search), "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
+            }
+
+
             var ose = MasterCatalogue.OpenSearchEngine;
             var type = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
             var ext = ose.GetFirstExtensionByTypeAbility(type);
@@ -159,6 +169,9 @@ namespace Terradue.Tep.WebServer.Services {
             HttpRequest httpRequest = HttpContext.Current.Request;
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
             IOpenSearchResultCollection osr = ose.Query(osfeed, httpRequest.QueryString, responseType);
+
+            var osrDesc = new Uri(context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description");
+            osr.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(osrDesc, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
 
             context.Close ();
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
@@ -197,6 +210,10 @@ namespace Terradue.Tep.WebServer.Services {
             var onlineResource = doc.SelectNodes("ml:metalink/ml:files/ml:file/ml:resources/ml:url",xmlns);
             var createddate = doc.SelectSingleNode("ml:metalink/ml:files/ml:file/ml:releasedate", xmlns).InnerText;
 
+            var self = baseurl + "/proxy/wps/" + identifier + "/search";
+            var search = baseurl + "/proxy/wps/" + identifier + "/description";
+
+            feed.Id = self;
             feed.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent("Wps job results");
             feed.Date = new DateTimeInterval {
                 StartDate = Convert.ToDateTime(createddate),
@@ -209,7 +226,8 @@ namespace Terradue.Tep.WebServer.Services {
                 OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
                 //link is an OWS context, we add it as is
-                if (url.Contains("/results/") && url.Contains(".atom")) {
+//                if (url.Contains("/results/") && url.Contains(".atom")) {
+                if (url.Contains(".atom")) {
                     HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
                     HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
 
@@ -225,7 +243,7 @@ namespace Terradue.Tep.WebServer.Services {
                     return new AtomFeed(atomFormatter.Feed);
                 }
                 //we build the OWS context
-                entry.Id = node.InnerText;
+                entry.Id = node.InnerText.Contains("/") ? node.InnerText.Substring(node.InnerText.LastIndexOf("/") + 1) : node.InnerText;
                 entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
 
                 //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
@@ -241,7 +259,7 @@ namespace Terradue.Tep.WebServer.Services {
                     EndDate = Convert.ToDateTime(createddate)
                 };
 
-                entry.ElementExtensions.Add("identifier", OwcNamespaces.Dc, remoteUri.AbsolutePath);
+                entry.ElementExtensions.Add("identifier", OwcNamespaces.Dc, entry.Id);
                 entry.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateMediaEnclosureLink(remoteUri, "application/octet-stream", 0));
 
                 List<OwcOffering> offerings = new List<OwcOffering>();
@@ -417,10 +435,19 @@ namespace Terradue.Tep.WebServer.Services {
             urib.Path += "/proxy/wps/" + jobIdentifier + "/search";
             query.Add(OpenSearchFactory.GetBaseOpenSearchParameter());
 
+            queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urib.Query = string.Join("&", queryString);
+            newUrls.Add("application/atom+xml", new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search"));
+
             query.Set("format", "json");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
             urib.Query = string.Join("&", queryString);
             newUrls.Add("application/json", new OpenSearchDescriptionUrl("application/json", urib.ToString(), "search"));
+
+            query.Set("format","html");
+            queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urib.Query = string.Join("&", queryString);
+            newUrls.Add("text/html",new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search"));
 
             OSDD.Url = new OpenSearchDescriptionUrl[newUrls.Count];
 
