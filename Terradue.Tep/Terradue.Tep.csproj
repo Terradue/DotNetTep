@@ -166,9 +166,6 @@
     <Reference Include="Terradue.GeoJson">
       <HintPath>..\packages\Terradue.GeoJson.1.7.5\lib\net40\Terradue.GeoJson.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.12.9\lib\net40\Terradue.OpenSearch.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Portal">
       <HintPath>..\packages\Terradue.Portal.2.6.61\lib\net40\Terradue.Portal.dll</HintPath>
     </Reference>
@@ -177,6 +174,9 @@
     </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
       <HintPath>..\packages\Terradue.Portal.2.6.61\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch">
+      <HintPath>..\packages\Terradue.OpenSearch.1.12.11\lib\net40\Terradue.OpenSearch.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
