@@ -26,11 +26,13 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/group/{{Id}} GET Id='{0}'", request.Id));
                 Group grp = Group.FromId(context, request.Id);
                 result = new WebGroup(grp);
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -47,12 +49,14 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/group GET"));
                 EntityList<Group> grps = new EntityList<Group>(context);
                 grps.Load();
                 foreach(Group g in grps) result.Add(new WebGroup(g));
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -69,6 +73,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebGroup result;
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/group PUT Id='{0}'", request.Id));
                 Group grp = (request.Id == 0 ? null : Group.FromId(context, request.Id));
                 grp = request.ToEntity(context, grp);
                 grp.Store();
@@ -76,6 +81,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebGroup(grp);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -97,8 +103,10 @@ namespace Terradue.Tep.WebServer.Services {
                 grp.Store();
                 log.InfoFormat("Group {0} created by user {1}", grp.Name, User.FromId(context, context.UserId).Username);
                 result = new WebGroup(grp);
+                context.LogInfo(log,string.Format("/group POST Id='{0}'", request.Id));
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -113,12 +121,14 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/group/{{Id}} DELETE Id='{0}'", request.Id));
                 Group grp = Group.FromId(context, request.Id);
                 if (context.UserLevel == UserLevel.Administrator) grp.Delete();
                 else throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
                 log.InfoFormat("Group {0} deleted by user {1}", grp.Name, User.FromId(context, context.UserId).Username);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -135,6 +145,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebGroup result;
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/group/{{grpId}}/user POST grpId='{0}'", request.GrpId));
                 context.AddUserToGroup(request.Id, request.GrpId);
 
                 User usr = User.FromId(context, request.Id);
@@ -143,6 +154,7 @@ namespace Terradue.Tep.WebServer.Services {
                 log.InfoFormat("User {0} has been added to group {1}", usr.Username, grp.Name);
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -159,6 +171,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebGroup result;
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/group/{{grpId}}/user/{{usrId}} DELETE grpId='{0}',usrId='{1}'", request.GrpId, request.UsrId));
                 context.RemoveUserFromGroup(request.UsrId, request.GrpId);
                 User usr = User.FromId(context, request.UsrId);
                 Group grp = Group.FromId(context, request.GrpId);
@@ -166,6 +179,7 @@ namespace Terradue.Tep.WebServer.Services {
                 log.InfoFormat("User {0} has been removed from group {1}", usr.Username, grp.Name);
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -178,6 +192,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebGroup result = null;
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/group/{{grpId}}/user PUT grpId='{0}'", request.GrpId));
                 Group grp = Group.FromId(context, request.GrpId);
                 List<User> users = new List<User>();
                 foreach(WebUser usr in request) users.Add(User.FromId(context, usr.Id));
@@ -187,6 +202,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach(WebUser usr in request) log.InfoFormat("User {0} has been added to group {1}", usr.Username, grp.Name);
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -199,10 +215,12 @@ namespace Terradue.Tep.WebServer.Services {
             List<WebUser> result = new List<WebUser>();;
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/group/{{grpId}}/user GET grpId='{0}'", request.GrpId));
                 Group grp = Group.FromId(context, request.GrpId);
                 foreach(User u in grp.GetUsers()) result.Add(new WebUser(u));
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -219,6 +237,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/user/{{usrId}}/group PUT usrId='{0}'", request.UsrId));
 
                 UserTep user = UserTep.FromId(context, request.UsrId);
                 List<int> ids = user.GetGroups();
@@ -232,6 +251,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }

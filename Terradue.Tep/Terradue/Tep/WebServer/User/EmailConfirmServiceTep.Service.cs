@@ -31,6 +31,7 @@ namespace Terradue.Tep.WebServer.Services {
             // Let's try to open context
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/user/emailconfirm GET"));
                 log.Error(string.Format("Email already confirmed for user {0}", context.Username));
                 context.Close();
                 return new HttpError(System.Net.HttpStatusCode.MethodNotAllowed, new InvalidOperationException("Email already confirmed"));
@@ -69,6 +70,7 @@ namespace Terradue.Tep.WebServer.Services {
                     string body = string.Format("Dear support,\n\nThis is an automatic email to inform you that user {0} has just confirmed his email address ({1}) on the geohazard platform.\n", umssoUser.Username, umssoUser.Email);
                     context.SendMail(emailFrom, emailFrom, subject, body);
                 } else {
+                    context.LogError(log, e.Message);
                     throw e;
                 }
             }
@@ -88,6 +90,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/user/emailconfirm POST"));
                 log.Error(string.Format("Email already confirmed for user {0}", context.Username));
                 return new HttpError(System.Net.HttpStatusCode.BadRequest, new InvalidOperationException("Account does not require email confirmation"));
 

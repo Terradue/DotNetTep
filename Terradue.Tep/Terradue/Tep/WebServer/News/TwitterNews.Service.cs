@@ -19,11 +19,15 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class TwitterNewsServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(SearchTwitterNews request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/news/twitter/search GET"));
 
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
@@ -39,6 +43,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -51,6 +56,7 @@ namespace Terradue.Tep.WebServer.Services {
             List<WebNews> result = new List<WebNews>();
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/news/twitter/feeds GET"));
 
                 List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
                 List<TwitterNews> tweetsfeeds = new List<TwitterNews>();
@@ -59,6 +65,7 @@ namespace Terradue.Tep.WebServer.Services {
                 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -71,6 +78,7 @@ namespace Terradue.Tep.WebServer.Services {
             List<WebNews> result = new List<WebNews>();
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/news/twitter GET"));
 
                 EntityList<TwitterNews> articles = new EntityList<TwitterNews>(context);
                 articles.Load();
@@ -78,6 +86,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -90,6 +99,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebNews result = null;
             try{
                 context.Open();
+                context.LogInfo(log,string.Format("/news/twitter POST Id='{0}'", request.Id));
 
                 TwitterNews article = new TwitterNews(context);
                 article = (TwitterNews)request.ToEntity(context, article);
@@ -98,6 +108,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(log, e.Message);
                 context.Close ();
                 throw e;
             }

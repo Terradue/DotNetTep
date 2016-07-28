@@ -17,12 +17,16 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class OneUserServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(GetOneUsers request) {
             List<WebOneUser> result = new List<WebOneUser>();
 
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/one/user GET ProviderId='{0}'", request.ProviderId));
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
                 OneCloudProvider oneCloud = (OneCloudProvider)CloudProvider.FromId(context, provId);
                 USER_POOL pool = oneCloud.XmlRpc.UserGetPoolInfo();
@@ -35,6 +39,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -47,6 +52,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/one/user/{{Id}} GET ProviderId='{0}',Id='{1}'", request.ProviderId, request.Id));
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
                 OneCloudProvider oneCloud = (OneCloudProvider)CloudProvider.FromId(context, provId);
                 USER oneuser = oneCloud.XmlRpc.UserGetInfo(request.Id);
@@ -54,6 +60,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -66,6 +73,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/one/user/current GET ProviderId='{0}'", request.ProviderId));
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
                 User user = User.FromId(context, context.UserId);
                 string username = user.Email;
@@ -88,6 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -99,11 +108,13 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/one/user PUT ProviderId='{0}',Id='{1}'", request.ProviderId, request.Id));
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
                 OneCloudProvider oneCloud = (OneCloudProvider)CloudProvider.FromId(context, provId);
                 result = oneCloud.XmlRpc.UserUpdatePassword(Int32.Parse(request.Id), request.Password);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -115,6 +126,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
                 User user = User.FromId(context, context.UserId);
                 string username = user.Email;
@@ -128,6 +140,8 @@ namespace Terradue.Tep.WebServer.Services {
                 //create user
                 int id = oneCloud.XmlRpc.UserAllocate(username, request.Password, (String.IsNullOrEmpty(request.AuthDriver) ? "x509" : request.AuthDriver));
                 USER oneuser = oneCloud.XmlRpc.UserGetInfo(id);
+
+                context.LogInfo(log,string.Format("/one/user POST ProviderId='{0}',Id='{1}'", request.ProviderId, id));
 
                 List<KeyValuePair<string, string>> templatePairs = new List<KeyValuePair<string, string>>();
                 templatePairs.Add(new KeyValuePair<string, string>("USERNAME", username));
@@ -150,6 +164,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebOneUser{ Id = oneuser.ID, Name = oneuser.NAME, Password = oneuser.PASSWORD, AuthDriver = oneuser.AUTH_DRIVER};
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Web.Routing;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
-using Terradue.WebService.Model;
-using System.IO;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -24,12 +22,16 @@ namespace Terradue.Tep.WebServer.Services {
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class LogServiceTep : ServiceStack.ServiceInterface.Service {
+
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         
         public object Get(LogsGetRequest request){
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             List<string> result = new List<string>();
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/logs GET"));
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
@@ -40,6 +42,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -52,32 +55,25 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/log GET filename='{0}'", request.filename));
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
                 var filepath = string.Format("{1}../logs/{0}",request.filename,path);
 
-
                 List<string> lines = new List<string>();
                 using (var csv = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var sr = new StreamReader(csv)){
                     while (!sr.EndOfStream) lines.Add(sr.ReadLine());
-                    return lines.ToArray();
                 }
-
-                foreach (string line in lines){
-                    text.Append(line);
-                    text.AppendLine();
-                }
-
 
                 context.Close();
-
+                return lines.ToArray();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
-            return text.ToString();
         }
 
        }

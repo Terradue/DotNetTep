@@ -14,18 +14,23 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class OneImageServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(OneGetImageRequestTep request) {
             string result = null;
 
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/one/{{providerId}}/img/{{imageId}} GET providerId='{0}',imageId='{1}'", request.ProviderId, request.ImageId));
                 int provId = (request.ProviderId != 0 ? request.ProviderId : context.GetConfigIntegerValue("One-default-provider"));
                 OneCloudProvider oneCloud = (OneCloudProvider)CloudProvider.FromId(context, provId);
                 IMAGE oneuser = oneCloud.XmlRpc.ImageGetInfo(request.ImageId);
                 result = oneuser.NAME;
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }

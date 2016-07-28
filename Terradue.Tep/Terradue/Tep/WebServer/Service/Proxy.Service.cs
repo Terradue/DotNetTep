@@ -53,8 +53,6 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(ProxyGetUrlRequestTep request){
 
-            log.InfoFormat("Proxy URL {0}", request.url);
-
             var uri = new UriBuilder(request.url);
             var host = uri.Host;
             var domain = host.Substring(host.LastIndexOf('.', host.LastIndexOf('.') - 1) + 1);
@@ -63,6 +61,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             HttpResult result = null;
             context.Open();
+            context.LogInfo(log,string.Format("/proxy GET url='{0}'", request.url));
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
@@ -90,6 +89,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
+            context.LogInfo(log,string.Format("/proxy/wps/{{jobid}}/description GET jobid='{0}'", request.jobid));
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
@@ -105,6 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
+            context.LogInfo(log,string.Format("/proxy/wps/{{jobid}}/search GET jobid='{0}'", request.jobid));
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 

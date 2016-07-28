@@ -14,18 +14,23 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class OneWpsServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(OneGetWPSRequestTep request) {
             List<WpsProvider> result = new List<WpsProvider>();
 
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/one/wps GET"));
 
                 CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
                 result = wpsFinder.GetWPSFromVMs();
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -39,9 +44,4 @@ namespace Terradue.Tep.WebServer.Services {
     [Route("/one/wps", "GET", Summary = "GET a list of WPS services for the user", Notes = "Get list of OpenNebula WPS")]
     public class OneGetWPSRequestTep : IReturn<List<WpsProcessOffering>> {}
 
-    [Route("/one/user/{id}", "POST", Summary = "GET a user of opennebula", Notes = "Get OpenNebula user")]
-    public class OneCreateWPSProcessRequestTep : IReturn<List<string>> {
-        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int Id { get; set; }
-    }
 }

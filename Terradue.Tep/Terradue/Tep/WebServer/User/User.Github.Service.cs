@@ -23,6 +23,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/github/token PUT"));
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
                 //user.GetNewAuthorizationToken(request.Password, "write:public_key", "Terradue Sandboxes Application");
                 user.GetNewAuthorizationToken(request.Code);
@@ -31,6 +32,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -44,6 +46,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/github/sshkey POST"));
 
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
                 UserTep userTep = UserTep.FromId(context, context.UserId);
@@ -57,6 +60,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -70,6 +74,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/github/user/current GET"));
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
                 UserTep userTep = UserTep.FromId(context, context.UserId);
                 userTep.LoadSSHPubKey();
@@ -77,6 +82,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -90,6 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/github/user PUT Id='{0}'", request.Id));
                 GithubProfile user = GithubProfile.FromId(context, request.Id);
                 user = request.ToEntity(context, user);
                 user.Store();
@@ -101,6 +108,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }

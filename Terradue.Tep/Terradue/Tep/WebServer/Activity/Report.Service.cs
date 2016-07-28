@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Routing;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
@@ -33,11 +32,16 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class ReportServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Delete(ReportDeleteRequest request){
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             List<string> result = new List<string>();
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/report DELETE filename='{0}'", request.Filename));
+
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
@@ -46,6 +50,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -57,6 +62,7 @@ namespace Terradue.Tep.WebServer.Services {
             List<string> result = new List<string>();
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/reports GET"));
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
@@ -65,8 +71,11 @@ namespace Terradue.Tep.WebServer.Services {
                 result = System.IO.Directory.GetFiles(path + "files","*.csv").ToList();
                 result = result.ConvertAll(f => f.Substring(f.LastIndexOf("/") + 1));
 
+                context.LogInfo(log,string.Format("Get list of Reports"));
+
                 context.Close();
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
@@ -82,6 +91,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
+                context.LogInfo(log,string.Format("/report GET startdate='{0}',enddate='{1}'", request.startdate, request.enddate));
 
                 string sql = "";
                 System.Data.IDbConnection dbConnection = null;
@@ -99,9 +109,12 @@ namespace Terradue.Tep.WebServer.Services {
 
                 System.IO.File.WriteAllText(string.Format("{2}files/GEP-report-{0}-{1}.csv",startdate,enddate,path), csv.ToString());
 
+                log.InfoFormat("Get report {1}-{2} (user Id = {0})", context.UserId, request.startdate, request.enddate);
+
                 context.Close();
 
             } catch (Exception e) {
+                context.LogError(log, e.Message);
                 context.Close();
                 throw e;
             }
