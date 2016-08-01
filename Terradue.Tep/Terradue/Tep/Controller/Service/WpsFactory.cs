@@ -42,7 +42,7 @@ namespace Terradue.Tep {
         //****************************************************************************************
 
         public WPSCapabilitiesType WpsGetCapabilities(){
-            log.Info("WPS GetCapabilities requested");
+            context.LogDebug(this,string.Format("WPS GetCapabilities requested"));
 
             //create GetCapabilities response
             WPSCapabilitiesType getCapabilities = CreateGetCapabilititesTemplate(context.BaseUrl + "/wps/WebProcessingService");
@@ -61,7 +61,7 @@ namespace Terradue.Tep {
                     foreach (ProcessBriefType processOff in processOfferings) {
                         try{
                             getCapabilities.ProcessOfferings.Process.Add(processOff);
-                            log.Info("WPS GetCapabilities - " + processOff.Title.Value);
+                            context.LogDebug(this,string.Format("WPS GetCapabilities - " + processOff.Title.Value));
                         }catch(Exception){}
                     }
                 }
@@ -77,7 +77,7 @@ namespace Terradue.Tep {
                         foreach (var oneProcess in capa.ProcessOfferings.Process) {
                             oneProcess.Identifier.Value = prov.Identifier + "-" + oneProcess.Identifier.Value;
                             getCapabilities.ProcessOfferings.Process.Add(oneProcess);
-                            log.Info("WPS GetCapabilities - " + oneProcess.Title.Value);
+                            context.LogDebug(this,string.Format("WPS GetCapabilities - " + oneProcess.Title.Value));
                         }
                     }catch(Exception){}
                 }

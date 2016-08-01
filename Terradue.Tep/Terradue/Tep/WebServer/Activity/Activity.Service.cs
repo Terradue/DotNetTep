@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -11,7 +9,6 @@ using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
-using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
     
@@ -29,10 +26,14 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class ActivityServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(ActivitySearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.RestrictedMode = false;
             context.Open();
+            context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
             List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
@@ -70,9 +71,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
             
         public object Get(ActivityDescriptionRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/activity/description GET"));
+
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
                 wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
@@ -82,6 +85,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 return new HttpResult(osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

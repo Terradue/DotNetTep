@@ -18,19 +18,21 @@ namespace Terradue.Tep.WebServer.Services {
             if (request.Code == null)
                 throw new Exception("Code is empty");
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/github/token PUT"));
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
                 //user.GetNewAuthorizationToken(request.Password, "write:public_key", "Terradue Sandboxes Application");
                 user.GetNewAuthorizationToken(request.Code);
-                log.InfoFormat("User {0} requested a new github token",user.Identifier);
+                context.LogDebug(this,string.Format("User {0} requested a new github token",user.Identifier));
                 result = new WebGithubProfile(user);
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -39,11 +41,12 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(AddGithubSSHKeyToCurrentUser request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/github/sshkey POST"));
 
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
                 UserTep userTep = UserTep.FromId(context, context.UserId);
@@ -53,10 +56,11 @@ namespace Terradue.Tep.WebServer.Services {
                 if(!user.IsAuthorizationTokenValid()) throw new UnauthorizedAccessException("Invalid token");
                 if(user.PublicSSHKey == null) throw new UnauthorizedAccessException("No available public ssh key");
                 githubClient.AddSshKey("Terradue ssh key", user.PublicSSHKey, user.Token);
-                log.InfoFormat("User {0} added Terradue ssh key to his github account",userTep.Username);
+                context.LogDebug(this,string.Format("User {0} added Terradue ssh key to his github account",userTep.Username));
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -65,11 +69,12 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetGithubUser request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/github/user/current GET"));
                 GithubProfile user = GithubProfile.FromId(context, context.UserId);
                 UserTep userTep = UserTep.FromId(context, context.UserId);
                 userTep.LoadSSHPubKey();
@@ -77,6 +82,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -85,11 +91,12 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(UpdateGithubUser request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebGithubProfile result;
 
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/github/user PUT Id='{0}'", request.Id));
                 GithubProfile user = GithubProfile.FromId(context, request.Id);
                 user = request.ToEntity(context, user);
                 user.Store();
@@ -97,10 +104,11 @@ namespace Terradue.Tep.WebServer.Services {
                 UserTep userTep = UserTep.FromId(context, context.UserId);
                 userTep.LoadSSHPubKey();
                 user.PublicSSHKey = userTep.SshPubKey;
-                log.InfoFormat("User {0} has updated his github account",userTep.Username);
+                context.LogDebug(this,string.Format("Github account of user {0} has been updated",userTep.Username));
                 result = new WebGithubProfile(user);
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

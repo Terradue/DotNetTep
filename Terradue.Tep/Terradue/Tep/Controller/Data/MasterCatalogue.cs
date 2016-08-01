@@ -88,7 +88,7 @@ namespace Terradue.Tep
             string[] queryString;
 
             urib = new UriBuilder(context.BaseUrl);
-            urib.Path = "/data/collection/search";
+            urib.Path += "/data/collection/search";
             query.Add(OpenSearchFactory.GetBaseOpenSearchParameter());
 
             query.Set("format", "atom");
@@ -118,7 +118,7 @@ namespace Terradue.Tep
 
             OSDD.Url = new OpenSearchDescriptionUrl[1];
             UriBuilder uri = new UriBuilder(context.BaseUrl);
-            uri.Path = "/data/collection/search";
+            uri.Path += "/data/collection/search";
             OpenSearchDescriptionUrl osdu = new OpenSearchDescriptionUrl("application/atom+xml", uri.ToString(), "search");
             OSDD.Url[0] = osdu;
 
