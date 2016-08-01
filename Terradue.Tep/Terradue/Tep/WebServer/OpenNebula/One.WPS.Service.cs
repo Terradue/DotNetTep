@@ -20,17 +20,17 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetWPSRequestTep request) {
             List<WpsProvider> result = new List<WpsProvider>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/one/wps GET"));
+                context.LogInfo(this,string.Format("/one/wps GET"));
 
                 CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
                 result = wpsFinder.GetWPSFromVMs();
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

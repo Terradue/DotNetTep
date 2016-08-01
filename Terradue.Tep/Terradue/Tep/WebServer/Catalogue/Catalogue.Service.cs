@@ -32,10 +32,10 @@ namespace Terradue.Tep.WebServer.Services
 		public object Get(GetOpensearchDescription request)
 		{
 			OpenSearchDescription OSDD;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/collection/{{serieId}}/description GET serieId='{0}'", request.serieId));
+                context.LogInfo(this,string.Format("/data/collection/{{serieId}}/description GET serieId='{0}'", request.serieId));
 
 				UriBuilder baseUrl = new UriBuilder ( context.BaseUrl );
 
@@ -75,7 +75,7 @@ namespace Terradue.Tep.WebServer.Services
 				newUrls.Values.CopyTo(OSDD.Url,0);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
 				context.Close ();
                 throw e;
 			}
@@ -89,17 +89,17 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
 		public object Get(GetOpensearchDescriptions request){
 			OpenSearchDescription OSDD;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/collection/description GET"));
+                context.LogInfo(this,string.Format("/data/collection/description GET"));
 
                 MasterCatalogue cat = new MasterCatalogue(context);
                 OSDD = cat.GetOpenSearchDescription();
 				
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
 				context.Close ();
                 throw e;
 			}
@@ -112,11 +112,11 @@ namespace Terradue.Tep.WebServer.Services
 		/// </summary>
 		/// <param name="request">Request.</param>
 		public object Get(GetOpensearchSearch request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/collection/{{serieId}}/search GET serieId='{0}'", request.serieId));
+                context.LogInfo(this,string.Format("/data/collection/{{serieId}}/search GET serieId='{0}'", request.serieId));
 
 				// Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
@@ -136,7 +136,7 @@ namespace Terradue.Tep.WebServer.Services
 				context.Close ();
 
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
 				context.Close ();
                 throw e;
 			}
@@ -155,11 +155,11 @@ namespace Terradue.Tep.WebServer.Services
 
 			// Load the complete request
 			HttpRequest httpRequest = HttpContext.Current.Request;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/collection/search GET"));
+                context.LogInfo(this,string.Format("/data/collection/search GET"));
 
                 MasterCatalogue cat = new MasterCatalogue(context);
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
@@ -170,7 +170,7 @@ namespace Terradue.Tep.WebServer.Services
 
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
 				context.Close ();
                 throw e;
 			}
@@ -183,11 +183,11 @@ namespace Terradue.Tep.WebServer.Services
         /// </summary>
         /// <param name="request">Request.</param>
         public object Get(DataPackageSearchRequest request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DataPackageId}}/search GET DataPackageId='{0}'", request.DataPackageId));
+                context.LogInfo(this,string.Format("/data/package/{{DataPackageId}}/search GET DataPackageId='{0}'", request.DataPackageId));
 
                 Terradue.Tep.DataPackage datapackage;
 
@@ -237,7 +237,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Close();
 
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -250,11 +250,11 @@ namespace Terradue.Tep.WebServer.Services
         /// </summary>
         /// <param name="request">Request.</param>
         public object Get(DataPackagesSearchRequest request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/search GET"));
+                context.LogInfo(this,string.Format("/data/package/search GET"));
 
                 EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage>(context);
                 EntityList<Terradue.Tep.DataPackage> datapackages = new EntityList<DataPackage>(context);
@@ -277,7 +277,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Close();
 
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -291,10 +291,10 @@ namespace Terradue.Tep.WebServer.Services
         /// </summary>
         /// <param name="request">Request.</param>
         public object Get(DataPackageDescriptionRequest request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DataPackageId}}/description GET DataPackageId='{0}'", request.DataPackageId));
+                context.LogInfo(this,string.Format("/data/package/{{DataPackageId}}/description GET DataPackageId='{0}'", request.DataPackageId));
 
                 Terradue.Tep.DataPackage datapackage;
                 if(request.Key != null) {
@@ -313,7 +313,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 return new HttpResult(osd,"application/opensearchdescription+xml");
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

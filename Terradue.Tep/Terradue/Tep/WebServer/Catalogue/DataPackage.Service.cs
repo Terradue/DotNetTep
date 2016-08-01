@@ -36,11 +36,11 @@ namespace Terradue.Tep.WebServer.Services
 		public object Get(GetAllDataPackages request)
 		{
 			//Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			List<WebDataPackageTep> result = new List<WebDataPackageTep> ();
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/package GET"));
+                context.LogInfo(this,string.Format("/data/package GET"));
 
                 EntityList<DataPackage> tmpList = new EntityList<DataPackage>(context);
                 tmpList.Load();
@@ -48,7 +48,7 @@ namespace Terradue.Tep.WebServer.Services
                     result.Add(new WebDataPackageTep(a, context));
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
 			}
@@ -63,17 +63,17 @@ namespace Terradue.Tep.WebServer.Services
 		public object Get(GetDataPackage request)
 		{
 			//Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			WebDataPackageTep result;
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{Id}} GET Id='{0}", request.Id));
+                context.LogInfo(this,string.Format("/data/package/{{Id}} GET Id='{0}", request.Id));
 
                 DataPackage tmp = DataPackage.FromId(context,request.Id);
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
 			}
@@ -84,11 +84,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Post(DataPackageSaveDefaultRequestTep request)
         {
             //Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default POST"));
+                context.LogInfo(this,string.Format("/data/package/default POST"));
 
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
                 DataPackage tmp = new DataPackage(context);
@@ -128,7 +128,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -139,11 +139,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Delete(DataPackageClearCurrentDefaultRequestTep request)
         {
             //Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default DELETE"));
+                context.LogInfo(this,string.Format("/data/package/default DELETE"));
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
 
                 foreach(RemoteResource res in def.Resources){
@@ -153,7 +153,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -164,11 +164,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Delete(DataPackageClearDefaultRequestTep request)
         {
             //Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default/{{userId}} DELETE userId='{0}", request.userId));
+                context.LogInfo(this,string.Format("/data/package/default/{{userId}} DELETE userId='{0}", request.userId));
                 DataPackage def = DataPackage.GetTemporaryForUser(context, request.userId);
 
                 foreach(RemoteResource res in def.Resources){
@@ -178,7 +178,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -187,11 +187,11 @@ namespace Terradue.Tep.WebServer.Services
         }
 
         public object Delete(DataPackageRemoveItemFromDefaultRequestTep request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default/item DELETE"));
+                context.LogInfo(this,string.Format("/data/package/default/item DELETE"));
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
 
                 foreach(RemoteResource res in def.Resources){
@@ -206,7 +206,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -221,7 +221,7 @@ namespace Terradue.Tep.WebServer.Services
         public object Post(DataPackageCreateRequestTep request)
 		{
 			//Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			WebDataPackageTep result;
 			try{
 				context.Open();
@@ -239,10 +239,10 @@ namespace Terradue.Tep.WebServer.Services
                     }
                 }
                 result = new WebDataPackageTep(tmp);
-                context.LogInfo(log,string.Format("/data/package POST Id='{0}'", tmp.Id));
+                context.LogInfo(this,string.Format("/data/package POST Id='{0}'", tmp.Id));
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
 			}
@@ -256,11 +256,11 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
         public object Put(DataPackageUpdateRequestTep request)
 		{
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			WebDataPackageTep result;
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/package PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/data/package PUT Id='{0}'", request.Id));
                 DataPackage tmp;
                 if(request.Id != 0) tmp = DataPackage.FromId(context, request.Id);
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
@@ -271,7 +271,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
 			}
@@ -285,11 +285,11 @@ namespace Terradue.Tep.WebServer.Services
         /// <param name="request">Request.</param>
         public object Put(DataPackageExportRequestTep request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/export PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/data/package/export PUT Id='{0}'", request.Id));
                 DataPackage tmp;
                 if(request.Id != 0) tmp = DataPackage.FromId(context, request.Id);
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
@@ -306,7 +306,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -320,11 +320,11 @@ namespace Terradue.Tep.WebServer.Services
         /// <param name="request">Request.</param>
         public object Put(DataPackageUpdateDefaultRequestTep request)
         {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default PUT"));
+                context.LogInfo(this,string.Format("/data/package/default PUT"));
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
                 //we want to do the copy of a datapackage into the default one
                 if(def.Identifier != request.Identifier){
@@ -351,7 +351,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -362,11 +362,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Post(DataPackageAddItemToDefaultRequestTep request)
         {
             //Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default/item POST Location='{0}'", request.Location));
+                context.LogInfo(this,string.Format("/data/package/default/item POST Location='{0}'", request.Location));
                 DataPackage tmp = DataPackage.GetTemporaryForCurrentUser(context);
                 RemoteResource tmp2 = new RemoteResource(context);
                 tmp2 = request.ToEntity(context, tmp2);
@@ -374,7 +374,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -385,11 +385,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Post(DataPackageAddItemsToDefaultRequestTep request)
         {
             //Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default/items POST"));
+                context.LogInfo(this,string.Format("/data/package/default/items POST"));
                 DataPackage tmp = DataPackage.GetTemporaryForCurrentUser(context);
                 foreach(WebDataPackageItem item in request){
                     RemoteResource tmp2 = new RemoteResource(context);
@@ -399,7 +399,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -412,11 +412,11 @@ namespace Terradue.Tep.WebServer.Services
         /// </summary>
         /// <param name="request">Request.</param>
         public object Get(DataPackageSearchDefaultRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default/search GET"));
+                context.LogInfo(this,string.Format("/data/package/default/search GET"));
                 Terradue.Tep.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
                 datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
 
@@ -433,7 +433,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Close();
 
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -446,11 +446,11 @@ namespace Terradue.Tep.WebServer.Services
         /// </summary>
         /// <param name="request">Request.</param>
         public object Get(DataPackageDescriptionDefaultRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             IOpenSearchResultCollection result = null;
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/default/description GET"));
+                context.LogInfo(this,string.Format("/data/package/default/description GET"));
                 Terradue.Tep.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
                 datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
                 OpenSearchDescription osd = datapackage.GetLocalOpenSearchDescription();
@@ -460,7 +460,7 @@ namespace Terradue.Tep.WebServer.Services
                 return new HttpResult(osd,"application/opensearchdescription+xml");
 
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -474,16 +474,16 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
         public object Delete(DataPackageDeleteRequestTep request)
 		{
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{Identifier}} DELETE Identifier='{0}'", request.Identifier));
+                context.LogInfo(this,string.Format("/data/package/{{Identifier}} DELETE Identifier='{0}'", request.Identifier));
                 DataPackage tmp = DataPackage.FromIdentifier(context,request.Identifier);
                 if(tmp.OwnerId != context.UserId) throw new UnauthorizedAccessException("You are not authorized to delete this data package.");
 				tmp.Delete();
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
 			}
@@ -498,11 +498,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Post(AddItemToDataPackage request)
         {
             //Get all requests from database
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DpId}}/item POST DpId='{0}', Location='{1}'", request.DpId, request.Location));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/item POST DpId='{0}', Location='{1}'", request.DpId, request.Location));
                 DataPackage tmp = DataPackage.FromId(context,request.DpId);
                 RemoteResource tmp2 = new RemoteResource(context);
                 tmp2 = request.ToEntity(context, tmp2);
@@ -510,7 +510,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -524,18 +524,18 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
 		public object Delete(RemoveItemFromDataPackage request)
 		{
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			WebDataPackageTep result;
 			try{
 				context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DpId}}/item/{{Id}} POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/item/{{Id}} POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
                 RemoteResource tmp = RemoteResource.FromId(context,request.Id);
 				tmp.Delete();
                 DataPackage dp = DataPackage.FromId(context,request.DpId);
                 result = new WebDataPackageTep(dp);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
 			}
@@ -550,10 +550,10 @@ namespace Terradue.Tep.WebServer.Services
         public object Get(DataPackageGetGroupsRequestTep request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DpId}}/group GET DpId='{0}'", request.DpId));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/group GET DpId='{0}'", request.DpId));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
                 List<int> ids = dp.GetGroupsWithPrivileges();
 
@@ -566,7 +566,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -579,10 +579,10 @@ namespace Terradue.Tep.WebServer.Services
         /// <param name="request">Request.</param>
         public object Post(DataPackageAddGroupRequestTep request) {
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DpId}}/group POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/group POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
                 List<int> ids = dp.GetGroupsWithPrivileges();
@@ -598,7 +598,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -611,10 +611,10 @@ namespace Terradue.Tep.WebServer.Services
         /// <param name="request">Request.</param>
         public object Put(DataPackageUpdateGroupsRequestTep request) {
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DpId}}/group PUT DpId='{0}', Id='{1}'", request.DpId, string.Join(",",request.ToArray())));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/group PUT DpId='{0}', Id='{1}'", request.DpId, string.Join(",",request.ToArray())));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
                 string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
@@ -624,7 +624,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -638,10 +638,10 @@ namespace Terradue.Tep.WebServer.Services
         public object Delete(DataPackageDeleteGroupRequestTep request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/data/package/{{DpId}}/group DELETE DpId='{0}', Id='{1}'", request.DpId, request.Id));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/group DELETE DpId='{0}', Id='{1}'", request.DpId, request.Id));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
@@ -650,7 +650,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

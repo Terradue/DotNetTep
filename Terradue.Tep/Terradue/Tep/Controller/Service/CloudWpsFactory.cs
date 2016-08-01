@@ -81,17 +81,17 @@ namespace Terradue.Tep {
             List<WpsProvider> result = new List<WpsProvider>();
             try{
                 StartDelegate(context.UserId);
-                log.Debug(string.Format("Get VM Pool for user {0}",cloudusername));
+                context.LogDebug(this,string.Format("Get VM Pool for user {0}",cloudusername));
                 VM_POOL pool = oneClient.VMGetPoolInfo(-2, -1, -1, 3);
                 if(pool != null && pool.VM != null){
-                    log.Debug(string.Format("{0} VM found",pool.VM.Length));
+                    context.LogDebug(this,string.Format("{0} VM found",pool.VM.Length));
                     foreach (VM vm in pool.VM) {
                         if(vm.USER_TEMPLATE == null) continue;
                         try{
                             XmlNode[] user_template = (XmlNode[])vm.USER_TEMPLATE;
                             foreach(XmlNode nodeUT in user_template){
                                 if(nodeUT.Name == "WPS"){
-                                    log.Debug(string.Format("WPS found : {0} - {1}",vm.ID, vm.GNAME));
+                                    context.LogDebug(this,string.Format("WPS found : {0} - {1}",vm.ID, vm.GNAME));
                                     result.Add(CreateWpsProviderForOne(context, vm));
                                     break;
                                 }

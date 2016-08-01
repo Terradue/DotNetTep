@@ -18,10 +18,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetFeatures request) {
             List<WebFeature> result = new List<WebFeature>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/feature GET"));
+                context.LogInfo(this,string.Format("/feature GET"));
                 EntityList<Terradue.Portal.Feature> feats = new EntityList<Terradue.Portal.Feature>(context);
                 feats.Load();
 
@@ -32,7 +32,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -42,16 +42,16 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/feature/{{Id}} GET Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/feature/{{Id}} GET Id='{0}'", request.Id));
                 Terradue.Portal.Feature feat = Terradue.Portal.Feature.FromId(context,request.Id);
                 result = new WebFeature(feat);
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -61,7 +61,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -70,11 +70,11 @@ namespace Terradue.Tep.WebServer.Services {
                 feat.Store();
                 result = new WebFeature(feat);
 
-                context.LogInfo(log,string.Format("/feature POST Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/feature POST Id='{0}'", request.Id));
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -84,10 +84,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/feature PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/feature PUT Id='{0}'", request.Id));
 
                 Terradue.Portal.Feature feat = Terradue.Portal.Feature.FromId(context, request.Id);
                 feat = request.ToEntity(context, feat);
@@ -96,7 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -106,10 +106,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(SortFeature request) {
             WebFeature result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/feature/sort PUT"));
+                context.LogInfo(this,string.Format("/feature/sort PUT"));
 
                 foreach(WebFeature wfeat in request){
                     Terradue.Portal.Feature feat = Terradue.Portal.Feature.FromId(context, wfeat.Id);
@@ -119,7 +119,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -127,16 +127,16 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteFeature request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/feature DELETE Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/feature DELETE Id='{0}'", request.Id));
                 Terradue.Portal.Feature feat = Terradue.Portal.Feature.FromId(context,request.Id);
                 feat.Delete();
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -144,7 +144,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(UploadFeatureImage request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             string img = "";
             string uid = Guid.NewGuid().ToString();
             string extension = ".png";
@@ -153,7 +153,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/feature/{{Id}}/image POST Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/feature/{{Id}}/image POST Id='{0}'", request.Id));
 
                 if (request.Id == 0)
                 {
@@ -193,7 +193,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
             }catch(Exception e)
             {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }

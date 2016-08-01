@@ -41,10 +41,10 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Post(ShareCreateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             object result;
             context.Open();
-            context.LogInfo(log,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, string.Join("'",request.groups)));
+            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, string.Join("'",request.groups)));
                             
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
@@ -86,9 +86,9 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(ShareGetRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
-                context.LogInfo(log,string.Format("/share GET url='{0}'", request.url));
+                context.LogInfo(this,string.Format("/share GET url='{0}'", request.url));
 
             var redirect = new UriBuilder(context.BaseUrl);
             redirect.Path = "geobrowser";
@@ -118,7 +118,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 redirectUrl += "&url=" + HttpUtility.UrlEncode(request.url);
             } else {
-                context.LogError(log, "Wrong format shared url");
+                context.LogError(this, "Wrong format shared url");
                 throw new Exception("Wrong format shared url");
             }
 

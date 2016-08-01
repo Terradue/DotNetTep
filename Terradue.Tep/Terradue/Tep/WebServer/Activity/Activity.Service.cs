@@ -30,10 +30,10 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Get(ActivitySearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.RestrictedMode = false;
             context.Open();
-            context.LogInfo(log,string.Format("/activity/search GET nologin='{0}'", request.nologin));
+            context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
             List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
@@ -71,10 +71,10 @@ namespace Terradue.Tep.WebServer.Services {
         }
             
         public object Get(ActivityDescriptionRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/activity/description GET"));
+                context.LogInfo(this,string.Format("/activity/description GET"));
 
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
                 wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
@@ -85,7 +85,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 return new HttpResult(osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

@@ -19,17 +19,17 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetConfigRequestTep request) {
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/one/config GET"));
+                context.LogInfo(this,string.Format("/one/config GET"));
 
                 string key = "One-access";
                 result.Add(new KeyValuePair<string, string>(key,context.GetConfigValue(key)));
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

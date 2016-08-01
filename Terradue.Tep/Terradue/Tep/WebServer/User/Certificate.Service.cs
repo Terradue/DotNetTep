@@ -24,7 +24,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(UploadCertificate request) {
             CertificateUser user;
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             WebUserCertificate userCert;
             try {
                 context.Open();
@@ -55,7 +55,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(RequestCertificate request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             CertificateUser certUser;
             WebUserCertificate userCert = null;
 
@@ -77,10 +77,10 @@ namespace Terradue.Tep.WebServer.Services {
                     if (e.Message.Contains("Certificate request failed: a certificate request has been already performed for the username <username> and is currently on approval.")) {
                         string msg = string.Format("Certificate request failed: a certificate request has been already performed for the username {0} and is currently on approval. " +
                             "If you created the request and want to cancel it, please contact the support team at ca@terradue.com",userCert.Username);
-                        log.Error(msg);
+                        context.LogError(this,string.Format(msg));
                         throw new Exception(msg, e);
                     } else {
-                        log.Error(e.Message);
+                        context.LogError(this,string.Format(e.Message));
                         throw e;
                     }
                 }
@@ -96,7 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteUserCertificate request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             UserTep user;
 
             try {
@@ -130,7 +130,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(UserUpdateCertificateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebUserTep result;
             try {
                 context.Open();
@@ -164,7 +164,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetUserCertificate request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             CertificateUser certUser;
             WebUserCertificate userCert;
 

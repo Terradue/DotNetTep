@@ -58,10 +58,10 @@ namespace Terradue.Tep.WebServer.Services {
             var domain = host.Substring(host.LastIndexOf('.', host.LastIndexOf('.') - 1) + 1);
             if (!domain.Equals("terradue.int") && !domain.Equals("terradue.com")) throw new Exception("Non Terradue urls are not accepted");
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             HttpResult result = null;
             context.Open();
-            context.LogInfo(log,string.Format("/proxy GET url='{0}'", request.url));
+            context.LogInfo(this,string.Format("/proxy GET url='{0}'", request.url));
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
@@ -87,13 +87,13 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(ProxyWpsJobDescriptionRequestTep request){
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
-            context.LogInfo(log,string.Format("/proxy/wps/{{jobid}}/description GET jobid='{0}'", request.jobid));
+            context.LogInfo(this,string.Format("/proxy/wps/{{jobid}}/description GET jobid='{0}'", request.jobid));
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
-            log.InfoFormat("Wps Proxy description for wpsjob {0}", wpsjob.Identifier);
+            context.LogDebug(this,string.Format("Wps Proxy description for wpsjob {0}", wpsjob.Identifier));
 
             OpenSearchDescription osd = GetWpsOpenSearchDescription(context, request.jobid, wpsjob.Name);
 
@@ -103,13 +103,13 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(ProxyWpsJobSearchRequestTep request){
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
-            context.LogInfo(log,string.Format("/proxy/wps/{{jobid}}/search GET jobid='{0}'", request.jobid));
+            context.LogInfo(this,string.Format("/proxy/wps/{{jobid}}/search GET jobid='{0}'", request.jobid));
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
-            log.InfoFormat("Wps Proxy search for wpsjob {0}", wpsjob.Identifier);
+            context.LogDebug(this,string.Format("Wps Proxy search for wpsjob {0}", wpsjob.Identifier));
 
             string executeUrl = wpsjob.StatusLocation;
 
@@ -119,15 +119,15 @@ namespace Terradue.Tep.WebServer.Services {
             }
             OpenGis.Wps.ExecuteResponse execResponse = null;
             try{
-                log.Debug("Wps proxy - exec response requested");
+                context.LogDebug(this,string.Format("Wps proxy - exec response requested"));
                 execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(executeHttpRequest.GetResponse().GetResponseStream());
-                log.Debug("Wps proxy - exec response OK");
+                context.LogDebug(this,string.Format("Wps proxy - exec response OK"));
             }catch(Exception e){
-                log.Error(e);
+                context.LogError(this,string.Format(e.Message));
             }
             if (execResponse == null) throw new Exception("Unable to get execute response from proxied job");
             Uri uri = new Uri(execResponse.statusLocation);
-            log.Debug("Proxy WPS - uri: " + uri);
+            context.LogDebug(this,string.Format("Proxy WPS - uri: " + uri));
 
             execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
@@ -139,11 +139,14 @@ namespace Terradue.Tep.WebServer.Services {
                             var item = ((DataType)(output.Item)).Item as ComplexDataType;
                             if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
                                 var reference = item.Reference as OutputReferenceType;
+                                context.LogDebug(this,string.Format("Wps proxy - metadata"));
                                 feed = CreateFeedForMetadata(reference.href);
                             } else if (item.Any != null && item.Any[0].LocalName != null) {
                                 if (item.Any[0].LocalName.Equals("RDF")) {
+                                    context.LogDebug(this,string.Format("Wps proxy - RDF"));
                                     feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
                                 } else if (item.Any[0].LocalName.Equals("metalink")) {
+                                    context.LogDebug(this,string.Format("Wps proxy - metalink"));
                                     feed = CreateFeedForMetalink(item.Any[0], request.jobid, context.BaseUrl);
                                 }
                             }       
@@ -180,7 +183,6 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private AtomFeed CreateFeedForMetadata(string url){
-            log.Debug("Wps proxy - metadata");
 
             HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
             HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
@@ -198,7 +200,6 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private AtomFeed CreateFeedForMetalink(XmlNode any, string identifier, string baseurl){
-            log.Debug("Wps proxy - metalink");
 
             OwsContextAtomFeed feed = new OwsContextAtomFeed();
             List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
@@ -314,7 +315,6 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private AtomFeed CreateFeedForRDF(XmlNode any, string identifier, string baseurl){
-            log.Debug("Wps proxy - RDF");
             OwsContextAtomFeed feed = new OwsContextAtomFeed();
             List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
             XmlDocument doc = new XmlDocument();

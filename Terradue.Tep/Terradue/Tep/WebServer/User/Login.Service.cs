@@ -40,17 +40,16 @@ namespace Terradue.Tep.WebServer.Services
             Terradue.Portal.User user = null;
 			try{
                 context.Open();
-                context.LogInfo(log,string.Format("/login GET Username='{0}'", request.username));
+                context.LogInfo(this,string.Format("/login GET Username='{0}'", request.username));
 
                 user = TepWebContext.passwordAuthenticationType.AuthenticateUser(context, request.username, request.password);
-                log.Info(String.Format("Log in from user '{0}'", user.Username));
 
                 response = new Terradue.WebService.Model.WebUser(user);
 
 				context.Close();
 			}
 			catch (Exception e){
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
 				context.Close();
                 throw e;
 			}
@@ -64,7 +63,7 @@ namespace Terradue.Tep.WebServer.Services
             Terradue.Portal.User user = null;
             try{
                 context.Open();
-                context.LogInfo(log,string.Format("/auth POST Username='{0}'", request.username));
+                context.LogInfo(this,string.Format("/auth POST Username='{0}'", request.username));
 
                 user = TepWebContext.passwordAuthenticationType.AuthenticateUser(context, request.username, request.password);
                 response = new Terradue.WebService.Model.WebUser(user);
@@ -72,7 +71,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Close();
             }
             catch (Exception e){
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -88,13 +87,12 @@ namespace Terradue.Tep.WebServer.Services
             TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
             try{
                 wsContext.Open();
-                wsContext.LogInfo(log,string.Format("/logout GET"));
-                log.Info(String.Format("Log out from user '{0}'", wsContext.Username));
+                wsContext.LogInfo(this,string.Format("/logout GET"));
                 wsContext.EndSession();
                 wsContext.Close();
             }
             catch (Exception e){
-                wsContext.LogError(log, e.Message);
+                wsContext.LogError(this, e.Message);
                 wsContext.Close();
                 throw e;
             }
@@ -106,12 +104,12 @@ namespace Terradue.Tep.WebServer.Services
             TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
             try{
                 wsContext.Open();
-                wsContext.LogInfo(log,string.Format("/auth DELETE"));
+                wsContext.LogInfo(this,string.Format("/auth DELETE"));
                 wsContext.EndSession();
                 wsContext.Close();
             }
             catch (Exception e){
-                wsContext.LogError(log, e.Message);
+                wsContext.LogError(this, e.Message);
                 wsContext.Close();
                 throw e;
             }

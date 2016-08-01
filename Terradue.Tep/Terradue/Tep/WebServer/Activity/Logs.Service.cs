@@ -27,11 +27,11 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         
         public object Get(LogsGetRequest request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             List<string> result = new List<string>();
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/logs GET"));
+                context.LogInfo(this,string.Format("/logs GET"));
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
@@ -42,7 +42,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -50,12 +50,12 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(LogGetRequest request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             var text = new System.Text.StringBuilder();
 
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/log GET filename='{0}'", request.filename));
+                context.LogInfo(this,string.Format("/log GET filename='{0}'", request.filename));
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
@@ -70,7 +70,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 return lines.ToArray();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

@@ -36,11 +36,11 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Delete(ReportDeleteRequest request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             List<string> result = new List<string>();
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/report DELETE filename='{0}'", request.Filename));
+                context.LogInfo(this,string.Format("/report DELETE filename='{0}'", request.Filename));
 
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
@@ -50,7 +50,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -58,11 +58,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(ReportsGetRequest request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             List<string> result = new List<string>();
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/reports GET"));
+                context.LogInfo(this,string.Format("/reports GET"));
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
@@ -71,11 +71,11 @@ namespace Terradue.Tep.WebServer.Services {
                 result = System.IO.Directory.GetFiles(path + "files","*.csv").ToList();
                 result = result.ConvertAll(f => f.Substring(f.LastIndexOf("/") + 1));
 
-                context.LogInfo(log,string.Format("Get list of Reports"));
+                context.LogInfo(this,string.Format("Get list of Reports"));
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -83,7 +83,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(ReportGetRequest request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             var csv = new System.Text.StringBuilder();
 
             var startdate = (request.startdate != DateTime.MinValue ? request.startdate.ToString("yyyy-MM-dd") : "2014-01-01");
@@ -91,7 +91,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
-                context.LogInfo(log,string.Format("/report GET startdate='{0}',enddate='{1}'", request.startdate, request.enddate));
+                context.LogInfo(this,string.Format("/report GET startdate='{0}',enddate='{1}'", request.startdate, request.enddate));
 
                 string sql = "";
                 System.Data.IDbConnection dbConnection = null;
@@ -109,12 +109,12 @@ namespace Terradue.Tep.WebServer.Services {
 
                 System.IO.File.WriteAllText(string.Format("{2}files/GEP-report-{0}-{1}.csv",startdate,enddate,path), csv.ToString());
 
-                log.InfoFormat("Get report {1}-{2} (user Id = {0})", context.UserId, request.startdate, request.enddate);
+                context.LogDebug(this,string.Format("Get report {1}-{2} (user Id = {0})", context.UserId, request.startdate, request.enddate));
 
                 context.Close();
 
             } catch (Exception e) {
-                context.LogError(log, e.Message);
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
