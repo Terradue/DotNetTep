@@ -20,12 +20,16 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class RssNewsServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         [AddHeader(ContentType="application/atom+xml")]
         public object Get(SearchRssNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/rss/search GET"));
 
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
@@ -43,6 +47,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -51,10 +56,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetRssNewsFeeds request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             List<WebNews> result = new List<WebNews>();
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/rss/feeds GET"));
 
                 EntityList<RssNews> rsss = new EntityList<RssNews>(context);
                 rsss.Load();
@@ -65,6 +71,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -73,10 +80,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetAllRssNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             List<WebNews> result = new List<WebNews>();
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/rss GET"));
 
                 EntityList<RssNews> articles = new EntityList<RssNews>(context);
                 articles.Load();
@@ -84,6 +92,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -92,7 +101,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(CreateRssNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             WebNews result = null;
             try{
                 context.Open();
@@ -102,8 +111,11 @@ namespace Terradue.Tep.WebServer.Services {
                 article.Store();
                 result = new WebNews(article);
 
+                context.LogInfo(this,string.Format("/news/rss POST Id='{0}'", request.Id));
+
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }

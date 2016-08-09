@@ -20,12 +20,9 @@ namespace Terradue.Tep {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private const int SERVICE_TABLE = 1;
-
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         [EntityDataField("remote_identifier")]
         public string RemoteIdentifier { get; set; }
-
 
         [EntityDataField("wps")]
         public string WpsId { get; set; }
@@ -207,7 +204,11 @@ namespace Terradue.Tep {
             result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             result.Summary = new TextSyndicationContent(name);
             result.ReferenceData = this;
-            result.PublishDate = this.CreatedTime;
+
+            //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+            result.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreatedTime, DateTimeKind.Utc));
+//            result.PublishDate = new DateTimeOffset(this.CreatedTime);
+
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";
             string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username ;
@@ -372,7 +373,10 @@ namespace Terradue.Tep {
 
             OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
-            entry.PublishDate = new DateTimeOffset(this.CreatedTime);
+            //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+            entry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreatedTime, DateTimeKind.Utc));
+//            entry.PublishDate = new DateTimeOffset(this.CreatedTime);
+
             entry.Publisher = Owner.Username;
 
             entry.Offerings = new List<OwcOffering>{ offering };

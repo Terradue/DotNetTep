@@ -23,10 +23,11 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Get(WpsJobsGetRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             List<WebWpsJobTep> result = new List<WebWpsJobTep>();
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps GET"));
 
                 EntityList<WpsJob> services = new EntityList<WpsJob>(context);
                 if(context.UserLevel != UserLevel.Administrator) services.OwnedItemsOnly = true;
@@ -38,6 +39,27 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Get(WpsJobGetOneRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            WebWpsJobTep result = new WebWpsJobTep();
+            try {
+                context.Open();
+                context.LogInfo(this,string.Format("/job/wps/{{Id}} GET Id='{0}'", request.Id));
+
+                WpsJob job = WpsJob.FromId(context, request.Id);
+                result = new WebWpsJobTep(job, context);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -64,9 +86,10 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(WpsJobSearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             object result;
             context.Open();
+            context.LogInfo(this,string.Format("/job/wps/search GET"));
 
             EntityList<WpsJob> tmp = new EntityList<WpsJob>(context);
             tmp.Load();
@@ -100,9 +123,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(WpsJobDescriptionRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps/description GET"));
+
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
                 wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
@@ -112,28 +137,30 @@ namespace Terradue.Tep.WebServer.Services {
 
                 return new HttpResult(osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
         }
 
         public object Post(WpsJobCreateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             HttpResult result = null;
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
             try{
                 job.Store();
-                log.Info(string.Format("WpsJob '{0}' created",job.Name));
             }catch(DuplicateEntityIdentifierException e){
                 job = WpsJob.FromIdentifier(context, request.Identifier);
                 job.Name = request.Name;
                 job.Store();
-                log.Info(string.Format("WpsJob '{0}' created",job.Name));
             }catch(Exception e){
                 throw e;
             }
+
+            context.LogInfo(this,string.Format("/job/wps POST Id='{0}'",job.Id));
+            context.LogDebug(this,string.Format("WpsJob '{0}' created",job.Name));
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
             wpsjobs.OwnedItemsOnly = true;
@@ -160,15 +187,16 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(WpsJobUpdateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             HttpResult result = null;
             context.Open();
+            context.LogInfo(this,string.Format("/job/wps PUT Id='{0}'",request.Id));
 
             WpsJob job = WpsJob.FromIdentifier(context, request.Identifier);
             try{
                 job.Name = request.Name;
                 job.Store();
-                log.Info(string.Format("WpsJob '{0}' updated",job.Name));
+                context.LogDebug(this,string.Format("WpsJob '{0}' updated",job.Name));
             }catch(Exception e){
                 throw e;
             }
@@ -197,30 +225,12 @@ namespace Terradue.Tep.WebServer.Services {
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
         }
 
-//        public object Delete(DeleteWPSJob request) {
-//            IfyWebContext context = TepQWWebContext.GetWebContext(PagePrivileges.UserView);
-//            bool result = false;
-//            try {
-//                context.Open();
-//
-//                WpsJob job = null;
-//                job = WpsJob.FromId(context, request.id);
-//                job.Delete();
-//                result = true;
-//
-//                context.Close();
-//            } catch (Exception e) {
-//                context.Close();
-//                throw e;
-//            }
-//            return new WebResponseBool(result);
-//        }
-
         public object Delete(WpsJobDeleteRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             bool result = false;
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps/{{Id}} DELETE Id='{0}'",request.id));
 
                 WpsJob job = null;
                 job = WpsJob.FromIdentifier(context, request.id);
@@ -229,6 +239,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -258,9 +269,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(WpsJobGetGroupsRequestTep request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group GET jobId='{0}'",request.JobId));
 
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
@@ -275,6 +287,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -287,9 +300,10 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(WpsJobAddGroupRequestTep request) {
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group POST jobId='{0}',Id='{1}'",request.JobId, request.Id));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
                 List<int> ids = wps.GetGroupsWithPrivileges();
@@ -305,6 +319,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -317,9 +332,10 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Put(WpsJobUpdateGroupsRequestTep request) {
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, string.Join(",",request.ToArray())));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
                 string sql = String.Format("DELETE FROM wpsjob_priv WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
@@ -329,6 +345,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -342,9 +359,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Delete(WpsJobDeleteGroupRequestTep request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group/{{Id}} DELETE jobId='{0}',Id='{1}'",request.JobId, request.Id));
 
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
@@ -354,6 +372,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

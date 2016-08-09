@@ -43,11 +43,15 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure   | EndpointAttributes.External | EndpointAttributes.Json)]
     public class ShareServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Post(ShareCreateRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             object result;
             context.Open();
-
+            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, string.Join("'",request.groups)));
+                            
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
             UrlBasedOpenSearchable urlToShare = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.url), ose);
@@ -88,8 +92,9 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(ShareGetRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
+                context.LogInfo(this,string.Format("/share GET url='{0}'", request.url));
 
             var redirect = new UriBuilder(context.BaseUrl);
             redirect.Path = "geobrowser";
@@ -102,13 +107,13 @@ namespace Terradue.Tep.WebServer.Services {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(Series)).Keyword;
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(DataPackage)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(DataPackage)).Keyword;
-                } else if (resultType.Contains(EntityType.GetEntityType(typeof(DataPackage)).Keyword)){
+                } else if (resultType.Contains(EntityType.GetEntityType(typeof(DataPackage)).Keyword)) {
                     redirectUrl += "resultType=" + "data";//in this case it is a search (over a data package) so we use data keyword
-                } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsJob)).Keyword)){
+                } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsJob)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsJob)).Keyword;
-                } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProvider)).Keyword)){
+                } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProvider)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProvider)).Keyword;
-                } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)){
+                } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword;
                 } else {
                     if (request.url.StartsWith("https://data.terradue.com") || request.url.StartsWith("https://data2.terradue.com")) {
@@ -118,9 +123,10 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }
                 redirectUrl += "&url=" + HttpUtility.UrlEncode(request.url);
-            }
-            else
+            } else {
+                context.LogError(this, "Wrong format shared url");
                 throw new Exception("Wrong format shared url");
+            }
 
             var keyword = match.Groups[1].Value.StartsWith("/") ? match.Groups[1].Value.Substring(1) : match.Groups[1].Value;
             EntityType entityType = EntityType.GetEntityTypeFromKeyword(keyword);

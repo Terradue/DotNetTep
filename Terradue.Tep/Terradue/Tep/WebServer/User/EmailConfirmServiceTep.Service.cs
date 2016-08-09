@@ -27,47 +27,52 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Get(ConfirmUserEmail request) {
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             // Let's try to open context
             try {
+                context.LogInfo(this,string.Format("/user/emailconfirm GET"));
                 context.Open();
-                log.Error(string.Format("Email already confirmed for user {0}", context.Username));
+                context.LogError(this,string.Format("Email already confirmed for user {0}", context.Username));
                 context.Close();
                 return new HttpError(System.Net.HttpStatusCode.MethodNotAllowed, new InvalidOperationException("Email already confirmed"));
             
-                // The user is pending activation
-            } catch (PendingActivationException e) {
-                log.Info(string.Format("Pending activation for user {0}", context.Username));
+            } catch (Exception e){
                 AuthenticationType authType = IfyWebContext.GetAuthenticationType(typeof(TokenAuthenticationType));
                 AuthenticationType umssoauthType = IfyWebContext.GetAuthenticationType(typeof(UmssoAuthenticationType));
 
                 var umssoUser = umssoauthType.GetUserProfile(context, HttpContext.Current.Request, false);
 
                 if (umssoUser == null) {
-                    log.Error(string.Format("User not logged in UMSSO"));
-                    return new HttpError(System.Net.HttpStatusCode.BadRequest, new UnauthorizedAccessException("Not logged in UM-SSO"));
+                    context.LogError(this,string.Format("User not logged in EOSSO"));
+                    throw new ResourceNotFoundException("Not logged in EO-SSO");
                 }
 
-                // User is logged, now we confirm the email with the token
-                log.Debug(string.Format("User now logged -- Confirm email with token"));
-                var tokenUser = ((TokenAuthenticationType)authType).AuthenticateUser(context, request.Token);
+                if (e is PendingActivationException) {
+                    context.LogDebug(this,string.Format("Pending activation for user {0}", context.Username));
+                    // User is logged, now we confirm the email with the token
+                    context.LogDebug(this,string.Format("User now logged -- Confirm email with token"));
+                    User tokenUser = ((TokenAuthenticationType)authType).AuthenticateUser(context, request.Token);
 
-                // We must check that the logged user if the one that received the email
-                // If not, we rollback to previous status
-                if (tokenUser.Email != Request.Headers["Umsso-Person-Email"]) {
-                    tokenUser.AccountStatus = AccountStatusType.PendingActivation;
-                    tokenUser.Store();
-                    log.Error(string.Format("Confirmation email and UM-SSO email do not match"));
-                    return new HttpError(System.Net.HttpStatusCode.BadRequest, new UnauthorizedAccessException("Confirmation email and UM-SSO email do not match"));
+                    // We must check that the logged user if the one that received the email
+                    // If not, we rollback to previous status
+                    if (tokenUser.Email != Request.Headers["Umsso-Person-Email"]) {
+                        tokenUser.AccountStatus = AccountStatusType.PendingActivation;
+                        tokenUser.Store();
+                        context.LogError(this,string.Format("Confirmation email and UM-SSO email do not match"));
+                        return new HttpError(System.Net.HttpStatusCode.BadRequest, new UnauthorizedAccessException("Confirmation email and UM-SSO email do not match"));
+                    }
+
+                    context.LogDebug(this,string.Format("User now logged -- Email confirmed"));
+
+                    //send an email to Support to warn them
+                    string emailFrom = context.GetConfigValue("MailSenderAddress");
+                    string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
+                    string body = string.Format("Dear support,\n\nThis is an automatic email to inform you that user {0} has just confirmed his email address ({1}) on the geohazard platform.\n", umssoUser.Username, umssoUser.Email);
+                    context.SendMail(emailFrom, emailFrom, subject, body);
+                } else {
+                    context.LogError(this, e.Message);
+                    throw e;
                 }
-
-                log.Debug(string.Format("User now logged -- Email confirmed"));
-
-                //send an email to Support to warn them
-                string emailFrom = context.GetConfigValue("MailSenderAddress");
-                string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
-                string body = string.Format("Dear support,\n\nThis is an automatic email to inform you that user {0} has just confirmed his email address ({1}) on the geohazard platform.\n", umssoUser.Username, umssoUser.Email);
-                context.SendMail(emailFrom, emailFrom, subject, body);
             }
 
             context.Close();
@@ -81,26 +86,27 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(SendUserEmailConfirmationEmail request) {
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
 
             try {
                 context.Open();
-                log.Error(string.Format("Email already confirmed for user {0}", context.Username));
+                context.LogInfo(this,string.Format("/user/emailconfirm POST"));
+                context.LogError(this,string.Format("Email already confirmed for user {0}", context.Username));
                 return new HttpError(System.Net.HttpStatusCode.BadRequest, new InvalidOperationException("Account does not require email confirmation"));
 
             } catch (PendingActivationException e) {
-                log.Info(string.Format("Pending activation for user {0}", context.Username));
+                context.LogDebug(this,string.Format("Pending activation for user {0}", context.Username));
                 AuthenticationType umssoauthType = IfyWebContext.GetAuthenticationType(typeof(UmssoAuthenticationType));
                 var umssoUser = umssoauthType.GetUserProfile(context, HttpContext.Current.Request, false);
                 if (umssoUser == null) {
-                    log.Error(string.Format("User not logged in UMSSO"));
+                    context.LogError(this,string.Format("User not logged in UMSSO"));
                     return new HttpError(System.Net.HttpStatusCode.BadRequest, new UnauthorizedAccessException("Not logged in UM-SSO"));
                 }
 
                 if (Request.Headers["Umsso-Person-Email"] != umssoUser.Email) {
                     umssoUser.Email = Request.Headers["Umsso-Person-Email"];
                     umssoUser.Store();
-                    log.Error(string.Format("Confirmation email and UM-SSO email do not match"));
+                    context.LogError(this,string.Format("Confirmation email and UM-SSO email do not match"));
                 }
 
                 string emailFrom = context.GetConfigValue("MailSenderAddress");

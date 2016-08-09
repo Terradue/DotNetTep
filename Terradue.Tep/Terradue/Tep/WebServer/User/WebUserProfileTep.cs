@@ -39,6 +39,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "CreatedDataPackages", Description = "User nb of Created Data packages", ParameterType = "query", DataType = "int", IsRequired = false)]
         public int CreatedDataPackages { get; set; }
 
+        [ApiMember(Name = "DefaultDataPackageItems", Description = "User nb of Items in Default Data packages", ParameterType = "query", DataType = "int", IsRequired = false)]
+        public int DefaultDataPackageItems { get; set; }
+
         [ApiMember(Name = "FirstLoginDate", Description = "User first login date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
         public DateTimeOffset FirstLoginDate { get; set; }
 
@@ -79,6 +82,9 @@ namespace Terradue.Tep.WebServer {
             dp.OwnedItemsOnly = true;
             dp.Load();
             CreatedDataPackages = dp.Count;
+
+            var dpdefault = DataPackage.GetTemporaryForUser(context, this.Id);
+            DefaultDataPackageItems = dpdefault.Items.Count;
 
         }
 

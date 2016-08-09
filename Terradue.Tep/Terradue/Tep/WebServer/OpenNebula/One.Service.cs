@@ -13,18 +13,23 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class OneServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(OneGetConfigRequestTep request) {
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/one/config GET"));
 
                 string key = "One-access";
                 result.Add(new KeyValuePair<string, string>(key,context.GetConfigValue(key)));
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

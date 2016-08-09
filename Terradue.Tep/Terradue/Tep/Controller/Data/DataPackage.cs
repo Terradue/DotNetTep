@@ -199,8 +199,12 @@ namespace Terradue.Tep {
         }
 
         public static DataPackage GetTemporaryForCurrentUser(IfyContext context){
+            return GetTemporaryForUser(context, context.UserId);
+        }
+
+        public static DataPackage GetTemporaryForUser(IfyContext context, int id){
             DataPackage result = new DataPackage(context);
-            result.OwnerId = context.UserId;
+            result.OwnerId = id;
             result.IsDefault = true;
             try {
                 result.Load();
@@ -232,12 +236,6 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="item">Item.</param>
         public void AddResourceItem(RemoteResource item) {
-            if (string.IsNullOrEmpty(item.Location)) return;
-            //temporary, waiting for http://project.terradue.com/issues/13297 to be solved
-            foreach (var it in Resources) {
-                if (it.Location.Equals(item.Location))
-                    return;
-            }
             item.ResourceSet = this;
             item.Store();
             Items.Include(item);
@@ -432,7 +430,11 @@ namespace Terradue.Tep {
             Uri share = new Uri(context.BaseUrl + "/share?url=" +id.AbsoluteUri);
             atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             atomEntry.ReferenceData = this;
-            atomEntry.PublishDate = this.CreationTime;
+
+            //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+            atomEntry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreationTime, DateTimeKind.Utc));
+//            atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
+
             User owner = User.FromId(context, this.OwnerId);
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";

@@ -31,16 +31,16 @@ namespace Terradue.Tep.WebServer.Services {
         public string url { get; set; }
     }
 
-    [Route("/proxy/gpod/{id}/description", "GET", Summary = "proxy a gpod result description", Notes = "")]
-    public class ProxyDescriptionGpodRequestTep {
-        [ApiMember(Name="id", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string id { get; set; }
+    [Route("/proxy/wps/{jobid}/description", "GET", Summary = "proxy a wps result description", Notes = "")]
+    public class ProxyWpsJobDescriptionRequestTep {
+        [ApiMember(Name="jobid", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string jobid { get; set; }
     }
 
-    [Route("/proxy/gpod/{id}/search", "GET", Summary = "proxy a gpod result search", Notes = "")]
-    public class ProxySearchGpodRequestTep {
-        [ApiMember(Name="id", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string id { get; set; }
+    [Route("/proxy/wps/{jobid}/search", "GET", Summary = "proxy a wps result search", Notes = "")]
+    public class ProxyWpsJobSearchRequestTep {
+        [ApiMember(Name="jobid", Description = "id of gpod job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string jobid { get; set; }
     }
 
      [Api("Tep Terradue webserver")]
@@ -58,9 +58,10 @@ namespace Terradue.Tep.WebServer.Services {
             var domain = host.Substring(host.LastIndexOf('.', host.LastIndexOf('.') - 1) + 1);
             if (!domain.Equals("terradue.int") && !domain.Equals("terradue.com")) throw new Exception("Non Terradue urls are not accepted");
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             HttpResult result = null;
             context.Open();
+            context.LogInfo(this,string.Format("/proxy GET url='{0}'", request.url));
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
@@ -84,25 +85,31 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
-        public object Get(ProxyDescriptionGpodRequestTep request){
+        public object Get(ProxyWpsJobDescriptionRequestTep request){
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
+            context.LogInfo(this,string.Format("/proxy/wps/{{jobid}}/description GET jobid='{0}'", request.jobid));
 
-            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.id);
+            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
-            OpenSearchDescription osd = GetGpodOpenSearchDescription(context, request.id, wpsjob.Name);
+            context.LogDebug(this,string.Format("Wps Proxy description for wpsjob {0}", wpsjob.Identifier));
+
+            OpenSearchDescription osd = GetWpsOpenSearchDescription(context, request.jobid, wpsjob.Name);
 
             context.Close();
             return new HttpResult(osd, "application/opensearchdescription+xml");
         }
 
-        public object Get(ProxySearchGpodRequestTep request){
+        public object Get(ProxyWpsJobSearchRequestTep request){
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
+            context.LogInfo(this,string.Format("/proxy/wps/{{jobid}}/search GET jobid='{0}'", request.jobid));
 
-            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.id);
+            WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
+
+            context.LogDebug(this,string.Format("Wps Proxy search for wpsjob {0}", wpsjob.Identifier));
 
             string executeUrl = wpsjob.StatusLocation;
 
@@ -112,237 +119,299 @@ namespace Terradue.Tep.WebServer.Services {
             }
             OpenGis.Wps.ExecuteResponse execResponse = null;
             try{
-                log.Debug("GPOD - exec response requested");
+                context.LogDebug(this,string.Format("Wps proxy - exec response requested"));
                 execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(executeHttpRequest.GetResponse().GetResponseStream());
-                log.Debug("GPOD - exec response OK");
+                context.LogDebug(this,string.Format("Wps proxy - exec response OK"));
             }catch(Exception e){
-                log.Error(e);
+                context.LogError(this,string.Format(e.Message));
             }
-            if (execResponse == null) throw new Exception("Unable to get response from G-POD");
+            if (execResponse == null) throw new Exception("Unable to get execute response from proxied job");
             Uri uri = new Uri(execResponse.statusLocation);
-            log.Debug("GPOD - uri: " + uri);
-            string identifier;
-            try{
-                identifier = uri.Query.Substring(uri.Query.IndexOf("id=") + 3);
-            }catch(Exception e){
-                if (executeUrl.Contains("gpod.eo.esa.int")) {
-                    identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-                } else
-                    throw e;
-            }
+            context.LogDebug(this,string.Format("Proxy WPS - uri: " + uri));
 
             execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
-            XmlNode[] any = null;
+            AtomFeed feed = new AtomFeed();
             if(execResponse.ProcessOutputs != null){
                 foreach (OutputDataType output in execResponse.ProcessOutputs) {
-                    if (output.Item != null && ((DataType)(output.Item)).Item != null) {
-                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                        if(item.Any != null){
-                            any = item.Any;
-                            break;
+                    if(output.Identifier != null){
+                        if (output.Item != null && ((DataType)(output.Item)).Item != null) {
+                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                            if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
+                                var reference = item.Reference as OutputReferenceType;
+                                context.LogDebug(this,string.Format("Wps proxy - metadata"));
+                                feed = CreateFeedForMetadata(reference.href);
+                            } else if (item.Any != null && item.Any[0].LocalName != null) {
+                                if (item.Any[0].LocalName.Equals("RDF")) {
+                                    context.LogDebug(this,string.Format("Wps proxy - RDF"));
+                                    feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
+                                } else if (item.Any[0].LocalName.Equals("metalink")) {
+                                    context.LogDebug(this,string.Format("Wps proxy - metalink"));
+                                    feed = CreateFeedForMetalink(item.Any[0], request.jobid, context.BaseUrl);
+                                }
+                            }       
                         }
                     }
                 }
             }
 
-            XmlDocument doc = new XmlDocument();
-            OwsContextAtomFeed feed = new OwsContextAtomFeed();
+            /* Proxy id + add self */
+            foreach (var item in feed.Items) {
+                var self = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/search?uid=" + HttpUtility.UrlEncode(item.Id);
+                var search = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                item.Id = self;
+                item.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateSelfLink(new Uri(self), "application/atom+xml"));
+                item.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(new Uri(search), "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
+            }
+
 
             var ose = MasterCatalogue.OpenSearchEngine;
             var type = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
             var ext = ose.GetFirstExtensionByTypeAbility(type);
 
-            if(any != null){
-                if (any[0].LocalName == "RDF") {
-                    doc.LoadXml(any[0].OuterXml);
-                    XmlNamespaceManager xmlns = new XmlNamespaceManager(doc.NameTable);
-                    xmlns.AddNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-                    xmlns.AddNamespace("dclite4g", "http://xmlns.com/2008/dclite4g#");
-                    xmlns.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
-                    xmlns.AddNamespace("dct", "http://purl.org/dc/terms/");
+            var osfeed = new AtomFeedOpenSearchable(feed);
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query(osfeed, httpRequest.QueryString, responseType);
 
-                    var onlineResource = doc.SelectNodes("rdf:RDF/dclite4g:DataSet/dclite4g:onlineResource",xmlns);
+            var osrDesc = new Uri(context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description");
+            osr.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(osrDesc, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
 
-                    var createddate = doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dct:created", xmlns).InnerText;
-                    var modifieddate = doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dct:modified", xmlns).InnerText;
+            context.Close ();
+            return new HttpResult(osr.SerializeToString(), osr.ContentType);
 
-                    feed.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dc:title",xmlns).InnerText);
-                    feed.Description = new Terradue.ServiceModel.Syndication.TextSyndicationContent(doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dc:subject",xmlns).InnerText);
-                    feed.Date = new DateTimeInterval {
-                        StartDate = Convert.ToDateTime(modifieddate),
-                        EndDate = Convert.ToDateTime(modifieddate)
-                    };
-                    List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
+        }
 
-                    for (int i = 0; i < onlineResource.Count; i++) {
-                        string id = onlineResource[i].ChildNodes[0].Attributes.GetNamedItem("rdf:about").InnerText;
-                        Uri remoteUri = new Uri(id);
-                        OwsContextAtomEntry entry = new OwsContextAtomEntry();
-                        entry.Id = remoteUri.AbsoluteUri;
-                        entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
-                        entry.PublishDate = Convert.ToDateTime(modifieddate);
-                        entry.LastUpdatedTime = Convert.ToDateTime(modifieddate);
-                        entry.Date = new DateTimeInterval {
-                            StartDate = Convert.ToDateTime(modifieddate),
-                            EndDate = Convert.ToDateTime(modifieddate)
-                        };
+        private AtomFeed CreateFeedForMetadata(string url){
 
-                        entry.ElementExtensions.Add("identifier", OwcNamespaces.Dc, request.id);
-                        entry.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateMediaEnclosureLink(remoteUri, "application/octet-stream", 0));
+            HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
+            HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
 
-                        List<OwcOffering> offerings = new List<OwcOffering>();
-                        OwcOffering offering = new OwcOffering();
-                        OwcContent content = new OwcContent();
-                        content.Url = remoteUri.ToString();
-                        string extension = remoteUri.AbsoluteUri.Substring(remoteUri.AbsoluteUri.LastIndexOf(".") + 1);
+            Stream atomResponseStream = new MemoryStream();
+            atomResponse = (HttpWebResponse)atomRequest.GetResponse();
+            atomResponse.GetResponseStream().CopyTo(atomResponseStream);
+            atomResponseStream.Seek(0, SeekOrigin.Begin);
 
-                        switch (extension.ToLower()) {
-                            case "gif":
-                                content.Type = "image/gif";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/gif";
-                                break;
-                            case "gtiff":
-                                content.Type = "image/tiff";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/geotiff";
-                                break;
-                            case "jpeg":
-                                content.Type = "image/jpg";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/jpg";
-                                break;
-                            case "png":
-                                content.Type = "image/png";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/png";
-                                break;
-                            default:
-                                content.Type = "application/octet-stream";
-                                offering.Code = null;
-                                break;
-                        }
+            var sr = XmlReader.Create(atomResponseStream);
+            Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
+            atomFormatter.ReadFrom(sr);
+            sr.Close();
+            return new AtomFeed(atomFormatter.Feed);
+        }
 
-                        List<OwcContent> contents = new List<OwcContent>();
-                        contents.Add(content);
-                        offering.Contents = contents.ToArray();
-                        offerings.Add(offering);
-                        entry.Offerings = offerings;
+        private AtomFeed CreateFeedForMetalink(XmlNode any, string identifier, string baseurl){
 
-                        entries.Add(entry);
-                    }
-                    feed.Items = entries;
+            OwsContextAtomFeed feed = new OwsContextAtomFeed();
+            List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
+
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(any.OuterXml);
+            XmlNamespaceManager xmlns = new XmlNamespaceManager(doc.NameTable);
+            xmlns.AddNamespace("ml", "http://www.metalinker.org");
+
+            var onlineResource = doc.SelectNodes("ml:metalink/ml:files/ml:file/ml:resources/ml:url",xmlns);
+            var createddate = doc.SelectSingleNode("ml:metalink/ml:files/ml:file/ml:releasedate", xmlns).InnerText;
+
+            var self = baseurl + "/proxy/wps/" + identifier + "/search";
+            var search = baseurl + "/proxy/wps/" + identifier + "/description";
+
+            feed.Id = self;
+            feed.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent("Wps job results");
+            feed.Date = new DateTimeInterval {
+                StartDate = Convert.ToDateTime(createddate),
+                EndDate = Convert.ToDateTime(createddate)
+            };
+
+            foreach (XmlNode node in onlineResource) {
+                string url = node.InnerText;
+                Uri remoteUri = new Uri(url);
+                OwsContextAtomEntry entry = new OwsContextAtomEntry();
+
+                //link is an OWS context, we add it as is
+//                if (url.Contains("/results/") && url.Contains(".atom")) {
+                if (url.Contains(".atom")) {
+                    HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
+                    HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
+
+                    Stream atomResponseStream = new MemoryStream();
+                    atomResponse = (HttpWebResponse)atomRequest.GetResponse();
+                    atomResponse.GetResponseStream().CopyTo(atomResponseStream);
+                    atomResponseStream.Seek(0, SeekOrigin.Begin);
+
+                    var sr = XmlReader.Create(atomResponseStream);
+                    Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
+                    atomFormatter.ReadFrom(sr);
+                    sr.Close();
+                    return new AtomFeed(atomFormatter.Feed);
                 }
-                if (any[0].LocalName == "metalink") {
+                //we build the OWS context
+                entry.Id = node.InnerText.Contains("/") ? node.InnerText.Substring(node.InnerText.LastIndexOf("/") + 1) : node.InnerText;
+                entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
 
-                    log.Debug("GPOD - metalink: ");
-                    doc.LoadXml(any[0].OuterXml);
-                    XmlNamespaceManager xmlns = new XmlNamespaceManager(doc.NameTable);
-                    xmlns.AddNamespace("ml", "http://www.metalinker.org");
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(createddate), DateTimeKind.Utc));
+//                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(createddate));
 
-                    var onlineResource = doc.SelectNodes("ml:metalink/ml:files/ml:file/ml:resources/ml:url",xmlns);
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.LastUpdatedTime = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(createddate), DateTimeKind.Utc));
+//                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(createddate));
 
-                    var createddate = doc.SelectSingleNode("ml:metalink/ml:files/ml:file/ml:releasedate", xmlns).InnerText;
+                entry.Date = new DateTimeInterval {
+                    StartDate = Convert.ToDateTime(createddate),
+                    EndDate = Convert.ToDateTime(createddate)
+                };
 
-                    feed.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent("GPOD results");
-                    feed.Date = new DateTimeInterval {
-                        StartDate = Convert.ToDateTime(createddate),
-                        EndDate = Convert.ToDateTime(createddate)
-                    };
-                    List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
+                entry.ElementExtensions.Add("identifier", OwcNamespaces.Dc, entry.Id);
+                entry.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateMediaEnclosureLink(remoteUri, "application/octet-stream", 0));
 
-                    foreach (XmlNode node in onlineResource) {
-                        string url = node.InnerText;
-                        Uri remoteUri = new Uri(url);
-                        OwsContextAtomEntry entry = new OwsContextAtomEntry();
+                List<OwcOffering> offerings = new List<OwcOffering>();
+                OwcOffering offering = new OwcOffering();
+                OwcContent content = new OwcContent();
+                content.Url = remoteUri.ToString();
+                string extension = remoteUri.AbsoluteUri.Substring(remoteUri.AbsoluteUri.LastIndexOf(".") + 1);
 
-                        //link is an OWS context, we add it as is
-                        if (url.Contains("/results/") && url.Contains(".atom")) {
-                            HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
-                            HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
-
-                            Stream atomResponseStream = new MemoryStream();
-                            atomResponse = (HttpWebResponse)atomRequest.GetResponse();
-                            atomResponse.GetResponseStream().CopyTo(atomResponseStream);
-                            atomResponseStream.Seek(0, SeekOrigin.Begin);
-
-                            var sr = XmlReader.Create(atomResponseStream);
-                            Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
-                            atomFormatter.ReadFrom(sr);
-                            sr.Close();
-                            var owsfeed = new AtomFeed(atomFormatter.Feed);
-                            var owsresult = ext.CreateOpenSearchResultFromOpenSearchResult(owsfeed);
-
-                            return new HttpResult(owsresult.SerializeToString(), owsresult.ContentType);
-
-                        }
-                        //we build the OWS context
-                        entry.Id = node.InnerText;
-                        entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
-                        entry.PublishDate = Convert.ToDateTime(createddate);
-                        entry.LastUpdatedTime = Convert.ToDateTime(createddate);
-                        entry.Date = new DateTimeInterval {
-                            StartDate = Convert.ToDateTime(createddate),
-                            EndDate = Convert.ToDateTime(createddate)
-                        };
-
-                        entry.ElementExtensions.Add("identifier", OwcNamespaces.Dc, remoteUri.AbsolutePath);
-                        entry.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateMediaEnclosureLink(remoteUri, "application/octet-stream", 0));
-
-                        List<OwcOffering> offerings = new List<OwcOffering>();
-                        OwcOffering offering = new OwcOffering();
-                        OwcContent content = new OwcContent();
-                        content.Url = remoteUri.ToString();
-                        string extension = remoteUri.AbsoluteUri.Substring(remoteUri.AbsoluteUri.LastIndexOf(".") + 1);
-
-                        switch (extension.ToLower()) {
-                            case "gif":
-                                content.Type = "image/gif";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/gif";
-                                break;
-                            case "gtiff":
-                                content.Type = "image/tiff";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/geotiff";
-                                break;
-                            case "jpeg":
-                                content.Type = "image/jpg";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/jpg";
-                                break;
-                            case "png":
-                                content.Type = "image/png";
-                                offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/png";
-                                break;
-                            default:
-                                content.Type = "application/octet-stream";
-                                offering.Code = null;
-                                break;
-                        }
-
-                        List<OwcContent> contents = new List<OwcContent>();
-                        contents.Add(content);
-                        offering.Contents = contents.ToArray();
-                        offerings.Add(offering);
-                        entry.Offerings = offerings;
-
-                        entries.Add(entry);
-                    }
-                    feed.Items = entries;
+                switch (extension.ToLower()) {
+                    case "gif":
+                        content.Type = "image/gif";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/gif";
+                        break;
+                    case "gtiff":
+                        content.Type = "image/tiff";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/geotiff";
+                        break;
+                    case "jpeg":
+                        content.Type = "image/jpg";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/jpg";
+                        break;
+                    case "png":
+                        content.Type = "image/png";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/png";
+                        break;
+                    default:
+                        content.Type = "application/octet-stream";
+                        offering.Code = null;
+                        break;
                 }
+
+                List<OwcContent> contents = new List<OwcContent>();
+                contents.Add(content);
+                offering.Contents = contents.ToArray();
+                offerings.Add(offering);
+                entry.Offerings = offerings;
+
+                entries.Add(entry);
             }
+            feed.Items = entries;
 
             AtomFeed atomfeed = new AtomFeed(feed);
             atomfeed.Title = feed.Title;
             atomfeed.Description = feed.Description;
-    
-            var urib = new UriBuilder(context.BaseUrl);
-            urib.Path += "/proxy/gpod/" + request.id + "/description";
+
+            var urib = new UriBuilder(baseurl);
+            urib.Path += "/proxy/wps/" + identifier + "/description";
             atomfeed.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(urib.Uri, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
 
-            var result = ext.CreateOpenSearchResultFromOpenSearchResult(atomfeed);
-
-            context.Close ();
-            return new HttpResult(result.SerializeToString(), result.ContentType);
-
+            return atomfeed;
         }
 
-        private OpenSearchDescription GetGpodOpenSearchDescription(IfyContext context, string jobIdentifier, string name) {
+        private AtomFeed CreateFeedForRDF(XmlNode any, string identifier, string baseurl){
+            OwsContextAtomFeed feed = new OwsContextAtomFeed();
+            List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
+            XmlDocument doc = new XmlDocument();
+
+            doc.LoadXml(any.OuterXml);
+            XmlNamespaceManager xmlns = new XmlNamespaceManager(doc.NameTable);
+            xmlns.AddNamespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+            xmlns.AddNamespace("dclite4g", "http://xmlns.com/2008/dclite4g#");
+            xmlns.AddNamespace("dc", "http://purl.org/dc/elements/1.1/");
+            xmlns.AddNamespace("dct", "http://purl.org/dc/terms/");
+
+            var onlineResource = doc.SelectNodes("rdf:RDF/dclite4g:DataSet/dclite4g:onlineResource",xmlns);
+
+            var createddate = doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dct:created", xmlns).InnerText;
+            var modifieddate = doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dct:modified", xmlns).InnerText;
+
+            feed.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dc:title",xmlns).InnerText);
+            feed.Description = new Terradue.ServiceModel.Syndication.TextSyndicationContent(doc.SelectSingleNode("rdf:RDF/dclite4g:DataSet/dc:subject",xmlns).InnerText);
+            feed.Date = new DateTimeInterval {
+                StartDate = Convert.ToDateTime(modifieddate),
+                EndDate = Convert.ToDateTime(modifieddate)
+            };
+
+            for (int i = 0; i < onlineResource.Count; i++) {
+                string id = onlineResource[i].ChildNodes[0].Attributes.GetNamedItem("rdf:about").InnerText;
+                Uri remoteUri = new Uri(id);
+                OwsContextAtomEntry entry = new OwsContextAtomEntry();
+                entry.Id = remoteUri.AbsoluteUri;
+                entry.Title = new Terradue.ServiceModel.Syndication.TextSyndicationContent(remoteUri.AbsoluteUri);
+
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(modifieddate), DateTimeKind.Utc));
+//                entry.PublishDate = new DateTimeOffset(Convert.ToDateTime(modifieddate));
+
+                //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
+                entry.LastUpdatedTime = new DateTimeOffset(DateTime.SpecifyKind(Convert.ToDateTime(modifieddate), DateTimeKind.Utc));
+//                entry.LastUpdatedTime = new DateTimeOffset(Convert.ToDateTime(modifieddate));
+
+                entry.Date = new DateTimeInterval {
+                    StartDate = Convert.ToDateTime(modifieddate),
+                    EndDate = Convert.ToDateTime(modifieddate)
+                };
+
+                entry.ElementExtensions.Add("identifier", OwcNamespaces.Dc, identifier);
+                entry.Links.Add(Terradue.ServiceModel.Syndication.SyndicationLink.CreateMediaEnclosureLink(remoteUri, "application/octet-stream", 0));
+
+                List<OwcOffering> offerings = new List<OwcOffering>();
+                OwcOffering offering = new OwcOffering();
+                OwcContent content = new OwcContent();
+                content.Url = remoteUri.ToString();
+                string extension = remoteUri.AbsoluteUri.Substring(remoteUri.AbsoluteUri.LastIndexOf(".") + 1);
+
+                switch (extension.ToLower()) {
+                    case "gif":
+                        content.Type = "image/gif";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/gif";
+                        break;
+                    case "gtiff":
+                        content.Type = "image/tiff";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/geotiff";
+                        break;
+                    case "jpeg":
+                        content.Type = "image/jpg";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/jpg";
+                        break;
+                    case "png":
+                        content.Type = "image/png";
+                        offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/png";
+                        break;
+                    default:
+                        content.Type = "application/octet-stream";
+                        offering.Code = null;
+                        break;
+                }
+
+                List<OwcContent> contents = new List<OwcContent>();
+                contents.Add(content);
+                offering.Contents = contents.ToArray();
+                offerings.Add(offering);
+                entry.Offerings = offerings;
+
+                entries.Add(entry);
+            }
+            feed.Items = entries;
+
+            AtomFeed atomfeed = new AtomFeed(feed);
+            atomfeed.Title = feed.Title;
+            atomfeed.Description = feed.Description;
+
+            var urib = new UriBuilder(baseurl);
+            urib.Path += "/proxy/wps/" + identifier + "/description";
+            atomfeed.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(urib.Uri, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
+
+            return atomfeed;
+        }
+
+        private OpenSearchDescription GetWpsOpenSearchDescription(IfyContext context, string jobIdentifier, string name) {
 
             OpenSearchDescription OSDD = new OpenSearchDescription();
 
@@ -364,23 +433,22 @@ namespace Terradue.Tep.WebServer.Services {
             string[] queryString;
 
             urib = new UriBuilder(context.BaseUrl);
-            urib.Path += "/proxy/gpod/" + jobIdentifier + "/search";
+            urib.Path += "/proxy/wps/" + jobIdentifier + "/search";
             query.Add(OpenSearchFactory.GetBaseOpenSearchParameter());
 
-//            query.Set("format", "atom");
-//            queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-//            urib.Query = string.Join("&", queryString);
-//            newUrls.Add("application/atom+xml", new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search"));
+            queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urib.Query = string.Join("&", queryString);
+            newUrls.Add("application/atom+xml", new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search"));
 
             query.Set("format", "json");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
             urib.Query = string.Join("&", queryString);
             newUrls.Add("application/json", new OpenSearchDescriptionUrl("application/json", urib.ToString(), "search"));
 
-//            query.Set("format", "html");
-//            queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-//            urib.Query = string.Join("&", queryString);
-//            newUrls.Add("text/html", new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search"));
+            query.Set("format","html");
+            queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urib.Query = string.Join("&", queryString);
+            newUrls.Add("text/html",new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search"));
 
             OSDD.Url = new OpenSearchDescriptionUrl[newUrls.Count];
 

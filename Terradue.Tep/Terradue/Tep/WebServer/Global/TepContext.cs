@@ -61,6 +61,80 @@ namespace Terradue.Tep.WebServer {
             if (user.AccountStatus == AccountStatusType.PendingActivation && GetConfigBooleanValue("PendingUserCanLogin")) return true;
             return base.CheckCanStartSession(user, throwOnError);
         }
+
+        public override void LogError(object reporter, string message){
+            PrepareLogger(reporter);
+            base.LogError(reporter, message);
+        }
+
+        public override void LogDebug(object reporter, string message){
+            PrepareLogger(reporter);
+            base.LogDebug(reporter, message);
+        }
+
+        public override void LogInfo(object reporter, string message){
+            PrepareLogger(reporter);
+            base.LogInfo(reporter, message);
+        }
+
+        private void PrepareLogger(object reporter){
+            log4net.GlobalContext.Properties["tepuser"] = this.Username != null ? this.Username : "Not logged user";
+//            try{
+//                switch (reporter.GetType().Name) {
+//                    //CATALOGUE
+//                    case "Terradue.Tep.WebServer.Services.CatalogueServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.CollectionServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.DataPackageServiceTep":
+//                        log4net.GlobalContext.Properties["teplogtype"] = "Catalogue";
+//                        break;
+//
+//                    //USER
+//                    case "Terradue.Tep.WebServer.Services.UserServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.EmailConfirmServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.LoginServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.UserGithubServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.GroupServiceTep":
+//                        log4net.GlobalContext.Properties["teplogtype"] = "User";
+//                        break;
+//                
+//                    //OPENNEBULA
+//                    case "Terradue.Tep.WebServer.Services.OneImageServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.OneServiceT ep":
+//                    case "Terradue.Tep.WebServer.Services.OneUserServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.OneWpsServiceTep":
+//                        log4net.GlobalContext.Properties["teplogtype"] = "One";
+//                        break;
+//
+//                    //SERVICE
+//                    case "Terradue.Tep.WebServer.Services.ProxyServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.ShareServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.WpsServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.WpsJobServiceTep":
+//                        log4net.GlobalContext.Properties["teplogtype"] = "Service";
+//                        break;
+//
+//                    //NEWS
+//                    case "Terradue.Tep.WebServer.Services.NewsServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.DiscourseServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.RssNewsServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.TumblrNewsServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.TwitterNewsServiceTep":
+//                        log4net.GlobalContext.Properties["teplogtype"] = "News";
+//                        break;
+//                
+//                    //ACTIVITY
+//                    case "Terradue.Tep.WebServer.Services.ActivityServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.LogServiceTep":
+//                    case "Terradue.Tep.WebServer.Services.ReportServiceTep":
+//                        log4net.GlobalContext.Properties["teplogtype"] = "Activity";
+//                        break;
+//
+//                    default:
+//                        log4net.GlobalContext.Properties["teplogtype"] = "N/A";
+//                        break;
+//                }
+//            }catch(Exception){}
+        }
     }
 }
 

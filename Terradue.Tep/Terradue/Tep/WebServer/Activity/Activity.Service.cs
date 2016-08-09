@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -11,12 +9,14 @@ using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
-using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
     
     [Route("/activity/search", "GET", Summary = "GET activity as opensearch", Notes = "")]
-    public class ActivitySearchRequestTep : IReturn<HttpResult>{}
+    public class ActivitySearchRequestTep : IReturn<HttpResult>{
+        [ApiMember(Name="nologin", Description = "get login activities", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool nologin { get; set; }
+    }
 
     [Route("/activity/description", "GET", Summary = "GET activity description", Notes = "")]
     public class ActivityDescriptionRequestTep : IReturn<HttpResult>{}
@@ -26,10 +26,14 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class ActivityServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(ActivitySearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.RestrictedMode = false;
             context.Open();
+            context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
             List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
@@ -43,7 +47,10 @@ namespace Terradue.Tep.WebServer.Services {
 
             activities = new EntityList<Activity>(context);
             activities.Identifier = "activity";
-            foreach (Activity item in tmplist) activities.Include(item);
+            foreach (Activity item in tmplist) {
+                if(!request.nologin || (item.Privilege.EntityTypeId != EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
+                    activities.Include(item);
+            }
             osentities.Add(activities);
 
             // Load the complete request
@@ -64,9 +71,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
             
         public object Get(ActivityDescriptionRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/activity/description GET"));
+
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
                 wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
@@ -76,6 +85,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 return new HttpResult(osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

@@ -19,11 +19,15 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class NewsServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public object Get(SearchNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/search GET"));
 
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
@@ -58,6 +62,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -68,9 +73,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetAllNewsFeeds request) {
             List<WebNews> result = new List<WebNews>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/news/feeds GET"));
 
                 //get internal news
                 try{
@@ -101,6 +107,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -110,9 +117,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetAllNews request) {
             List<WebNews> result = new List<WebNews>();
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/news GET"));
                 //get internal news
                 EntityList<Terradue.Portal.Article> news = new EntityList<Terradue.Portal.Article>(context);
                 news.Load();
@@ -120,6 +128,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -129,14 +138,16 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetNews request) {
             WebNews result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/news/{{Id}} GET Id='{0}'", request.Id));
 
                 result = new WebNews(Terradue.Portal.Article.FromId(context,request.Id));
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -146,7 +157,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateNews request) {
             WebNews result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
 
@@ -176,8 +187,11 @@ namespace Terradue.Tep.WebServer.Services {
                     result = new WebNews(article);
                 }
 
+                context.LogInfo(this,string.Format("/news POST Id='{0}'", request.Id));
+
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -187,9 +201,10 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateNews request) {
             WebNews result = null;
 
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/news PUT Id='{0}'", request.Id));
 
                 if (request.Type.Equals(EntityType.GetEntityType(typeof(TwitterNews)).Keyword)){
                     TwitterNews tweet = null;
@@ -219,6 +234,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
@@ -226,14 +242,16 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             try {
                 context.Open();
+                context.LogInfo(this,string.Format("/news/{{Id}} DELETE Id='{0}'", request.Id));
                 Terradue.Portal.Article news = Terradue.Portal.Article.FromId(context,request.Id);
                 news.Delete();
 
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }

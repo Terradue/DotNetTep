@@ -20,12 +20,16 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class TumblrNewsServiceTep : ServiceStack.ServiceInterface.Service {
 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         [AddHeader(ContentType="application/atom+xml")]
         public object Get(SearchTumblrNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             IOpenSearchResultCollection result = null;
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/tumblr/search GET"));
 
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
@@ -43,6 +47,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -51,10 +56,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetTumblrNewsFeeds request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             List<WebNews> result = new List<WebNews>();
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/tumblr/feeds GET"));
 
                 List<TumblrFeed> tumblrs = TumblrNews.LoadTumblrFeeds(context);
                 List<TumblrNews> tumblrfeeds = new List<TumblrNews>();
@@ -68,6 +74,7 @@ namespace Terradue.Tep.WebServer.Services {
                 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -76,10 +83,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetAllTumblrNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             List<WebNews> result = new List<WebNews>();
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/tumblr GET"));
 
                 EntityList<TumblrNews> articles = new EntityList<TumblrNews>(context);
                 articles.Load();
@@ -87,6 +95,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }
@@ -95,10 +104,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(CreateTumblrNews request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             WebNews result = null;
             try{
                 context.Open();
+                context.LogInfo(this,string.Format("/news/tumblr POST Id='{0}'", request.Id));
 
                 TumblrNews article = new TumblrNews(context);
                 article = (TumblrNews)request.ToEntity(context, article);
@@ -107,6 +117,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             }catch(Exception e) {
+                context.LogError(this, e.Message);
                 context.Close ();
                 throw e;
             }

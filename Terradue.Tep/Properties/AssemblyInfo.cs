@@ -1,42 +1,14 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-
-// Information about this assembly is defined by the following attributes.
-// Change them to the values specific to your project.
-
-[assembly: AssemblyTitle("Terradue.Tep")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Terradue")]
-[assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("Terradue")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-
-// The assembly version has the format "{Major}.{Minor}.{Build}.{Revision}".
-// The form "{Major}.{Minor}.*" will automatically update the build and revision,
-// and "{Major}.{Minor}.{Build}.*" will update just the revision.
-
-[assembly: AssemblyVersion("1.0.12.*")]
-[assembly: AssemblyInformationalVersion("1.0.12")]
-
-// The following attributes are used to specify the signing key for the assembly,
-// if desired. See the Mono documentation for more information about signing.
-
-//[assembly: AssemblyDelaySign(false)]
-//[assembly: AssemblyKeyFile("")]
-
 /*!
 
 \namespace Terradue.Tep
 @{
-    Terradue.Tep Software Package
+    Terradue.Tep Software Package provides with all the functionalities specific to the TEP.
 
-    \xrefitem sw_version "Versions" "Software Package Version" 1.0.0
+    \xrefitem sw_version "Versions" "Software Package Version" 1.0.25
 
-    \xrefitem sw_link "Links" "Software Package List" [Terradue.Portal](https://git.terradue.com/sugar/Terradue.Tep)
+    \xrefitem sw_link "Links" "Software Package List" [Terradue.Tep](https://git.terradue.com/sugar/Terradue.Tep)
 
-    \xrefitem sw_license "License" "Software License" [incubating](https://git.terradue.com/sugar/Terradue.Tep)
+    \xrefitem sw_license "License" "Software License" [AGPL](https://git.terradue.com/sugar/Terradue.Tep/LICENSE)
 
     \xrefitem sw_req "Require" "Software Dependencies" \ref Terradue.OpenSearch
 
@@ -90,3 +62,21 @@ using System.Runtime.CompilerServices;
 @}
 */
 
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using NuGet4Mono.Extensions;
+
+[assembly: AssemblyTitle("Terradue.Tep")]
+[assembly: AssemblyDescription("Terradue Tep .Net library")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("Terradue")]
+[assembly: AssemblyProduct("Terradue.Tep")]
+[assembly: AssemblyCopyright("Terradue")]
+[assembly: AssemblyAuthors("Enguerran Boissier")]
+[assembly: AssemblyProjectUrl("https://git.terradue.com/sugar/Terradue.Tep")]
+[assembly: AssemblyLicenseUrl("")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: AssemblyVersion("1.0.25")]
+[assembly: AssemblyInformationalVersion("1.0.25")]
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
