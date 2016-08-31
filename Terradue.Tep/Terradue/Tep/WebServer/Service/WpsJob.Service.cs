@@ -317,7 +317,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, string.Join(",",request.ToArray())));
+                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
                 string sql = String.Format("DELETE FROM wpsjob_priv WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);

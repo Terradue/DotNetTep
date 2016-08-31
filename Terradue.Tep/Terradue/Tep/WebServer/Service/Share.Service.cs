@@ -44,7 +44,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             object result;
             context.Open();
-            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, string.Join("'",request.groups)));
+            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, request.groups != null ? string.Join("'",request.groups) : "null"));
                             
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 

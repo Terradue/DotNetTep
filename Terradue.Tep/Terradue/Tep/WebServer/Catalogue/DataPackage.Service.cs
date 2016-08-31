@@ -614,7 +614,7 @@ namespace Terradue.Tep.WebServer.Services
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/data/package/{{DpId}}/group PUT DpId='{0}', Id='{1}'", request.DpId, string.Join(",",request.ToArray())));
+                context.LogInfo(this,string.Format("/data/package/{{DpId}}/group PUT DpId='{0}', Id='{1}'", request.DpId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
                 string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
