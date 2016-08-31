@@ -195,7 +195,7 @@ namespace Terradue.Tep.WebServer.Services
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                 }catch(Exception e){
                     if(request.Key != null) {//or if public
-                        context.RestrictedMode = false;
+                        context.AccessLevel = EntityAccessLevel.Administrator;
                         datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                         if(request.Key != null && !request.Key.Equals(datapackage.AccessKey))
                             throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);
@@ -298,7 +298,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 Terradue.Tep.DataPackage datapackage;
                 if(request.Key != null) {
-                    context.RestrictedMode = false;
+                    context.AccessLevel = EntityAccessLevel.Administrator;
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                     if(request.Key != null && !request.Key.Equals(datapackage.AccessKey))
                         throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);

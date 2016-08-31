@@ -70,7 +70,7 @@ namespace Terradue.Tep.WebServer {
             DateTime timel = entity.GetLastLoginDate();
             this.LastLoginDate = (timel == DateTime.MinValue ? DateTimeOffset.MinValue : new DateTimeOffset(timel));
 
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             EntityList<WpsJob> jobs = new EntityList<WpsJob>(context);
             jobs.UserId = this.Id;
             jobs.OwnedItemsOnly = true;

@@ -69,16 +69,16 @@ namespace Terradue.Tep.WebServer.Services {
                         string visibility = (request.visibility != null ? request.visibility : "public");
                         switch (visibility){
                             case "public":
-                                ent.StoreGlobalPrivileges();
+                                ent.GrantGlobalPermissions();
                                 break;
                             case "restricted":
-                                ent.RemoveGlobalPrivileges();
+                                ent.RevokeGlobalPermission();
                                 if(request.groups != null && request.groups.Count > 0)
-                                    ent.StorePrivilegesForGroups(request.groups.ToArray(), true);
+                                    ent.GrantPermissionsToGroups(request.groups.ToArray(), true);
                                 break;
                             case "private":
-                                ent.StorePrivilegesForGroups(null, true);
-								ent.RemoveGlobalPrivileges();
+                                ent.GrantPermissionsToGroups(new int[0], true);
+                                ent.RevokeGlobalPermission();
                                 break;
                             default:
                                 break;

@@ -14,7 +14,7 @@ namespace Terradue.Tep.WebServer.Services {
     
     [Route("/activity/search", "GET", Summary = "GET activity as opensearch", Notes = "")]
     public class ActivitySearchRequestTep : IReturn<HttpResult>{
-        [ApiMember(Name="nologin", Description = "get login activities", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        [ApiMember(Name="nologin", Description = "dont get login activities", ParameterType = "query", DataType = "bool", IsRequired = false)]
         public bool nologin { get; set; }
     }
 
@@ -31,7 +31,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(ActivitySearchRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             context.Open();
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
@@ -48,7 +48,9 @@ namespace Terradue.Tep.WebServer.Services {
             activities = new EntityList<Activity>(context);
             activities.Identifier = "activity";
             foreach (Activity item in tmplist) {
-                if(!request.nologin || (item.Privilege.EntityTypeId != EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
+                if(!request.nologin || 
+                   (item.Privilege != null && item.Privilege.EntityType != null && item.Privilege.EntityType.Id != EntityType.GetEntityType(typeof(UserTep)).Id && !item.Privilege.Operation.Equals("l")))
+//                    EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
                     activities.Include(item);
             }
             osentities.Add(activities);

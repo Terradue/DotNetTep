@@ -82,7 +82,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c> if this instance is public; otherwise, <c>false</c>.</returns>
         public bool IsPublic(){
-            return HasGlobalPrivilege();
+            return DoesGrantGlobalPermission();
         }
 
         /// <summary>

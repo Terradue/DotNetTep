@@ -152,7 +152,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{id}}/public GET Id='{0}'", request.id));
-                context.RestrictedMode = false;
+                context.AccessLevel = EntityAccessLevel.Administrator;
                 UserTep user = UserTep.GetPublicUser(context, request.id);
                 result = new WebUserProfileTep(context, user);
                 context.Close();

@@ -4,6 +4,7 @@ using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.Linq;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -76,9 +77,9 @@ namespace Terradue.Tep.WebServer.Services {
                 Series serie = new Series(context);
                 serie = request.ToEntity(context, serie);
                 serie.Store();
-                serie.StoreGlobalPrivileges();
+                serie.GrantGlobalPermissions();
 
-                Activity activity = new Activity(context, serie, OperationPriv.CREATE);
+                Activity activity = new Activity(context, serie, EntityOperationType.Create);
                 activity.Store();
 
                 context.LogInfo(this,string.Format("/data/collection POST Id='{0}'", serie.Id));
@@ -110,12 +111,12 @@ namespace Terradue.Tep.WebServer.Services {
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":
-                            serie.StoreGlobalPrivileges();
-                            Activity activity = new Activity(context, serie, OperationPriv.MAKE_PUBLIC);
+                            serie.GrantGlobalPermissions();
+                            Activity activity = new Activity(context, serie, EntityOperationType.Share);
                             activity.Store();
                             break;
                         case "private":
-                            serie.RemoveGlobalPrivileges();
+                            serie.GrantGlobalPermissions();
                             break;
                         default:
                             break;
@@ -123,7 +124,7 @@ namespace Terradue.Tep.WebServer.Services {
                 } else {
                     serie = request.ToEntity(context, serie);
                     serie.Store();
-                    Activity activity = new Activity(context, serie, OperationPriv.MODIFY);
+                    Activity activity = new Activity(context, serie, EntityOperationType.Change);
                     activity.Store();
                 }
 
@@ -152,7 +153,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 Series serie = Series.FromId(context, request.Id);
                 serie.Delete();
-                Activity activity = new Activity(context, serie, OperationPriv.DELETE);
+                Activity activity = new Activity(context, serie, EntityOperationType.Delete);
                 activity.Store();
                 context.Close();
             } catch (Exception e) {
@@ -176,7 +177,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/data/collection/{{collId}}/group GET collId='{0}'", request.CollId));
 
                 Collection coll = Collection.FromId(context, request.CollId);
-                List<int> ids = coll.GetGroupsWithPrivileges();
+                List<int> ids = coll.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -207,7 +208,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 Collection serie = Collection.FromId(context, request.CollId);
 
-                List<int> ids = serie.GetGroupsWithPrivileges();
+                List<int> ids = serie.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -216,7 +217,7 @@ namespace Terradue.Tep.WebServer.Services {
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
 
-                serie.StorePrivilegesForGroups(new int[]{request.Id});
+                serie.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {

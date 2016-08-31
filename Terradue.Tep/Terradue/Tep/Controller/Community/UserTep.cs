@@ -100,7 +100,7 @@ namespace Terradue.Tep {
         }
 
         public static UserTep GetPublicUser(IfyContext context, int id){
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             UserTep usr = new UserTep(context, User.FromId(context, id));
             return usr;
         }

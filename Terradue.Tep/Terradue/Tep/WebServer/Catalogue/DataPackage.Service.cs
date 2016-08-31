@@ -15,6 +15,7 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.Linq;
 
 
 
@@ -344,7 +345,7 @@ namespace Terradue.Tep.WebServer.Services
                 def.Store();
 
                 if(!def.IsDefault){ //we dont store activities about the temporary data package
-                    Activity activity = new Activity(context, def, OperationPriv.VIEW);
+                    Activity activity = new Activity(context, def, EntityOperationType.View);
                     activity.Store();
                 }
 
@@ -555,7 +556,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group GET DpId='{0}'", request.DpId));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
-                List<int> ids = dp.GetGroupsWithPrivileges();
+                List<int> ids = dp.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -585,7 +586,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
-                List<int> ids = dp.GetGroupsWithPrivileges();
+                List<int> ids = dp.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -594,7 +595,7 @@ namespace Terradue.Tep.WebServer.Services
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
 
-                dp.StorePrivilegesForGroups(new int[]{request.Id});
+                dp.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
@@ -620,7 +621,7 @@ namespace Terradue.Tep.WebServer.Services
                 string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
                 context.Execute(sql);
 
-                dp.StorePrivilegesForGroups(request.ToArray());
+                dp.GrantPermissionsToGroups(request.ToArray());
 
                 context.Close();
             } catch (Exception e) {

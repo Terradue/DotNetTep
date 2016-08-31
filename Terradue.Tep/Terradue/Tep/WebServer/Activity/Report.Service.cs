@@ -414,7 +414,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             //shared data packages
             EntityType entityType = EntityType.GetEntityType(typeof(DataPackage));
-            Privilege priv = Privilege.FromTypeAndOperation(context, entityType.Id, OperationPriv.MAKE_PUBLIC);
+            Privilege priv = Privilege.Get(entityType, EntityOperationType.Share);
             sql = String.Format("SELECT id FROM activity WHERE id_type={0} AND id_priv={1} AND log_time >= '{2}' AND log_time <= '{3}' AND id_owner NOT IN ({4});",
                                 entityType.Id, priv.Id, startdate, enddate, skipedIds);
             dbConnection = context.GetDbConnection();

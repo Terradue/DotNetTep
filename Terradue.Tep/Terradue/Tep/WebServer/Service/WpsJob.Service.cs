@@ -11,6 +11,7 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.Linq;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -60,24 +61,6 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
-                context.Close();
-                throw e;
-            }
-
-            return result;
-        }
-
-        public object Get(WpsJobGetOneRequestTep request){
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            WebWpsJobTep result = new WebWpsJobTep();
-            try {
-                context.Open();
-
-                WpsJob job = WpsJob.FromId(context, request.Id);
-                result = new WebWpsJobTep(job, context);
-
-                context.Close();
-            } catch (Exception e) {
                 context.Close();
                 throw e;
             }
@@ -276,7 +259,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
-                List<int> ids = job.GetGroupsWithPrivileges();
+                List<int> ids = job.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -306,7 +289,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group POST jobId='{0}',Id='{1}'",request.JobId, request.Id));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
-                List<int> ids = wps.GetGroupsWithPrivileges();
+                List<int> ids = wps.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -314,8 +297,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach(Group grp in groups){
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
-
-                wps.StorePrivilegesForGroups(new int[]{request.Id});
+                wps.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
@@ -341,7 +323,7 @@ namespace Terradue.Tep.WebServer.Services {
                 string sql = String.Format("DELETE FROM wpsjob_priv WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
                 context.Execute(sql);
 
-                wps.StorePrivilegesForGroups(request.ToArray());
+                wps.GrantPermissionsToGroups(request.ToArray());
 
                 context.Close();
             } catch (Exception e) {

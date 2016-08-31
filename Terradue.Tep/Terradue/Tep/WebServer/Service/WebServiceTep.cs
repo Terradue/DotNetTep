@@ -67,7 +67,7 @@ namespace Terradue.Tep.WebServer {
         /// <param name="entity">Entity.</param>
         public WebServiceTep(IfyContext context, Service entity) : base(entity)
         {
-            this.IsPublic = entity.HasGlobalPrivilege();
+            this.IsPublic = entity.DoesGrantGlobalPermission();
             this.OwnerId = entity.UserId;
         }
 

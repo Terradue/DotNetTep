@@ -303,7 +303,7 @@ namespace Terradue.Tep {
         }
 
         public bool IsPublic(){
-            return HasGlobalPrivilege();
+            return DoesGrantGlobalPermission();
         }
 
         public bool IsPrivate(){

@@ -29,8 +29,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(SearchWPSProviders request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.RestrictedMode = false;
-            object result;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             context.Open();
             context.LogInfo(this,string.Format("/cr/wps/search GET"));
 
@@ -167,7 +166,7 @@ namespace Terradue.Tep.WebServer.Services {
             IfyWebContext context;
             System.IO.Stream stream = new System.IO.MemoryStream();
             context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
 
             context.Open();
             context.LogInfo(this,string.Format("/wps/WebProcessingService GET service='{4}',request='{2}',version='{5}',identifier='{1}',dataInputs='{0}',responseDocument='{3}'",
@@ -383,7 +382,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             System.IO.Stream stream = new System.IO.MemoryStream();
             try{
                 context.Open();
@@ -494,7 +493,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetWPSProviders request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             List<WebWpsProvider> result = new List<WebWpsProvider>();
             try {
                 context.Open();
@@ -543,7 +542,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/cr/wps POST Id='{0}'", wpsProvider.Id));
 
                 //Make it public, the authorizations will then be done on the services
-                wpsProvider.StoreGlobalPrivileges();
+                wpsProvider.GrantGlobalPermissions();
 
                 wpsProvider.StoreProcessOfferings();
 
@@ -709,10 +708,10 @@ namespace Terradue.Tep.WebServer.Services {
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":
-                            wps.StoreGlobalPrivileges();
+                            wps.GrantGlobalPermissions();
                             break;
                         case "private":
-                            wps.RemoveGlobalPrivileges();
+                            wps.RevokeGlobalPermission();
                             break;
                         default:
                             break;
@@ -835,7 +834,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
 
-                List<int> ids = wps.GetGroupsWithPrivileges();
+                List<int> ids = wps.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -865,7 +864,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group POST WpsId='{0}'", request.WpsId));
                 WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
 
-                List<int> ids = wps.GetGroupsWithPrivileges();
+                List<int> ids = wps.GetAuthorizedGroupIds().ToList();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -874,7 +873,7 @@ namespace Terradue.Tep.WebServer.Services {
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
 
-                wps.StorePrivilegesForGroups(new int[]{request.Id});
+                wps.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
