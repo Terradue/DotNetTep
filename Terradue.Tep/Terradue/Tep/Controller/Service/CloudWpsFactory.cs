@@ -84,7 +84,7 @@ namespace Terradue.Tep {
                 context.LogDebug(this,string.Format("Get VM Pool for user {0}",cloudusername));
                 VM_POOL pool = oneClient.VMGetPoolInfo(-2, -1, -1, 3);
                 if(pool != null && pool.VM != null){
-                    context.LogDebug(this,string.Format("{0} VM found",pool.VM.Length));
+                    context.LogDebug(this,string.Format("{0} VM found",pool.VM != null ? pool.VM.Length : 0));
                     foreach (VM vm in pool.VM) {
                         if(vm.USER_TEMPLATE == null) continue;
                         try{

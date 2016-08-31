@@ -403,7 +403,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var remoteWpsResponseStream = new MemoryStream();
                 HttpWebResponse remoteWpsResponse = null;
 
-                context.LogDebug(this,string.Format(string.Format("Status url = {0}",executeHttpRequest.RequestUri.AbsoluteUri)));
+                context.LogDebug(this,string.Format(string.Format("Status url = {0}",executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
 
                 try {
                     remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse();
