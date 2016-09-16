@@ -134,23 +134,27 @@ namespace Terradue.Tep.WebServer.Services {
             AtomFeed feed = new AtomFeed();
             if(execResponse.ProcessOutputs != null){
                 foreach (OutputDataType output in execResponse.ProcessOutputs) {
-                    if(output.Identifier != null){
-                        if (output.Item != null && ((DataType)(output.Item)).Item != null) {
+                    if (output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_metadata")) {
+                        context.LogDebug(this, string.Format("Wps proxy - metadata"));
+                        if (output.Item is OutputReferenceType) {
+                            var reference = output.Item as OutputReferenceType;
+                            feed = CreateFeedForMetadata(reference.href);
+                        } else if (output.Item is DataType) {
                             var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                            if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
-                                var reference = item.Reference as OutputReferenceType;
-                                context.LogDebug(this,string.Format("Wps proxy - metadata"));
-                                feed = CreateFeedForMetadata(reference.href);
-                            } else if (item.Any != null && item.Any[0].LocalName != null) {
-                                if (item.Any[0].LocalName.Equals("RDF")) {
-                                    context.LogDebug(this,string.Format("Wps proxy - RDF"));
-                                    feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
-                                } else if (item.Any[0].LocalName.Equals("metalink")) {
-                                    context.LogDebug(this,string.Format("Wps proxy - metalink"));
-                                    feed = CreateFeedForMetalink(item.Any[0], request.jobid, context.BaseUrl);
-                                }
-                            }       
+                            var reference = item.Reference as OutputReferenceType;
+                            feed = CreateFeedForMetadata(reference.href);
                         }
+                    } else {
+                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                        if (item.Any != null && item.Any[0].LocalName != null) {
+                            if (item.Any[0].LocalName.Equals("RDF")) {
+                                context.LogDebug(this, string.Format("Wps proxy - RDF"));
+                                feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
+                            } else if (item.Any[0].LocalName.Equals("metalink")) {
+                                context.LogDebug(this, string.Format("Wps proxy - metalink"));
+                                feed = CreateFeedForMetalink(item.Any[0], request.jobid, context.BaseUrl);
+                            }
+                        }   
                     }
                 }
             }
