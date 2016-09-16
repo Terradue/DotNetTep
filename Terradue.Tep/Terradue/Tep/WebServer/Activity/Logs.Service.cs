@@ -67,8 +67,22 @@ namespace Terradue.Tep.WebServer.Services {
                     while (!sr.EndOfStream) lines.Add(sr.ReadLine());
                 }
 
+                List<string> lines2 = new List<string> ();
+                for (int i = 0; i < lines.Count; i++) {
+                    if (lines [i].Contains ("ERROR")){
+                        var newline = lines[i];
+                        while(i < lines.Count - 1){
+                            var afterline = lines [i + 1];
+                            if (!afterline.Contains ("INFO") && !afterline.Contains ("DEBUG") && !afterline.Contains ("ERROR")){
+                                newline += "-" + lines[++i];
+                            } else break;
+                        }
+                        lines2.Add (newline);
+                    } else lines2.Add (lines [i]);
+                }
+
                 context.Close();
-                return lines.ToArray();
+                return lines2.ToArray();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
                 context.Close();
