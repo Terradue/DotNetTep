@@ -22,6 +22,9 @@ namespace Terradue.Tep.WebServer {
     [Route("/job/wps", "PUT", Summary = "POST a WPS job", Notes = "")]
     public class WpsJobUpdateRequestTep : WebWpsJobTep, IReturn<WebWpsJobTep>{}
 
+    [Route ("/job/wps/copy", "PUT", Summary = "Copy the wps job to the current user", Notes = "")]
+    public class WpsJobCopyRequestTep : WebWpsJobTep, IReturn<WebWpsJobTep> { }
+
     [Route("/job/wps/search", "GET", Summary = "GET WPS job as opensearch", Notes = "")]
     public class WpsJobSearchRequestTep : IReturn<HttpResult>{}
 

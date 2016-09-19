@@ -452,29 +452,43 @@ namespace Terradue.Tep.WebServer.Services {
                 if (execResponse.ProcessOutputs != null) {
                     foreach (OutputDataType output in execResponse.ProcessOutputs) {
                         try{
-                            if(output.Item != null && output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                if (item.Reference != null && output.Identifier.Value.Equals("result_osd")) {
+                            if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_metadata")){
+                                var item = new ComplexDataType();
+                                var reference = output.Item as OutputReferenceType;
+                                reference.mimeType = "application/opensearchdescription+xml";
+                                reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                                item.Reference = reference;
+                                item.Any = null;
+                                item.mimeType = "application/xml";
+                                output.Identifier = new CodeType{ Value = "result_osd" };
+                                output.Item = new DataType();
+                                ((DataType)(output.Item)).Item = item;
+                            } 
+                            else if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_osd")){
+                                if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                     var reference = item.Reference as OutputReferenceType;
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
-                                } else if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
-                                    var reference = new OutputReferenceType();
-                                    reference.mimeType = "application/opensearchdescription+xml";
-                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
-                                    item.Reference = reference;
-                                    item.Any = null;
-                                    item.mimeType = "application/xml";
-                                    output.Identifier = new CodeType{ Value = "result_osd" };
-                                } else if (item.Any != null) {
-                                    var reference = new OutputReferenceType();
-                                    reference.mimeType = "application/opensearchdescription+xml";
-                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
-                                    item.Reference = reference;
-                                    item.Any = null;
-                                    item.mimeType = "application/xml";
-                                    output.Identifier = new CodeType{ Value = "result_osd" };
+                                } else if (output.Item is OutputReferenceType) {
+                                    var reference = output.Item as OutputReferenceType;
+                                    reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
+                                    output.Item = reference;
+                                }
+                            }
+                            else {
+                                if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    var item = ((DataType)(output.Item)).Item as ComplexDataType; 
+                                    if (item.Any != null) {
+                                        var reference = new OutputReferenceType();
+                                        reference.mimeType = "application/opensearchdescription+xml";
+                                        reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                                        item.Reference = reference;
+                                        item.Any = null;
+                                        item.mimeType = "application/xml";
+                                        output.Identifier = new CodeType{ Value = "result_osd" }; 
+                                    }
                                 }
                             }
                         }catch(Exception){}
