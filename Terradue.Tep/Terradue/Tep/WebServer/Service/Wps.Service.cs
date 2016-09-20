@@ -453,8 +453,9 @@ namespace Terradue.Tep.WebServer.Services {
                     foreach (OutputDataType output in execResponse.ProcessOutputs) {
                         try{
                             if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_metadata")){
+                                context.LogDebug (this, string.Format ("Case result_metadata"));
                                 var item = new ComplexDataType();
-                                var reference = output.Item as OutputReferenceType;
+                                var reference = new OutputReferenceType();
                                 reference.mimeType = "application/opensearchdescription+xml";
                                 reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
                                 item.Reference = reference;
@@ -466,18 +467,21 @@ namespace Terradue.Tep.WebServer.Services {
                             } 
                             else if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_osd")){
                                 if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
                                     var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                     var reference = item.Reference as OutputReferenceType;
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
                                 } else if (output.Item is OutputReferenceType) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
                                     var reference = output.Item as OutputReferenceType;
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
                                     output.Item = reference;
                                 }
                             }
                             else {
+                                if (output.Identifier != null && output.Identifier.Value != null) context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
                                 if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
                                     var item = ((DataType)(output.Item)).Item as ComplexDataType; 
                                     if (item.Any != null) {
@@ -491,7 +495,9 @@ namespace Terradue.Tep.WebServer.Services {
                                     }
                                 }
                             }
-                        }catch(Exception){}
+                        }catch(Exception e){
+                            context.LogError (this, e.Message);
+                        }
                     }
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);
