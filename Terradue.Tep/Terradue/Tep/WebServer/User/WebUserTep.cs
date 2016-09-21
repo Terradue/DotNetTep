@@ -74,6 +74,12 @@ namespace Terradue.Tep.WebServer {
     [Route("/user", "POST", Summary = "Create a new user", Notes = "User is contained in the POST data.")]
     public class UserCreateRequestTep : WebUserTep, IReturn<WebUserTep> {}
 
+    [Route ("/user/key", "POST", Summary = "Create a new apikey", Notes = "User is contained in the POST data.")]
+    public class UserCreateApiKeyRequestTep : IReturn<WebUserTep> { }
+
+    [Route ("/user/key", "DELETE", Summary = "Create a new apikey", Notes = "User is contained in the POST data.")]
+    public class UserDeleteApiKeyRequestTep : IReturn<WebUserTep> { }
+
     [Route("/user/cert", "PUT", Summary = "Update user cert", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
     public class UserUpdateCertificateRequestTep : WebUserTep, IReturn<WebUserTep> {}
 
@@ -102,6 +108,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string T2Username { get; set; }
 
+        [ApiMember (Name = "apikey", Description = "User apikeyl", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string ApiKey { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
         /// </summary>
@@ -116,6 +125,8 @@ namespace Terradue.Tep.WebServer {
             var umssoUser = umssoauthType.GetUserProfile(context, HttpContext.Current.Request, false);
             if (umssoUser != null) this.UmssoEmail = umssoUser.Email;
             this.T2Username = entity.TerradueCloudUsername;
+            //only current user can know the api key
+            if(context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
         }
 
         /// <summary>
