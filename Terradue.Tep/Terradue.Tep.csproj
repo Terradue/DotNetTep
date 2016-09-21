@@ -148,9 +148,6 @@
     <Reference Include="Terradue.OpenSearch.Twitter">
       <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.0.10\lib\net40\Terradue.OpenSearch.Twitter.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.WebService.Model">
-      <HintPath>..\packages\Terradue.WebService.Model.1.1.12\lib\net40\Terradue.WebService.Model.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.News">
       <HintPath>..\packages\Terradue.News.1.0.13\lib\net40\Terradue.News.dll</HintPath>
     </Reference>
@@ -190,14 +187,17 @@
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.12.12\lib\net40\Terradue.OpenSearch.dll</HintPath>
     </Reference>
+    <Reference Include="Terradue.WebService.Model">
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.13\lib\net40\Terradue.WebService.Model.dll</HintPath>
+    </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.6.62\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.6.63\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.6.62\lib\net40\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.6.63\lib\net40\Terradue.Portal.Agent.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.6.62\lib\net40\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.6.63\lib\net40\Terradue.Portal.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
