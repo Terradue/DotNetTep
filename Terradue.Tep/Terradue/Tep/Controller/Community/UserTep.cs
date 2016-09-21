@@ -200,11 +200,12 @@ namespace Terradue.Tep {
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
-            var httpResponse = (HttpWebResponse)request.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                this.TerradueCloudUsername = streamReader.ReadToEnd();
-                this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
-                context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+            using (var httpResponse = (HttpWebResponse)request.GetResponse ()) {
+                using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
+                    this.TerradueCloudUsername = streamReader.ReadToEnd ();
+                    this.StoreCloudUsername (context.GetConfigIntegerValue ("One-default-provider"));
+                    context.LogDebug (this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                }
             }
         }
 
@@ -236,13 +237,14 @@ namespace Terradue.Tep {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse();
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
-                    var result = streamReader.ReadToEnd();
-                    User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User>(result);
-                    this.TerradueCloudUsername = resUser.Username;
-                    context.LogDebug(this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
-                    this.StoreCloudUsername();
+                using (var httpResponse = (HttpWebResponse)request.GetResponse ()) {
+                    using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {//TODO in case of error
+                        var result = streamReader.ReadToEnd ();
+                        User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User> (result);
+                        this.TerradueCloudUsername = resUser.Username;
+                        context.LogDebug (this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
+                        this.StoreCloudUsername ();
+                    }
                 }
             }
         }
@@ -264,11 +266,12 @@ namespace Terradue.Tep {
             request.ContentType = "application/json";
             request.Accept = "application/json";
 
-            var httpResponse = (HttpWebResponse)request.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                this.SshPubKey = streamReader.ReadToEnd();
-                this.SshPubKey = this.SshPubKey.Replace("\"", "");
-                context.LogDebug(this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
+            using (var httpResponse = (HttpWebResponse)request.GetResponse ()){
+                using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
+                    this.SshPubKey = streamReader.ReadToEnd ();
+                    this.SshPubKey = this.SshPubKey.Replace ("\"", "");
+                    context.LogDebug (this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
+                }
             }
         }
 

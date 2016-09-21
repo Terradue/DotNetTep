@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using ServiceStack.ServiceHost;
 
@@ -48,9 +49,11 @@ namespace Terradue.Tep.WebServer.Services {
             httprequest.ContentType = "application/json";
             httprequest.Accept = "application/json";
 
+            Stream stream;
             try{
-                HttpWebResponse httpResponse = (HttpWebResponse)httprequest.GetResponse();
-                return httpResponse.GetResponseStream();
+                using (var httpResponse = (HttpWebResponse)httprequest.GetResponse ()) {
+                    stream = httpResponse.GetResponseStream ();
+                }
             }catch(WebException e){
                 var reader = new System.IO.StreamReader(e.Response.GetResponseStream());
                 string text = reader.ReadToEnd();
@@ -60,7 +63,7 @@ namespace Terradue.Tep.WebServer.Services {
                 log.ErrorFormat("{0} - {1}",e.Message, e.StackTrace);
                 throw e;
             }
-            return null;
+            return stream;
         }
 
     }

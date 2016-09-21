@@ -394,9 +394,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 string executeUrl = wpsjob.StatusLocation;
 
-                HttpWebRequest executeHttpRequest = WpsProvider.CreateWebRequest(executeUrl);
-                    //(HttpWebRequest)WebRequest.Create(executeUrl);
-                if (executeUrl.Contains("gpod.eo.esa.int")) {
+                HttpWebRequest executeHttpRequest = wpsjob.Provider.CreateWebRequest(wpsjob.StatusLocation);
+                if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }
 
@@ -413,6 +412,7 @@ namespace Terradue.Tep.WebServer.Services {
                         remoteWpsResponse = (HttpWebResponse)e.Response;
                     } else if (e.Response != null) remoteWpsResponse = (HttpWebResponse)e.Response;
                     else {
+                        remoteWpsResponse.Close ();
                         context.LogError(this,string.Format(e.Message));
                         return new HttpResult(e.Message, HttpStatusCode.BadGateway);
                     }
@@ -432,6 +432,7 @@ namespace Terradue.Tep.WebServer.Services {
                         return new HttpResult(e.Message, HttpStatusCode.BadRequest);
                     }
                 }
+                remoteWpsResponse.Close ();
 
                 OpenGis.Wps.ExecuteResponse execResponse = null; 
                 try{
@@ -441,10 +442,12 @@ namespace Terradue.Tep.WebServer.Services {
                     remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                     using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
                         string errormsg = reader.ReadToEnd();
+                        remoteWpsResponseStream.Close ();
                         context.LogError(this, errormsg);
                         return new HttpResult(errormsg, HttpStatusCode.BadRequest);
                     }
                 }
+                remoteWpsResponseStream.Close ();
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
@@ -453,8 +456,9 @@ namespace Terradue.Tep.WebServer.Services {
                     foreach (OutputDataType output in execResponse.ProcessOutputs) {
                         try{
                             if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_metadata")){
+                                context.LogDebug (this, string.Format ("Case result_metadata"));
                                 var item = new ComplexDataType();
-                                var reference = output.Item as OutputReferenceType;
+                                var reference = new OutputReferenceType();
                                 reference.mimeType = "application/opensearchdescription+xml";
                                 reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
                                 item.Reference = reference;
@@ -466,18 +470,21 @@ namespace Terradue.Tep.WebServer.Services {
                             } 
                             else if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_osd")){
                                 if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
                                     var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                     var reference = item.Reference as OutputReferenceType;
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
                                 } else if (output.Item is OutputReferenceType) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
                                     var reference = output.Item as OutputReferenceType;
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
                                     output.Item = reference;
                                 }
                             }
                             else {
+                                if (output.Identifier != null && output.Identifier.Value != null) context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
                                 if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
                                     var item = ((DataType)(output.Item)).Item as ComplexDataType; 
                                     if (item.Any != null) {
@@ -491,7 +498,9 @@ namespace Terradue.Tep.WebServer.Services {
                                     }
                                 }
                             }
-                        }catch(Exception){}
+                        }catch(Exception e){
+                            context.LogError (this, e.Message);
+                        }
                     }
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);

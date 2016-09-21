@@ -37,7 +37,7 @@ namespace Terradue.Tep.WebServer.Services {
                 if(!path.EndsWith("/")) path += "/";
 
                 context.LogDebug(this, path);
-                result = System.IO.Directory.GetFiles(path + "../logs","*.log*").ToList();
+                result = System.IO.Directory.GetFiles(path + "logs","*.log*").ToList();
                 result = result.ConvertAll(f => f.Substring(f.LastIndexOf("/") + 1));
 
                 context.Close();
@@ -59,7 +59,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
-                var filepath = string.Format("{1}../logs/{0}",request.filename,path);
+                var filepath = string.Format("{1}logs/{0}",request.filename,path);
 
                 List<string> lines = new List<string>();
                 using (var csv = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -69,16 +69,11 @@ namespace Terradue.Tep.WebServer.Services {
 
                 List<string> lines2 = new List<string> ();
                 for (int i = 0; i < lines.Count; i++) {
-                    if (lines [i].Contains ("ERROR")){
-                        var newline = lines[i];
-                        while(i < lines.Count - 1){
-                            var afterline = lines [i + 1];
-                            if (!afterline.Contains ("INFO") && !afterline.Contains ("DEBUG") && !afterline.Contains ("ERROR")){
-                                newline += "-" + lines[++i];
-                            } else break;
-                        }
-                        lines2.Add (newline);
-                    } else lines2.Add (lines [i]);
+                    var newline = lines[i];
+                    while(i < lines.Count - 1 && !IsNewLog(lines[i+1])){
+                        newline += lines[++i];
+                    }
+                    lines2.Add (newline);
                 }
 
                 context.Close();
@@ -90,6 +85,14 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
-       }
+        private bool IsNewLog (string line) {
+            var parts = line.Split (" | ".ToCharArray());
+            try {
+                DateTime.Parse (parts [0]);
+                if (line.Contains ("INFO") || line.Contains ("DEBUG") || line.Contains ("ERROR")) return true;
+            } catch (Exception){}
+            return false;
+        }
+    }
 }
 
