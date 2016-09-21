@@ -419,35 +419,38 @@ namespace Terradue.Tep.WebServer.Services {
                 }
 
                 try {
-                    remoteWpsResponse.GetResponseStream().CopyTo(remoteWpsResponseStream);
+                    remoteWpsResponse.GetResponseStream ().CopyTo (remoteWpsResponseStream);
                 } catch (WebException e) {
 
                     // TODO: Remove this patch when Frank will correct GPOD
-                    if (executeUrl.Contains("gpod.eo.esa.int")) {
-                        e.Response.GetResponseStream().CopyTo(remoteWpsResponseStream);
+                    if (executeUrl.Contains ("gpod.eo.esa.int")) {
+                        e.Response.GetResponseStream ().CopyTo (remoteWpsResponseStream);
                         if (remoteWpsResponseStream == null)
                             throw e;
                     } else {
-                        context.LogError(this, e.Message);
-                        return new HttpResult(e.Message, HttpStatusCode.BadRequest);
+                        context.LogError (this, e.Message);
+                        return new HttpResult (e.Message, HttpStatusCode.BadRequest);
                     }
+                } finally {
+                    remoteWpsResponse.Close ();
                 }
-                remoteWpsResponse.Close ();
 
-                OpenGis.Wps.ExecuteResponse execResponse = null; 
-                try{
-                    remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                    execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(remoteWpsResponseStream);
-                }catch(Exception e){
-                    remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                    using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
-                        string errormsg = reader.ReadToEnd();
+                OpenGis.Wps.ExecuteResponse execResponse = null;
+                try {
+                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                    execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
+                } catch (Exception e) {
+                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                    using (StreamReader reader = new StreamReader (remoteWpsResponseStream)) {
+                        string errormsg = reader.ReadToEnd ();
                         remoteWpsResponseStream.Close ();
-                        context.LogError(this, errormsg);
-                        return new HttpResult(errormsg, HttpStatusCode.BadRequest);
+                        context.LogError (this, errormsg);
+                        return new HttpResult (errormsg, HttpStatusCode.BadRequest);
                     }
+                } finally {
+                    remoteWpsResponseStream.Close ();
                 }
-                remoteWpsResponseStream.Close ();
+
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
