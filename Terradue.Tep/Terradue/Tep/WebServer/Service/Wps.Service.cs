@@ -394,9 +394,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 string executeUrl = wpsjob.StatusLocation;
 
-                HttpWebRequest executeHttpRequest = WpsProvider.CreateWebRequest(executeUrl);
-                    //(HttpWebRequest)WebRequest.Create(executeUrl);
-                if (executeUrl.Contains("gpod.eo.esa.int")) {
+                HttpWebRequest executeHttpRequest = wpsjob.Provider.CreateWebRequest(wpsjob.StatusLocation);
+                if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }
 
@@ -413,6 +412,7 @@ namespace Terradue.Tep.WebServer.Services {
                         remoteWpsResponse = (HttpWebResponse)e.Response;
                     } else if (e.Response != null) remoteWpsResponse = (HttpWebResponse)e.Response;
                     else {
+                        remoteWpsResponse.Close ();
                         context.LogError(this,string.Format(e.Message));
                         return new HttpResult(e.Message, HttpStatusCode.BadGateway);
                     }
@@ -432,6 +432,7 @@ namespace Terradue.Tep.WebServer.Services {
                         return new HttpResult(e.Message, HttpStatusCode.BadRequest);
                     }
                 }
+                remoteWpsResponse.Close ();
 
                 OpenGis.Wps.ExecuteResponse execResponse = null; 
                 try{
@@ -441,10 +442,12 @@ namespace Terradue.Tep.WebServer.Services {
                     remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                     using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
                         string errormsg = reader.ReadToEnd();
+                        remoteWpsResponseStream.Close ();
                         context.LogError(this, errormsg);
                         return new HttpResult(errormsg, HttpStatusCode.BadRequest);
                     }
                 }
+                remoteWpsResponseStream.Close ();
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;

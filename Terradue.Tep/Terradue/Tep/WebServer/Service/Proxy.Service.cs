@@ -109,27 +109,27 @@ namespace Terradue.Tep.WebServer.Services {
 
             WpsJob wpsjob = WpsJob.FromIdentifier(context, request.jobid);
 
+            if (string.IsNullOrEmpty (wpsjob.StatusLocation)) throw new Exception ("Invalid Status Location");
+
             context.LogDebug(this,string.Format("Wps Proxy search for wpsjob {0}", wpsjob.Identifier));
 
-            string executeUrl = wpsjob.StatusLocation;
-
-            HttpWebRequest executeHttpRequest = (HttpWebRequest)WebRequest.Create(executeUrl);
-            if (executeUrl.Contains("gpod.eo.esa.int")) {
+            HttpWebRequest executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
+            if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
             }
             OpenGis.Wps.ExecuteResponse execResponse = null;
             try{
-                context.LogDebug(this,string.Format("Wps proxy - exec response requested"));
+                context.LogDebug(this,string.Format("Wps proxy - exec response requested - {0}", executeHttpRequest.Address.AbsoluteUri));
                 execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(executeHttpRequest.GetResponse().GetResponseStream());
                 context.LogDebug(this,string.Format("Wps proxy - exec response OK"));
             }catch(Exception e){
                 context.LogError(this,string.Format(e.Message));
             }
             if (execResponse == null) throw new Exception("Unable to get execute response from proxied job");
-            Uri uri = new Uri(execResponse.statusLocation);
-            context.LogDebug(this,string.Format("Proxy WPS - uri: " + uri));
+            //Uri uri = new Uri(execResponse.statusLocation);
 
             execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
+            context.LogDebug (this, string.Format ("Proxy WPS - uri: " + execResponse.statusLocation));
 
             AtomFeed feed = new AtomFeed();
             if(execResponse.ProcessOutputs != null){
@@ -138,23 +138,27 @@ namespace Terradue.Tep.WebServer.Services {
                         context.LogDebug(this, string.Format("Wps proxy - metadata"));
                         if (output.Item is OutputReferenceType) {
                             var reference = output.Item as OutputReferenceType;
-                            feed = CreateFeedForMetadata(reference.href);
+                            HttpWebRequest atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
+                            feed = CreateFeedForMetadata (atomRequest);
                         } else if (output.Item is DataType) {
                             var item = ((DataType)(output.Item)).Item as ComplexDataType;
                             var reference = item.Reference as OutputReferenceType;
-                            feed = CreateFeedForMetadata(reference.href);
+                            HttpWebRequest atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
+                            feed = CreateFeedForMetadata(atomRequest);
                         }
                     } else {
-                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                        if (item.Any != null && item.Any[0].LocalName != null) {
-                            if (item.Any[0].LocalName.Equals("RDF")) {
-                                context.LogDebug(this, string.Format("Wps proxy - RDF"));
-                                feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
-                            } else if (item.Any[0].LocalName.Equals("metalink")) {
-                                context.LogDebug(this, string.Format("Wps proxy - metalink"));
-                                feed = CreateFeedForMetalink(item.Any[0], request.jobid, context.BaseUrl);
+                        if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                            if (item.Any != null && item.Any [0].LocalName != null) {
+                                if (item.Any [0].LocalName.Equals ("RDF")) {
+                                    context.LogDebug (this, string.Format ("Wps proxy - RDF"));
+                                    feed = CreateFeedForRDF (item.Any [0], request.jobid, context.BaseUrl);
+                                } else if (item.Any [0].LocalName.Equals ("metalink")) {
+                                    context.LogDebug (this, string.Format ("Wps proxy - metalink"));
+                                    feed = CreateFeedForMetalink (item.Any [0], request.jobid, context.BaseUrl);
+                                }
                             }
-                        }   
+                        }
                     }
                 }
             }
@@ -186,20 +190,20 @@ namespace Terradue.Tep.WebServer.Services {
 
         }
 
-        private AtomFeed CreateFeedForMetadata(string url){
+        private AtomFeed CreateFeedForMetadata(HttpWebRequest atomRequest){
+            Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter ();
+            using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
+                using (var atomResponseStream = new MemoryStream ()) {
 
-            HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
-            HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
+                    atomResponse.GetResponseStream ().CopyTo (atomResponseStream);
+                    atomResponseStream.Seek (0, SeekOrigin.Begin);
 
-            Stream atomResponseStream = new MemoryStream();
-            atomResponse = (HttpWebResponse)atomRequest.GetResponse();
-            atomResponse.GetResponseStream().CopyTo(atomResponseStream);
-            atomResponseStream.Seek(0, SeekOrigin.Begin);
+                    var sr = XmlReader.Create (atomResponseStream);
 
-            var sr = XmlReader.Create(atomResponseStream);
-            Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
-            atomFormatter.ReadFrom(sr);
-            sr.Close();
+                    atomFormatter.ReadFrom (sr);
+                    sr.Close();
+                }
+            }
             return new AtomFeed(atomFormatter.Feed);
         }
 
@@ -233,19 +237,19 @@ namespace Terradue.Tep.WebServer.Services {
 
                 //link is an OWS context, we add it as is
 //                if (url.Contains("/results/") && url.Contains(".atom")) {
+                Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter ();
                 if (url.Contains(".atom")) {
-                    HttpWebRequest atomRequest = (HttpWebRequest)WebRequest.Create(url);
-                    HttpWebResponse atomResponse = (HttpWebResponse)atomRequest.GetResponse();
+                    HttpWebRequest atomRequest = WpsProvider.CreateWebRequest (url, new UriBuilder(url));//TODO
+                    using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
+                        using (var atomResponseStream = new MemoryStream ()) {
+                            atomResponse.GetResponseStream ().CopyTo (atomResponseStream);
+                            atomResponseStream.Seek (0, SeekOrigin.Begin);
 
-                    Stream atomResponseStream = new MemoryStream();
-                    atomResponse = (HttpWebResponse)atomRequest.GetResponse();
-                    atomResponse.GetResponseStream().CopyTo(atomResponseStream);
-                    atomResponseStream.Seek(0, SeekOrigin.Begin);
-
-                    var sr = XmlReader.Create(atomResponseStream);
-                    Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
-                    atomFormatter.ReadFrom(sr);
-                    sr.Close();
+                            var sr = XmlReader.Create (atomResponseStream);
+                            atomFormatter.ReadFrom (sr);
+                            sr.Close ();
+                        }
+                    }
                     return new AtomFeed(atomFormatter.Feed);
                 }
                 //we build the OWS context
