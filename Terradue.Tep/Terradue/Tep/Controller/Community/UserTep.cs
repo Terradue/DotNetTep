@@ -76,6 +76,16 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Gets or sets the API key.
+        /// </summary>
+        /// <value>The API key.</value>
+        [EntityDataField ("apikey")]
+        public string ApiKey {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
@@ -97,6 +107,14 @@ namespace Terradue.Tep {
             this.Affiliation = user.Affiliation;
             this.Country = user.Country;
             this.Level = user.Level;
+        }
+
+        public override string AlternativeIdentifyingCondition {
+            get {
+                if (!string.IsNullOrEmpty (ApiKey))
+                    return String.Format ("t.key='{0}'", ApiKey);
+                else return null;
+            }
         }
 
         public static UserTep GetPublicUser(IfyContext context, int id){
@@ -136,6 +154,14 @@ namespace Terradue.Tep {
             UserTep user = new UserTep(context);
             user.Id = id;
             user.Load();
+            return user;
+        }
+
+        public new static UserTep FromApiKey (IfyContext context, string key)
+        {
+            UserTep user = new UserTep (context);
+            user.ApiKey = key;
+            user.Load ();
             return user;
         }
 
@@ -207,6 +233,13 @@ namespace Terradue.Tep {
                     context.LogDebug (this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
                 }
             }
+        }
+
+        /// <summary>
+        /// Generates the API key.
+        /// </summary>
+        public void GenerateApiKey () {
+            this.ApiKey = Guid.NewGuid ().ToString ();
         }
 
         /// <summary>

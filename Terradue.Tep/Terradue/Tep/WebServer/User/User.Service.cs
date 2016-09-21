@@ -338,6 +338,50 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Post (UserCreateApiKeyRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            WebUserTep result;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/user/key POST Id='{0}'", context.UserId));
+
+                UserTep user = UserTep.FromId (context, context.UserId);
+                user.GenerateApiKey ();
+                user.Store ();
+                
+                result = new WebUserTep (context, user);
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Delete (UserDeleteApiKeyRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            WebUserTep result;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/user/key DELETE Id='{0}'", context.UserId));
+
+                UserTep user = UserTep.FromId (context, context.UserId);
+                user.ApiKey = null;
+                user.Store ();
+
+                result = new WebUserTep (context, user);
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
         /// <summary>
         /// Delete the specified request.
         /// </summary>
