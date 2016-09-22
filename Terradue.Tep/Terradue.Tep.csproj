@@ -513,6 +513,8 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
+    <None Include="Resources\db\db-0.1#.sql" />
+    <None Include="Resources\db\db-create.sql" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
