@@ -112,7 +112,7 @@ namespace Terradue.Tep {
         public override string AlternativeIdentifyingCondition {
             get {
                 if (!string.IsNullOrEmpty (ApiKey))
-                    return String.Format ("t.key='{0}'", ApiKey);
+                    return String.Format ("t.apikey='{0}'", ApiKey);
                 else return null;
             }
         }
