@@ -33,11 +33,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/logs GET"));
 
-                string path = AppDomain.CurrentDomain.BaseDirectory;
-                if(!path.EndsWith("/")) path += "/";
-
-                context.LogDebug(this, path);
-                result = System.IO.Directory.GetFiles(path + "logs","*.log*").ToList();
+                var logpath = context.GetConfigValue ("log-path");
+                result = System.IO.Directory.GetFiles(logpath,"*.log*").ToList();
                 result = result.ConvertAll(f => f.Substring(f.LastIndexOf("/") + 1));
 
                 context.Close();
@@ -57,9 +54,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/log GET filename='{0}'", request.filename));
 
-                string path = AppDomain.CurrentDomain.BaseDirectory;
-                if(!path.EndsWith("/")) path += "/";
-                var filepath = string.Format("{1}logs/{0}",request.filename,path);
+                var logpath = context.GetConfigValue ("log-path");
+                var filepath = string.Format("{1}/{0}",request.filename,logpath);
 
                 List<string> lines = new List<string>();
                 using (var csv = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
