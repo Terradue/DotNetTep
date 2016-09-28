@@ -45,25 +45,31 @@ namespace Terradue.Tep.WebServer.Services {
             var discourseUrl = string.Format("{0}/{1}", discourseBaseUrl, query);
             log.DebugFormat("Discourse url : {0}",discourseUrl);
             HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(discourseUrl);
+            httprequest.Proxy = null;
             httprequest.Method = "GET";
             httprequest.ContentType = "application/json";
             httprequest.Accept = "application/json";
 
-            Stream stream;
+            string text = null;
             try{
                 using (var httpResponse = (HttpWebResponse)httprequest.GetResponse ()) {
-                    stream = httpResponse.GetResponseStream ();
+                    using (var stream = httpResponse.GetResponseStream ()){
+                        var reader = new StreamReader (stream, System.Text.Encoding.UTF8);
+                        text = reader.ReadToEnd ();
+                    }
                 }
+                return text;
             }catch(WebException e){
-                var reader = new System.IO.StreamReader(e.Response.GetResponseStream());
-                string text = reader.ReadToEnd();
+                using (var stream = e.Response.GetResponseStream ()){
+                    var reader = new StreamReader (stream, System.Text.Encoding.UTF8);
+                    text = reader.ReadToEnd();
+                }
                 log.ErrorFormat(text);
                 throw e;
             }catch(Exception e){
                 log.ErrorFormat("{0} - {1}",e.Message, e.StackTrace);
                 throw e;
             }
-            return stream;
         }
 
     }

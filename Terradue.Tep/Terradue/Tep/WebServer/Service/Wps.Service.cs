@@ -399,56 +399,45 @@ namespace Terradue.Tep.WebServer.Services {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }
 
-                var remoteWpsResponseStream = new MemoryStream();
-                HttpWebResponse remoteWpsResponse = null;
-
-                context.LogDebug(this,string.Format(string.Format("Status url = {0}",executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
-
-                try {
-                    remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse();
-                } catch (WebException e) {
-                    //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
-                    if (executeUrl.Contains("gpod.eo.esa.int")) {
-                        remoteWpsResponse = (HttpWebResponse)e.Response;
-                    } else if (e.Response != null) remoteWpsResponse = (HttpWebResponse)e.Response;
-                    else {
-                        remoteWpsResponse.Close ();
-                        context.LogError(this,string.Format(e.Message));
-                        return new HttpResult(e.Message, HttpStatusCode.BadGateway);
-                    }
-                }
-
-                try {
-                    remoteWpsResponse.GetResponseStream ().CopyTo (remoteWpsResponseStream);
-                } catch (WebException e) {
-
-                    // TODO: Remove this patch when Frank will correct GPOD
-                    if (executeUrl.Contains ("gpod.eo.esa.int")) {
-                        e.Response.GetResponseStream ().CopyTo (remoteWpsResponseStream);
-                        if (remoteWpsResponseStream == null)
-                            throw e;
-                    } else {
-                        context.LogError (this, e.Message);
-                        return new HttpResult (e.Message, HttpStatusCode.BadRequest);
-                    }
-                } finally {
-                    remoteWpsResponse.Close ();
-                }
-
                 OpenGis.Wps.ExecuteResponse execResponse = null;
-                try {
-                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
-                    execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
-                } catch (Exception e) {
-                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
-                    using (StreamReader reader = new StreamReader (remoteWpsResponseStream)) {
-                        string errormsg = reader.ReadToEnd ();
+                using (var remoteWpsResponseStream = new MemoryStream ()) {
+                    context.LogDebug (this, string.Format (string.Format ("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
+
+                    try {
+                        using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse ())
+                        using (var remotestream = remoteWpsResponse.GetResponseStream ())
+                            remotestream.CopyTo (remoteWpsResponseStream);
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
+
+                    } catch (WebException we) {
+                        context.LogError (this, string.Format (we.Message));
+                        //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
+                        if (executeUrl.Contains ("gpod.eo.esa.int")) {
+                            using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream ()) remotestream.CopyTo (remoteWpsResponseStream);
+                            remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                            execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
+                        } else if (we.Response != null && we.Response is HttpWebResponse) {
+                            return new HttpResult (we.Message, ((HttpWebResponse)we.Response).StatusCode);
+                        } else {
+                            return new HttpResult (we.Message, HttpStatusCode.BadGateway);
+                        }
+                    } catch (Exception e) {
+                        OpenGis.Wps.ExceptionReport exceptionReport = null;
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        try {
+                            exceptionReport = (OpenGis.Wps.ExceptionReport)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExceptionReport)).Deserialize (remoteWpsResponseStream);
+                        } catch (Exception e2) {}
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        string errormsg = null;
+                        using (StreamReader reader = new StreamReader (remoteWpsResponseStream)) {
+                            errormsg = reader.ReadToEnd ();
+                        }
                         remoteWpsResponseStream.Close ();
                         context.LogError (this, errormsg);
-                        return new HttpResult (errormsg, HttpStatusCode.BadRequest);
+                        if (exceptionReport != null && exceptionReport.Exception != null) return new HttpResult(exceptionReport.Exception [0].ExceptionText [0], HttpStatusCode.BadRequest);
+                        else return new HttpResult (errormsg, HttpStatusCode.BadRequest);
                     }
-                } finally {
-                    remoteWpsResponseStream.Close ();
                 }
 
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;

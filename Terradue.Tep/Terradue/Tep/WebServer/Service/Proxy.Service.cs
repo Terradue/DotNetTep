@@ -120,13 +120,14 @@ namespace Terradue.Tep.WebServer.Services {
             OpenGis.Wps.ExecuteResponse execResponse = null;
             try{
                 context.LogDebug(this,string.Format("Wps proxy - exec response requested - {0}", executeHttpRequest.Address.AbsoluteUri));
-                execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(executeHttpRequest.GetResponse().GetResponseStream());
+                using (var response = executeHttpRequest.GetResponse ())
+                    using (var stream = response.GetResponseStream ())
+                        execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(stream);
                 context.LogDebug(this,string.Format("Wps proxy - exec response OK"));
             }catch(Exception e){
                 context.LogError(this,string.Format(e.Message));
             }
             if (execResponse == null) throw new Exception("Unable to get execute response from proxied job");
-            //Uri uri = new Uri(execResponse.statusLocation);
 
             execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
             context.LogDebug (this, string.Format ("Proxy WPS - uri: " + execResponse.statusLocation));
@@ -172,6 +173,7 @@ namespace Terradue.Tep.WebServer.Services {
                 item.Links.Add(new Terradue.ServiceModel.Syndication.SyndicationLink(new Uri(search), "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
             }
 
+            feed.Id = wpsjob.StatusLocation;
 
             var ose = MasterCatalogue.OpenSearchEngine;
             var type = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
@@ -194,12 +196,10 @@ namespace Terradue.Tep.WebServer.Services {
             Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter ();
             using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
                 using (var atomResponseStream = new MemoryStream ()) {
-
-                    atomResponse.GetResponseStream ().CopyTo (atomResponseStream);
+                    using (var stream = atomResponse.GetResponseStream ())
+                        stream.CopyTo (atomResponseStream);
                     atomResponseStream.Seek (0, SeekOrigin.Begin);
-
                     var sr = XmlReader.Create (atomResponseStream);
-
                     atomFormatter.ReadFrom (sr);
                     sr.Close();
                 }
@@ -242,9 +242,9 @@ namespace Terradue.Tep.WebServer.Services {
                     HttpWebRequest atomRequest = WpsProvider.CreateWebRequest (url, new UriBuilder(url));//TODO
                     using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
                         using (var atomResponseStream = new MemoryStream ()) {
-                            atomResponse.GetResponseStream ().CopyTo (atomResponseStream);
+                            using (var stream = atomResponse.GetResponseStream ())
+                                stream.CopyTo (atomResponseStream);
                             atomResponseStream.Seek (0, SeekOrigin.Begin);
-
                             var sr = XmlReader.Create (atomResponseStream);
                             atomFormatter.ReadFrom (sr);
                             sr.Close ();

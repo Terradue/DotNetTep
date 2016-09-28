@@ -223,6 +223,7 @@ namespace Terradue.Tep {
                                     this.Username, 
                                     this.Email);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Proxy = null;
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
@@ -252,6 +253,7 @@ namespace Terradue.Tep {
             request.Method = "POST";
             request.ContentType = "application/json";
             request.Accept = "application/json";
+            request.Proxy = null;
 
             var validatedUserName = this.Username.Replace(" ", "");
 
@@ -298,6 +300,7 @@ namespace Terradue.Tep {
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
+            request.Proxy = null;
 
             using (var httpResponse = (HttpWebResponse)request.GetResponse ()){
                 using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
