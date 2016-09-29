@@ -42,11 +42,11 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "DefaultDataPackageItems", Description = "User nb of Items in Default Data packages", ParameterType = "query", DataType = "int", IsRequired = false)]
         public int DefaultDataPackageItems { get; set; }
 
-        [ApiMember(Name = "FirstLoginDate", Description = "User first login date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
-        public DateTimeOffset FirstLoginDate { get; set; }
+        [ApiMember(Name = "FirstLoginDate", Description = "User first login date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string FirstLoginDate { get; set; }
 
-        [ApiMember(Name = "LastLoginDate", Description = "User last login date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
-        public DateTimeOffset LastLoginDate { get; set; }
+        [ApiMember(Name = "LastLoginDate", Description = "User last login date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string LastLoginDate { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
@@ -66,9 +66,9 @@ namespace Terradue.Tep.WebServer {
             if(String.IsNullOrEmpty(this.Gravatar)) 
                 this.Gravatar = string.Format("http://www.gravatar.com/avatar/{0}", HashEmailForGravatar(string.IsNullOrEmpty(this.Email) ? "" : this.Email));
             DateTime timef = entity.GetFirstLoginDate();
-            this.FirstLoginDate = (timef == DateTime.MinValue ? DateTimeOffset.MinValue : new DateTimeOffset(timef));
+            this.FirstLoginDate = (timef == DateTime.MinValue ? null : timef.ToString("U"));
             DateTime timel = entity.GetLastLoginDate();
-            this.LastLoginDate = (timel == DateTime.MinValue ? DateTimeOffset.MinValue : new DateTimeOffset(timel));
+            this.LastLoginDate = (timel == DateTime.MinValue ? null : timel.ToString("U"));
 
             context.RestrictedMode = false;
             EntityList<WpsJob> jobs = new EntityList<WpsJob>(context);
