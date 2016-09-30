@@ -156,7 +156,7 @@ namespace Terradue.Tep.WebServer.Services {
                                     feed = CreateFeedForRDF (item.Any [0], request.jobid, context.BaseUrl);
                                 } else if (item.Any [0].LocalName.Equals ("metalink")) {
                                     context.LogDebug (this, string.Format ("Wps proxy - metalink"));
-                                    feed = CreateFeedForMetalink (item.Any [0], request.jobid, context.BaseUrl);
+                                    feed = CreateFeedForMetalink (item.Any [0], request.jobid, context.BaseUrl, context);
                                 }
                             }
                         }
@@ -207,7 +207,7 @@ namespace Terradue.Tep.WebServer.Services {
             return new AtomFeed(atomFormatter.Feed);
         }
 
-        private AtomFeed CreateFeedForMetalink(XmlNode any, string identifier, string baseurl){
+        private AtomFeed CreateFeedForMetalink(XmlNode any, string identifier, string baseurl, IfyContext context){
 
             OwsContextAtomFeed feed = new OwsContextAtomFeed();
             List<OwsContextAtomEntry> entries = new List<OwsContextAtomEntry>();
@@ -232,23 +232,31 @@ namespace Terradue.Tep.WebServer.Services {
 
             foreach (XmlNode node in onlineResource) {
                 string url = node.InnerText;
+                context.LogDebug (this, "Url = " + url);
                 Uri remoteUri = new Uri(url);
                 OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
                 //link is an OWS context, we add it as is
-//                if (url.Contains("/results/") && url.Contains(".atom")) {
                 Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter ();
                 if (url.Contains(".atom")) {
                     HttpWebRequest atomRequest = WpsProvider.CreateWebRequest (url, new UriBuilder(url));//TODO
-                    using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
-                        using (var atomResponseStream = new MemoryStream ()) {
-                            using (var stream = atomResponse.GetResponseStream ())
-                                stream.CopyTo (atomResponseStream);
-                            atomResponseStream.Seek (0, SeekOrigin.Begin);
-                            var sr = XmlReader.Create (atomResponseStream);
-                            atomFormatter.ReadFrom (sr);
-                            sr.Close ();
+                    atomRequest.Accept = "*/*";
+                    atomRequest.UserAgent = "Terradue TEP";
+
+                    try {
+                        using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
+                            using (var atomResponseStream = new MemoryStream ()) {
+                                using (var stream = atomResponse.GetResponseStream ())
+                                    stream.CopyTo (atomResponseStream);
+                                atomResponseStream.Seek (0, SeekOrigin.Begin);
+                                var sr = XmlReader.Create (atomResponseStream);
+                                atomFormatter.ReadFrom (sr);
+                                sr.Close ();
+                            }
                         }
+                    }catch (Exception e) {
+                        context.LogError (this, e.Message);
+                        throw e;                
                     }
                     return new AtomFeed(atomFormatter.Feed);
                 }
