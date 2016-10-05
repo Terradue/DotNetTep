@@ -68,9 +68,14 @@ namespace Terradue.Tep {
         /// <value>The provider.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         public WpsProvider Provider {
-            get { 
-                if (provider == null)
-                    provider = (WpsProvider)WpsProvider.FromIdentifier(context, WpsId);
+            get {
+                if (provider == null) {
+                    try {
+                        provider = (WpsProvider)WpsProvider.FromIdentifier (context, WpsId);
+                    } catch (Exception){
+                        provider = null;
+                    }
+                }
                 return provider;
             }
         }
