@@ -394,7 +394,12 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 string executeUrl = wpsjob.StatusLocation;
 
-                HttpWebRequest executeHttpRequest = wpsjob.Provider.CreateWebRequest(wpsjob.StatusLocation);
+                HttpWebRequest executeHttpRequest;
+                if (wpsjob.Provider != null)
+                    executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
+                else
+                    executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, new UriBuilder (wpsjob.StatusLocation));
+
                 if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }

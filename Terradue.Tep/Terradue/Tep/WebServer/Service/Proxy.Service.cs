@@ -113,7 +113,12 @@ namespace Terradue.Tep.WebServer.Services {
 
             context.LogDebug(this,string.Format("Wps Proxy search for wpsjob {0}", wpsjob.Identifier));
 
-            HttpWebRequest executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
+            HttpWebRequest executeHttpRequest;
+            if (wpsjob.Provider != null)
+                executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
+            else
+                executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, new UriBuilder (wpsjob.StatusLocation));
+            
             if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
             }
@@ -139,12 +144,20 @@ namespace Terradue.Tep.WebServer.Services {
                         context.LogDebug(this, string.Format("Wps proxy - metadata"));
                         if (output.Item is OutputReferenceType) {
                             var reference = output.Item as OutputReferenceType;
-                            HttpWebRequest atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
+                            HttpWebRequest atomRequest;
+                            if (wpsjob.Provider != null)
+                                atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
+                            else
+                                atomRequest = WpsProvider.CreateWebRequest (reference.href, new UriBuilder (reference.href));
                             feed = CreateFeedForMetadata (atomRequest);
                         } else if (output.Item is DataType) {
                             var item = ((DataType)(output.Item)).Item as ComplexDataType;
                             var reference = item.Reference as OutputReferenceType;
-                            HttpWebRequest atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
+                            HttpWebRequest atomRequest;
+                            if (wpsjob.Provider != null)
+                                atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
+                            else
+                                atomRequest = WpsProvider.CreateWebRequest (reference.href, new UriBuilder (reference.href));
                             feed = CreateFeedForMetadata(atomRequest);
                         }
                     } else {
