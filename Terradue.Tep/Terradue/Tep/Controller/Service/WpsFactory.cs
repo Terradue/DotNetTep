@@ -73,7 +73,7 @@ namespace Terradue.Tep {
             try{
                 foreach (WpsProvider prov in wpsFinder.GetWPSFromVMs()) {
                     try{
-                        WPSCapabilitiesType capa = WpsProvider.GetWPSCapabilitiesFromUrl(prov.BaseUrl);
+                        WPSCapabilitiesType capa = prov.GetWPSCapabilities();
                         foreach (var oneProcess in capa.ProcessOfferings.Process) {
                             oneProcess.Identifier.Value = prov.Identifier + "-" + oneProcess.Identifier.Value;
                             getCapabilities.ProcessOfferings.Process.Add(oneProcess);

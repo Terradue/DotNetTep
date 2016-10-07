@@ -124,6 +124,8 @@ namespace Terradue.Tep {
         /// <returns>The wps provider</returns>
         /// <param name="vm">Virtual machine object.</param>
         public static WpsProvider CreateWpsProviderForOne(IfyContext context, VM vm){
+            context.LogDebug (context, "VM id = " + vm.ID);
+            context.LogDebug (context, "VM name = " + vm.GNAME);
             WpsProvider wps = new WpsProvider(context);
             wps.Name = vm.NAME;
             wps.Identifier = "one-" + vm.ID;
@@ -132,8 +134,10 @@ namespace Terradue.Tep {
             wps.Description = vm.UNAME + " from laboratory " + vm.GNAME;
             XmlNode[] template = (XmlNode[])vm.TEMPLATE;
             foreach (XmlNode nodeT in template) {
+                context.LogDebug (context, "node name = " + nodeT.Name);
                 if (nodeT.Name == "NIC") {
                     wps.BaseUrl = String.Format("http://{0}:8080/wps/WebProcessingService" , nodeT["IP"].InnerText);
+                    context.LogDebug (context, "wpsbaseurl = " + wps.BaseUrl);
                     break;
                 }
             }
@@ -144,10 +148,8 @@ namespace Terradue.Tep {
         public WpsProcessOffering CreateWpsProcessOfferingForOne(string vmId, string processId){
             WpsProvider wps = this.CreateWpsProviderForOne(vmId);
 
-            var wpsUri = new UriBuilder(wps.BaseUrl);
-            wpsUri.Query = "service=WPS&request=GetCapabilities";
-
-            foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromUrl(wpsUri.Uri.AbsoluteUri)) {
+            foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
+                context.LogDebug (this, "Get process -- " + process.RemoteIdentifier);
                 if (process.RemoteIdentifier.Equals(processId)) return process;
             }
 

@@ -116,8 +116,12 @@ namespace Terradue.Tep.WebServer.Services {
             HttpWebRequest executeHttpRequest;
             if (wpsjob.Provider != null)
                 executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
-            else
-                executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, new UriBuilder (wpsjob.StatusLocation));
+            else {
+                NetworkCredential credentials = null;
+                var uri = new UriBuilder (wpsjob.StatusLocation);
+                if (!string.IsNullOrEmpty (uri.UserName) && !string.IsNullOrEmpty (uri.Password)) credentials = new NetworkCredential (uri.UserName, uri.Password);
+                executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, credentials, context.Username);
+            }
             
             if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
@@ -147,8 +151,12 @@ namespace Terradue.Tep.WebServer.Services {
                             HttpWebRequest atomRequest;
                             if (wpsjob.Provider != null)
                                 atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
-                            else
-                                atomRequest = WpsProvider.CreateWebRequest (reference.href, new UriBuilder (reference.href));
+                            else {
+                                NetworkCredential credentials = null;
+                                var uri = new UriBuilder (reference.href);
+                                if (!string.IsNullOrEmpty (uri.UserName) && !string.IsNullOrEmpty (uri.Password)) credentials = new NetworkCredential (uri.UserName, uri.Password);
+                                atomRequest = WpsProvider.CreateWebRequest (reference.href, credentials, context.Username);
+                            }
                             feed = CreateFeedForMetadata (atomRequest);
                         } else if (output.Item is DataType) {
                             var item = ((DataType)(output.Item)).Item as ComplexDataType;
@@ -156,8 +164,12 @@ namespace Terradue.Tep.WebServer.Services {
                             HttpWebRequest atomRequest;
                             if (wpsjob.Provider != null)
                                 atomRequest = wpsjob.Provider.CreateWebRequest (reference.href);
-                            else
-                                atomRequest = WpsProvider.CreateWebRequest (reference.href, new UriBuilder (reference.href));
+                            else {
+                                NetworkCredential credentials = null;
+                                var uri = new UriBuilder (reference.href);
+                                if (!string.IsNullOrEmpty (uri.UserName) && !string.IsNullOrEmpty (uri.Password)) credentials = new NetworkCredential (uri.UserName, uri.Password);
+                                atomRequest = WpsProvider.CreateWebRequest (reference.href, credentials, context.Username);
+                            }
                             feed = CreateFeedForMetadata(atomRequest);
                         }
                     } else {
@@ -252,7 +264,10 @@ namespace Terradue.Tep.WebServer.Services {
                 //link is an OWS context, we add it as is
                 Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter ();
                 if (url.Contains(".atom")) {
-                    HttpWebRequest atomRequest = WpsProvider.CreateWebRequest (url, new UriBuilder(url));//TODO
+                    NetworkCredential credentials = null;
+                    var uri = new UriBuilder (url);
+                    if (!string.IsNullOrEmpty (uri.UserName) && !string.IsNullOrEmpty (uri.Password)) credentials = new NetworkCredential (uri.UserName, uri.Password);
+                    HttpWebRequest atomRequest = WpsProvider.CreateWebRequest (url, credentials, context.Username);
                     atomRequest.Accept = "*/*";
                     atomRequest.UserAgent = "Terradue TEP";
 

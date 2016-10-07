@@ -202,6 +202,7 @@ namespace Terradue.Tep {
                 }
             }
 
+
             result.Id = id.ToString();
             result.Title = new TextSyndicationContent(identifier);
             result.Content = new TextSyndicationContent(name);
@@ -252,6 +253,7 @@ namespace Terradue.Tep {
                 process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, this.ProcessId);
                 provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
             } catch (Exception e) {
+                context.LogError (this, e.Message);
                 string[] identifierParams = this.ProcessId.Split("-".ToCharArray());
                 if (identifierParams.Length == 3) {
                     switch (identifierParams[0]) {
@@ -259,10 +261,12 @@ namespace Terradue.Tep {
                             CloudWpsFactory wpstep = new CloudWpsFactory(context);
                             if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
                             try{
+                                context.LogDebug (this, "Get process -- " + identifierParams [1] + " -- " + identifierParams [2]);
                                 process = wpstep.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
+                            context.LogDebug (this, "Get provider");
                                 provider = process.Provider;
                             }catch(Exception e2){
-                                
+                                context.LogError (this, e2.Message);
                             }
                             break;
                         default:
