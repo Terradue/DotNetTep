@@ -86,7 +86,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
             foreach (WpsProvider wps in wpss) {
                 try {
-                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromUrl(wps.BaseUrl)) {
+                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                         wpsProcesses.Include(process);
                     }
                 } catch (Exception e) {
@@ -133,7 +133,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 foreach (WpsProvider wps in wpss) {
                     try {
-                        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromUrl(wps.BaseUrl)) {
+                        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                             process.UserId = 0;
                             services.Include(process);
                         }
@@ -397,9 +397,12 @@ namespace Terradue.Tep.WebServer.Services {
                 HttpWebRequest executeHttpRequest;
                 if (wpsjob.Provider != null)
                     executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
-                else
-                    executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, new UriBuilder (wpsjob.StatusLocation));
-
+                else {
+                    NetworkCredential credentials = null;
+                    var urib = new UriBuilder (wpsjob.StatusLocation);
+                    if (!string.IsNullOrEmpty (urib.UserName) && !string.IsNullOrEmpty (urib.Password)) credentials = new NetworkCredential (urib.UserName, urib.Password);
+                    executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, credentials, context.Username);
+                }
                 if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }
