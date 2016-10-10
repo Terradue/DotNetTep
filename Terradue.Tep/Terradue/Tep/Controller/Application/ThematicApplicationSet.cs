@@ -42,47 +42,8 @@ namespace Terradue.Tep {
     /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
-    public class ThematicApplication : Entity {
-        public ThematicApplication() : base(null){
-        }
-
-        /// <summary>
-        /// Collections available in the application
-        /// </summary>
-        /// <value>contains \ref Collection</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public List<Collection> Collections {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Processing Services available in the application
-        /// </summary>
-        /// <value>contains \ref WpsProcessOffering</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public List<WpsProcessOffering> WPSServices {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Title of the application
-        /// </summary>
-        /// <value>The title.</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public string Description {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Features and widgets defining the application maps, layers, features.
-        /// </summary>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public List<string> Features {
-            get;
-            set;
+    public class ThematicApplicationSet : DataPackage {
+        public ThematicApplicationSet(IfyContext context) : base(context){
         }
     }
 }

@@ -242,7 +242,7 @@
     <Compile Include="Terradue\Tep\WebServer\Config\Config.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\User\EmailConfirmServiceTep.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\User\WebUserProfileTep.cs" />
-    <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
+    <Compile Include="Terradue\Tep\Controller\Application\ThematicApplicationSet.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\UserTep.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\GroupTep.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\RoleTep.cs" />
@@ -257,6 +257,8 @@
     <Compile Include="Terradue\Tep\Controller\Accounting\Rates.cs" />
     <Compile Include="Terradue\Tep\WebServer\Activity\Logs.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\News\Discourse.Service.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Application\ThematicApp.Service.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Application\WebThematicAppTep.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
