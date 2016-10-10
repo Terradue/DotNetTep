@@ -151,19 +151,6 @@
     <Reference Include="Terradue.News">
       <HintPath>..\packages\Terradue.News.1.0.13\lib\net40\Terradue.News.dll</HintPath>
     </Reference>
-<<<<<<< HEAD
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.12.11\lib\net40\Terradue.OpenSearch.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.ServiceModel.Ogc">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.1.1.5\lib\net40\Terradue.ServiceModel.Ogc.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.GeoJson">
-      <HintPath>..\packages\Terradue.GeoJson.1.7.8\lib\net40\Terradue.GeoJson.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Metadata.EarthObservation">
-      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.4.8\lib\net40\Terradue.Metadata.EarthObservation.dll</HintPath>
-=======
     <Reference Include="Terradue.ServiceModel.Ogc">
       <HintPath>..\packages\Terradue.ServiceModel.Ogc.1.1.5\lib\net40\Terradue.ServiceModel.Ogc.dll</HintPath>
     </Reference>
@@ -202,16 +189,6 @@
     </Reference>
     <Reference Include="Terradue.WebService.Model">
       <HintPath>..\packages\Terradue.WebService.Model.1.1.13\lib\net40\Terradue.WebService.Model.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.6.65\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.6.65\lib\net40\Terradue.Portal.Agent.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.6.65\lib\net40\Terradue.Portal.dll</HintPath>
->>>>>>> develop
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -285,13 +262,6 @@
     <None Include="modules\cloud\www\admin\vmtemplate.aspx" />
     <None Include="Resources\.DS_Store" />
     <None Include="Resources\ne_110m_land\.DS_Store" />
-<<<<<<< HEAD
-    <None Include="modules\github\db\db-create.sql" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.dbf" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.shx" />
-=======
     <None Include="Resources\ne_110m_land\ne_110m_land.shx" />
     <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
     <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
@@ -536,7 +506,6 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
->>>>>>> develop
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
@@ -546,5 +515,11 @@
     <Folder Include="Terradue\Tep\External\" />
     <Folder Include="Terradue\Tep\External\Apel\" />
     <Folder Include="Terradue\Tep\WebServer\Application\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Terradue.Portal\Terradue.Portal\Terradue.Portal.csproj">
+      <Project>{2E8D7875-8347-4205-936B-F1BBA2164D87}</Project>
+      <Name>Terradue.Portal</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
