@@ -317,7 +317,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, string.Join(",",request.ToArray())));
+                context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
                 string sql = String.Format("DELETE FROM wpsjob_priv WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
@@ -335,7 +335,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         /// <summary>
-        /// Post the specified request.
+        /// Delete the specified request.
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(WpsJobDeleteGroupRequestTep request) {
@@ -360,6 +360,38 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return new WebResponseBool(true);
         }
+
+        public object Put (WpsJobCopyRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/copy PUT Id='{0}'", request.Id));
+
+                WpsJob job = WpsJob.FromId (context, request.Id);
+
+                WpsJob newjob = new WpsJob (context);
+                newjob.OwnerId = context.UserId;
+                newjob.UserId = context.UserId;
+                newjob.Identifier = Guid.NewGuid().ToString();
+                newjob.StatusLocation = job.StatusLocation;
+                newjob.Parameters = job.Parameters;
+                newjob.CreatedTime = job.CreatedTime;
+                newjob.Name = job.Name;
+                newjob.ProcessId = job.ProcessId;
+                newjob.RemoteIdentifier = job.RemoteIdentifier;
+                newjob.WpsId = job.WpsId;
+                newjob.Store ();
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return new WebResponseBool (true);
+        }
+
     }
 }
 

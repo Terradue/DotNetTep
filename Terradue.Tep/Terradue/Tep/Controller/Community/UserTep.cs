@@ -76,6 +76,16 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Gets or sets the API key.
+        /// </summary>
+        /// <value>The API key.</value>
+        [EntityDataField ("apikey")]
+        public string ApiKey {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
@@ -97,6 +107,14 @@ namespace Terradue.Tep {
             this.Affiliation = user.Affiliation;
             this.Country = user.Country;
             this.Level = user.Level;
+        }
+
+        public override string AlternativeIdentifyingCondition {
+            get {
+                if (!string.IsNullOrEmpty (ApiKey))
+                    return String.Format ("t.apikey='{0}'", ApiKey);
+                else return null;
+            }
         }
 
         public static UserTep GetPublicUser(IfyContext context, int id){
@@ -136,6 +154,14 @@ namespace Terradue.Tep {
             UserTep user = new UserTep(context);
             user.Id = id;
             user.Load();
+            return user;
+        }
+
+        public new static UserTep FromApiKey (IfyContext context, string key)
+        {
+            UserTep user = new UserTep (context);
+            user.ApiKey = key;
+            user.Load ();
             return user;
         }
 
@@ -197,15 +223,24 @@ namespace Terradue.Tep {
                                     this.Username, 
                                     this.Email);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Proxy = null;
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
-            var httpResponse = (HttpWebResponse)request.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                this.TerradueCloudUsername = streamReader.ReadToEnd();
-                this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
-                context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+            using (var httpResponse = (HttpWebResponse)request.GetResponse ()) {
+                using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
+                    this.TerradueCloudUsername = streamReader.ReadToEnd ();
+                    this.StoreCloudUsername (context.GetConfigIntegerValue ("One-default-provider"));
+                    context.LogDebug (this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                }
             }
+        }
+
+        /// <summary>
+        /// Generates the API key.
+        /// </summary>
+        public void GenerateApiKey () {
+            this.ApiKey = Guid.NewGuid ().ToString ();
         }
 
         /// <summary>
@@ -218,6 +253,7 @@ namespace Terradue.Tep {
             request.Method = "POST";
             request.ContentType = "application/json";
             request.Accept = "application/json";
+            request.Proxy = null;
 
             var validatedUserName = this.Username.Replace(" ", "");
 
@@ -236,13 +272,14 @@ namespace Terradue.Tep {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse();
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
-                    var result = streamReader.ReadToEnd();
-                    User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User>(result);
-                    this.TerradueCloudUsername = resUser.Username;
-                    context.LogDebug(this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
-                    this.StoreCloudUsername();
+                using (var httpResponse = (HttpWebResponse)request.GetResponse ()) {
+                    using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {//TODO in case of error
+                        var result = streamReader.ReadToEnd ();
+                        User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User> (result);
+                        this.TerradueCloudUsername = resUser.Username;
+                        context.LogDebug (this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
+                        this.StoreCloudUsername ();
+                    }
                 }
             }
         }
@@ -263,12 +300,14 @@ namespace Terradue.Tep {
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
+            request.Proxy = null;
 
-            var httpResponse = (HttpWebResponse)request.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                this.SshPubKey = streamReader.ReadToEnd();
-                this.SshPubKey = this.SshPubKey.Replace("\"", "");
-                context.LogDebug(this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
+            using (var httpResponse = (HttpWebResponse)request.GetResponse ()){
+                using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
+                    this.SshPubKey = streamReader.ReadToEnd ();
+                    this.SshPubKey = this.SshPubKey.Replace ("\"", "");
+                    context.LogDebug (this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
+                }
             }
         }
 

@@ -50,11 +50,15 @@ namespace Terradue.Tep.WebServer.Services {
             WebUserTep result;
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
+                log.DebugFormat ("/user/current GET -- before context open");
                 context.Open();
                 context.LogInfo(this,string.Format("/user/current GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
-                result = new WebUserTep(context, user);
+                log.DebugFormat ("/user/current GET -- after user load");
+                result = new WebUserTep(context, user, request.umsso);
+                log.DebugFormat ("/user/current GET -- after webuser load");
                 context.Close();
+                log.DebugFormat ("/user/current GET -- after context close");
             } catch (Exception e) {
                 context.LogError(this, e.Message);
                 context.Close();
@@ -332,6 +336,50 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close ();
             }catch(Exception e) {
                 context.LogError(this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Post (UserCreateApiKeyRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            WebUserTep result;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/user/key POST Id='{0}'", context.UserId));
+
+                UserTep user = UserTep.FromId (context, context.UserId);
+                user.GenerateApiKey ();
+                user.Store ();
+                
+                result = new WebUserTep (context, user);
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Delete (UserDeleteApiKeyRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            WebUserTep result;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/user/key DELETE Id='{0}'", context.UserId));
+
+                UserTep user = UserTep.FromId (context, context.UserId);
+                user.ApiKey = null;
+                user.Store ();
+
+                result = new WebUserTep (context, user);
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
                 context.Close ();
                 throw e;
             }

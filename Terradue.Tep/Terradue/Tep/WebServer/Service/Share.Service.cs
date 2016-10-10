@@ -50,7 +50,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             object result;
             context.Open();
-            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, string.Join("'",request.groups)));
+            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, request.groups != null ? string.Join("'",request.groups) : "null"));
                             
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
@@ -116,7 +116,7 @@ namespace Terradue.Tep.WebServer.Services {
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword;
                 } else {
-                    if (request.url.StartsWith("https://data.terradue.com") || request.url.StartsWith("https://data2.terradue.com")) {
+                    if (request.url.StartsWith(context.GetConfigValue("catalog-baseurl")) || request.url.StartsWith ("https://data.terradue.com") || request.url.StartsWith("https://data2.terradue.com")) {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         redirectUrl += "resultType=" + "na";

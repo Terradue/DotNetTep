@@ -258,11 +258,19 @@ namespace Terradue.Tep.WebServer.Services
 
                 EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage>(context);
                 EntityList<Terradue.Tep.DataPackage> datapackages = new EntityList<DataPackage>(context);
+                if (!string.IsNullOrEmpty (request.Key)) {
+                    UserTep user = UserTep.FromApiKey (context, request.Key);
+                    tmp_datapackages.UserId = user.Id;
+                }
                 tmp_datapackages.Load();
 
-                foreach(DataPackage dp in tmp_datapackages)
-                    if(!dp.IsDefault) datapackages.Include(dp);
-
+                foreach (DataPackage dp in tmp_datapackages) {
+                    if (!dp.IsDefault) {
+                        datapackages.Include (dp);
+                        Console.WriteLine ("DataPackage = " + dp.Id);
+                        context.LogDebug (this, "DataPackage = " + dp.Id);
+                    }
+                }
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;

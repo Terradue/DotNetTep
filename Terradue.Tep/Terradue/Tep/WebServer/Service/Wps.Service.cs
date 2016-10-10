@@ -85,7 +85,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
             foreach (WpsProvider wps in wpss) {
                 try {
-                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromUrl(wps.BaseUrl)) {
+                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                         wpsProcesses.Include(process);
                     }
                 } catch (Exception e) {
@@ -132,7 +132,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 foreach (WpsProvider wps in wpss) {
                     try {
-                        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromUrl(wps.BaseUrl)) {
+                        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                             process.UserId = 0;
                             services.Include(process);
                         }
@@ -393,57 +393,60 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 string executeUrl = wpsjob.StatusLocation;
 
-                HttpWebRequest executeHttpRequest = WpsProvider.CreateWebRequest(executeUrl);
-                    //(HttpWebRequest)WebRequest.Create(executeUrl);
-                if (executeUrl.Contains("gpod.eo.esa.int")) {
+                HttpWebRequest executeHttpRequest;
+                if (wpsjob.Provider != null)
+                    executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
+                else {
+                    NetworkCredential credentials = null;
+                    var urib = new UriBuilder (wpsjob.StatusLocation);
+                    if (!string.IsNullOrEmpty (urib.UserName) && !string.IsNullOrEmpty (urib.Password)) credentials = new NetworkCredential (urib.UserName, urib.Password);
+                    executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, credentials, context.Username);
+                }
+                if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
                     executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
                 }
 
-                var remoteWpsResponseStream = new MemoryStream();
-                HttpWebResponse remoteWpsResponse = null;
+                OpenGis.Wps.ExecuteResponse execResponse = null;
+                using (var remoteWpsResponseStream = new MemoryStream ()) {
+                    context.LogDebug (this, string.Format (string.Format ("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
 
-                context.LogDebug(this,string.Format(string.Format("Status url = {0}",executeHttpRequest.RequestUri.AbsoluteUri)));
+                    try {
+                        using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse ())
+                        using (var remotestream = remoteWpsResponse.GetResponseStream ())
+                            remotestream.CopyTo (remoteWpsResponseStream);
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
 
-                try {
-                    remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse();
-                } catch (WebException e) {
-                    //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
-                    if (executeUrl.Contains("gpod.eo.esa.int")) {
-                        remoteWpsResponse = (HttpWebResponse)e.Response;
-                    } else if (e.Response != null) remoteWpsResponse = (HttpWebResponse)e.Response;
-                    else {
-                        context.LogError(this,string.Format(e.Message));
-                        return new HttpResult(e.Message, HttpStatusCode.BadGateway);
+                    } catch (WebException we) {
+                        context.LogError (this, string.Format (we.Message));
+                        //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
+                        if (executeUrl.Contains ("gpod.eo.esa.int")) {
+                            using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream ()) remotestream.CopyTo (remoteWpsResponseStream);
+                            remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                            execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
+                        } else if (we.Response != null && we.Response is HttpWebResponse) {
+                            return new HttpResult (we.Message, ((HttpWebResponse)we.Response).StatusCode);
+                        } else {
+                            return new HttpResult (we.Message, HttpStatusCode.BadGateway);
+                        }
+                    } catch (Exception e) {
+                        OpenGis.Wps.ExceptionReport exceptionReport = null;
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        try {
+                            exceptionReport = (OpenGis.Wps.ExceptionReport)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExceptionReport)).Deserialize (remoteWpsResponseStream);
+                        } catch (Exception e2) {}
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        string errormsg = null;
+                        using (StreamReader reader = new StreamReader (remoteWpsResponseStream)) {
+                            errormsg = reader.ReadToEnd ();
+                        }
+                        remoteWpsResponseStream.Close ();
+                        context.LogError (this, errormsg);
+                        if (exceptionReport != null && exceptionReport.Exception != null) return new HttpResult(exceptionReport.Exception [0].ExceptionText [0], HttpStatusCode.BadRequest);
+                        else return new HttpResult (errormsg, HttpStatusCode.BadRequest);
                     }
                 }
 
-                try {
-                    remoteWpsResponse.GetResponseStream().CopyTo(remoteWpsResponseStream);
-                } catch (WebException e) {
-
-                    // TODO: Remove this patch when Frank will correct GPOD
-                    if (executeUrl.Contains("gpod.eo.esa.int")) {
-                        e.Response.GetResponseStream().CopyTo(remoteWpsResponseStream);
-                        if (remoteWpsResponseStream == null)
-                            throw e;
-                    } else {
-                        context.LogError(this, e.Message);
-                        return new HttpResult(e.Message, HttpStatusCode.BadRequest);
-                    }
-                }
-
-                OpenGis.Wps.ExecuteResponse execResponse = null; 
-                try{
-                    remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                    execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Deserialize(remoteWpsResponseStream);
-                }catch(Exception e){
-                    remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                    using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
-                        string errormsg = reader.ReadToEnd();
-                        context.LogError(this, errormsg);
-                        return new HttpResult(errormsg, HttpStatusCode.BadRequest);
-                    }
-                }
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
@@ -451,32 +454,52 @@ namespace Terradue.Tep.WebServer.Services {
                 if (execResponse.ProcessOutputs != null) {
                     foreach (OutputDataType output in execResponse.ProcessOutputs) {
                         try{
-                            if(output.Item != null && output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                if (item.Reference != null && output.Identifier.Value.Equals("result_osd")) {
+                            if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_metadata")){
+                                context.LogDebug (this, string.Format ("Case result_metadata"));
+                                var item = new ComplexDataType();
+                                var reference = new OutputReferenceType();
+                                reference.mimeType = "application/opensearchdescription+xml";
+                                reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                                item.Reference = reference;
+                                item.Any = null;
+                                item.mimeType = "application/xml";
+                                output.Identifier = new CodeType{ Value = "result_osd" };
+                                output.Item = new DataType();
+                                ((DataType)(output.Item)).Item = item;
+                            } 
+                            else if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_osd")){
+                                if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
+                                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                     var reference = item.Reference as OutputReferenceType;
                                     reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
-                                } else if (item.Reference != null && output.Identifier.Value.Equals("result_metadata")) {
-                                    var reference = new OutputReferenceType();
-                                    reference.mimeType = "application/opensearchdescription+xml";
-                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
-                                    item.Reference = reference;
-                                    item.Any = null;
-                                    item.mimeType = "application/xml";
-                                    output.Identifier = new CodeType{ Value = "result_osd" };
-                                } else if (item.Any != null) {
-                                    var reference = new OutputReferenceType();
-                                    reference.mimeType = "application/opensearchdescription+xml";
-                                    reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
-                                    item.Reference = reference;
-                                    item.Any = null;
-                                    item.mimeType = "application/xml";
-                                    output.Identifier = new CodeType{ Value = "result_osd" };
+                                } else if (output.Item is OutputReferenceType) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
+                                    var reference = output.Item as OutputReferenceType;
+                                    reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
+                                    output.Item = reference;
                                 }
                             }
-                        }catch(Exception){}
+                            else {
+                                if (output.Identifier != null && output.Identifier.Value != null) context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
+                                if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    var item = ((DataType)(output.Item)).Item as ComplexDataType; 
+                                    if (item.Any != null) {
+                                        var reference = new OutputReferenceType();
+                                        reference.mimeType = "application/opensearchdescription+xml";
+                                        reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                                        item.Reference = reference;
+                                        item.Any = null;
+                                        item.mimeType = "application/xml";
+                                        output.Identifier = new CodeType{ Value = "result_osd" }; 
+                                    }
+                                }
+                            }
+                        }catch(Exception e){
+                            context.LogError (this, e.Message);
+                        }
                     }
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);
