@@ -14,4 +14,8 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-baseurl', 'string', 'Catalog baseurl', 'Catalog baseurl', 'https://catalog.terradue.com', '0');
 -- RESULT
 
+-- Add type
+CALL add_type(NULL, 'Terradue.Tep.ThematicApplicationSet, Terradue.Tep', 'Terradue.Tep.DataPackage, Terradue.Tep', 'Thematic Apps', 'Thematic Apps', 'apps');
+-- RESULT
+
 /*****************************************************************************/
