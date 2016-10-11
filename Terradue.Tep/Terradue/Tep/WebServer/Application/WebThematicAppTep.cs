@@ -10,11 +10,23 @@ namespace Terradue.Tep.WebServer {
     [Route("/apps", "GET", Summary = "GET a list of thematic apps", Notes = "")]
     public class ThematicAppGetRequestTep : IReturn<List<WebThematicAppTep>>{}
 
-    [Route("/apps/description", "GET", Summary = "GET a list of thematic apps", Notes = "")]
-    public class ThematicAppDescriptionhRequestTep : IReturn<List<HttpResult>>{}
+    [Route ("/apps/description", "GET", Summary = "GET a list of thematic apps", Notes = "")]
+    public class ThematicAppsDescriptionRequestTep : IReturn<List<HttpResult>> { }
 
-    [Route("/apps/search", "GET", Summary = "GET a list of thematic apps", Notes = "")]
-    public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>>{}
+    [Route ("/apps/search", "GET", Summary = "GET a list of thematic apps", Notes = "")]
+    public class ThematicAppsSearchRequestTep : IReturn<List<HttpResult>> { }
+
+    [Route("/apps/{identifier}/description", "GET", Summary = "GET a list of thematic apps", Notes = "")]
+    public class ThematicAppDescriptionRequestTep : IReturn<List<HttpResult>>{
+        [ApiMember (Name = "identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/apps/{identifier}/search", "GET", Summary = "GET a list of thematic apps", Notes = "")]
+    public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>>{
+        [ApiMember (Name = "identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
 
     public class WebThematicAppTep : WebDataPackageTep {
         

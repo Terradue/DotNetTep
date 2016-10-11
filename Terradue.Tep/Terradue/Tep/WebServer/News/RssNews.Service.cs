@@ -87,6 +87,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/news/rss GET"));
 
                 EntityList<RssNews> articles = new EntityList<RssNews>(context);
+                context.ConsoleDebug = true;
                 articles.Load();
                 foreach(RssNews article in articles) result.Add(new WebNews(article));
 

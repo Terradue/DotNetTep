@@ -106,8 +106,8 @@ namespace Terradue.Tep {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private EntityType entitytype { get; set; }
-        private EntityType entityType { 
+        protected EntityType entitytype { get; set; }
+        protected EntityType entityType { 
             get{ 
                 if(entitytype == null) entitytype = EntityType.GetEntityType(typeof(DataPackage));
                 return entitytype;
