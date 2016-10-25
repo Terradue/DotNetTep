@@ -114,13 +114,13 @@ namespace Terradue.Tep {
 
         #region IOpenSearchable implementation
 
-        public OpenSearchRequest Create(string type, NameValueCollection parameters) {
+        public OpenSearchRequest Create(QuerySettings querySettings, NameValueCollection parameters) {
             NameValueCollection nvc = new NameValueCollection(parameters);
             NameValueCollection query = HttpUtility.ParseQueryString(url.Query);
             foreach (var key in query.AllKeys) {
                 nvc.Set(key, query[key]);
             }
-            return Entity.Create(type, nvc);
+            return Entity.Create(querySettings, nvc);
         }
 
         public QuerySettings GetQuerySettings(OpenSearchEngine ose) {
