@@ -31,11 +31,23 @@ namespace Terradue.Tep.WebServer {
     [Route("/job/wps/description", "GET", Summary = "GET WPS job as opensearch", Notes = "")]
     public class WpsJobDescriptionRequestTep : IReturn<HttpResult>{}
 
-//    [Route("/job/wps/{id}", "DELETE", Summary = "DELETE a WPS job", Notes = "")]
-//    public class DeleteWPSJob : IReturn<WebWpsJob>{
-//        [ApiMember(Name="id", Description = "Id of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
-//        public int id { get; set; }
-//    }
+    [Route ("/job/wps/{jobId}/products/search", "GET", Summary = "GET WPS job products as opensearch", Notes = "")]
+    public class WpsJobProductSearchRequestTep : IReturn<HttpResult> {
+        [ApiMember (Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+    }
+
+    [Route ("/job/wps/{jobId}/products/description", "GET", Summary = "GET WPS job products as opensearch", Notes = "")]
+    public class WpsJobProductDescriptionRequestTep : IReturn<HttpResult> {
+        [ApiMember (Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+    }
+
+    //    [Route("/job/wps/{id}", "DELETE", Summary = "DELETE a WPS job", Notes = "")]
+    //    public class DeleteWPSJob : IReturn<WebWpsJob>{
+    //        [ApiMember(Name="id", Description = "Id of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
+    //        public int id { get; set; }
+    //    }
 
     [Route("/job/wps/{id}", "DELETE", Summary = "DELETE a WPS job", Notes = "")]
     public class WpsJobDeleteRequestTep : IReturn<WebWpsJobTep>{

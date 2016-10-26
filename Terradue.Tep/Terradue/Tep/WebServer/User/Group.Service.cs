@@ -146,10 +146,11 @@ namespace Terradue.Tep.WebServer.Services {
             try{
                 context.Open();
                 context.LogInfo(this,string.Format("/group/{{grpId}}/user POST grpId='{0}'", request.GrpId));
-                context.AddUserToGroup(request.Id, request.GrpId);
 
                 User usr = User.FromId(context, request.Id);
                 Group grp = Group.FromId(context, request.GrpId);
+                grp.AssignUser (usr);
+
                 result = new WebGroup(grp);
                 context.LogDebug(this,string.Format("User {0} has been added to group {1}", usr.Username, grp.Name));
                 context.Close ();

@@ -12,6 +12,8 @@ using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 using System.Linq;
+using System.Net;
+using OpenGis.Wps;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -124,6 +126,115 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
+        }
+
+        public object Get (WpsJobProductSearchRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            HttpResult result = null;
+            try {
+                context.Open ();
+                WpsJob wpsjob = WpsJob.FromIdentifier (context, request.JobId);
+
+                //Get Execute Response
+                ExecuteResponse execResponse = null;
+                var jobresponse = wpsjob.GetExecuteResponse ();
+                if (jobresponse is HttpResult) return jobresponse;
+                else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
+
+                //Go through results
+                if (execResponse.ProcessOutputs != null) {
+                    foreach (OutputDataType output in execResponse.ProcessOutputs) {
+                        try {
+                            if (output.Identifier != null && output.Identifier.Value != null) {
+                                if (output.Identifier.Value.Equals ("result_metadata")) {
+                                    context.LogDebug (this, string.Format ("Case result_metadata"));
+
+                                } else if (output.Identifier.Value.Equals ("result_osd")) {
+                                    context.LogDebug (this, string.Format ("Case result_osd"));
+
+                                    //Get result Url
+                                    string resultUrl = null;
+                                    if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                        var reference = item.Reference as OutputReferenceType;
+                                        resultUrl = reference.href;
+                                    } else if (output.Item is OutputReferenceType) {
+                                        var reference = output.Item as OutputReferenceType;
+                                        resultUrl = reference.href;
+                                    }
+
+                                    if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
+                                    var uri = new UriBuilder (resultUrl);
+
+                                    //TEMPORARY: if T2 sandbox (/sbws), use new path (/sbws/production)
+                                    var r = new System.Text.RegularExpressions.Regex (@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_-]+)\/(?<runid>[a-zA-Z0-9_-]+)\/results\/description");
+                                    var m = r.Match (uri.Path);
+                                    if (m.Success) {
+                                        var workflow = m.Result ("${workflow}");
+                                        var runid = m.Result ("${runid}");
+                                        uri.Path = string.Format ("/sbws/production/run/{0}/{1}/products/search", workflow, runid);
+                                    }
+
+                                    OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                                    var e = OpenSearchFactory.FindOpenSearchable (ose, new Uri (uri.Uri.AbsoluteUri), "application/atom+xml");
+                                    if (e.DefaultMimeType != "application/atom+xml" && !e.DefaultMimeType.Contains ("xml")) {
+                                        throw new InvalidOperationException ("No Url in the OpenSearch Description Document that query fully qualified model");
+                                    }
+                                    var type = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
+                                    var res = ose.Query (e, new NameValueCollection (), type);
+
+                                    result = new HttpResult (res.SerializeToString (), res.ContentType);
+
+                                } else {
+                                    context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
+                                }
+                            } else {
+                                if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                    if (item.Any != null) {
+                                        //TODO
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            context.LogError (this, e.Message);
+                        }
+                    }
+                }
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Get (WpsJobProductDescriptionRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            HttpResult result = null;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/{0}/description GET", request.JobId)    );
+
+                OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                GenericOpenSearchable urlToShare = new GenericOpenSearchable (new OpenSearchUrl (HttpContext.Current.Request.Url.AbsoluteUri), ose);
+                OpenSearchDescription osd = urlToShare.GetOpenSearchDescription ();
+                result = new HttpResult (osd, "application/opensearchdescription+xml");
+
+                context.Close ();
+
+                return new HttpResult (osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
         }
 
         public object Post(WpsJobCreateRequestTep request) {

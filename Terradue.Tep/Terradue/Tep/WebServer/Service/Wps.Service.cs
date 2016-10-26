@@ -391,61 +391,12 @@ namespace Terradue.Tep.WebServer.Services {
                 //load job from request identifier
                 WpsJob wpsjob = WpsJob.FromIdentifier(context, request.Id);
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
-                string executeUrl = wpsjob.StatusLocation;
+                ExecuteResponse execResponse = null;
 
-                HttpWebRequest executeHttpRequest;
-                if (wpsjob.Provider != null)
-                    executeHttpRequest = wpsjob.Provider.CreateWebRequest (wpsjob.StatusLocation);
-                else {
-                    NetworkCredential credentials = null;
-                    var urib = new UriBuilder (wpsjob.StatusLocation);
-                    if (!string.IsNullOrEmpty (urib.UserName) && !string.IsNullOrEmpty (urib.Password)) credentials = new NetworkCredential (urib.UserName, urib.Password);
-                    executeHttpRequest = WpsProvider.CreateWebRequest (wpsjob.StatusLocation, credentials, context.Username);
-                }
-                if (wpsjob.StatusLocation.Contains("gpod.eo.esa.int")) {
-                    executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));  
-                }
-
-                OpenGis.Wps.ExecuteResponse execResponse = null;
-                using (var remoteWpsResponseStream = new MemoryStream ()) {
-                    context.LogDebug (this, string.Format (string.Format ("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
-
-                    try {
-                        using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse ())
-                        using (var remotestream = remoteWpsResponse.GetResponseStream ())
-                            remotestream.CopyTo (remoteWpsResponseStream);
-                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
-                        execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
-
-                    } catch (WebException we) {
-                        context.LogError (this, string.Format (we.Message));
-                        //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
-                        if (executeUrl.Contains ("gpod.eo.esa.int")) {
-                            using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream ()) remotestream.CopyTo (remoteWpsResponseStream);
-                            remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
-                            execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
-                        } else if (we.Response != null && we.Response is HttpWebResponse) {
-                            return new HttpResult (we.Message, ((HttpWebResponse)we.Response).StatusCode);
-                        } else {
-                            return new HttpResult (we.Message, HttpStatusCode.BadGateway);
-                        }
-                    } catch (Exception e) {
-                        OpenGis.Wps.ExceptionReport exceptionReport = null;
-                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
-                        try {
-                            exceptionReport = (OpenGis.Wps.ExceptionReport)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExceptionReport)).Deserialize (remoteWpsResponseStream);
-                        } catch (Exception e2) {}
-                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
-                        string errormsg = null;
-                        using (StreamReader reader = new StreamReader (remoteWpsResponseStream)) {
-                            errormsg = reader.ReadToEnd ();
-                        }
-                        remoteWpsResponseStream.Close ();
-                        context.LogError (this, errormsg);
-                        if (exceptionReport != null && exceptionReport.Exception != null) return new HttpResult(exceptionReport.Exception [0].ExceptionText [0], HttpStatusCode.BadRequest);
-                        else return new HttpResult (errormsg, HttpStatusCode.BadRequest);
-                    }
-                }
+                var jobresponse = wpsjob.GetExecuteResponse ();
+                if (jobresponse is HttpResult) return jobresponse;
+                else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
 
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 

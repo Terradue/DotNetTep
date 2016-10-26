@@ -135,12 +135,6 @@ namespace Terradue.Tep {
                 //create github profile
                 GithubProfile github = new GithubProfile(context, this.Id);
                 github.Store();
-                //create cloud user profile
-                EntityList<CloudProvider> provs = new EntityList<CloudProvider>(context);
-                provs.Load();
-                foreach (CloudProvider prov in provs) {
-                    context.Execute(String.Format("INSERT INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, prov.Id));
-                }
             }
         }
 
@@ -151,6 +145,7 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         /// <param name="id">Identifier.</param>
         public new static UserTep FromId(IfyContext context, int id){
+            if (context.UserId == id) context.AccessLevel = EntityAccessLevel.Administrator;
             UserTep user = new UserTep(context);
             user.Id = id;
             user.Load();
@@ -159,6 +154,7 @@ namespace Terradue.Tep {
 
         public new static UserTep FromApiKey (IfyContext context, string key)
         {
+            context.AccessLevel = EntityAccessLevel.Administrator;
             UserTep user = new UserTep (context);
             user.ApiKey = key;
             user.Load ();
@@ -200,6 +196,9 @@ namespace Terradue.Tep {
         /// <param name="providerId">Provider identifier.</param>
         /// <param name="cloudusername">Cloudusername.</param>
         public void StoreCloudUsername(int providerId){
+            //In case user has no record in db for the cloud provider
+            context.Execute (String.Format ("INSERT IGNORE INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, providerId));
+
             Terradue.Cloud.CloudUser cusr;
             try{
                 cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
