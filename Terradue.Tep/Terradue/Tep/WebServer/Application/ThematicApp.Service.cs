@@ -9,10 +9,7 @@ using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
-<<<<<<< HEAD
-=======
 using Terradue.ServiceModel.Syndication;
->>>>>>> origin/feature/apps
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
@@ -26,20 +23,6 @@ namespace Terradue.Tep.WebServer.Services {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-<<<<<<< HEAD
-        public object Get(ThematicAppGetRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            List<WebWpsJobTep> result = new List<WebWpsJobTep>();
-            try {
-                context.Open();
-
-                EntityList<WpsJob> services = new EntityList<WpsJob>(context);
-                services.OwnedItemsOnly = true;
-                services.Load();
-
-                foreach (WpsJob job in services) {
-                    result.Add(new WebWpsJobTep(job));
-=======
         /// <summary>
         /// Get the specified request.
         /// </summary>
@@ -59,7 +42,6 @@ namespace Terradue.Tep.WebServer.Services {
 
                 foreach (ThematicApplicationSet job in services) {
                     result.Add(new WebThematicAppTep(job));
->>>>>>> origin/feature/apps
                 }
 
                 context.Close();
@@ -71,22 +53,7 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
-<<<<<<< HEAD
-        public object Get(ThematicAppSearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            object result;
-            context.Open();
 
-            EntityList<WpsJob> tmp = new EntityList<WpsJob>(context);
-            tmp.Load();
-
-            List<WpsJob> jobs = tmp.GetItemsAsList();
-            jobs.Sort();
-            jobs.Reverse();
-
-            EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            foreach (WpsJob job in jobs) wpsjobs.Include(job);
-=======
         /// <summary>
         /// Get the specified request.
         /// </summary>
@@ -107,7 +74,6 @@ namespace Terradue.Tep.WebServer.Services {
 
             EntityList<ThematicApplicationSet> apps = new EntityList<ThematicApplicationSet>(context);
             foreach (ThematicApplicationSet app in appset) apps.Include(app);
->>>>>>> origin/feature/apps
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
@@ -121,23 +87,17 @@ namespace Terradue.Tep.WebServer.Services {
                 format = Request.QueryString["format"];
 
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-<<<<<<< HEAD
-            IOpenSearchResultCollection osr = ose.Query(wpsjobs, httpRequest.QueryString, responseType);
 
-            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobs, osr);
-=======
             IOpenSearchResultCollection osr = ose.Query(apps, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(apps, osr);
->>>>>>> origin/feature/apps
 //            OpenSearchFactory.ReplaceSelfLinks(wpsjobs, httpRequest.QueryString, osr.Result, EntrySelfLinkTemplate);
 
             context.Close();
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
         }
 
-<<<<<<< HEAD
-=======
+
         /// <summary>
         /// Get the specified request.
         /// </summary>
@@ -233,7 +193,6 @@ namespace Terradue.Tep.WebServer.Services {
             return hr;
         }
 
->>>>>>> origin/feature/apps
     }
 }
 
