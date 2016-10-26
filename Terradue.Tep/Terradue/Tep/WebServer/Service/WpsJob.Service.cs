@@ -134,6 +134,8 @@ namespace Terradue.Tep.WebServer.Services {
             HttpResult result = null;
             try {
                 context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/{0}/products/search GET", request.JobId));
+
                 WpsJob wpsjob = WpsJob.FromIdentifier (context, request.JobId);
 
                 //Get Execute Response
@@ -143,66 +145,14 @@ namespace Terradue.Tep.WebServer.Services {
                 else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                 else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
 
-                //Go through results
-                if (execResponse.ProcessOutputs != null) {
-                    foreach (OutputDataType output in execResponse.ProcessOutputs) {
-                        try {
-                            if (output.Identifier != null && output.Identifier.Value != null) {
-                                if (output.Identifier.Value.Equals ("result_metadata")) {
-                                    context.LogDebug (this, string.Format ("Case result_metadata"));
+                var resultUrl = wpsjob.GetResultUrlFromExecuteResponse (execResponse);
+                if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
 
-                                } else if (output.Identifier.Value.Equals ("result_osd")) {
-                                    context.LogDebug (this, string.Format ("Case result_osd"));
-
-                                    //Get result Url
-                                    string resultUrl = null;
-                                    if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                        var reference = item.Reference as OutputReferenceType;
-                                        resultUrl = reference.href;
-                                    } else if (output.Item is OutputReferenceType) {
-                                        var reference = output.Item as OutputReferenceType;
-                                        resultUrl = reference.href;
-                                    }
-
-                                    if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
-                                    var uri = new UriBuilder (resultUrl);
-
-                                    //TEMPORARY: if T2 sandbox (/sbws), use new path (/sbws/production)
-                                    var r = new System.Text.RegularExpressions.Regex (@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_-]+)\/(?<runid>[a-zA-Z0-9_-]+)\/results\/description");
-                                    var m = r.Match (uri.Path);
-                                    if (m.Success) {
-                                        var workflow = m.Result ("${workflow}");
-                                        var runid = m.Result ("${runid}");
-                                        uri.Path = string.Format ("/sbws/production/run/{0}/{1}/products/search", workflow, runid);
-                                    }
-
-                                    OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                                    var e = OpenSearchFactory.FindOpenSearchable (ose, new Uri (uri.Uri.AbsoluteUri), "application/atom+xml");
-                                    if (e.DefaultMimeType != "application/atom+xml" && !e.DefaultMimeType.Contains ("xml")) {
-                                        throw new InvalidOperationException ("No Url in the OpenSearch Description Document that query fully qualified model");
-                                    }
-                                    var type = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
-                                    var res = ose.Query (e, new NameValueCollection (), type);
-
-                                    result = new HttpResult (res.SerializeToString (), res.ContentType);
-
-                                } else {
-                                    context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
-                                }
-                            } else {
-                                if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                    if (item.Any != null) {
-                                        //TODO
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            context.LogError (this, e.Message);
-                        }
-                    }
-                }
+                OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose);
+                var type = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
+                var res = ose.Query (wpsjobUrl, new NameValueCollection (), type);
+                result = new HttpResult (res.SerializeToString (), res.ContentType);
 
                 context.Close ();
             } catch (Exception e) {
@@ -219,16 +169,26 @@ namespace Terradue.Tep.WebServer.Services {
             HttpResult result = null;
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/job/wps/{0}/description GET", request.JobId)    );
+                context.LogInfo (this, string.Format ("/job/wps/{0}/products/description GET", request.JobId));
+
+                WpsJob wpsjob = WpsJob.FromIdentifier (context, request.JobId);
+
+                //Get Execute Response
+                ExecuteResponse execResponse = null;
+                var jobresponse = wpsjob.GetExecuteResponse ();
+                if (jobresponse is HttpResult) return jobresponse;
+                else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
+
+                var resultUrl = wpsjob.GetResultUrlFromExecuteResponse (execResponse);
+                if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                GenericOpenSearchable urlToShare = new GenericOpenSearchable (new OpenSearchUrl (HttpContext.Current.Request.Url.AbsoluteUri), ose);
-                OpenSearchDescription osd = urlToShare.GetOpenSearchDescription ();
+                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose);
+                OpenSearchDescription osd = wpsjobUrl.GetOpenSearchDescription ();
                 result = new HttpResult (osd, "application/opensearchdescription+xml");
 
                 context.Close ();
-
-                return new HttpResult (osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
                 context.LogError (this, e.Message);
                 context.Close ();
