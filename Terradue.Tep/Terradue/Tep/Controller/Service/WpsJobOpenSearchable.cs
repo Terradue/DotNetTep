@@ -17,7 +17,7 @@ namespace Terradue.Tep
     public class WpsJobOpenSearchable : GenericOpenSearchable{
 
         private WpsJob Wpsjob;
-        private string Index;
+        private string Hostname;
         private string Workflow;
         private string RunId;
         private bool IsOpensearchable;
@@ -36,23 +36,42 @@ namespace Terradue.Tep
             if (this.url.AbsolutePath.EndsWith ("/search") || this.url.AbsolutePath.EndsWith ("/description")) {
                 IsOpensearchable = true;
 
-                //TEMPORARY: if T2 sandbox (/sbws), use new path (/sbws/production)
-                var r = new System.Text.RegularExpressions.Regex (@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results\/description");
-                var m = r.Match (this.url.AbsolutePath);
-                if (m.Success) {
-                    Workflow = m.Result ("${workflow}");
-                    RunId = m.Result ("${runid}");
-                    var replacement = string.Format ("/sbws/production/run/{0}/{1}/products/description", Workflow, RunId);
-                    this.url = new OpenSearchUrl (this.url.AbsoluteUri.Replace (this.url.AbsolutePath, replacement));
+                System.Text.RegularExpressions.Regex r;
+                System.Text.RegularExpressions.Match m;
+
+                //GET Workflow / RunId for Terradue VMs
+                if (this.url.AbsolutePath.StartsWith ("/sbws/wps")) {
+                    r = new System.Text.RegularExpressions.Regex (@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
+                    m = r.Match (this.url.AbsolutePath);
+                    if (m.Success) {
+                        Workflow = m.Result ("${workflow}");
+                        RunId = m.Result ("${runid}");
+                        var replacementUrl = this.url.AbsoluteUri.Replace ("/sbws/wps/"+Workflow+"/"+RunId+"/results", "/sbws/production/run/"+Workflow+"/"+RunId+"/products");
+
+                        //TEMPORARY: if T2 sandbox (/sbws), use new path (/sbws/production)
+                        //if url exists we replace the value
+                        try {
+                            var request = (HttpWebRequest)WebRequest.Create (replacementUrl);
+                            using (var response = (HttpWebResponse)request.GetResponse ()) {
+                                this.url = new OpenSearchUrl (replacementUrl);
+                            }
+                        } catch (Exception) { }
+                    }
+                } else if (this.url.AbsolutePath.StartsWith ("/sbws/production/run")) { 
+                    r = new System.Text.RegularExpressions.Regex (@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
+                    m = r.Match (this.url.AbsolutePath);
+                    if (m.Success) {
+                        Hostname = m.Result ("${hostname}");
+                        Workflow = m.Result ("${workflow}");
+                        RunId = m.Result ("${runid}");
+                    }
                 }
 
                 //Get hostname of the run VM
-                r = new System.Text.RegularExpressions.Regex (@"^https?:\/\/(?<hostname>[a-zA-Z0-9_\-\.]+)\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products\/description");
+                r = new System.Text.RegularExpressions.Regex (@"^https?:\/\/(?<hostname>[a-zA-Z0-9_\-\.]+)\/");
                 m = r.Match (this.url.AbsoluteUri);
                 if (m.Success) {
-                    Index = m.Result ("${hostname}");
-                    Workflow = m.Result ("${workflow}");
-                    RunId = m.Result ("${runid}");
+                    Hostname = m.Result ("${hostname}");
                 }
 
             } else { 
@@ -69,32 +88,22 @@ namespace Terradue.Tep
         /// <param name="ose">Ose.</param>
         public WpsJobOpenSearchable(OpenSearchDescription osd, OpenSearchEngine ose) : base(osd, ose) {}
 
-        public NameValueCollection GetParameters () {
-            return this.url.SearchAttributes;
-        }
-
-
         public new OpenSearchDescription GetOpenSearchDescription () {
             if (!IsOpensearchable) return GetProxiedOpenSearchDescription ();
 
             var osdd = base.GetOpenSearchDescription ();
 
             foreach (var link in osdd.Url) {
-                var baseUri = new UriBuilder (HttpContext.Current.Request.Url.AbsoluteUri);
+                var baseUri = new UriBuilder (HttpContext.Current.Request.Url.AbsoluteUri.Replace("/description", "/search"));
                 baseUri.Query = "";
 
-                if (link.Relation.Equals ("results")) { 
-                    link.Template = link.Template.Replace ("/description", "/search");
-                    //add do if not present
-                    if (!link.Template.Contains ("do=")) link.Template += (link.Template.Contains ("?") ? "&" : "?") + "do={t2:downloadOrigin?}";
-                }
+                //add download origin if not present
+                if (link.Relation.Equals ("results") && !link.Template.Contains ("do=")) 
+                    link.Template += (link.Template.Contains ("?") ? "&" : "?") + "do={t2:downloadOrigin?}";
 
-                if (link.Template.Contains ("?")) {
-                    link.Template = baseUri.Uri.AbsoluteUri + link.Template.Substring (link.Template.IndexOf ("?"));
-                    if (link.Relation.Equals ("results")) link.Template = link.Template.Replace ("/description", "/search");
-                } else {
-                    link.Template = baseUri.Uri.AbsoluteUri;
-                }
+                //replace Hostname with baseUri
+                link.Template = link.Template.Contains ("?") ? baseUri.Uri.AbsoluteUri + link.Template.Substring (link.Template.IndexOf ("?")) : baseUri.Uri.AbsoluteUri;
+
             }
 
             return osdd;
@@ -157,26 +166,26 @@ namespace Terradue.Tep
         public new void ApplyResultFilters (OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType = null)
         {
             if (finalContentType != null) {
-                ReplaceEnclosureLinks (this, request.Parameters, osr, EntryEnclosureLinkTemplate, finalContentType);
+                ReplaceEnclosureLinks (this, request.Parameters, osr, TerradueEntryEnclosureLinkTemplate, finalContentType);
             } else { 
-                ReplaceEnclosureLinks (this, request.Parameters, osr, EntryEnclosureLinkTemplate, osr.ContentType);
+                ReplaceEnclosureLinks (this, request.Parameters, osr, TerradueEntryEnclosureLinkTemplate, osr.ContentType);
             }
         }
 
         public void ApplyResultFilters (NameValueCollection parameters, ref IOpenSearchResultCollection osr, string finalContentType = null)
         {
             if (finalContentType != null) {
-                ReplaceEnclosureLinks (this, parameters, osr, EntryEnclosureLinkTemplate, finalContentType);
+                ReplaceEnclosureLinks (this, parameters, osr, TerradueEntryEnclosureLinkTemplate, finalContentType);
             } else {
-                ReplaceEnclosureLinks (this, parameters, osr, EntryEnclosureLinkTemplate, osr.ContentType);
+                ReplaceEnclosureLinks (this, parameters, osr, TerradueEntryEnclosureLinkTemplate, osr.ContentType);
             }
         }
 
-        public virtual SyndicationLink EntryEnclosureLinkTemplate (IOpenSearchResultItem item, string mimeType, Uri baseUrl)
+        public virtual SyndicationLink TerradueEntryEnclosureLinkTemplate (IOpenSearchResultItem item, string mimeType, Uri baseUrl)
         {
             UriBuilder enclosureUrl = new UriBuilder (baseUrl);
 
-            enclosureUrl.Path += string.Format ("/{0}/workflows/{1}/runs/{2}", this.Index, this.Workflow, this.RunId);
+            enclosureUrl.Path += string.Format ("/{0}/workflows/{1}/runs/{2}", this.Hostname, this.Workflow, this.RunId);
 
             return new SyndicationLink (enclosureUrl.Uri, "enclosure", "Download via Data Gateway", "application/octet-stream", 0);
         }

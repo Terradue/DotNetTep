@@ -151,10 +151,11 @@ namespace Terradue.Tep.WebServer.Services {
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+                var nvc = httpRequest.QueryString;
 
                 WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose, wpsjob);
 
-                var nvc = wpsjobUrl.GetParameters ();
+                //var nvc = wpsjobUrl.GetParameters ();
                 var res = ose.Query (wpsjobUrl, nvc, type);
                 wpsjobUrl.ApplyResultFilters (nvc, ref res);
                 result = new HttpResult (res.SerializeToString (), res.ContentType);
