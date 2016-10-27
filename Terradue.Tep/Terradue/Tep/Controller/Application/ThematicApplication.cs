@@ -47,14 +47,14 @@ namespace Terradue.Tep
     /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
-    public class ThematicApplicationSet : DataPackage
+    public class ThematicApplication : DataPackage
     {
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicApplicationSet"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
-        public ThematicApplicationSet (IfyContext context) : base (context)
+        public ThematicApplication (IfyContext context) : base (context)
         {
         }
 
@@ -64,9 +64,9 @@ namespace Terradue.Tep
         /// <returns>The identifier.</returns>
         /// <param name="context">Context.</param>
         /// <param name="identifier">Identifier.</param>
-        public static new ThematicApplicationSet FromIdentifier (IfyContext context, string identifier)
+        public static new ThematicApplication FromIdentifier (IfyContext context, string identifier)
         {
-            ThematicApplicationSet result = new ThematicApplicationSet (context);
+            ThematicApplication result = new ThematicApplication (context);
             result.Identifier = identifier;
             try {
                 result.Load ();
@@ -86,7 +86,7 @@ namespace Terradue.Tep
             return GetSearchBaseUrl ();
         }
 
-        public OpenSearchUrl GetSearchBaseUrl ()
+        public new OpenSearchUrl GetSearchBaseUrl ()
         {
             return new OpenSearchUrl (string.Format ("{0}/" + entityType.Keyword + "/{1}/search", context.BaseUrl, Identifier));
         }

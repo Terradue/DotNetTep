@@ -137,7 +137,7 @@
       <HintPath>..\packages\Terradue.OpenNebula.1.0.2\lib\net40\Terradue.OpenNebula.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Metadata.EarthObservation">
-      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.4.14\lib\net40\Terradue.Metadata.EarthObservation.dll</HintPath>
+      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.4.11\lib\net40\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
       <HintPath>..\packages\Terradue.GeoJson.1.7.12\lib\net40\Terradue.GeoJson.dll</HintPath>
@@ -249,8 +249,12 @@
     <Compile Include="Terradue\Tep\WebServer\Application\ThematicApp.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Application\WebThematicAppTep.cs" />
     <Compile Include="Mono.Options\Options.cs" />
-    <Compile Include="Terradue\Tep\Controller\Service\WpsJobOpenSearchable.cs" />
+<<<<<<< HEAD
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
+=======
+    <Compile Include="Terradue\Tep\Controller\Application\ThematicApplicationSet.cs" />
+    <Compile Include="Terradue\Tep\Controller\Service\WpsJobOpenSearchable.cs" />
+>>>>>>> a1be6e94b7e8ef25edb2417c4e5c35438fbdebf3
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
