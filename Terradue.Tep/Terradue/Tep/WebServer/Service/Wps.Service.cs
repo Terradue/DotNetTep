@@ -402,50 +402,38 @@ namespace Terradue.Tep.WebServer.Services {
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
+                var jobResultUrl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
+
                 if (execResponse.ProcessOutputs != null) {
                     foreach (OutputDataType output in execResponse.ProcessOutputs) {
                         try{
-                            if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_metadata")){
-                                context.LogDebug (this, string.Format ("Case result_metadata"));
-                                var item = new ComplexDataType();
-                                var reference = new OutputReferenceType();
-                                reference.mimeType = "application/opensearchdescription+xml";
-                                reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
-                                item.Reference = reference;
-                                item.Any = null;
-                                item.mimeType = "application/xml";
-                                output.Identifier = new CodeType{ Value = "result_osd" };
-                                output.Item = new DataType();
-                                ((DataType)(output.Item)).Item = item;
-                            } 
-                            else if(output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals("result_osd")){
-                                if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                    context.LogDebug (this, string.Format ("Case result_osd"));
-                                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                    var reference = item.Reference as OutputReferenceType;
-                                    //reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
-                                    reference.href = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
-                                    item.Reference = reference;
-                                    ((DataType)(output.Item)).Item = item;
-                                } else if (output.Item is OutputReferenceType) {
-                                    context.LogDebug (this, string.Format ("Case result_osd"));
-                                    var reference = output.Item as OutputReferenceType;
-                                    reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
-                                    output.Item = reference;
-                                }
-                            }
-                            else {
-                                if (output.Identifier != null && output.Identifier.Value != null) context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
-                                if(output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                    var item = ((DataType)(output.Item)).Item as ComplexDataType; 
-                                    if (item.Any != null) {
-                                        var reference = new OutputReferenceType();
-                                        reference.mimeType = "application/opensearchdescription+xml";
-                                        reference.href = context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description";
+                            if (output.Identifier != null && output.Identifier.Value != null) { 
+                                context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
+                                if (output.Identifier.Value.Equals ("result_metadata") || output.Identifier.Value.Equals ("result_osd")) {
+                                    if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                        var reference = item.Reference as OutputReferenceType;
+                                        reference.href = jobResultUrl;
                                         item.Reference = reference;
-                                        item.Any = null;
-                                        item.mimeType = "application/xml";
-                                        output.Identifier = new CodeType{ Value = "result_osd" }; 
+                                        ((DataType)(output.Item)).Item = item;
+                                    } else if (output.Item is OutputReferenceType) {
+                                        context.LogDebug (this, string.Format ("Case result_osd"));
+                                        var reference = output.Item as OutputReferenceType;
+                                        reference.href = jobResultUrl;
+                                        output.Item = reference;
+                                    }
+                                } else {
+                                    if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                        if (item.Any != null) {
+                                            var reference = new OutputReferenceType ();
+                                            reference.mimeType = "application/opensearchdescription+xml";
+                                            reference.href = jobResultUrl;
+                                            item.Reference = reference;
+                                            item.Any = null;
+                                            item.mimeType = "application/xml";
+                                            output.Identifier = new CodeType { Value = "result_osd" };
+                                        }
                                     }
                                 }
                             }

@@ -308,12 +308,9 @@ namespace Terradue.Tep
                 foreach (OutputDataType output in execResponse.ProcessOutputs) {
                     try {
                         if (output.Identifier != null && output.Identifier.Value != null) {
-                            if (output.Identifier.Value.Equals ("result_metadata")) {
-                                context.LogDebug (this, string.Format ("Case result_metadata"));
-                                //TODO
-                            } else if (output.Identifier.Value.Equals ("result_osd")) {
-                                context.LogDebug (this, string.Format ("Case result_osd"));
-
+                            context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
+                            //we handle only result_metadata and result_osd cases
+                            if (output.Identifier.Value.Equals ("result_metadata") || output.Identifier.Value.Equals ("result_osd")) {
                                 //Get result Url
                                 if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
                                     var item = ((DataType)(output.Item)).Item as ComplexDataType;
@@ -322,17 +319,6 @@ namespace Terradue.Tep
                                 } else if (output.Item is OutputReferenceType) {
                                     var reference = output.Item as OutputReferenceType;
                                     resultUrl = reference.href;
-                                }
-
-                            } else {
-                                context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
-                                //TODO
-                            }
-                        } else {
-                            if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                if (item.Any != null) {
-                                    //TODO
                                 }
                             }
                         }

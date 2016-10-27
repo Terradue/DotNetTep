@@ -152,7 +152,7 @@ namespace Terradue.Tep.WebServer.Services {
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
 
-                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose);
+                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose, wpsjob);
 
                 var nvc = wpsjobUrl.GetParameters ();
                 var res = ose.Query (wpsjobUrl, nvc, type);
@@ -189,7 +189,7 @@ namespace Terradue.Tep.WebServer.Services {
                 if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose);
+                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose, wpsjob);
                 OpenSearchDescription osd = wpsjobUrl.GetOpenSearchDescription ();
                 result = new HttpResult (osd, "application/opensearchdescription+xml");
 
