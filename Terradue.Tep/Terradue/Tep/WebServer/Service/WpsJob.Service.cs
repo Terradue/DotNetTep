@@ -149,9 +149,14 @@ namespace Terradue.Tep.WebServer.Services {
                 if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                HttpRequest httpRequest = HttpContext.Current.Request;
+                var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+
                 WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose);
-                var type = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
-                var res = ose.Query (wpsjobUrl, new NameValueCollection (), type);
+
+                var nvc = wpsjobUrl.GetParameters ();
+                var res = ose.Query (wpsjobUrl, nvc, type);
+                wpsjobUrl.ApplyResultFilters (nvc, ref res);
                 result = new HttpResult (res.SerializeToString (), res.ContentType);
 
                 context.Close ();
