@@ -423,7 +423,8 @@ namespace Terradue.Tep.WebServer.Services {
                                     context.LogDebug (this, string.Format ("Case result_osd"));
                                     var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                     var reference = item.Reference as OutputReferenceType;
-                                    reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
+                                    //reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode(reference.href);
+                                    reference.href = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
                                     item.Reference = reference;
                                     ((DataType)(output.Item)).Item = item;
                                 } else if (output.Item is OutputReferenceType) {

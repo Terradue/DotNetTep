@@ -10,6 +10,7 @@ using System.IO;
 using System.Net;
 using ServiceStack.Common.Web;
 using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
+using OpenGis.Wps;
 
 namespace Terradue.Tep
 {
@@ -123,28 +124,48 @@ namespace Terradue.Tep
             }
         }
 
+        /// <summary>
+        /// Gets the total results.
+        /// </summary>
+        /// <value>The total results.</value>
         public long TotalResults {
             get {
                 throw new NotImplementedException ();
             }
         }
 
+        /// <summary>
+        /// Gets the default type of the MIME.
+        /// </summary>
+        /// <value>The default type of the MIME.</value>
         public string DefaultMimeType {
             get {
                 throw new NotImplementedException ();
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="T:Terradue.Tep.WpsJob"/> can cache.
+        /// </summary>
+        /// <value><c>true</c> if can cache; otherwise, <c>false</c>.</value>
         public bool CanCache {
             get {
                 throw new NotImplementedException ();
             }
         }
 
-        public WpsJob (IfyContext context) : base (context)
-        {
-        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Terradue.Tep.WpsJob"/> class.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        public WpsJob (IfyContext context) : base (context) {}
 
+        /// <summary>
+        /// Froms the identifier.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="id">Identifier.</param>
         public static WpsJob FromId (IfyContext context, int id)
         {
             WpsJob result = new WpsJob (context);
@@ -153,6 +174,12 @@ namespace Terradue.Tep
             return result;
         }
 
+        /// <summary>
+        /// Froms the identifier.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="id">Identifier.</param>
         public static WpsJob FromIdentifier (IfyContext context, string id)
         {
             WpsJob result = new WpsJob (context);
@@ -161,6 +188,9 @@ namespace Terradue.Tep
             return result;
         }
 
+        /// <summary>
+        /// Store this instance.
+        /// </summary>
         public override void Store ()
         {
             if (this.Id == 0) {
@@ -169,22 +199,38 @@ namespace Terradue.Tep
             base.Store ();
         }
 
+        /// <summary>
+        /// Is the job public.
+        /// </summary>
+        /// <returns><c>true</c>, if public was ised, <c>false</c> otherwise.</returns>
         public bool IsPublic ()
         {
             return DoesGrantGlobalPermission ();
         }
 
+        /// <summary>
+        /// Is the job private.
+        /// </summary>
+        /// <returns><c>true</c>, if private was ised, <c>false</c> otherwise.</returns>
         public bool IsPrivate ()
         {
             return !IsPublic () && !IsRestricted ();
         }
 
+        /// <summary>
+        /// Is the job restricted.
+        /// </summary>
+        /// <returns><c>true</c>, if restricted was ised, <c>false</c> otherwise.</returns>
         public bool IsRestricted ()
         {
             string sql = String.Format ("SELECT COUNT(*) FROM wpsjob_priv WHERE id_wpsjob={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue (sql) > 0;
         }
 
+        /// <summary>
+        /// Gets the execute response.
+        /// </summary>
+        /// <returns>The execute response.</returns>
         public object GetExecuteResponse ()
         {
             string executeUrl = StatusLocation;
@@ -247,6 +293,56 @@ namespace Terradue.Tep
             }
 
             return execResponse;
+        }
+
+        /// <summary>
+        /// Gets the result URL from execute response.
+        /// </summary>
+        /// <returns>The result URL from execute response.</returns>
+        /// <param name="execResponse">Exec response.</param>
+        public string GetResultUrlFromExecuteResponse (OpenGis.Wps.ExecuteResponse execResponse) {
+            string resultUrl = null;
+
+            //Go through results
+            if (execResponse.ProcessOutputs != null) {
+                foreach (OutputDataType output in execResponse.ProcessOutputs) {
+                    try {
+                        if (output.Identifier != null && output.Identifier.Value != null) {
+                            if (output.Identifier.Value.Equals ("result_metadata")) {
+                                context.LogDebug (this, string.Format ("Case result_metadata"));
+                                //TODO
+                            } else if (output.Identifier.Value.Equals ("result_osd")) {
+                                context.LogDebug (this, string.Format ("Case result_osd"));
+
+                                //Get result Url
+                                if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                    var reference = item.Reference as OutputReferenceType;
+                                    resultUrl = reference.href;
+                                } else if (output.Item is OutputReferenceType) {
+                                    var reference = output.Item as OutputReferenceType;
+                                    resultUrl = reference.href;
+                                }
+
+                            } else {
+                                context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
+                                //TODO
+                            }
+                        } else {
+                            if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                if (item.Any != null) {
+                                    //TODO
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        context.LogError (this, e.Message);
+                    }
+                }
+            }
+
+            return resultUrl;
         }
 
         #region IAtomizable implementation

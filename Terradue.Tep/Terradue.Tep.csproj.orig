@@ -249,8 +249,12 @@
     <Compile Include="Terradue\Tep\WebServer\Application\ThematicApp.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Application\WebThematicAppTep.cs" />
     <Compile Include="Mono.Options\Options.cs" />
+<<<<<<< HEAD
+    <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
+=======
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplicationSet.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\WpsJobOpenSearchable.cs" />
+>>>>>>> a1be6e94b7e8ef25edb2417c4e5c35438fbdebf3
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
