@@ -262,6 +262,9 @@ namespace Terradue.Tep.WebServer.Services
                     UserTep user = UserTep.FromApiKey (context, request.Key);
                     tmp_datapackages.UserId = user.Id;
                 }
+                context.ConsoleDebug = true;
+
+                //context.AccessLevel = EntityAccessLevel.Permission;
                 tmp_datapackages.Load();
 
                 foreach (DataPackage dp in tmp_datapackages) {
