@@ -251,6 +251,7 @@
     <Compile Include="Mono.Options\Options.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\WpsJobOpenSearchable.cs" />
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
+    <Compile Include="Terradue\Tep\Controller\Application\ThematicGroup.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
