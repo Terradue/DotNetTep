@@ -102,7 +102,7 @@ namespace Terradue.Tep {
             OpenGis.Wps.KeywordsType kw1 = new OpenGis.Wps.KeywordsType{ Keyword = new List<OpenGis.Wps.LanguageStringType>{ new OpenGis.Wps.LanguageStringType{ Value = "WPS" } } };
             List<OpenGis.Wps.LanguageStringType> listKeywords = new List<OpenGis.Wps.LanguageStringType>();
             listKeywords.Add(new OpenGis.Wps.LanguageStringType{ Value = "WPS" });
-            listKeywords.Add(new OpenGis.Wps.LanguageStringType{ Value = "geohazards" });
+            listKeywords.Add(new OpenGis.Wps.LanguageStringType{ Value = "TEP" });
             listKeywords.Add(new OpenGis.Wps.LanguageStringType{ Value = "geospatial" });
             listKeywords.Add(new OpenGis.Wps.LanguageStringType{ Value = "geoprocessing" });
             capabilitites.ServiceIdentification.Keywords.Add(new OpenGis.Wps.KeywordsType{ Keyword = listKeywords });
@@ -112,8 +112,8 @@ namespace Terradue.Tep {
             capabilitites.ServiceIdentification.AccessConstraints = new List<string>{ "NONE" };
 
             capabilitites.ServiceProvider = new OpenGis.Wps.ServiceProvider();
-            capabilitites.ServiceProvider.ProviderName = "Geohazards Tep";
-            capabilitites.ServiceProvider.ProviderSite = new OpenGis.Wps.OnlineResourceType{ href = "https://geohazards-tep.eo.esa.int/" };
+            capabilitites.ServiceProvider.ProviderName = "Tep";
+            capabilitites.ServiceProvider.ProviderSite = new OpenGis.Wps.OnlineResourceType{ href = "https://tep.eo.esa.int/" };
 
             capabilitites.OperationsMetadata = new OpenGis.Wps.OperationsMetadata();
             capabilitites.OperationsMetadata.Operation = new List<OpenGis.Wps.Operation>();
