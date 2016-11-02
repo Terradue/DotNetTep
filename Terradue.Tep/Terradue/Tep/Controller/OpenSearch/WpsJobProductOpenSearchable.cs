@@ -244,6 +244,7 @@ namespace Terradue.Tep.OpenSearch
         {
             var parameters =  openSearchable.GetOpenSearchParameters(mimeType);
             parameters.Set("do", "{t2:downloadOrigin?}");
+            return parameters;
         }
     }
 }
