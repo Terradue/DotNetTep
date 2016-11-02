@@ -144,7 +144,7 @@ namespace Terradue.Tep.OpenSearch
                 return false;
             });
             request.OriginalParameters.AllKeys.FirstOrDefault (k => {
-                parameters.Add (k, request.OriginalParameters [k]);
+                parameters.Set (k, request.OriginalParameters [k]);
                 return false;
             });
 
