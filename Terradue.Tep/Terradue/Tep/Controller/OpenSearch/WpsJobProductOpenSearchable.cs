@@ -242,7 +242,8 @@ namespace Terradue.Tep.OpenSearch
 
         public NameValueCollection GetOpenSearchParameters(string mimeType)
         {
-            return openSearchable.GetOpenSearchParameters(mimeType);
+            var parameters =  openSearchable.GetOpenSearchParameters(mimeType);
+            parameters.Set("do", "{t2:downloadOrigin?}");
         }
     }
 }
