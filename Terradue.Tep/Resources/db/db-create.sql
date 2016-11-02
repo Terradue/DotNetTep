@@ -5,6 +5,7 @@ USE $MAIN$;
 -- Add WpsJob table... \
 CREATE TABLE wpsjob (
     id int unsigned NOT NULL auto_increment,
+    id_domain int unsigned COMMENT 'FK: Owning domain',
     id_usr int unsigned NOT NULL COMMENT 'FK: User',
     identifier varchar(50) NOT NULL COMMENT 'Unique identifier',
     remote_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Unique remote identifier',

@@ -135,12 +135,12 @@ namespace Terradue.Tep
             }
         }
 
-        private User owner { get; set; }
-        public User Owner
-        {
-            get
-            {
-                if (owner == null) owner = User.FromId(context, this.OwnerId);
+        private UserTep owner;
+        public UserTep Owner {
+            get {
+                if (owner == null) {
+                    if (OwnerId != 0) owner = UserTep.FromId (context, OwnerId);
+                }
                 return owner;
             }
         }
@@ -220,8 +220,8 @@ namespace Terradue.Tep
         /// </summary>
         public override void Store()
         {
-            if (this.Id == 0)
-            {
+            DomainId = Owner.Domain.Id;
+            if (this.Id == 0) {
                 this.CreatedTime = DateTime.UtcNow;
             }
             base.Store();

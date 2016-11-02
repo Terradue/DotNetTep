@@ -170,7 +170,8 @@ namespace Terradue.Tep.WebServer.Services
             try{
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/default/{{userId}} DELETE userId='{0}", request.userId));
-                DataPackage def = DataPackage.GetTemporaryForUser(context, request.userId);
+                User user = User.FromId (context, request.userId);
+                DataPackage def = DataPackage.GetTemporaryForUser(context, user);
 
                 foreach(RemoteResource res in def.Resources){
                     res.Delete();

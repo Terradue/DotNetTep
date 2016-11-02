@@ -125,9 +125,14 @@ namespace Terradue.Tep {
         /// </summary>
         /// <value>is owned by a \ref User</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
+        private UserTep owner;
         public UserTep Owner {
-            get;
-            set;
+            get {
+                if (owner == null) {
+                    if (OwnerId != 0) owner = UserTep.FromId (context, OwnerId);
+                }
+                return owner;
+            }
         }
 
         /// <summary>
@@ -199,12 +204,13 @@ namespace Terradue.Tep {
         }
 
         public static DataPackage GetTemporaryForCurrentUser(IfyContext context){
-            return GetTemporaryForUser(context, context.UserId);
+            User user = User.FromId (context, context.UserId);
+            return GetTemporaryForUser(context, user);
         }
 
-        public static DataPackage GetTemporaryForUser(IfyContext context, int id){
+        public static DataPackage GetTemporaryForUser(IfyContext context, User user){
             DataPackage result = new DataPackage(context);
-            result.OwnerId = id;
+            result.OwnerId = user.Id;
             result.IsDefault = true;
             try {
                 result.Load();
@@ -213,16 +219,15 @@ namespace Terradue.Tep {
                 result.Identifier = Guid.NewGuid().ToString();
                 result.Name = "temporary workspace";
                 result.CreationTime = DateTime.UtcNow;
+                result.DomainId = user.Domain.Id;
                 result.Store();
             }
             return result;
         }
 
-        public override string AlternativeIdentifyingCondition{
-            get { 
-                if (OwnerId != 0 && IsDefault) return String.Format("t.id_usr={0} AND t.is_default={1}",OwnerId,IsDefault); 
-                return null;
-            }
+        public override string GetIdentifyingConditionSql (){
+            if (OwnerId != 0 && IsDefault) return String.Format("t.id_usr={0} AND t.is_default={1}",OwnerId,IsDefault); 
+            return null;
         }
 
         public static string GenerateIdentifier(string identifier){
@@ -263,6 +268,7 @@ namespace Terradue.Tep {
         /// </summary>
         public override void Store() {
             context.StartTransaction();
+            DomainId = Owner.Domain.Id;
             bool isNew = this.Id == 0;
             try {
                 if (isNew){
@@ -272,7 +278,7 @@ namespace Terradue.Tep {
                 base.Store();
 
                 if (IsDefault)
-                    this.StorePrivilegesForUsers(null, true);
+                    this.GrantPermissionsToUsers (new int [] { Owner.Id }, true);
 
                 Resources.StoreExactly();
                 LoadItems();
