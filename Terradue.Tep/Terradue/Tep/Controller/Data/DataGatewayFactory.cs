@@ -12,7 +12,7 @@ namespace Terradue.Tep
     {
 
 
-        static string dataGatewayBaseUrl;
+        static string dataGatewayBaseUrl = "https://store.terradue.com";
         static MemoryCache downloadUriCache = new MemoryCache("downloadUriCache");
 
 
