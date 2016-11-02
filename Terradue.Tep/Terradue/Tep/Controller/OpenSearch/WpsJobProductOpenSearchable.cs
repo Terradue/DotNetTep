@@ -138,12 +138,23 @@ namespace Terradue.Tep.OpenSearch
         /// <param name="finalContentType">Final content type.</param>
         public void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType = null)
         {
+            var parameters = new NameValueCollection ();
+            request.Parameters.AllKeys.FirstOrDefault (k => {
+                parameters.Add (k, request.Parameters [k]);
+                return false;
+            });
+            request.OriginalParameters.AllKeys.FirstOrDefault (k => {
+                parameters.Add (k, request.OriginalParameters [k]);
+                return false;
+            });
+
+
             if (finalContentType != null)
             {
-                ReplaceEnclosureLinks(this, request.Parameters, osr, TerradueEntryEnclosureLinkTemplate, finalContentType);
+                ReplaceEnclosureLinks(this, parameters, osr, TerradueEntryEnclosureLinkTemplate, finalContentType);
             }
             else {
-                ReplaceEnclosureLinks(this, request.Parameters, osr, TerradueEntryEnclosureLinkTemplate, osr.ContentType);
+                ReplaceEnclosureLinks(this, parameters, osr, TerradueEntryEnclosureLinkTemplate, osr.ContentType);
             }
         }
 
@@ -211,8 +222,9 @@ namespace Terradue.Tep.OpenSearch
                         }
                     }
 
-
-                    foreach (var enclosureLink in item.Links.Where(l => l.RelationshipType == "enclosure"))
+                    var tmpLinks = new List<SyndicationLink> ();
+                    tmpLinks.AddRange(item.Links);
+                    foreach (var enclosureLink in tmpLinks.Where(l => l.RelationshipType == "enclosure"))
                     {
                         if (origin.Contains("terradue") || isDomain)
                         {

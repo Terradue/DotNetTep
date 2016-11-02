@@ -85,8 +85,7 @@ namespace Terradue.Tep
 
         static SyndicationLink SubstituteSandboxEnclosure(SyndicationLink link, SandboxOpenSearchable sandboxOpenSearchable, IOpenSearchResultItem item)
         {
-            UriBuilder urib = new UriBuilder(link.BaseUri);
-
+            UriBuilder urib = new UriBuilder (link.Uri.AbsoluteUri);
             urib.Path = "";
             urib.Query = null;
             urib.Fragment = null;
