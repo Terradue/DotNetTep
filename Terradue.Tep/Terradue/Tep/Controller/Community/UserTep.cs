@@ -30,6 +30,33 @@ namespace Terradue.Tep {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /// <summary>
+        /// Gets or sets the private domain of the user.
+        /// </summary>
+        /// <value>The domain.</value>
+        public override Domain Domain { 
+            get {
+                if (base.Domain == null) {
+                    try {
+                        base.Domain = Domain.FromIdentifier (context, Username);
+                    } catch (Exception e) {}
+                }
+                return base.Domain;
+            }
+            set {
+                base.Domain = value;
+            }
+        }
+
+        public override int DomainId {
+            get {
+                return Domain.Id;
+            }
+            set {
+                base.DomainId = value;
+            }
+        }
+
+        /// <summary>
         /// Thematic groups the user belongs to.
         /// </summary>
         /// <value>belongs to a Group</value>
@@ -109,12 +136,10 @@ namespace Terradue.Tep {
             this.Level = user.Level;
         }
 
-        public override string AlternativeIdentifyingCondition {
-            get {
-                if (!string.IsNullOrEmpty (ApiKey))
-                    return String.Format ("t.apikey='{0}'", ApiKey);
-                else return null;
-            }
+        public override string GetIdentifyingConditionSql() {
+            if (!string.IsNullOrEmpty (ApiKey))
+                return String.Format ("t.apikey='{0}'", ApiKey);
+            else return null;
         }
 
         public static UserTep GetPublicUser(IfyContext context, int id){
@@ -126,6 +151,8 @@ namespace Terradue.Tep {
         public override void Load(){
             base.Load();
             this.LoadCloudUsername();
+
+            if (Domain == null) CreatePrivateDomain ();
         }
 
         public override void Store(){
@@ -233,6 +260,44 @@ namespace Terradue.Tep {
                     context.LogDebug (this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
                 }
             }
+        }
+
+        /// <summary>
+        /// Creates the private domain.
+        /// </summary>
+        public void CreatePrivateDomain () {
+            //create new domain with Identifier = Username
+            var privatedomain = new Domain (context);
+            privatedomain.Identifier = Username;
+            privatedomain.Description = "Domain of user " + Username;
+            privatedomain.Store ();
+
+            //set the userdomain
+            Domain = privatedomain;
+
+            CreateDefaultUserRole ();
+        }
+
+        /// <summary>
+        /// Creates the default user role.
+        /// </summary>
+        public void CreateDefaultUserRole ()
+        {
+            //Create Role
+            var userRole = new Role (context);
+            userRole.Identifier = "user-" + Username;
+            userRole.Name = "User role - " + Username;
+            userRole.Store ();
+
+            //Add Privileges
+            //Data Package -- All
+            userRole.IncludePrivileges (Privilege.Get (EntityType.GetEntityType (typeof (DataPackage))));
+
+            //WpsJob
+            userRole.IncludePrivileges (Privilege.Get (EntityType.GetEntityType (typeof (WpsJob))));
+
+            //Grant role for user
+            userRole.GrantToUser (this, Domain);
         }
 
         /// <summary>

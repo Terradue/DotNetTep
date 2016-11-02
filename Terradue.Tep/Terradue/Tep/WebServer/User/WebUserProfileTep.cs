@@ -83,7 +83,7 @@ namespace Terradue.Tep.WebServer {
             dp.Load();
             CreatedDataPackages = dp.Count;
 
-            var dpdefault = DataPackage.GetTemporaryForUser(context, this.Id);
+            var dpdefault = DataPackage.GetTemporaryForUser(context, entity);
             DefaultDataPackageItems = dpdefault.Items.Count;
 
         }
