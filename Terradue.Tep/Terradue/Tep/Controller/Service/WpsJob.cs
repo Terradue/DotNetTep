@@ -16,7 +16,7 @@ using Terradue.Tep.OpenSearch;
 
 namespace Terradue.Tep
 {
-    [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true)]
+    [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true)]
     /// <summary>
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.
     /// </summary>
