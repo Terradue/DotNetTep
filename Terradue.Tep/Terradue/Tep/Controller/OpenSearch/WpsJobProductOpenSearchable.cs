@@ -100,7 +100,7 @@ namespace Terradue.Tep.OpenSearch
             NameValueCollection parameters = GetOpenSearchParameters(this.DefaultMimeType);
 
             UriBuilder searchUrl = new UriBuilder(context.BaseUrl);
-            searchUrl.Path += "/search";
+            searchUrl.Path += string.Format("/job/wps/{0}/products/search", Wpsjob.Identifier);
             NameValueCollection queryString = HttpUtility.ParseQueryString("");
             parameters.AllKeys.FirstOrDefault(k =>
             {
@@ -120,7 +120,7 @@ namespace Terradue.Tep.OpenSearch
 
             }
             UriBuilder descriptionUrl = new UriBuilder(context.BaseUrl);
-            descriptionUrl.Path += "/description";
+            descriptionUrl.Path += string.Format("/job/wps/{0}/products/description", Wpsjob.Identifier);
             urls.Add(new OpenSearchDescriptionUrl("application/opensearchdescription+xml",
                                                   searchUrl.ToString(),
                                                   "self"));
