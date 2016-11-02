@@ -330,6 +330,27 @@ namespace Terradue.Tep.WebServer.Services
             }
         }
 
+        public object Get (DataPackagesDescriptionRequest request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/data/package/description GET"));
+
+                EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage> (context);
+
+                OpenSearchDescription osd = tmp_datapackages.GetOpenSearchDescription ();
+
+                context.Close ();
+
+                return new HttpResult (osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+        }
+
 	}
 
 }
