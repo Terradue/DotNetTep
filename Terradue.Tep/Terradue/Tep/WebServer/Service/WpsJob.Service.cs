@@ -175,7 +175,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var nvc = httpRequest.QueryString;
 
                 WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);
-                OpenSearchDescription osd = wpsjobProductOs.GetOpenSearchDescription ();
+                OpenSearchDescription osd = wpsjobProductOs.GetProxyOpenSearchDescription ();
                 result = new HttpResult (osd, "application/opensearchdescription+xml");
 
                 context.Close ();
