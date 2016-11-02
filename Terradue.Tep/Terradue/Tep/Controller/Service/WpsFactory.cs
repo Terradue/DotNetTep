@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.IO;
 using ServiceStack.Common.Web;
+using System.Xml.Serialization;
 
 
 /*!
@@ -32,6 +33,9 @@ namespace Terradue.Tep {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private IfyContext context { get; set; }
+
+        public static XmlSerializer ExceptionReportSerializer = new XmlSerializer(typeof(OpenGis.Wps.ExceptionReport));
+        public static XmlSerializer ExecuteResponseSerializer = new XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse));
 
         public WpsFactory(IfyContext context) {
             this.context = context;
