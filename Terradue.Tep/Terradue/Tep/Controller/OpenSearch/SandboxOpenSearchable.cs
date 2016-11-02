@@ -72,6 +72,8 @@ namespace Terradue.Tep.OpenSearch
                 }
             }
 
+            sosi.Url = url;
+
             return sosi;
 
         }
