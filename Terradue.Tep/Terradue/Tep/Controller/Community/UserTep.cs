@@ -275,29 +275,12 @@ namespace Terradue.Tep {
             //set the userdomain
             Domain = privatedomain;
 
-            CreateDefaultUserRole ();
-        }
-
-        /// <summary>
-        /// Creates the default user role.
-        /// </summary>
-        public void CreateDefaultUserRole ()
-        {
-            //Create Role
-            var userRole = new Role (context);
-            userRole.Identifier = "user-" + Username;
-            userRole.Name = "User role - " + Username;
-            userRole.Store ();
-
-            //Add Privileges
-            //Data Package -- All
-            userRole.IncludePrivileges (Privilege.Get (EntityType.GetEntityType (typeof (DataPackage))));
-
-            //WpsJob
-            userRole.IncludePrivileges (Privilege.Get (EntityType.GetEntityType (typeof (WpsJob))));
+            //Get role owner
+            var userRole = Role.FromIdentifier (context, "owner");
 
             //Grant role for user
             userRole.GrantToUser (this, Domain);
+
         }
 
         /// <summary>

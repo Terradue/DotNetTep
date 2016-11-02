@@ -137,3 +137,58 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 -- RESULT
 
 /*****************************************************************************/
+
+-- Add Owner role
+INSERT INTO role (`identifier`, `name`, `description`) VALUES ('owner', 'owner', 'Default role for every user to be able to use his own domain');
+SET @role_id = (SELECT LAST_INSERT_ID());
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-c');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-m');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-M');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-d');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-c');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-m');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-p');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-d');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+-- RESULT
+
+-- Add Starter role
+INSERT INTO role (`identifier`, `name`, `description`) VALUES ('starter', 'starter', 'Starter role');
+SET @role_id = (SELECT LAST_INSERT_ID());
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+-- RESULT
+
+-- Add Explorer role
+INSERT INTO role (`identifier`, `name`, `description`) VALUES ('explorer ', 'explorer', 'Explorer role');
+SET @role_id = (SELECT LAST_INSERT_ID());
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='datapackage-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+-- RESULT
