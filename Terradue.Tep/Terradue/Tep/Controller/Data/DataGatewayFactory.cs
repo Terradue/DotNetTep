@@ -63,7 +63,7 @@ namespace Terradue.Tep
         {
             UriBuilder urib = new UriBuilder(dataGatewayBaseUrl);
 
-            urib.Path += string.Format("/{0}", baseUri.Host);
+            urib.Path += string.Format("/api/{0}", baseUri.Host);
 
             HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(urib.Uri);
 
