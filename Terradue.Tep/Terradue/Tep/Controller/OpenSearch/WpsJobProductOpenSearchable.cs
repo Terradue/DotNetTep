@@ -224,6 +224,7 @@ namespace Terradue.Tep.OpenSearch
 
                     var tmpLinks = new List<SyndicationLink> ();
                     tmpLinks.AddRange(item.Links);
+                    int i = 1;
                     foreach (var enclosureLink in tmpLinks.Where(l => l.RelationshipType == "enclosure"))
                     {
                         if (origin.Contains("terradue") || isDomain)
@@ -231,9 +232,11 @@ namespace Terradue.Tep.OpenSearch
                             SyndicationLink enclosureUrl = entryEnclosureLinkTemplate(enclosureLink, item, contentType);
                             if (enclosureUrl != null)
                             {
-                                item.Links.Insert(0, enclosureUrl);
+                                item.Links.Insert(i, enclosureUrl);
+                                i++;
                             }
                         }
+                        i++;
 
                     }
                 }
