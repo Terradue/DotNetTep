@@ -14,6 +14,7 @@ using Terradue.WebService.Model;
 using System.Linq;
 using System.Net;
 using OpenGis.Wps;
+using Terradue.Tep.OpenSearch;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -138,26 +139,15 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsJob wpsjob = WpsJob.FromIdentifier (context, request.JobId);
 
-                //Get Execute Response
-                ExecuteResponse execResponse = null;
-                var jobresponse = wpsjob.GetExecuteResponse ();
-                if (jobresponse is HttpResult) return jobresponse;
-                else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
-                else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
-
-                var resultUrl = wpsjob.GetResultUrlFromExecuteResponse (execResponse);
-                if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
-
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
                 var nvc = httpRequest.QueryString;
 
-                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose, wpsjob);
+                WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable (wpsjob,context);
 
                 //var nvc = wpsjobUrl.GetParameters ();
-                var res = ose.Query (wpsjobUrl, nvc, type);
-                wpsjobUrl.ApplyResultFilters (nvc, ref res);
+                var res = ose.Query (wpsjobProductOs, nvc, type);
                 result = new HttpResult (res.SerializeToString (), res.ContentType);
 
                 context.Close ();
@@ -177,21 +167,15 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/job/wps/{0}/products/description GET", request.JobId));
 
-                WpsJob wpsjob = WpsJob.FromIdentifier (context, request.JobId);
-
-                //Get Execute Response
-                ExecuteResponse execResponse = null;
-                var jobresponse = wpsjob.GetExecuteResponse ();
-                if (jobresponse is HttpResult) return jobresponse;
-                else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
-                else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
-
-                var resultUrl = wpsjob.GetResultUrlFromExecuteResponse (execResponse);
-                if (string.IsNullOrEmpty (resultUrl)) throw new Exception ("Invalid result Url for job " + wpsjob.Identifier);
+                WpsJob wpsjob = WpsJob.FromIdentifier(context, request.JobId);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                WpsJobOpenSearchable wpsjobUrl = new WpsJobOpenSearchable (new OpenSearchUrl (resultUrl), ose, wpsjob);
-                OpenSearchDescription osd = wpsjobUrl.GetOpenSearchDescription ();
+                HttpRequest httpRequest = HttpContext.Current.Request;
+                var type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+                var nvc = httpRequest.QueryString;
+
+                WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);
+                OpenSearchDescription osd = wpsjobProductOs.GetOpenSearchDescription ();
                 result = new HttpResult (osd, "application/opensearchdescription+xml");
 
                 context.Close ();

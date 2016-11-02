@@ -393,7 +393,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 ExecuteResponse execResponse = null;
 
-                var jobresponse = wpsjob.GetExecuteResponse ();
+                var jobresponse = wpsjob.GetStatusLocationContent ();
                 if (jobresponse is HttpResult) return jobresponse;
                 else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                 else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
