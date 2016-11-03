@@ -11,6 +11,7 @@ using Terradue.OpenSearch.Request;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep.OpenSearch
@@ -138,30 +139,16 @@ namespace Terradue.Tep.OpenSearch
         /// <param name="finalContentType">Final content type.</param>
         public void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType = null)
         {
-            var parameters = new NameValueCollection ();
-            request.Parameters.AllKeys.FirstOrDefault (k => {
-                parameters.Add (k, request.Parameters [k]);
-                return false;
-            });
-            request.OriginalParameters.AllKeys.FirstOrDefault (k => {
-                parameters.Set (k, request.OriginalParameters [k]);
-                return false;
-            });
-
-
             if (finalContentType != null)
             {
-                ReplaceEnclosureLinks(this, parameters, osr, TerradueEntryEnclosureLinkTemplate, finalContentType);
+                ReplaceEnclosureLinks(this, request.OriginalParameters, osr, finalContentType);
             }
             else {
-                ReplaceEnclosureLinks(this, parameters, osr, TerradueEntryEnclosureLinkTemplate, osr.ContentType);
+                ReplaceEnclosureLinks(this, request.OriginalParameters, osr, osr.ContentType);
             }
         }
 
-        public virtual SyndicationLink TerradueEntryEnclosureLinkTemplate(SyndicationLink link, IOpenSearchResultItem item, string contentType)
-        {
-            return DataGatewayFactory.SubstituteEnclosure(link, openSearchable, item);
-        }
+
 
         /// <summary>
         /// Replaces the enclosure links.
@@ -171,7 +158,7 @@ namespace Terradue.Tep.OpenSearch
         /// <param name="osr">Osr.</param>
         /// <param name="entryEnclosureLinkTemplate">Entry enclosure link template.</param>
         /// <param name="contentType">Content type.</param>
-        public void ReplaceEnclosureLinks(IOpenSearchable entity, NameValueCollection parameters, IOpenSearchResultCollection osr, Func<SyndicationLink, IOpenSearchResultItem, string, SyndicationLink> entryEnclosureLinkTemplate, string contentType)
+        public void ReplaceEnclosureLinks(IOpenSearchable entity, NameValueCollection parameters, IOpenSearchResultCollection osr, string contentType)
         {
             if (!string.IsNullOrEmpty(parameters["do"]))
             {
@@ -192,53 +179,51 @@ namespace Terradue.Tep.OpenSearch
                 }
                 catch { }
 
-                SyndicationLink[] array = (from l in osr.Links
-                                           where l.RelationshipType == "enclosure"
-                                           select l).ToArray<SyndicationLink>();
-                SyndicationLink[] array2 = array;
-                if (strict)
-                {
-                    for (int i = 0; i < array2.Length; i++)
-                    {
-                        SyndicationLink item = array2[i];
-                        osr.Links.Remove(item);
-                    }
-                }
-
 
 
                 foreach (IOpenSearchResultItem item in osr.Items)
                 {
-                    array = (from l in item.Links
-                             where l.RelationshipType == "enclosure"
-                             select l).ToArray<SyndicationLink>();
-                    SyndicationLink[] array3 = array;
-                    if (strict)
-                    {
-                        for (int j = 0; j < array3.Length; j++)
-                        {
-                            SyndicationLink previous = array3[j];
-                            item.Links.Remove(previous);
-                        }
-                    }
 
-                    var tmpLinks = new List<SyndicationLink> ();
-                    tmpLinks.AddRange(item.Links);
-                    int i = 1;
-                    foreach (var enclosureLink in tmpLinks.Where(l => l.RelationshipType == "enclosure"))
+                    foreach (var enclosureLink in item.Links.Where(l => l.RelationshipType == "enclosure").ToArray())
                     {
                         if (origin.Contains("terradue") || isDomain)
                         {
-                            SyndicationLink enclosureUrl = entryEnclosureLinkTemplate(enclosureLink, item, contentType);
-                            if (enclosureUrl != null)
+                            SyndicationLink newEnclosureLink = DataGatewayFactory.SubstituteEnclosure(enclosureLink, openSearchable, item);
+                            if (newEnclosureLink != null)
                             {
-                                item.Links.Insert(i, enclosureUrl);
-                                i++;
+                                item.Links.Insert(item.Links.IndexOf(enclosureLink), newEnclosureLink);
+                                item.Links.Remove(enclosureLink);
                             }
+                            else if (strict)
+                                item.Links.Remove(enclosureLink);
                         }
-                        i++;
 
                     }
+
+
+                    item.ElementExtensions = new SyndicationElementExtensionCollection(
+                        item.ElementExtensions.Select<SyndicationElementExtension, SyndicationElementExtension>(ext =>
+                    {
+                        if (ext.OuterName != "offering" || ext.OuterNamespace != "http://www.opengis.net/owc/1.0")
+                            return ext;
+
+                        var offering = (OwcOffering)OwcContextHelper.OwcOfferingSerializer.Deserialize(ext.GetReader());
+
+                        if (offering.Contents != null)
+                        {
+                            foreach (var content in offering.Contents)
+                            {
+                                if (content.Url != null)
+                                {
+                                    var newUrl = DataGatewayFactory.SubstituteUrlApi(content.Url, openSearchable, item);
+                                    if (newUrl != null)
+                                        content.Url = newUrl;
+                                }
+                            }
+                        }
+
+                        return new SyndicationElementExtension(offering.CreateReader());
+                    }));
                 }
             }
         }
@@ -257,7 +242,7 @@ namespace Terradue.Tep.OpenSearch
 
         public NameValueCollection GetOpenSearchParameters(string mimeType)
         {
-            var parameters =  openSearchable.GetOpenSearchParameters(mimeType);
+            var parameters = openSearchable.GetOpenSearchParameters(mimeType);
             parameters.Set("do", "{t2:downloadOrigin?}");
             return parameters;
         }
