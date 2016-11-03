@@ -69,7 +69,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetGithubUser request){
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebGithubProfile result;
 
             try {

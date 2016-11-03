@@ -27,7 +27,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Get(ConfirmUserEmail request) {
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             // Let's try to open context
             try {
                 context.LogInfo(this,string.Format("/user/emailconfirm GET"));
@@ -116,7 +116,7 @@ namespace Terradue.Tep.WebServer.Services {
                 subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
 
                 string activationToken = context.GetQueryStringValue(String.Format("SELECT token FROM usrreg WHERE id_usr={0};", umssoUser.Id));
-                string confirmUrl = context.GetConfigValue("EmailConfirmationUrl").Replace("$(BASEURL)", context.BaseUrl).Replace("$(TOKEN)", activationToken);
+                string confirmUrl = context.GetConfigValue("EmailConfirmationUrl").Replace("$(BASEURL)", context.GetConfigValue("BaseUrl")).Replace("$(TOKEN)", activationToken);
                 string body = context.GetConfigValue("RegistrationMailBody");
                 body = body.Replace("$(USERNAME)", umssoUser.Username);
                 body = body.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));

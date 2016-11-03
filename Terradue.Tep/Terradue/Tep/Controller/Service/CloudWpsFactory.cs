@@ -165,7 +165,9 @@ namespace Terradue.Tep {
             WpsProcessOffering wps = null;
             try {
                 //wps is stored in DB
-                wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, identifier);
+                wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier (context, identifier);
+            } catch (UnauthorizedAccessException e) {
+                throw e;
             } catch (Exception e) {
                 //wps is not stored in DB
                 string[] identifierParams = identifier.Split("-".ToCharArray());
