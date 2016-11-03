@@ -180,6 +180,10 @@ SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-v');
 INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
 SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-s');
 INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='service-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='service-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
 -- RESULT
 
 -- Add Explorer role
@@ -192,5 +196,9 @@ INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
 SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-v');
 INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
 SET @priv_id = (SELECT id FROM priv WHERE identifier='wpsjob-s');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='service-v');
+INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
+SET @priv_id = (SELECT id FROM priv WHERE identifier='service-s');
 INSERT INTO role_priv (`id_role`, `id_priv`) VALUES (@role_id, @priv_id);
 -- RESULT
