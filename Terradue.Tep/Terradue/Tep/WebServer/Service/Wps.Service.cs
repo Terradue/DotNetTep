@@ -380,6 +380,7 @@ namespace Terradue.Tep.WebServer.Services {
             return wpsjob;
         }
 
+
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.AccessLevel = EntityAccessLevel.Administrator;
@@ -447,7 +448,13 @@ namespace Terradue.Tep.WebServer.Services {
                 new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
                 context.Close();
 
-                return new HttpResult(stream, "application/xml");
+                var result = new HttpResult(stream, "application/xml");
+
+                result.Headers.Remove("Cache-Control");
+                result.Headers.Add("Cache-Control", "max-age=60");
+
+                return result;
+
             }catch(Exception e){
                 context.LogError(this, e.Message);
                 return new HttpResult(e.Message, HttpStatusCode.BadRequest);
