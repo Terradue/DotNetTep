@@ -98,7 +98,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             var redirect = new UriBuilder(context.BaseUrl);
             redirect.Path = "geobrowser";
-            string redirectUrl = redirect.Uri.AbsoluteUri + "/#!";
+            string redirectUrl = redirect.Uri.AbsoluteUri + (!string.IsNullOrEmpty (request.id) ? "/?id=" + request.id : "/") + "#!";
 
             Match match = Regex.Match(new Uri(request.url).LocalPath.Replace(new Uri(context.BaseUrl).LocalPath, ""), @"(/.*)(/?.*)/search");
             if (match.Success) {
