@@ -109,15 +109,19 @@ namespace Terradue.Tep.OpenSearch
                 return false;
             });
 
+            List<OpenSearchDescriptionUrlParameter> paramdesc = OpenSearchFactory.GetDefaultParametersDescription(10);
+
             foreach (int code in searchExtensions.Keys)
             {
 
                 queryString.Set("format", searchExtensions[code].Identifier);
                 string[] queryStrings = Array.ConvertAll(queryString.AllKeys, key => string.Format("{0}={1}", key, queryString[key]));
                 searchUrl.Query = string.Join("&", queryStrings);
-                urls.Add(new OpenSearchDescriptionUrl(searchExtensions[code].DiscoveryContentType,
+                var url = new OpenSearchDescriptionUrl(searchExtensions[code].DiscoveryContentType,
                                                       searchUrl.ToString(),
-                                                      "results"));
+                                                       "results");
+                url.Parameters = paramdesc.ToArray();
+                urls.Add(url);
 
             }
             UriBuilder descriptionUrl = new UriBuilder(context.BaseUrl);
