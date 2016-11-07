@@ -33,7 +33,8 @@ namespace Terradue.Tep
 
         public static SyndicationLink SubstituteExternalEnclosure(SyndicationLink link)
         {
-            UriBuilder urib = new UriBuilder(link.BaseUri);
+            var uri = link.BaseUri ?? link.Uri;
+            UriBuilder urib = new UriBuilder(uri);
 
             urib.Path = "";
             urib.Query = null;
@@ -45,7 +46,7 @@ namespace Terradue.Tep
                 return null;
 
             urib = new UriBuilder(substUri);
-            urib.Path += link.BaseUri.AbsolutePath;
+            urib.Path += uri.AbsolutePath;
 
             return new SyndicationLink(urib.Uri, "enclosure", link.Title + " via Data Gateway", link.MediaType, link.Length);
 
