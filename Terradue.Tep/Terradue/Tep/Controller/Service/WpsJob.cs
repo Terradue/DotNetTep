@@ -443,7 +443,8 @@ namespace Terradue.Tep
                         httpRequest.PreAuthenticate = true;
                     using (var httpResp = httpRequest.GetResponse())
                     {
-                        AtomFeed.Load(XmlReader.Create(httpResp.GetResponseStream()));
+                        feed = AtomFeed.Load(XmlReader.Create(httpResp.GetResponseStream()));
+                        feed.Id = url;
                     }
                 }
                 catch (Exception e)
