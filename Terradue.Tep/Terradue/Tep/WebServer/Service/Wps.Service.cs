@@ -415,6 +415,8 @@ namespace Terradue.Tep.WebServer.Services {
                                         var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                         var reference = item.Reference as OutputReferenceType;
                                         reference.href = jobResultUrl;
+                                        if(jobResultUrl != null && jobResultUrl.EndsWith("/description"))
+                                            reference.mimeType = "application/opensearchdescription+xml";
                                         item.Reference = reference;
                                         ((DataType)(output.Item)).Item = item;
                                     } else if (output.Item is OutputReferenceType) {
