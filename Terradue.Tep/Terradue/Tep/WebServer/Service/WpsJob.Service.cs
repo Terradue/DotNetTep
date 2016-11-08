@@ -381,7 +381,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
-                string sql = String.Format("DELETE FROM wpsjob_priv WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
+                string sql = String.Format("DELETE FROM wpsjob_perm WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
                 context.Execute(sql);
 
                 wps.GrantPermissionsToGroups(request.ToArray());
@@ -410,7 +410,7 @@ namespace Terradue.Tep.WebServer.Services {
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM wpjob_priv WHERE id_wpsjob={0} AND id_grp={1};",request.JobId, job.Id);
+                string sql = String.Format("DELETE FROM wpjob_perm WHERE id_wpsjob={0} AND id_grp={1};",request.JobId, job.Id);
                 context.Execute(sql);
 
                 context.Close();

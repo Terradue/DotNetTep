@@ -377,7 +377,7 @@ namespace Terradue.Tep.WebServer.Services {
             if (ids.Count > 0) {
                 csv.Append("Username,Data package name,Data package creation date, Shared" + Environment.NewLine);
                 for (int i = 0; i < ids.Count; i++) {
-                    sql = string.Format("SELECT COUNT(*) FROM resourceset_priv WHERE id_resourceset={0} AND id_usr IS NULL AND id_grp IS NULL;", ids[i]);
+                    sql = string.Format("SELECT COUNT(*) FROM resourceset_perm WHERE id_resourceset={0} AND id_usr IS NULL AND id_grp IS NULL;", ids[i]);
                     csv.Append(lines[i]);
                     csv.Append("," + (context.GetQueryIntegerValue(sql) > 0 ? "yes" : "no"));
                     csv.Append(Environment.NewLine);

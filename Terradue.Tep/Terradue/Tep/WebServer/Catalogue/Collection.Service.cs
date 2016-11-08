@@ -243,7 +243,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Series serie = Series.FromId(context, request.CollId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM series_priv WHERE id_series={0} AND id_grp={1};",request.CollId, request.Id);
+                string sql = String.Format("DELETE FROM series_perm WHERE id_series={0} AND id_grp={1};",request.CollId, request.Id);
                 context.Execute(sql);
 
                 context.Close();

@@ -619,7 +619,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group PUT DpId='{0}', Id='{1}'", request.DpId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
-                string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
+                string sql = String.Format("DELETE FROM resourceset_perm WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
                 context.Execute(sql);
 
                 dp.GrantPermissionsToGroups(request.ToArray());
@@ -647,7 +647,7 @@ namespace Terradue.Tep.WebServer.Services
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp={1};",dp.Id, request.Id);
+                string sql = String.Format("DELETE FROM resourceset_perm WHERE id_resourceset={0} AND id_grp={1};",dp.Id, request.Id);
                 context.Execute(sql);
 
                 context.Close();

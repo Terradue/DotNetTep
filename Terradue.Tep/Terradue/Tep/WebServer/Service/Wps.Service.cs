@@ -868,7 +868,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group/{{Id}} DELETE WpsId='{0}',Id='{1}'", request.WpsId, request.Id));
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM service_priv WHERE id_service={0} AND id_grp={1};",request.WpsId, request.Id);
+                string sql = String.Format("DELETE FROM service_perm WHERE id_service={0} AND id_grp={1};",request.WpsId, request.Id);
                 context.Execute(sql);
 
                 context.Close();

@@ -295,7 +295,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="usrId">Usr identifier.</param>
         public void AllowUser(int usrId) {
-            String sql = String.Format("INSERT IGNORE INTO resourceset_priv (id_resourceset, id_usr) VALUES ({0},{1});", this.Id, usrId);
+            String sql = String.Format("INSERT IGNORE INTO resourceset_perm (id_resourceset, id_usr) VALUES ({0},{1});", this.Id, usrId);
             context.Execute(sql);
         }
 
@@ -304,7 +304,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="usrId">Usr identifier.</param>
         public void RemoveUser(int usrId) {
-            String sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_usr={1};", this.Id, usrId);
+            String sql = String.Format("DELETE FROM resourceset_perm WHERE id_resourceset={0} AND id_usr={1};", this.Id, usrId);
             context.Execute(sql);
         }
 
@@ -317,7 +317,7 @@ namespace Terradue.Tep {
         }
 
         public bool IsRestricted(){
-			string sql = String.Format("SELECT COUNT(*) FROM resourceset_priv WHERE id_resourceset={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
+			string sql = String.Format("SELECT COUNT(*) FROM resourceset_perm WHERE id_resourceset={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue(sql) > 0;
         }
 

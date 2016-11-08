@@ -251,7 +251,7 @@ namespace Terradue.Tep
         /// <returns><c>true</c>, if restricted was ised, <c>false</c> otherwise.</returns>
         public bool IsRestricted()
         {
-            string sql = String.Format("SELECT COUNT(*) FROM wpsjob_priv WHERE id_wpsjob={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
+            string sql = String.Format("SELECT COUNT(*) FROM wpsjob_perm WHERE id_wpsjob={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue(sql) > 0;
         }
 
