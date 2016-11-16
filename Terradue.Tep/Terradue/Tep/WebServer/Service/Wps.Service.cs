@@ -244,12 +244,18 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(WpsExecutePostRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.Open();
-            context.LogInfo(this,string.Format("/wps/WebProcessingService POST"));
+            object response = null;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/wps/WebProcessingService POST"));
 
-            Execute executeInput = (Execute)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.Execute)).Deserialize(request.RequestStream);
-            context.LogDebug(this,string.Format("Deserialization done"));
-            var response = Execute(context, executeInput);
+                Execute executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.Execute)).Deserialize (request.RequestStream);
+                context.LogDebug (this, string.Format ("Deserialization done"));
+                response = Execute (context, executeInput);
+            } catch (Exception e){
+                context.Close ();
+                return new HttpError (e.Message);
+            }
             context.Close();
             return response;
         }
