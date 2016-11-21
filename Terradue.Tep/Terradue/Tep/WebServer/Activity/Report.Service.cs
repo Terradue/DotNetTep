@@ -93,10 +93,6 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/report GET startdate='{0}',enddate='{1}'", request.startdate, request.enddate));
 
-                string sql = "";
-                System.Data.IDbConnection dbConnection = null;
-                System.Data.IDataReader reader = null;
-
                 var skipedIds = context.GetConfigValue("report-ignored-ids");
 
                 GenerateCsvHeader(context, csv, startdate, enddate, skipedIds);
@@ -147,7 +143,7 @@ namespace Terradue.Tep.WebServer.Services {
                     csv.Append(reader.GetString(0) + Environment.NewLine);
                 }
             }
-            reader.Close();
+            context.CloseQueryResult (reader, dbConnection);
             csv.Append(Environment.NewLine);
         }
 
@@ -184,7 +180,7 @@ namespace Terradue.Tep.WebServer.Services {
                     ids.Add(reader.GetInt32(0));
                 }
             }
-            reader.Close();
+            context.CloseQueryResult (reader, dbConnection);
             csv.Append(String.Format("Users signed in between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
             if (ids.Count > 0) {
                 csv.Append("Username,Organization,First Login date,Cloud access" + Environment.NewLine);
@@ -203,7 +199,7 @@ namespace Terradue.Tep.WebServer.Services {
                             csv.Append(Environment.NewLine);
                         }
                     }
-                    reader.Close();
+                    context.CloseQueryResult (reader, dbConnection);
                 }
             }
             csv.Append(Environment.NewLine);
@@ -223,7 +219,7 @@ namespace Terradue.Tep.WebServer.Services {
                     s += String.Format("{0},{1}{2}",reader.GetString(0), reader.GetInt32(1), Environment.NewLine);
                 }
             }
-            reader.Close();
+            context.CloseQueryResult (reader, dbConnection);
             csv.Append(String.Format("Active users (logged more than once) between {0} and {1},{2}{3}", startdate, enddate, nbActU, Environment.NewLine));
             if (nbActU > 0) {
                 csv.Append("Username,Nb of logins" + Environment.NewLine);
@@ -232,121 +228,130 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(Environment.NewLine);
         }
 
-        private void GenerateCsvWpsJobPart(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
-            //Runs of processing jobs on the Portal: username, wpsjob name, job creation date (ORDERED BY CREATION DATE)
-            string sql = String.Format("SELECT usr.username, wpsjob.id from wpsjob INNER JOIN usr ON wpsjob.id_usr=usr.id WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) ORDER BY username;", 
-                                       startdate, enddate, skipedIds);
-            System.Data.IDbConnection dbConnection = context.GetDbConnection();
-            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
-            List<int> ids = new List<int>();
-            while (reader.Read()) {
-                ids.Add(reader.GetInt32(1));
+        private void GenerateCsvWpsJobPart (IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds)
+        {
+            System.Data.IDbConnection dbConnection = null;
+            System.Data.IDataReader reader = null;
+            try {
+                //Runs of processing jobs on the Portal: username, wpsjob name, job creation date (ORDERED BY CREATION DATE)
+                string sql = String.Format ("SELECT usr.username, wpsjob.id from wpsjob INNER JOIN usr ON wpsjob.id_usr=usr.id WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) ORDER BY username;",
+                                           startdate, enddate, skipedIds);
+                dbConnection = context.GetDbConnection ();
+                reader = context.GetQueryResult (sql, dbConnection);
+                List<int> ids = new List<int> ();
+                while (reader.Read ()) {
+                    ids.Add (reader.GetInt32 (1));
+                }
+                context.CloseQueryResult (reader, dbConnection);
+
+                List<WpsJob> jobs = new List<WpsJob> ();
+                foreach (int id in ids) {
+                    jobs.Add (WpsJob.FromId (context, id));
+                }
+
+                csv.Append (String.Format ("Wps jobs created between {0} and {1} (ordered by user),{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
+                if (ids.Count > 0) {
+                    csv.Append ("Username,Wpsjob name,Wpsjob creation date,Process name,Shared" + Environment.NewLine);
+                    foreach (WpsJob job in jobs) {
+                        User usr = User.FromId (context, job.OwnerId);
+                        string wpsname = "";
+                        try {
+                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering (context, job.ProcessId);
+                            wpsname = wps.Name;
+                        } catch (Exception) {
+                            wpsname = job.ProcessId;
+                        }
+                        string ispublic = job.IsPublic () ? "yes" : "no";
+                        csv.Append (String.Format ("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace (",", "\\,"), job.CreatedTime.ToString ("yyyy-MM-dd"), wpsname.Replace (",", "\\,"), ispublic, Environment.NewLine));
+                    }
+                }
+                csv.Append (Environment.NewLine);
+
+                jobs.Sort ();
+                csv.Append (String.Format ("Wps jobs created between {0} and {1} (ordered by date),{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
+                if (ids.Count > 0) {
+                    csv.Append ("Username,Wpsjob name,Wpsjob creation date,Process name,Shared" + Environment.NewLine);
+                    foreach (WpsJob job in jobs) {
+                        User usr = User.FromId (context, job.OwnerId);
+                        string wpsname = "";
+                        try {
+                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering (context, job.ProcessId);
+                            wpsname = wps.Name;
+                        } catch (Exception) {
+                            wpsname = job.ProcessId;
+                        }
+                        string ispublic = job.IsPublic () ? "yes" : "no";
+                        csv.Append (String.Format ("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace (",", "\\,"), job.CreatedTime.ToString ("yyyy-MM-dd"), wpsname.Replace (",", "\\,"), ispublic, Environment.NewLine));
+                    }
+                    csv.Append (Environment.NewLine);
+
+                    //Nb of wpsjobs per user
+                    csv.Append (string.Format ("Number of wpsjob created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                    sql = String.Format ("SELECT usr.username, COUNT(wpsjob.id) FROM usr INNER JOIN wpsjob ON usr.id=wpsjob.id_usr " +
+                    "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.id_usr " +
+                    "ORDER BY COUNT(wpsjob.id) DESC;",
+                                        startdate, enddate, skipedIds);
+                    dbConnection = context.GetDbConnection ();
+                    reader = context.GetQueryResult (sql, dbConnection);
+                    while (reader.Read ()) {
+                        if (reader.GetValue (0) != DBNull.Value) {
+                            csv.Append (String.Format ("{0},{1}{2}", reader.GetString (0), reader.GetInt32 (1), Environment.NewLine));
+                        }
+                    }
+                    context.CloseQueryResult (reader, dbConnection);
+                    csv.Append (Environment.NewLine);
+
+                    //Nb of wpsjobs per group
+                    csv.Append (string.Format ("Number of wpsjob created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                    sql = String.Format ("SELECT grp.name, COUNT(wpsjob.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN wpsjob ON wpsjob.id_usr=usr_grp.id_usr " +
+                    "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY grp.id " +
+                    "ORDER BY COUNT(wpsjob.id) DESC;",
+                                        startdate, enddate, skipedIds);
+                    dbConnection = context.GetDbConnection ();
+                    reader = context.GetQueryResult (sql, dbConnection);
+                    while (reader.Read ()) {
+                        if (reader.GetValue (0) != DBNull.Value) {
+                            csv.Append (String.Format ("{0},{1}{2}", reader.GetString (0), reader.GetInt32 (1), Environment.NewLine));
+                        }
+                    }
+                    context.CloseQueryResult (reader, dbConnection);
+                    csv.Append (Environment.NewLine);
+
+                    //Nb of wpsjobs per service
+                    csv.Append (string.Format ("Number of wpsjob created per service between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                    sql = String.Format ("SELECT wpsjob.process, COUNT(wpsjob.process) FROM wpsjob " +
+                    "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.process " +
+                    "ORDER BY COUNT(wpsjob.id) DESC;",
+                                        startdate, enddate, skipedIds);
+                    dbConnection = context.GetDbConnection ();
+                    reader = context.GetQueryResult (sql, dbConnection);
+                    List<KeyValuePair<string, int>> services = new List<KeyValuePair<string, int>> ();
+                    while (reader.Read ()) {
+                        if (reader.GetValue (0) != DBNull.Value) {
+                            services.Add (new KeyValuePair<string, int> (reader.GetString (0), reader.GetInt32 (1)));
+                        }
+                    }
+                    context.CloseQueryResult (reader, dbConnection);
+                    foreach (KeyValuePair<string, int> kv in services) {
+                        string wpsname = "";
+                        try {
+                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering (context, kv.Key);
+                            context.LogDebug (this, "Wps name = " + wps.Name);
+                            wpsname = wps.Name;
+                        } catch (Exception e) {
+                            context.LogError (this, e.Message);
+                            context.LogDebug (this, "Wps name (key) = " + kv.Key);
+                            wpsname = kv.Key;
+                        }
+                        csv.Append (String.Format ("{0},{1}{2}", wpsname.Replace (",", "\\,"), kv.Value, Environment.NewLine));
+                    }
+                }
+                csv.Append (Environment.NewLine);
+            } catch (Exception e){
+                try {
+                    context.CloseQueryResult (reader, dbConnection);
+                } catch (Exception){}
             }
-            reader.Close();
-
-            List<WpsJob> jobs = new List<WpsJob>();
-            foreach (int id in ids) {
-                jobs.Add(WpsJob.FromId(context, id));
-            }
-
-            csv.Append(String.Format("Wps jobs created between {0} and {1} (ordered by user),{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
-                csv.Append("Username,Wpsjob name,Wpsjob creation date,Process name,Shared" + Environment.NewLine);
-                foreach (WpsJob job in jobs) {
-                    User usr = User.FromId(context, job.OwnerId);
-                    string wpsname = "";
-                    try {
-                        WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
-                        wpsname = wps.Name;
-                    } catch (Exception) {
-                        wpsname = job.ProcessId;
-                    }
-                    string ispublic = job.IsPublic() ? "yes" : "no";
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace(",","\\,"), job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",","\\,"), ispublic, Environment.NewLine));
-                }
-            }
-            csv.Append(Environment.NewLine);
-
-            jobs.Sort();
-            csv.Append(String.Format("Wps jobs created between {0} and {1} (ordered by date),{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
-                csv.Append("Username,Wpsjob name,Wpsjob creation date,Process name,Shared" + Environment.NewLine);
-                foreach (WpsJob job in jobs) {
-                    User usr = User.FromId(context, job.OwnerId);
-                    string wpsname = "";
-                    try {
-                        WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
-                        wpsname = wps.Name;
-                    } catch (Exception) {
-                        wpsname = job.ProcessId;
-                    }
-                    string ispublic = job.IsPublic() ? "yes" : "no";
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace(",","\\,"), job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",","\\,"), ispublic, Environment.NewLine));
-                }
-                csv.Append(Environment.NewLine);
-
-                //Nb of wpsjobs per user
-                csv.Append(string.Format("Number of wpsjob created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT usr.username, COUNT(wpsjob.id) FROM usr INNER JOIN wpsjob ON usr.id=wpsjob.id_usr " +
-                "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.id_usr " +
-                "ORDER BY COUNT(wpsjob.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
-                }
-                reader.Close();
-                csv.Append(Environment.NewLine);
-
-                //Nb of wpsjobs per group
-                csv.Append(string.Format("Number of wpsjob created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT grp.name, COUNT(wpsjob.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN wpsjob ON wpsjob.id_usr=usr_grp.id_usr " +
-                "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY grp.id " +
-                "ORDER BY COUNT(wpsjob.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
-                }
-                reader.Close();
-                csv.Append(Environment.NewLine);
-
-                //Nb of wpsjobs per service
-                csv.Append(string.Format("Number of wpsjob created per service between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT wpsjob.process, COUNT(wpsjob.process) FROM wpsjob " +
-                "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.process " +
-                "ORDER BY COUNT(wpsjob.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                List<KeyValuePair<string,int>> services = new List<KeyValuePair<string, int>>();
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        services.Add(new KeyValuePair<string, int>(reader.GetString(0), reader.GetInt32(1)));
-                    }
-                }
-                reader.Close();
-                foreach (KeyValuePair<string,int> kv in services) {
-                    string wpsname = "";
-                    try {
-                        WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, kv.Key);
-                        context.LogDebug(this,"Wps name = " + wps.Name);
-                        wpsname = wps.Name;
-                    } catch (Exception e) {
-                        context.LogError(this, e.Message);
-                        context.LogDebug(this,"Wps name (key) = " + kv.Key);
-                        wpsname = kv.Key;
-                    }
-                    csv.Append(String.Format("{0},{1}{2}", wpsname.Replace(",","\\,"), kv.Value, Environment.NewLine));
-                }
-            }
-            csv.Append(Environment.NewLine);
         }
 
         /// <summary>
@@ -357,93 +362,104 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="startdate">Startdate.</param>
         /// <param name="enddate">Enddate.</param>
         /// <param name="skipedIds">Skiped identifiers.</param>
-        private void GenerateCsvDataPackagePart(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
-            //  Data Packages created + shared
-            string sql = String.Format("SELECT resourceset.id, usr.username, resourceset.name, resourceset.creation_time from resourceset INNER JOIN usr on usr.id=resourceset.id_usr " +
-                                       "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.is_default=0;",
-                                       startdate, enddate, skipedIds);
-            System.Data.IDbConnection dbConnection = context.GetDbConnection();
-            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
-            List<string> lines = new List<string>();
-            List<int> ids = new List<int>();
-            while (reader.Read()) {
-                if (reader.GetValue(0) != DBNull.Value) {
-                    ids.Add(reader.GetInt32(0));
-                    lines.Add(string.Format("{0},{1},{2}",reader.GetString(1), reader.GetString(2).Replace(",","\\,"), reader.GetDateTime(3)));
-                }
-            }
-            reader.Close();
-            csv.Append(String.Format("Data packages created between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
-                csv.Append("Username,Data package name,Data package creation date, Shared" + Environment.NewLine);
-                for (int i = 0; i < ids.Count; i++) {
-                    sql = string.Format("SELECT COUNT(*) FROM resourceset_priv WHERE id_resourceset={0} AND id_usr IS NULL AND id_grp IS NULL;", ids[i]);
-                    csv.Append(lines[i]);
-                    csv.Append("," + (context.GetQueryIntegerValue(sql) > 0 ? "yes" : "no"));
-                    csv.Append(Environment.NewLine);
-                }
-                csv.Append(Environment.NewLine);
-                csv.Append(string.Format("Number of Data package created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT usr.username, COUNT(resourceset.id) FROM usr INNER JOIN resourceset ON usr.id=resourceset.id_usr " +
-                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.is_default=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY resourceset.id_usr " +
-                "ORDER BY COUNT(resourceset.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
-                }
-                reader.Close();
-                csv.Append(Environment.NewLine);
-                csv.Append(string.Format("Number of Data package created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT grp.name, COUNT(resourceset.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN resourceset ON resourceset.id_usr=usr_grp.id_usr " +
-                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.is_default=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY grp.id " +
-                "ORDER BY COUNT(resourceset.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
-                }
-                reader.Close();
-            }
+        private void GenerateCsvDataPackagePart (IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds)
+        {
 
-            //shared data packages
-            EntityType entityType = EntityType.GetEntityType(typeof(DataPackage));
-            Privilege priv = Privilege.FromTypeAndOperation(context, entityType.Id, OperationPriv.MAKE_PUBLIC);
-            sql = String.Format("SELECT id FROM activity WHERE id_type={0} AND id_priv={1} AND log_time >= '{2}' AND log_time <= '{3}' AND id_owner NOT IN ({4});",
-                                entityType.Id, priv.Id, startdate, enddate, skipedIds);
-            dbConnection = context.GetDbConnection();
-            reader = context.GetQueryResult(sql, dbConnection);
-            ids = new List<int>();
-            while (reader.Read()) {
-                if (reader.GetValue(0) != DBNull.Value) {
-                    ids.Add(reader.GetInt32(0));
+            System.Data.IDbConnection dbConnection = null;
+            System.Data.IDataReader reader = null;
+            try {
+
+                //  Data Packages created + shared
+                string sql = String.Format ("SELECT resourceset.id, usr.username, resourceset.name, resourceset.creation_time from resourceset INNER JOIN usr on usr.id=resourceset.id_usr " +
+                                           "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.is_default=0;",
+                                           startdate, enddate, skipedIds);
+                dbConnection = context.GetDbConnection ();
+                reader = context.GetQueryResult (sql, dbConnection);
+                List<string> lines = new List<string> ();
+                List<int> ids = new List<int> ();
+                while (reader.Read ()) {
+                    if (reader.GetValue (0) != DBNull.Value) {
+                        ids.Add (reader.GetInt32 (0));
+                        lines.Add (string.Format ("{0},{1},{2}", reader.GetString (1), reader.GetString (2).Replace (",", "\\,"), reader.GetDateTime (3)));
+                    }
                 }
-            }
-            reader.Close();
-            if (ids.Count > 0) {
-                csv.Append(String.Format("Data packages shared between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-                csv.Append("Username,Data package name,Data package creation date, Data package shared date" + Environment.NewLine);
-                foreach (int id in ids) {
-                    Activity activity = Activity.FromId(context, id);
-                    User user = User.FromId(context, activity.OwnerId);
-                    DataPackage dp;
-                    string dpname = "not available";
-                    string dpdate = "not available";
-                    try{
-                        dp = DataPackage.FromId(context, activity.EntityId);
-                        dpname = dp.Name;
-                        dpdate = dp.CreationTime.ToString("yyyy-MM-dd");
-                    }catch(Exception){}
-                    csv.Append(string.Format("{0},{1},{2},{3}{4}",user.Username,dpname.Replace(",","\\,"),dpdate,activity.CreationTime.ToString("yyyy-MM-dd"),Environment.NewLine));
+                context.CloseQueryResult (reader, dbConnection);
+                csv.Append (String.Format ("Data packages created between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
+                if (ids.Count > 0) {
+                    csv.Append ("Username,Data package name,Data package creation date, Shared" + Environment.NewLine);
+                    for (int i = 0; i < ids.Count; i++) {
+                        sql = string.Format ("SELECT COUNT(*) FROM resourceset_priv WHERE id_resourceset={0} AND id_usr IS NULL AND id_grp IS NULL;", ids [i]);
+                        csv.Append (lines [i]);
+                        csv.Append ("," + (context.GetQueryIntegerValue (sql) > 0 ? "yes" : "no"));
+                        csv.Append (Environment.NewLine);
+                    }
+                    csv.Append (Environment.NewLine);
+                    csv.Append (string.Format ("Number of Data package created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                    sql = String.Format ("SELECT usr.username, COUNT(resourceset.id) FROM usr INNER JOIN resourceset ON usr.id=resourceset.id_usr " +
+                    "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.is_default=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY resourceset.id_usr " +
+                    "ORDER BY COUNT(resourceset.id) DESC;",
+                                        startdate, enddate, skipedIds);
+                    dbConnection = context.GetDbConnection ();
+                    reader = context.GetQueryResult (sql, dbConnection);
+                    while (reader.Read ()) {
+                        if (reader.GetValue (0) != DBNull.Value) {
+                            csv.Append (String.Format ("{0},{1}{2}", reader.GetString (0), reader.GetInt32 (1), Environment.NewLine));
+                        }
+                    }
+                    context.CloseQueryResult (reader, dbConnection);
+                    csv.Append (Environment.NewLine);
+                    csv.Append (string.Format ("Number of Data package created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                    sql = String.Format ("SELECT grp.name, COUNT(resourceset.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN resourceset ON resourceset.id_usr=usr_grp.id_usr " +
+                    "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.is_default=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY grp.id " +
+                    "ORDER BY COUNT(resourceset.id) DESC;",
+                                        startdate, enddate, skipedIds);
+                    dbConnection = context.GetDbConnection ();
+                    reader = context.GetQueryResult (sql, dbConnection);
+                    while (reader.Read ()) {
+                        if (reader.GetValue (0) != DBNull.Value) {
+                            csv.Append (String.Format ("{0},{1}{2}", reader.GetString (0), reader.GetInt32 (1), Environment.NewLine));
+                        }
+                    }
+                    context.CloseQueryResult (reader, dbConnection);
                 }
+
+                //shared data packages
+                EntityType entityType = EntityType.GetEntityType (typeof (DataPackage));
+                Privilege priv = Privilege.FromTypeAndOperation (context, entityType.Id, OperationPriv.MAKE_PUBLIC);
+                sql = String.Format ("SELECT id FROM activity WHERE id_type={0} AND id_priv={1} AND log_time >= '{2}' AND log_time <= '{3}' AND id_owner NOT IN ({4});",
+                                    entityType.Id, priv.Id, startdate, enddate, skipedIds);
+                dbConnection = context.GetDbConnection ();
+                reader = context.GetQueryResult (sql, dbConnection);
+                ids = new List<int> ();
+                while (reader.Read ()) {
+                    if (reader.GetValue (0) != DBNull.Value) {
+                        ids.Add (reader.GetInt32 (0));
+                    }
+                }
+                context.CloseQueryResult (reader, dbConnection);
+                if (ids.Count > 0) {
+                    csv.Append (String.Format ("Data packages shared between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
+                    csv.Append ("Username,Data package name,Data package creation date, Data package shared date" + Environment.NewLine);
+                    foreach (int id in ids) {
+                        Activity activity = Activity.FromId (context, id);
+                        User user = User.FromId (context, activity.OwnerId);
+                        DataPackage dp;
+                        string dpname = "not available";
+                        string dpdate = "not available";
+                        try {
+                            dp = DataPackage.FromId (context, activity.EntityId);
+                            dpname = dp.Name;
+                            dpdate = dp.CreationTime.ToString ("yyyy-MM-dd");
+                        } catch (Exception) { }
+                        csv.Append (string.Format ("{0},{1},{2},{3}{4}", user.Username, dpname.Replace (",", "\\,"), dpdate, activity.CreationTime.ToString ("yyyy-MM-dd"), Environment.NewLine));
+                    }
+                }
+                csv.Append (Environment.NewLine);
+            } catch (Exception e) {
+                try {
+                    context.CloseQueryResult (reader, dbConnection);
+                } catch (Exception) { }
             }
-            csv.Append(Environment.NewLine);
         }
     }
 }
