@@ -314,21 +314,18 @@ namespace Terradue.Tep.WebServer.Services {
             //create WpsJob
             context.LogDebug(this,string.Format("Get identifier from status location"));
             string identifier = null;
-            try {
-                identifier = uri.Query.Substring(uri.Query.IndexOf("id=") + 3);
-            } catch (Exception e) {
-                context.LogDebug(this,string.Format("identifier does not contain id="));
+                var pos = uri.Query != null ? uri.Query.ToLower ().IndexOf ("id=") : 0;
+            if (pos > 0) identifier = uri.Query.Substring (pos + 3);
+            else {
+                context.LogDebug (this, string.Format ("identifier does not contain id="));
                 //statusLocation url is different for gpod
-                if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
-                    context.LogDebug(this,string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
-                    identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-                } else if (uri.AbsoluteUri.Contains("pywps")) {
+                if (uri.AbsoluteUri.Contains ("gpod.eo.esa.int")) {
+                    context.LogDebug (this, string.Format ("identifier taken from gpod url : " + uri.AbsoluteUri));
+                    identifier = uri.AbsoluteUri.Substring (uri.AbsoluteUri.LastIndexOf ("status") + 7);
+                } else if (uri.AbsoluteUri.Contains ("pywps")) {
                     identifier = uri.AbsoluteUri;
-                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
-                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
-                } else {
-                    context.LogError(this,string.Format(e.Message));
-                    throw e;
+                    identifier = identifier.Substring (identifier.LastIndexOf ("pywps-") + 6);
+                    identifier = identifier.Substring (0, identifier.LastIndexOf (".xml"));
                 }
             }
             context.LogDebug(this,string.Format("identifier = " + identifier));
@@ -417,6 +414,7 @@ namespace Terradue.Tep.WebServer.Services {
                             if (output.Identifier != null && output.Identifier.Value != null) { 
                                 context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
                                 if (output.Identifier.Value.Equals ("result_metadata") || output.Identifier.Value.Equals ("result_osd")) {
+
                                     if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
                                         var item = ((DataType)(output.Item)).Item as ComplexDataType;
                                         var reference = item.Reference as OutputReferenceType;
@@ -428,8 +426,11 @@ namespace Terradue.Tep.WebServer.Services {
                                         context.LogDebug (this, string.Format ("Case result_osd"));
                                         var reference = output.Item as OutputReferenceType;
                                         reference.href = jobResultUrl;
+                                        reference.mimeType = "application/opensearchdescription+xml";
                                         output.Item = reference;
                                     }
+
+                                    output.Identifier = new CodeType { Value = "result_osd" };
                                 } else {
                                     if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
                                         var item = ((DataType)(output.Item)).Item as ComplexDataType;

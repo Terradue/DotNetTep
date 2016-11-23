@@ -6,6 +6,9 @@ using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.ServiceModel.Syndication;
 using Terradue.Tep.OpenSearch;
+using System.Runtime.Serialization;
+using System.Collections.Generic;
+using ServiceStack.Text;
 
 namespace Terradue.Tep
 {
@@ -14,9 +17,9 @@ namespace Terradue.Tep
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        static string dataGatewayBaseUrl = "https://store.terradue.com";
         static MemoryCache downloadUriCache = new MemoryCache("downloadUriCache");
-
+        static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
+        static string dataGatewayBaseUrl = AppSettings ["DataGatewayBaseUrl"];
 
         public static SyndicationLink SubstituteEnclosure(SyndicationLink link, IOpenSearchable os, IOpenSearchResultItem item)
         {
@@ -28,8 +31,6 @@ namespace Terradue.Tep
             return SubstituteExternalEnclosure(link);
 
         }
-
-
 
         public static SyndicationLink SubstituteExternalEnclosure(SyndicationLink link)
         {
@@ -46,7 +47,7 @@ namespace Terradue.Tep
                 return null;
 
             urib = new UriBuilder(substUri);
-            urib.Path += uri.AbsolutePath;
+            urib.Path += RewriteExternalPath (uri);
 
             return new SyndicationLink(urib.Uri, "enclosure", link.Title + " via Data Gateway", link.MediaType, link.Length);
 
@@ -66,7 +67,11 @@ namespace Terradue.Tep
                 return null;
 
             urib = new UriBuilder(substUri);
-            urib.Path += RewritePath(url.AbsolutePath, openSearchable);
+            if (openSearchable is SandboxOpenSearchable) {
+                urib.Path += RewritePath (url.AbsolutePath, openSearchable);
+            } else 
+                urib.Path += RewriteExternalPath (url);
+
 
             return urib.Uri;
         }
@@ -115,7 +120,7 @@ namespace Terradue.Tep
             }
 
             urib = new UriBuilder(dataGatewayBaseUrl);
-            urib.Path += string.Format("/api/production/");
+            urib.Path += string.Format("/api/");
 
             downloadUriCache.Set(new CacheItem(baseUri.ToString(), urib.Uri), new CacheItemPolicy() { AbsoluteExpiration = DateTimeOffset.Now.AddHours(1) });
 
@@ -148,7 +153,7 @@ namespace Terradue.Tep
                 var sandboxOpenSearchable = openSearchable as SandboxOpenSearchable;
                 var match = Regex.Match(path, string.Format(".*\\/{0}\\/_results\\/(?'relativeFilename'.*)", sandboxOpenSearchable.SandboxOpenSearchInformation.RunId));
                 if (match.Success)
-                    return path = string.Format("/workflows/{0}/runs/{1}/{2}", sandboxOpenSearchable.SandboxOpenSearchInformation.Workflow,
+                    return path = string.Format("/production/workflows/{0}/runs/{1}/{2}", sandboxOpenSearchable.SandboxOpenSearchInformation.Workflow,
                                               sandboxOpenSearchable.SandboxOpenSearchInformation.RunId,
                                               match.Groups["relativeFilename"].Value);
             }
@@ -156,5 +161,29 @@ namespace Terradue.Tep
             return path;
         }
 
+        public static string RewriteExternalPath (Uri uri) {
+            var path = uri.AbsolutePath;
+
+            List<DataGatewaySubstitution> dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>> (AppSettings ["DataGatewaySubstitutions"]);
+            foreach (var sub in dataGatewaySubstitutions) {
+                if (uri.Host.Equals (sub.host)) {
+                    return path.Replace (sub.oldvalue, sub.substitute);
+                }
+            }
+            return path;
+        }
+
     }
+
+    [DataContract]
+    public class DataGatewaySubstitution
+    {
+        [DataMember]
+        public string host { get; set; }
+        [DataMember]
+        public string oldvalue { get; set; }
+        [DataMember]
+        public string substitute { get; set; }
+    }
+
 }
