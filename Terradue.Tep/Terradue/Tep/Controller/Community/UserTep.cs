@@ -172,7 +172,6 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         /// <param name="id">Identifier.</param>
         public new static UserTep FromId(IfyContext context, int id){
-            if (context.UserId == id) context.AccessLevel = EntityAccessLevel.Administrator;
             UserTep user = new UserTep(context);
             user.Id = id;
             user.Load();
@@ -181,7 +180,6 @@ namespace Terradue.Tep {
 
         public new static UserTep FromApiKey (IfyContext context, string key)
         {
-            context.AccessLevel = EntityAccessLevel.Administrator;
             UserTep user = new UserTep (context);
             user.ApiKey = key;
             user.Load ();
