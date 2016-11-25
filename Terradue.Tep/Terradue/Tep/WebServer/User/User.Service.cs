@@ -340,7 +340,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post (UserCreateApiKeyRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
             WebUserTep result;
             try {
                 context.Open ();
@@ -362,7 +362,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Delete (UserDeleteApiKeyRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
             WebUserTep result;
             try {
                 context.Open ();
