@@ -133,6 +133,11 @@ namespace Terradue.Tep.WebServer.Services
 
                 result = ose.Query(serie, httpRequest.QueryString, type);
 
+                var descriptionUrl = serie.GetOpenSearchDescriptionUrl("application/opensearchdescription+xml");
+                if (descriptionUrl != null) {
+                    result.Links.Add (new SyndicationLink (new Uri(descriptionUrl.Template), descriptionUrl.Relation, "OpenSearch Description link", descriptionUrl.Type, 0));
+                }
+
 				context.Close ();
 
 			}catch(Exception e) {
@@ -261,10 +266,10 @@ namespace Terradue.Tep.WebServer.Services
                 if (!string.IsNullOrEmpty (request.Key)) {
                     UserTep user = UserTep.FromApiKey (context, request.Key);
                     tmp_datapackages.UserId = user.Id;
+                    context.AccessLevel = EntityAccessLevel.Privilege;
                 }
                 context.ConsoleDebug = true;
 
-                //context.AccessLevel = EntityAccessLevel.Permission;
                 tmp_datapackages.Load();
 
                 foreach (DataPackage dp in tmp_datapackages) {

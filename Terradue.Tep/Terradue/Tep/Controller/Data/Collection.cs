@@ -95,6 +95,16 @@ namespace Terradue.Tep {
             MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
         }
 
+        public OpenSearchUrl GetOpensearchSearchrl ()
+        {
+            return new OpenSearchUrl (string.Format ("{0}/data/collection/{1}/search", context.BaseUrl, this.Identifier));
+        }
+
+        public OpenSearchDescriptionUrl GetOpenSearchDescriptionUrl (string mimeType)
+        {
+            return new OpenSearchDescriptionUrl(mimeType, string.Format ("{0}/data/collection/{1}/description", context.BaseUrl, this.Identifier), "search");
+        }
+
         /// <summary>
         /// Gets the local open search description.
         /// </summary>
