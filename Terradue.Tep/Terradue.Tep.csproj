@@ -191,13 +191,13 @@
       <HintPath>..\packages\Terradue.Cloud.1.3.0-ftea20161028T163136\lib\net40\Terradue.Cloud.dll</HintPath>
     </Reference>
 	<Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.0-ftea20161108T152312\lib\net40\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.0-ftea20161201T161731\lib\net40\Terradue.Portal.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.0-ftea20161108T152312\lib\net40\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.0-ftea20161201T161731\lib\net40\Terradue.Portal.Agent.exe</HintPath>
     </Reference>
 	<Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.0-ftea20161108T152312\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.0-ftea20161201T161731\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
   </ItemGroup>

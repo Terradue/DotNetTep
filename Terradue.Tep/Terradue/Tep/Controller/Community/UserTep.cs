@@ -268,6 +268,7 @@ namespace Terradue.Tep {
             var privatedomain = new Domain (context);
             privatedomain.Identifier = Username;
             privatedomain.Description = "Domain of user " + Username;
+            privatedomain.Kind = DomainKind.User;
             privatedomain.Store ();
 
             //set the userdomain

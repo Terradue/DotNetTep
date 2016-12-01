@@ -28,7 +28,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/role/{{Id}} GET Id='{0}'", request.Id));
                 Role role = Role.FromId(context, request.Id);
-                result = new WebRole(role);
+                result = new WebRole(role, true);
 
                 context.Close();
             } catch (Exception e) {
@@ -52,7 +52,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/role GET"));
                 EntityList<Role> roles = new EntityList<Role>(context);
                 roles.Load();
-                foreach(Role g in roles) result.Add(new WebRole(g));
+                foreach(Role g in roles) result.Add(new WebRole(g,true));
 
                 context.Close();
             } catch (Exception e) {
@@ -77,7 +77,7 @@ namespace Terradue.Tep.WebServer.Services {
                 role = request.ToEntity(context, role);
                 role.Store();
                 context.LogDebug(this,string.Format("Role {0} updated by user {1}", role.Identifier, User.FromId(context, context.UserId).Username));
-                result = new WebRole(role);
+                result = new WebRole(role,true);
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
@@ -138,21 +138,16 @@ namespace Terradue.Tep.WebServer.Services {
         /// Put the specified request.
         /// </summary>
         /// <param name="request">Request.</param>
-        public object Put (RoleUpdatePrivilegesRequest request)
-        {
+        public object Put (RoleUpdatePrivilegesRequest request) {
             var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
             WebRole result;
             try {
                 context.Open ();
                 if (request.Privileges == null) throw new Exception ("Invalid list of privileges");
                 context.LogInfo (this, string.Format ("/role/priv PUT Id='{0}'", request.Id));
+
                 Role role = Role.FromId (context, request.Id);
-                foreach (int pid in request.Privileges) {
-                    Privilege priv = Privilege.FromId (context, pid);
-                    role.IncludePrivilege (priv);
-                    context.LogDebug (this, string.Format ("Role {0} updated with priv {2} by user {1}", role.Identifier, User.FromId (context, context.UserId).Username), priv.Identifier);
-                }
-                role.GrantPermissions ();
+                role.IncludePrivileges (request.Privileges, false);
                 result = new WebRole (role);
                 context.Close ();
             } catch (Exception e) {
@@ -163,17 +158,62 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get (RolesGrantGetRequest request) {
+            List<WebRoleGrant> result = new List<WebRoleGrant> ();
+            var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/role/grant GET"));
+
+                Domain domain = Domain.FromId (context, request.DomainId);
+                var webdomain = new WebDomain (domain);
+                EntityList<Role> roles = new EntityList<Role> (context);
+                roles.Load ();
+
+                foreach (var role in roles) {
+                    var webrole = new WebRole (role);
+                    //get users
+                    var usrs = role.GetUsers (domain.Id);
+                    foreach (var usrid in usrs) {
+                        var webuser = new WebUser (User.FromId(context, usrid));
+                        result.Add (new WebRoleGrant {
+                            Domain = webdomain,
+                            Role = webrole,
+                            User = webuser
+                        });
+                    }
+                    //get groups
+                    var grps = role.GetGroups (domain.Id);
+                    foreach (var grpid in grps) {
+                        var webgroup = new WebGroup (Group.FromId (context, grpid));
+                        result.Add (new WebRoleGrant {
+                            Domain = webdomain,
+                            Role = webrole,
+                            Group = webgroup
+                        });
+                    }
+                }
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
         /// <summary>
-        /// Put the specified request.
+        /// Post the specified request.
         /// </summary>
         /// <param name="request">Request.</param>
-        public object Put (RoleGrantRequest request)
+        public object Post (RoleGrantRequest request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/role/{{Id}}/grant PUT Id='{0}', UserId='{1}', GroupId='{2}', DomainId='{3}'", request.Id, request.UserId, request.GroupId, request.DomainId));
-                Role role = Role.FromId (context, request.Id);
+                context.LogInfo (this, string.Format ("/role/grant POST RoleId='{0}', UserId='{1}', GroupId='{2}', DomainId='{3}'", request.RoleId, request.UserId, request.GroupId, request.DomainId));
+                Role role = Role.FromId (context, request.RoleId);
                 Domain domain = request.DomainId != 0 ? Domain.FromId (context, request.DomainId) : null;
                 if (request.UserId != 0) {
                     if (request.GroupId != 0) throw new Exception ("Select only one amongst User and Group");
@@ -205,8 +245,8 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/role/{{Id}}/grant DELETE Id='{0}', UserId='{1}', GroupId='{2}', DomainId='{3}'", request.Id, request.UserId, request.GroupId, request.DomainId));
-                Role role = Role.FromId (context, request.Id);
+                context.LogInfo (this, string.Format ("/role/grant DELETE RoleId='{0}', UserId='{1}', GroupId='{2}', DomainId='{3}'", request.RoleId, request.UserId, request.GroupId, request.DomainId));
+                Role role = Role.FromId (context, request.RoleId);
                 Domain domain = request.DomainId != 0 ? Domain.FromId (context, request.DomainId) : null;
                 if (request.UserId != 0) {
                     if (request.GroupId != 0) throw new Exception ("Select only one amongst User and Group");

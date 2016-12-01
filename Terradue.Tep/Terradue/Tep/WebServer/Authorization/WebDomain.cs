@@ -21,8 +21,8 @@ namespace Terradue.Tep.WebServer {
 
     [Route ("/domain", "GET", Summary = "GET the domains", Notes = "")]
     public class DomainsGetRequest : IReturn<List<WebDomain>> {
-        [ApiMember (Name = "all", Description = "Return or not all domains. If set to false, return only the thematic ones (not the user ones)", ParameterType = "query", DataType = "bool", IsRequired = false)]
-        public bool all { get; set; }
+        [ApiMember (Name = "kind", Description = "kind of domain", ParameterType = "query", DataType = "int", IsRequired = false)]
+        public int Kind { get; set; }
     }
 
     [Route ("/domain", "POST", Summary = "POST the domain", Notes = "")]
@@ -52,6 +52,12 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "description", Description = "Domain description", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Description { get; set; }
 
+        [ApiMember (Name = "kind", Description = "Domain type", ParameterType = "query", DataType = "int", IsRequired = false)]
+        public int Kind { get; set; }
+
+        [ApiMember (Name = "IconeUrl", Description = "icone url of domain", ParameterType = "query", DataType = "int", IsRequired = false)]
+        public string IconeUrl { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.WebServer.WebDomain"/> class.
         /// </summary>
@@ -63,6 +69,8 @@ namespace Terradue.Tep.WebServer {
         /// <param name="entity">Entity.</param>
         public WebDomain(Domain entity) : base(entity) {
             this.Description = entity.Description;
+            this.Kind = (int)entity.Kind;
+            this.IconeUrl = entity.IconUrl;
         }
 
         /// <summary>
@@ -74,6 +82,8 @@ namespace Terradue.Tep.WebServer {
 			Domain domain = input ?? new Domain (context);
             domain.Identifier = this.Identifier;
             domain.Description = Description;
+            domain.Kind = (DomainKind)Kind;
+            domain.IconUrl = IconeUrl;
 
             return domain;
         }
