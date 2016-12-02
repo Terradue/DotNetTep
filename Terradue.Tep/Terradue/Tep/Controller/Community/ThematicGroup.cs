@@ -51,7 +51,9 @@ namespace Terradue.Tep
         private UserTep GetOwner () {
             var role = Role.FromIdentifier (context, RoleTep.OWNER);
             var usrs = role.GetUsers (this.Id);
-            return UserTep.FromId(context, usrs [0]);
+            if (usrs != null && usrs.Length > 0)
+                return UserTep.FromId (context, usrs [0]);
+            else return null;
         }
 
         /// <summary>
@@ -171,12 +173,14 @@ namespace Terradue.Tep
             result.PublishDate = new DateTimeOffset (DateTime.UtcNow);
 
             //owner
-            var ownerUri = Owner.GetUserPageLink ();
-            SyndicationPerson ownerPerson = new SyndicationPerson (Owner.Email, Owner.Name, ownerUri);
-            ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
-            ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", RoleTep.OWNER));
-            result.Authors.Add (ownerPerson);
+            if (Owner != null) {
+                var ownerUri = Owner.GetUserPageLink ();
+                SyndicationPerson ownerPerson = new SyndicationPerson (Owner.Email, Owner.Name, ownerUri);
+                ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
+                ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", RoleTep.OWNER));
+                result.Authors.Add (ownerPerson);
 
+            }
             //members
             var roles = new EntityList<Role> (context);
             roles.Load ();

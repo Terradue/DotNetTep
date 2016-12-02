@@ -285,7 +285,7 @@ namespace Terradue.Tep.WebServer.Services
                     if (request.UserId != context.UserId) throw new UnauthorizedAccessException ("Cannot validate invitation for another user");
                     domain.SetUserAsDefinitiveMember (request.UserId);
                 } else {
-                    if(domain.Owner.Id != context.UserId) throw new UnauthorizedAccessException ("You are not owner of the domain");
+                    if(domain.Owner == null || domain.Owner.Id != context.UserId) throw new UnauthorizedAccessException ("You are not owner of the domain");
                     domain.SetUserAsTemporaryMember (request.UserId, request.RoleId);
                 }
 
