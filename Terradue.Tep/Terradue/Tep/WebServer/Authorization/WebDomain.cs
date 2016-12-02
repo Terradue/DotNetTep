@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Text;
-using System.Web;
+﻿using System.Collections.Generic;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
-using ServiceStack.ServiceInterface;
-using ServiceStack.ServiceInterface.ServiceModel;
-using Terradue.Authentication.Umsso;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 
-namespace Terradue.Tep.WebServer {
+namespace Terradue.Tep.WebServer
+{
 
     [Route("/domain/{id}", "GET", Summary = "GET the domain", Notes = "Domain is found from id")]
     public class DomainGetRequest : IReturn<WebDomain> {
@@ -25,6 +19,12 @@ namespace Terradue.Tep.WebServer {
         public int Kind { get; set; }
     }
 
+    [Route ("/domain/search", "GET", Summary = "GET domain as opensearch", Notes = "")]
+    public class DomainSearchRequestTep : IReturn<HttpResult> { }
+
+    [Route ("/domain/description", "GET", Summary = "GET domain as opensearch", Notes = "")]
+    public class DomainDescriptionRequestTep : IReturn<HttpResult> { }
+
     [Route ("/domain", "POST", Summary = "POST the domain", Notes = "")]
     public class DomainCreateRequest : WebDomain, IReturn<WebDomain> { }
 
@@ -35,6 +35,15 @@ namespace Terradue.Tep.WebServer {
     public class DomainDeleteRequest : IReturn<WebDomain>
     {
         [ApiMember (Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+    }
+
+    [Route ("/domain/{id}/image", "POST", Summary = "POST Image file")]
+    public class UploadDomainImage : IRequiresRequestStream, IReturn<WebDomain>
+    {
+        public System.IO.Stream RequestStream { get; set; }
+
+        [ApiMember (Name = "id", Description = "Domain Id", ParameterType = "path", DataType = "int", IsRequired = true)]
         public int Id { get; set; }
     }
 
