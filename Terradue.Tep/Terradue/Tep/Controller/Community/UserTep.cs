@@ -187,6 +187,16 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Gets the user page link.
+        /// </summary>
+        /// <returns>The user page link.</returns>
+        public string GetUserPageLink () { 
+            var basepath = new UriBuilder (context.BaseUrl);
+            basepath.Path = "user";
+            return basepath.Uri.AbsoluteUri + "/" + Username;
+        }
+
+        /// <summary>
         /// Loads the cloud username.
         /// </summary>
         public void LoadCloudUsername(){
@@ -275,7 +285,7 @@ namespace Terradue.Tep {
             Domain = privatedomain;
 
             //Get role owner
-            var userRole = Role.FromIdentifier (context, "owner");
+            var userRole = Role.FromIdentifier (context, RoleTep.OWNER);
 
             //Grant role for user
             userRole.GrantToUser (this, Domain);

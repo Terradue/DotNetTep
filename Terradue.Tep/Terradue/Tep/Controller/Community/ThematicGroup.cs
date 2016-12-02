@@ -16,6 +16,120 @@ namespace Terradue.Tep
         /// <param name="context">Context.</param>
         public ThematicGroup (IfyContext context) : base (context) { }
 
+        /// <summary>
+        /// Froms the identifier.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="id">Identifier.</param>
+        public static new ThematicGroup FromId (IfyContext context, int id)
+        {
+            ThematicGroup result = new ThematicGroup (context);
+            result.Id = id;
+            try {
+                result.Load ();
+            } catch (Exception e) {
+                throw e;
+            }
+            return result;
+        }
+
+        private UserTep owner;
+        public UserTep Owner {
+            get {
+                if (owner == null) {
+                    owner = GetOwner ();
+                }
+                return owner;
+            }
+        }
+
+        /// <summary>
+        /// Gets the owner.
+        /// </summary>
+        /// <returns>The owner.</returns>
+        private UserTep GetOwner () {
+            var role = Role.FromIdentifier (context, RoleTep.OWNER);
+            var usrs = role.GetUsers (this.Id);
+            return UserTep.FromId(context, usrs [0]);
+        }
+
+        /// <summary>
+        /// Sets the owner.
+        /// </summary>
+        /// <param name="user">User.</param>
+        public void SetOwner (UserTep user) { 
+            var role = Role.FromIdentifier (context, RoleTep.OWNER);
+            role.GrantToUser (user, this);
+        }
+
+        /// <summary>
+        /// Sets the user as temporary member.
+        /// </summary>
+        /// <param name="userId">User identifier.</param>
+        /// <param name="roleId">Role identifier.</param>
+        public void SetUserAsTemporaryMember (int userId, int roleId) {
+            SetAsTemporaryMember (userId, roleId, false);
+        }
+
+        /// <summary>
+        /// Sets the group as temporary member.
+        /// </summary>
+        /// <param name="grpId">Group identifier.</param>
+        /// <param name="roleId">Role identifier.</param>
+        public void SetGroupAsTemporaryMember (int grpId, int roleId) {
+            SetAsTemporaryMember (grpId, roleId, true);
+        }
+
+        /// <summary>
+        /// Sets user or group as temporary member.
+        /// </summary>
+        /// <param name="id">User or Group Identifier.</param>
+        /// <param name="roleId">Role identifier.</param>
+        /// <param name="forGroup">If set to <c>true</c> for group.</param>
+        private void SetAsTemporaryMember (int id, int roleId, bool forGroup) {
+            context.Execute (string.Format ("DELETE FROM rolegrant_pending WHERE {2}={0} AND id_domain={1};", id, this.Id, forGroup ? "id_grp" : "id_usr")); // avoid duplicates
+            context.Execute (string.Format ("INSERT INTO rolegrant_pending ({0}, id_role, id_domain) VALUES ({1},{2},{3});", forGroup ? "id_grp" : "id_usr", id, roleId, this.Id));
+        }
+
+        /// <summary>
+        /// Is the key valid.
+        /// </summary>
+        /// <returns><c>true</c>, if key is valid, <c>false</c> otherwise.</returns>
+        /// <param name="key">Key.</param>
+        public bool IsKeyValid (string key) {
+            var id = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE key='{0}' AND id_domain={1};", key, this.Id));
+            return id != 0;
+        }
+
+        /// <summary>
+        /// Sets the user as definitive member.
+        /// </summary>
+        /// <param name="userId">User identifier.</param>
+        public void SetUserAsDefinitiveMember (int userId) { 
+            var roleId = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE id_usr={0} AND id_domain={1};", userId, this.Id));
+            context.Execute (string.Format ("DELETE FROM rolegrant_pending WHERE id_usr={0} AND id_domain={1};", userId, this.Id)); // remove from pending table
+
+            Role role = Role.FromId (context, roleId);
+            User user = User.FromId (context, userId);
+            role.GrantToUser (user, this);
+        }
+
+        /// <summary>
+        /// Sets the group as definitive member.
+        /// </summary>
+        /// <param name="groupId">Group identifier.</param>
+        public void SetGroupAsDefinitiveMember (int groupId) {
+            var roleId = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE id_grp={0} AND id_domain={1};", groupId, this.Id));
+            context.Execute (string.Format ("DELETE FROM rolegrant_pending WHERE id_grp={0} AND id_domain={1};", groupId, this.Id)); // remove from pending table
+
+            Role role = Role.FromId (context, roleId);
+            Group grp = Group.FromId (context, groupId);
+            role.GrantToGroup (grp, this);
+        }
+
+        #region IAtomizable
+
         public NameValueCollection GetOpenSearchParameters ()
         {
             return OpenSearchFactory.GetBaseOpenSearchParameter ();
@@ -56,16 +170,21 @@ namespace Terradue.Tep
 
             result.PublishDate = new DateTimeOffset (DateTime.UtcNow);
 
-            //authors
+            //owner
+            var ownerUri = Owner.GetUserPageLink ();
+            SyndicationPerson ownerPerson = new SyndicationPerson (Owner.Email, Owner.Name, ownerUri);
+            ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
+            ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", RoleTep.OWNER));
+            result.Authors.Add (ownerPerson);
+
+            //members
             var roles = new EntityList<Role> (context);
             roles.Load ();
-            var basepath = new UriBuilder (context.BaseUrl);
-            basepath.Path = "user";
             foreach (var role in roles) {
                 var usrs = role.GetUsers (this.Id);
                 foreach (var usrId in usrs) {
-                    User usr = User.FromId (context, usrId);
-                    string usrUri = basepath.Uri.AbsoluteUri + "/" + usr.Username;
+                    UserTep usr = UserTep.FromId (context, usrId);
+                    var usrUri = usr.GetUserPageLink ();
                     SyndicationPerson author = new SyndicationPerson (usr.Email, usr.Name, usrUri);
                     author.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", usr.Username));
                     author.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", role.Name));
@@ -106,6 +225,7 @@ namespace Terradue.Tep
             }
             return result;
         }
+        #endregion
     }
 
     public class ThematicGroupFactory {

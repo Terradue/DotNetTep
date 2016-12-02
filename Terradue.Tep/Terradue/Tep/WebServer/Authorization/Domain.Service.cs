@@ -193,7 +193,7 @@ namespace Terradue.Tep.WebServer.Services
             }
         }
 
-        public object Post (UploadDomainImage request){
+        public object Post (UploadDomainImageRequest request){
             var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
             string img = "";
             string uid = Guid.NewGuid ().ToString ();
@@ -246,6 +246,85 @@ namespace Terradue.Tep.WebServer.Services
             }
             return result;
         }
+
+        /// <summary>
+        /// Post the specified request.
+        /// </summary>
+        /// <param name="request">Request.</param>
+        public object Post (CreateDomainOwnerRequest request){
+            var context = TepWebContext.GetWebContext (PagePrivileges.AdminOnly);
+            WebDomain result;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/domain/{{id}}/owner POST Id='{0}', UserId='{1}'", request.Id, request.UserId));
+                ThematicGroup domain = ThematicGroup.FromId (context, request.Id);
+                UserTep owner = UserTep.FromId (context, request.UserId);
+                domain.SetOwner (owner);
+
+                result = new WebDomain (domain);
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Post (CreateDomainUserRequest request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/domain/{{id}}/user POST Id='{0}', UserId='{1}', RoleId='{2}'", request.Id, request.UserId, request.RoleId));
+
+                ThematicGroup domain = ThematicGroup.FromId (context, request.Id);
+                if (!string.IsNullOrEmpty (request.Key)) {
+                    if (!domain.IsKeyValid (request.Key)) throw new UnauthorizedAccessException (CustomErrorMessages.WRONG_ACCESSKEY);
+                    if (request.UserId != context.UserId) throw new UnauthorizedAccessException ("Cannot validate invitation for another user");
+                    domain.SetUserAsDefinitiveMember (request.UserId);
+                } else {
+                    if(domain.Owner.Id != context.UserId) throw new UnauthorizedAccessException ("You are not owner of the domain");
+                    domain.SetUserAsTemporaryMember (request.UserId, request.RoleId);
+                }
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        //public object Put (UpdateDomainUserRequest request)
+        //{
+        //    var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
+        //    try {
+        //        context.Open ();
+        //        context.LogInfo (this, string.Format ("/domain/{{id}}/user PUT Id='{0}', UserId='{1}', RoleId='{2}'", request.Id, request.UserId, request.RoleId));
+        //        Role role = Role.FromId (context, request.RoleId);
+        //        Domain domain = request.Id != 0 ? Domain.FromId (context, request.Id) : null;
+        //        if (request.UserId != 0) {
+        //            User usr = User.FromId (context, request.UserId);
+        //            role.GrantToUser (usr, domain);
+        //            context.LogDebug (this, string.Format ("Role {0} granted for user {1} for domain {2}", role.Identifier, usr.Username, domain != null ? domain.Name : "n/a"));
+        //        } else if (request.GroupId != 0) {
+        //            if (request.UserId != 0) throw new Exception ("Select only one amongst User and Group");
+        //            Group grp = Group.FromId (context, request.GroupId);
+        //            role.GrantToGroup (grp, domain);
+        //            context.LogDebug (this, string.Format ("Role {0} granted for group {1} for domain {2}", role.Identifier, grp.Identifier, domain != null ? domain.Name : "n/a"));
+        //        } else throw new Exception ("Select one amongst User and Group");
+
+        //        context.Close ();
+        //    } catch (Exception e) {
+        //        context.LogError (this, e.Message);
+        //        context.Close ();
+        //        throw e;
+        //    }
+        //    return new WebResponseBool (true);
+        //}
 
     }
 }

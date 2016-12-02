@@ -39,12 +39,51 @@ namespace Terradue.Tep.WebServer
     }
 
     [Route ("/domain/{id}/image", "POST", Summary = "POST Image file")]
-    public class UploadDomainImage : IRequiresRequestStream, IReturn<WebDomain>
+    public class UploadDomainImageRequest : IRequiresRequestStream, IReturn<WebDomain>
     {
         public System.IO.Stream RequestStream { get; set; }
 
         [ApiMember (Name = "id", Description = "Domain Id", ParameterType = "path", DataType = "int", IsRequired = true)]
         public int Id { get; set; }
+    }
+
+    [Route ("/domain/{id}/owner", "POST", Summary = "POST domain owner")]
+    public class CreateDomainOwnerRequest : IReturn<WebDomain>
+    {
+        [ApiMember (Name = "id", Description = "Domain Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember (Name = "userId", Description = "user Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int UserId { get; set; }
+    }
+
+    [Route ("/domain/{id}/user", "POST", Summary = "POST domain user")]
+    public class CreateDomainUserRequest : IReturn<WebDomain>
+    {
+        [ApiMember (Name = "id", Description = "Domain Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember (Name = "userId", Description = "user Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int UserId { get; set; }
+
+        [ApiMember (Name = "roleId", Description = "role Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int RoleId { get; set; }
+
+        [ApiMember (Name = "key", Description = "user key", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string Key { get; set; }
+    }
+
+    [Route ("/domain/{id}/user", "PUT", Summary = "POST domain user")]
+    public class UpdateDomainUserRequest : IReturn<WebDomain>
+    {
+        [ApiMember (Name = "id", Description = "Domain Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember (Name = "userId", Description = "user Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int UserId { get; set; }
+
+        [ApiMember (Name = "roleId", Description = "role Id", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int RoleId { get; set; }
     }
 
 

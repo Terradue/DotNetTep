@@ -260,7 +260,6 @@
     <Compile Include="Terradue\Tep\WebServer\Application\WebThematicAppTep.cs" />
     <Compile Include="Mono.Options\Options.cs" />
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplication.cs" />
-    <Compile Include="Terradue\Tep\Controller\Application\ThematicGroup.cs" />
     <Compile Include="Terradue\Tep\Controller\OpenSearch\WpsJobProductOpenSearchable.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\WpsProxyException.cs" />
     <Compile Include="Terradue\Tep\Controller\OpenSearch\ExecuteResponseOutputOpenSearchable.cs" />
@@ -273,6 +272,7 @@
     <Compile Include="Terradue\Tep\WebServer\Authorization\WebRole.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\WebPrivilege.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\Privilege.Service.cs" />
+    <Compile Include="Terradue\Tep\Controller\Community\ThematicGroup.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
