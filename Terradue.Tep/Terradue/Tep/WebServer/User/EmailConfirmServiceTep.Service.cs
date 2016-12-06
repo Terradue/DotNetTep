@@ -67,7 +67,9 @@ namespace Terradue.Tep.WebServer.Services {
                     //send an email to Support to warn them
                     string emailFrom = context.GetConfigValue("MailSenderAddress");
                     string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
-                    string body = string.Format("Dear support,\n\nThis is an automatic email to inform you that user {0} has just confirmed his email address ({1}) on the geohazard platform.\n", umssoUser.Username, umssoUser.Email);
+                    string body = context.GetConfigValue ("EmailConfirmedNotification");
+                    body = body.Replace ("$(USERNAME)", umssoUser.Username);
+                    body = body.Replace ("$(EMAIL)", umssoUser.Email);
                     context.SendMail(emailFrom, emailFrom, subject, body);
                 } else {
                     context.LogError(this, e.Message);

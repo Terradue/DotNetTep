@@ -322,7 +322,7 @@ namespace Terradue.Tep {
                 string sql = String.Format("SELECT log_time FROM usrsession WHERE id_usr={0} ORDER BY log_time ASC LIMIT 1;",this.Id);
                 System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
                 if (reader.Read()) value = context.GetDateTimeValue(reader, 0);
-                reader.Close();
+                context.CloseQueryResult (reader, dbConnection);
             }catch(Exception){}
             return value;
         }
@@ -338,7 +338,7 @@ namespace Terradue.Tep {
                 string sql = String.Format("SELECT log_time FROM usrsession WHERE id_usr={0} ORDER BY log_time DESC LIMIT 1;",this.Id);
                 System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
                 if (reader.Read()) value = context.GetDateTimeValue(reader, 0);
-                reader.Close();
+                context.CloseQueryResult (reader, dbConnection);
             }catch(Exception){}
             return value;
         }
@@ -353,7 +353,7 @@ namespace Terradue.Tep {
                 if (reader.GetValue(0) != DBNull.Value)
                     result.Add(reader.GetInt32(0));
             }
-            reader.Close();
+            context.CloseQueryResult (reader, dbConnection);
 
             return result;
         }
