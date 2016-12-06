@@ -173,12 +173,6 @@ namespace Terradue.Tep.WebServer.Services {
                     rss = (RssNews)request.ToEntity(context, rss);
                     rss.Store();
                     result = new WebNews(rss);
-                } else if (request.Type.Equals(EntityType.GetEntityType(typeof(TumblrNews)).Keyword)){
-                    TumblrNews tumblr = null;
-                    tumblr = new TumblrNews(context);
-                    tumblr = (TumblrNews)request.ToEntity(context, tumblr);
-                    tumblr.Store();
-                    result = new WebNews(tumblr);
                 } else {
                     Article article = null;
                     article = new Article(context);
@@ -218,12 +212,6 @@ namespace Terradue.Tep.WebServer.Services {
                     rss = (RssNews)request.ToEntity(context, rss);
                     rss.Store();
                     result = new WebNews(rss);
-                } else if (request.Type.Equals(EntityType.GetEntityType(typeof(TumblrNews)).Keyword)){
-                    TumblrNews tumblr = null;
-                    tumblr = TumblrNews.FromId(context, request.Id);
-                    tumblr = (TumblrNews)request.ToEntity(context, tumblr);
-                    tumblr.Store();
-                    result = new WebNews(tumblr);
                 } else {
                     Article article = null;
                     article = Article.FromId(context, request.Id);

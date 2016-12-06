@@ -3,27 +3,22 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Web;
 using System.Xml;
-using System.Xml.Serialization;
 using OpenGis.Wps;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
-using Terradue.OpenSearch.GeoJson.Result;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
-using Terradue.ServiceModel.Ogc.OwsContext;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 using Terradue.ServiceModel.Syndication;
-using Terradue.Tep.WebServer;
-using Terradue.WebService.Model;
 
-namespace Terradue.Tep.WebServer.Services {
+namespace Terradue.Tep.WebServer.Services
+{
 
     [Route("/proxy", "GET", Summary = "proxy an url", Notes = "")]
     public class ProxyGetUrlRequestTep {
@@ -311,7 +306,7 @@ namespace Terradue.Tep.WebServer.Services {
                 List<OwcOffering> offerings = new List<OwcOffering>();
                 OwcOffering offering = new OwcOffering();
                 OwcContent content = new OwcContent();
-                content.Url = remoteUri.ToString();
+                content.Url = remoteUri;
                 string extension = remoteUri.AbsoluteUri.Substring(remoteUri.AbsoluteUri.LastIndexOf(".") + 1);
 
                 switch (extension.ToLower()) {
@@ -408,7 +403,7 @@ namespace Terradue.Tep.WebServer.Services {
                 List<OwcOffering> offerings = new List<OwcOffering>();
                 OwcOffering offering = new OwcOffering();
                 OwcContent content = new OwcContent();
-                content.Url = remoteUri.ToString();
+                content.Url = remoteUri;
                 string extension = remoteUri.AbsoluteUri.Substring(remoteUri.AbsoluteUri.LastIndexOf(".") + 1);
 
                 switch (extension.ToLower()) {

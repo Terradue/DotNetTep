@@ -144,29 +144,7 @@ namespace Terradue.Tep
             }
         }
 
-        /// <summary>
-        /// Create the specified type and parameters.
-        /// </summary>
-        /// <param name="type">Type.</param>
-        /// <param name="parameters">Parameters.</param>
-        public OpenSearchRequest Create(string type, NameValueCollection parameters) {
 
-            UriBuilder url = new UriBuilder(context.BaseUrl);
-            url.Path += "/data/collection/";
-            var array = (from key in parameters.AllKeys
-                         from value in parameters.GetValues(key)
-                         select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value)))
-                .ToArray();
-            url.Query = string.Join("&", array);
-
-            MemoryOpenSearchRequest request = new MemoryOpenSearchRequest(new OpenSearchUrl(url.ToString()), type);
-
-            Stream input = request.MemoryInputStream;
-
-            GenerateCatalogueAtomFeed(input, parameters);
-
-            return request;
-        }
         /// <summary>
         /// Gets the open search parameters.
         /// </summary>
@@ -305,6 +283,25 @@ namespace Terradue.Tep
 
         }
 
+        /// <summary>
+        /// Create the specified querySettings and parameters.
+        /// </summary>
+        /// <param name="querySettings">Query settings.</param>
+        /// <param name="parameters">Parameters.</param>
+        public OpenSearchRequest Create (QuerySettings querySettings, NameValueCollection parameters)
+        {
+            UriBuilder url = new UriBuilder (context.BaseUrl);
+            url.Path += "/data/collection/";
+            var array = (from key in parameters.AllKeys
+                         from value in parameters.GetValues (key)
+                         select string.Format ("{0}={1}", HttpUtility.UrlEncode (key), HttpUtility.UrlEncode (value)))
+                .ToArray ();
+            url.Query = string.Join ("&", array);
+            MemoryOpenSearchRequest request = new MemoryOpenSearchRequest (new OpenSearchUrl (url.ToString ()), querySettings.PreferredContentType);
+            Stream input = request.MemoryInputStream;
+            GenerateCatalogueAtomFeed (input, parameters);
+            return request;
+        }
     }
 
 }

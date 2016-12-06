@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using System.Collections.Specialized;
-using Terradue.ServiceModel.Ogc.OwsContext;
 using Terradue.ServiceModel.Syndication;
 using System.Xml;
 using System.IO;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 
 namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPrivilegeManagement = true)]
@@ -310,10 +310,10 @@ namespace Terradue.Tep {
                                          "&identifier=" + identifier);
 
             //getcapabilities
-            Terradue.ServiceModel.Ogc.OwsContext.OwcOperation operation = new OwcOperation {
+            OwcOperation operation = new OwcOperation {
                 Method = "GET",
                 Code = "GetCapabilities",
-                Href = capabilitiesUri
+                Href = capabilitiesUri.AbsoluteUri
             };
             OpenGis.Wps.GetCapabilities getcapabilities = new OpenGis.Wps.GetCapabilities();
 
@@ -327,11 +327,11 @@ namespace Terradue.Tep {
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            ((OwcContent)operation.Request).Any = nodes.ToArray();
+            operation.Request.Any = (XmlElement)nodes [0];
             operations.Add(operation);
 
             //describeProcess
-            operation = new OwcOperation{ Method = "GET", Code = "DescribeProcess", Href = describeUri };
+            operation = new OwcOperation{ Method = "GET", Code = "DescribeProcess", Href = describeUri.AbsoluteUri };
             OpenGis.Wps.DescribeProcess describe = new OpenGis.Wps.DescribeProcess();
 
             ms = new MemoryStream();
@@ -347,11 +347,11 @@ namespace Terradue.Tep {
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            ((OwcContent)operation.Request).Any = nodes.ToArray();
+            operation.Request.Any = (XmlElement)nodes [0];
             operations.Add(operation);
 
             //execute
-            operation = new OwcOperation{ Method = "POST", Code = "Execute", Href = executeUri };
+            operation = new OwcOperation{ Method = "POST", Code = "Execute", Href = executeUri.AbsoluteUri };
             OpenGis.Wps.Execute execute = new OpenGis.Wps.Execute();
             execute.Identifier = new OpenGis.Wps.CodeType{ Value = identifier };
             execute.DataInputs = new List<OpenGis.Wps.InputType>();
@@ -375,7 +375,7 @@ namespace Terradue.Tep {
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            ((OwcContent)operation.Request).Any = nodes.ToArray();
+            operation.Request.Any = (XmlElement)nodes [0];
             operations.Add(operation);
 
             offering.Operations = operations.ToArray();
