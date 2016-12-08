@@ -164,7 +164,7 @@
       <HintPath>..\packages\Terradue.Github.1.0.6\lib\net40\Terradue.Github.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.WebService.Model">
-      <HintPath>..\packages\Terradue.WebService.Model.1.1.13\lib\net40\Terradue.WebService.Model.dll</HintPath>
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.13-ftea20161208T104149\lib\net40\Terradue.WebService.Model.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.13.2\lib\net40\Terradue.OpenSearch.dll</HintPath>
@@ -267,10 +267,7 @@
     <Compile Include="Terradue\Tep\Controller\OpenSearch\SandboxOpenSearchable.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\DataGatewayFactory.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\Domain.Service.cs" />
-    <Compile Include="Terradue\Tep\WebServer\Authorization\WebDomain.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\Role.Service.cs" />
-    <Compile Include="Terradue\Tep\WebServer\Authorization\WebRole.cs" />
-    <Compile Include="Terradue\Tep\WebServer\Authorization\WebPrivilege.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\Privilege.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\ThematicGroup.cs" />
   </ItemGroup>
