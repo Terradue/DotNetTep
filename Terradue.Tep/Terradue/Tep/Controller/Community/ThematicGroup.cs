@@ -156,7 +156,7 @@ namespace Terradue.Tep
 
             if (!string.IsNullOrEmpty (parameters ["q"])) {
                 string q = parameters ["q"].ToLower ();
-                if (!(Name.ToLower ().Contains (q) || this.Identifier.ToLower ().Contains (q)))
+                if (!this.Identifier.ToLower ().Contains (q) && !(Description != null && Description.ToLower ().Contains (q)))
                     return null;
             }
 
@@ -164,7 +164,7 @@ namespace Terradue.Tep
 
             result.Id = id.ToString ();
             result.Title = new TextSyndicationContent (Identifier);
-            result.Content = new TextSyndicationContent (Name);
+            result.Content = new TextSyndicationContent (Identifier);
 
             result.ElementExtensions.Add ("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             result.Summary = new TextSyndicationContent (Description);
@@ -196,9 +196,19 @@ namespace Terradue.Tep
                 }
             }
 
-            result.Links.Add (new SyndicationLink (id, "self", Name, "application/atom+xml", 0));
+            result.Links.Add (new SyndicationLink (id, "self", Identifier, "application/atom+xml", 0));
             if (!string.IsNullOrEmpty (IconUrl)) {
-                result.Links.Add (new SyndicationLink (new Uri (context.BaseUrl + "/files/" + IconUrl), "icon", "", GetImageMimeType(IconUrl), 0));
+
+                Uri uri;
+                if (IconUrl.StartsWith ("http")) {
+                    uri = new Uri (IconUrl);
+                } else {
+                    var urib = new UriBuilder (System.Web.HttpContext.Current.Request.Url);
+                    urib.Path = IconUrl;
+                    uri = urib.Uri;
+                }
+
+                result.Links.Add (new SyndicationLink (uri, "icon", "", GetImageMimeType(IconUrl), 0));
             }
 
             result.Categories.Add (new SyndicationCategory ("visibility", null, ispublic ? "public" : "private"));
@@ -239,13 +249,6 @@ namespace Terradue.Tep
         public ThematicGroupFactory (IfyContext context) 
         {
             Context = context;
-        }
-
-        public void CreateThematicGroup (string identifier, string name) {
-            ThematicGroup tg = new ThematicGroup (Context);
-            tg.Identifier = identifier;
-            tg.Name = name;
-            tg.Store ();
         }
 
         public void CreateVisitorRole () {
