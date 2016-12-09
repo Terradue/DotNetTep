@@ -264,7 +264,8 @@ namespace Terradue.Tep {
                 "\"username\":\"" + validatedUserName + "\"," +
                 "\"eosso\":\"" + this.Username + "\"," +
                 "\"email\":\"" + this.Email + "\"," +
-                "\"password\":\"" + password + "\"" +
+                "\"password\":\"" + password + "\"," + 
+                "\"plan\":\"" + context.GetConfigValue ("t2portal-usr-defaultPlan") + "\"" +
                 "}";
 
             using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
