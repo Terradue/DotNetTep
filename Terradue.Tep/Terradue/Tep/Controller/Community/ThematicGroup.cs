@@ -100,7 +100,7 @@ namespace Terradue.Tep
         /// <returns><c>true</c>, if key is valid, <c>false</c> otherwise.</returns>
         /// <param name="key">Key.</param>
         public bool IsKeyValid (string key) {
-            var id = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE key='{0}' AND id_domain={1};", key, this.Id));
+            var id = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE access_key='{0}' AND id_domain={1};", key, this.Id));
             return id != 0;
         }
 
