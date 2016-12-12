@@ -242,8 +242,10 @@ namespace Terradue.Tep {
         /// <param name="item">Item.</param>
         public void AddResourceItem(RemoteResource item) {
             item.ResourceSet = this;
-            item.Store();
-            Items.Include(item);
+            var res = Resources;
+            res.AllowDuplicates = false;
+            res.Include(item);
+            res.StoreNew ();
         }
 
         /// <summary>
