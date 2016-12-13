@@ -116,10 +116,15 @@ namespace Terradue.Tep.WebServer.Services {
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword;
                 } else {
-                    if (request.url.StartsWith(context.GetConfigValue("catalog-baseurl")) || request.url.StartsWith ("https://data.terradue.com") || request.url.StartsWith("https://data2.terradue.com")) {
+                    if (request.url.StartsWith(context.GetConfigValue("catalog-baseurl"))) {
                         redirectUrl += "resultType=" + "data";
                     } else {
-                        redirectUrl += "resultType=" + "na";
+                        try {
+                            var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), MasterCatalogue.OpenSearchEngine);
+                            redirectUrl += "resultType=" + "data";
+                        } catch (Exception e) { 
+                            redirectUrl += "resultType=" + "na";
+                        }
                     }
                 }
                 redirectUrl += "&url=" + HttpUtility.UrlEncode(request.url);
