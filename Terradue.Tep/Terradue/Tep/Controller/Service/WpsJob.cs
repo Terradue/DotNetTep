@@ -1,5 +1,6 @@
 using System;
 using Terradue.Portal;
+using Terradue.Portal.OpenSearch;
 using System.Collections.Generic;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
@@ -20,7 +21,7 @@ namespace Terradue.Tep {
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.
     /// </summary>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-    public class WpsJob : Entity, IAtomizable, IComparable<WpsJob> {
+    public class WpsJob : Entity, IEntityAtomizable, IComparable<WpsJob> {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -175,27 +176,34 @@ namespace Terradue.Tep {
 
         #region IAtomizable implementation
 
-        public new AtomItem ToAtomItem(NameValueCollection parameters) {
+        public bool IsSearchable (NameValueCollection parameters) {
+            string name = (this.Name != null ? this.Name : this.Identifier);
+            string text = (this.TextContent != null ? this.TextContent : "");
+
+            if (!string.IsNullOrEmpty (parameters ["q"])) {
+                string q = parameters ["q"].ToLower ();
+                if (!(name.ToLower ().Contains (q) || this.Identifier.ToLower ().Contains (q) || text.ToLower ().Contains (q)))
+                    return false;
+            }
+
+            if (!string.IsNullOrEmpty (parameters ["public"]) && parameters ["public"].Equals ("true")) {
+                if (this.IsPrivate ()) return false;
+            }
+
+            return true;
+        }
+
+        public AtomItem ToAtomItem(NameValueCollection parameters) {
 
             bool ispublic = this.IsPublic();
 
-            string identifier = null;
             string name = (this.Name != null ? this.Name : this.Identifier);
-            string description = null;
             string text = (this.TextContent != null ? this.TextContent : "");
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
-            if (!string.IsNullOrEmpty(parameters["q"])) {
-                string q = parameters["q"].ToLower();
-                if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
-                    return null;
-            }
-                
-            if (!string.IsNullOrEmpty(parameters["public"]) && parameters["public"].Equals("true")) {
-                if (this.IsPrivate()) return null;
-            }
-                
+            if (!IsSearchable (parameters)) return null;
+
             AtomItem result = new AtomItem();
             string statusloc = this.StatusLocation;
 
