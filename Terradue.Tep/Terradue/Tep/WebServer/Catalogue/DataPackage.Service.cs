@@ -343,7 +343,7 @@ namespace Terradue.Tep.WebServer.Services
                 }else{
                     def = (DataPackage)request.ToEntity(context, def);    
                 }
-                def.Store();
+                //def.Store();
 
                 if(!def.IsDefault){ //we dont store activities about the temporary data package
                     Activity activity = new Activity(context, def, EntityOperationType.View);
