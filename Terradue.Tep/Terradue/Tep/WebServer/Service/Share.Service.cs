@@ -114,9 +114,9 @@ namespace Terradue.Tep.WebServer.Services {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         try {
-                            var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), MasterCatalogue.OpenSearchEngine);
+                            new GenericOpenSearchable (new OpenSearchUrl (request.url), MasterCatalogue.OpenSearchEngine);
                             redirectUrl += "resultType=" + "data";
-                        } catch (Exception e) { 
+                        } catch (Exception) { 
                             redirectUrl += "resultType=" + "na";
                         }
                     }
