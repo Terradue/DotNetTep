@@ -74,6 +74,57 @@ namespace Terradue.Tep {
             this.context = context;
         }
 
+        public EntityList<WpsProcessOffering> GetWpsServices (bool canCache, bool fromDb = true, bool fromCloud = true) {
+
+            EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering> (context);
+            wpsProcesses.Template.Available = true;
+            if(fromDb) wpsProcesses.Load ();
+
+            if (fromCloud) {
+                List<WpsProvider> wpss = new List<WpsProvider> ();
+                try {
+                    wpss = GetWPSFromVMs();
+                } catch (Exception e) {
+                    //we do nothing, we will return the list without any WPS from the cloud
+                }
+
+                int workerThreads, completionPortThreads;
+                System.Threading.ThreadPool.GetMaxThreads (out workerThreads, out completionPortThreads);
+
+                try {
+                    System.Threading.Tasks.Parallel.ForEach (wpss, wps => PerformGetProcessWpsOffering (wpsProcesses, wps, canCache));
+                } catch (AggregateException e) {
+                    foreach (var e1 in e.InnerExceptions) {
+                        log.Error (e1.Message);
+                    }
+                }
+
+                //foreach (WpsProvider wps in wpss) {
+                //    wps.CanCache = canCache;
+                //    try {
+                //        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote ()) {
+                //            wpsProcesses.Include (process);
+                //        }
+                //    } catch (Exception e) {
+                //        //we do nothing, we just dont add the process
+                //    }
+                //}
+            }
+            return wpsProcesses;
+
+        }
+
+        private void PerformGetProcessWpsOffering (EntityList<WpsProcessOffering> wpsProcesses, WpsProvider wps, bool canCache) { 
+            wps.CanCache = canCache;
+            try {
+                foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote ()) {
+                    wpsProcesses.Include (process);
+                }
+            } catch (Exception e) {
+                //we do nothing, we just dont add the process
+            }
+        }
+
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         public List<WpsProvider> GetWPSFromVMs(){
             if (context.UserId == 0) return new List<WpsProvider>();
@@ -145,12 +196,13 @@ namespace Terradue.Tep {
         }
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        public WpsProcessOffering CreateWpsProcessOfferingForOne(string vmId, string processId){
+        public WpsProcessOffering CreateWpsProcessOfferingForOne(string vmId, string processId, bool cancache = true){
             WpsProvider wps = this.CreateWpsProviderForOne(vmId);
+            wps.CanCache = cancache;
 
             foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                 context.LogDebug (this, "Get process -- " + process.RemoteIdentifier);
-                if (process.RemoteIdentifier.Equals(processId)) return process;
+                if (process.RemoteIdentifier.Equals (processId)) return process;
             }
 
             return null;
