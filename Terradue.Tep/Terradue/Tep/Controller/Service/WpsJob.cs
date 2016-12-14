@@ -8,6 +8,11 @@ using Terradue.ServiceModel.Syndication;
 using System.Xml;
 using System.IO;
 using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
+using System.Net;
+using ServiceStack.Common.Web;
+using OpenGis.Wps;
+using System.Web;
+using System.Runtime.Caching;
 
 namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPrivilegeManagement = true)]
@@ -19,6 +24,8 @@ namespace Terradue.Tep {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        static MemoryCache ResultServletCache = new MemoryCache ("wpsjobResultServletCache");
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         [EntityDataField("remote_identifier")]
@@ -41,6 +48,14 @@ namespace Terradue.Tep {
         public string parameters { get; protected set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="T:Terradue.Tep.WpsJob"/> can cache.
+        /// </summary>
+        /// <value><c>true</c> if can cache; otherwise, <c>false</c>.</value>
+        public bool CanCache { get; set; }
+
+        private CloudWpsFactory CloudWpsFactory;
+
+        /// <summary>
         /// Gets or sets the parameters associated to the job
         /// </summary>
         /// <remarks>
@@ -60,8 +75,6 @@ namespace Terradue.Tep {
             } 
         }
 
-        private WpsProvider provider { get; set; }
-
         /// <summary>
         /// Get the Wps provider associated to the job
         /// </summary>
@@ -69,14 +82,9 @@ namespace Terradue.Tep {
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         public WpsProvider Provider {
             get {
-                if (provider == null) {
-                    try {
-                        provider = (WpsProvider)WpsProvider.FromIdentifier (context, WpsId);
-                    } catch (Exception){
-                        provider = null;
-                    }
-                }
-                return provider;
+                if (Process != null)
+                    return Process.Provider;
+                else return null;
             }
         }
 
@@ -90,6 +98,7 @@ namespace Terradue.Tep {
         public WpsProcessOffering Process {
             get { 
                 if (process == null) {
+                    if (String.IsNullOrEmpty (this.ProcessId)) return null;
                     try {
                         process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, ProcessId);
                     } catch (Exception e) {
@@ -97,13 +106,19 @@ namespace Terradue.Tep {
                         if (identifierParams.Length == 3) {
                             switch (identifierParams[0]) {
                                 case "one":
-                                    process = new CloudWpsFactory(context).CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
+                                    try {
+                                        if (this.IsPublic ()) CloudWpsFactory.StartDelegate (this.OwnerId);
+                                        context.LogDebug (this, "Get process -- " + identifierParams [1] + " -- " + identifierParams [2]);
+                                        process = CloudWpsFactory.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
+                                    } catch (Exception e2) {
+                                        context.LogError (this, e2.Message);
+                                    }
                                     break;
                                 default:
                                     break;
                             }
                         }
-                        if (process == null) throw e;
+                        //if (process == null) throw e;
                     }
                 }
 
@@ -120,6 +135,8 @@ namespace Terradue.Tep {
         }
 
         public WpsJob(IfyContext context) : base(context) {
+            CloudWpsFactory = new CloudWpsFactory (context);
+            CanCache = true;//default is true, to be set to false to disable the cache
         }
 
         public static WpsJob FromId(IfyContext context, int id) {
@@ -179,20 +196,10 @@ namespace Terradue.Tep {
                 if (this.IsPrivate()) return null;
             }
                 
-            WpsProcessOffering process = null;
-            WpsProvider provider = null;
             AtomItem result = new AtomItem();
             string statusloc = this.StatusLocation;
 
-            try {
-                provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
-
-                if (provider.Proxy) statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
-
-            } catch (Exception e) {
-                //if provider not on db, then it is proxied
-                statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
-            }
+            if (Provider == null || Provider.Proxy) statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
 
             if (string.IsNullOrEmpty(parameters["basicrequest"]) || parameters["basicrequest"] != "true") {
                 result = GetFullWpsJobAtomItem();
@@ -202,9 +209,8 @@ namespace Terradue.Tep {
                 }
             }
 
-
             result.Id = id.ToString();
-            result.Title = new TextSyndicationContent(identifier);
+            result.Title = new TextSyndicationContent(name);
             result.Content = new TextSyndicationContent(name);
 
             result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
@@ -246,67 +252,26 @@ namespace Terradue.Tep {
             string providerUrl = null;
             string identifier = this.Identifier;
 
-            WpsProcessOffering process = null;
-            WpsProvider provider = null;
-
-            try{
-                process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, this.ProcessId);
-                provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
-            } catch (Exception e) {
-                context.LogError (this, e.Message);
-                string[] identifierParams = this.ProcessId.Split("-".ToCharArray());
-                if (identifierParams.Length == 3) {
-                    switch (identifierParams[0]) {
-                        case "one":
-                            CloudWpsFactory wpstep = new CloudWpsFactory(context);
-                            if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
-                            try{
-                                context.LogDebug (this, "Get process -- " + identifierParams [1] + " -- " + identifierParams [2]);
-                                process = wpstep.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
-                            context.LogDebug (this, "Get provider");
-                                provider = process.Provider;
-                            }catch(Exception e2){
-                                context.LogError (this, e2.Message);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            if (provider != null && process != null) {
-                if (provider.Proxy) {
-                    identifier = process.Identifier;
+            if (Provider != null && Process != null) {
+                if (Provider.Proxy) {
+                    identifier = Process.Identifier;
                     providerUrl = context.BaseUrl + "/wps/WebProcessingService";
                 } else {
-                    identifier = process.RemoteIdentifier;
-                    providerUrl = provider.BaseUrl;
+                    identifier = Process.RemoteIdentifier;
+                    providerUrl = Provider.BaseUrl;
                 }
-            }
-
-
-            if (process == null || provider == null)
-                return null;
-
-            if (provider.Proxy) {
-                identifier = process.Identifier;
-                providerUrl = context.BaseUrl + "/wps/WebProcessingService";
-            } else {
-                identifier = process.RemoteIdentifier;
-                providerUrl = provider.BaseUrl;
-            }
+            } else return null;
 
             Uri capabilitiesUri = new Uri(providerUrl + "?service=WPS" +
                                               "&request=GetCapabilities");
 
             Uri describeUri = new Uri(providerUrl + "?service=WPS" +
                                           "&request=DescribeProcess" +
-                                      "&version=" + process.Version +
+                                      "&version=" + Process.Version +
                                           "&identifier=" + identifier);
             Uri executeUri = new Uri(providerUrl + "?service=WPS" +
                                          "&request=Execute" +
-                                     "&version=" + process.Version +
+                                     "&version=" + Process.Version +
                                          "&identifier=" + identifier);
 
             //getcapabilities
@@ -391,8 +356,11 @@ namespace Terradue.Tep {
             entry.Offerings = new List<OwcOffering>{ offering };
             entry.Categories.Add(new SyndicationCategory("WpsOffering"));
 
-            entry.Content = new TextSyndicationContent("This job has been created using the service " + process.Name);
-            return new AtomItem(entry);
+            entry.Content = new TextSyndicationContent("This job has been created using the service " + Process.Name);
+            ms.Close ();
+
+            var resultAtom = new AtomItem (entry);
+            return resultAtom;
         }
 
 
@@ -412,6 +380,127 @@ namespace Terradue.Tep {
         }
 
         #endregion
+
+        public object GetExecuteResponse () { 
+            var cacheItem = ResultServletCache.GetCacheItem (StatusLocation);
+            if (cacheItem != null && CanCache) {
+                return (ExecuteResponse)cacheItem.Value;
+            } else {
+                return GetAndCacheExecuteResponse ();
+            }
+        }
+
+        private object GetAndCacheExecuteResponse () {
+            OpenGis.Wps.ExecuteResponse execResponse = null;
+            HttpWebRequest executeHttpRequest;
+            if (Provider != null)
+                executeHttpRequest = Provider.CreateWebRequest (StatusLocation);
+            else {
+                NetworkCredential credentials = null;
+                var urib = new UriBuilder (StatusLocation);
+                if (!string.IsNullOrEmpty (urib.UserName) && !string.IsNullOrEmpty (urib.Password)) credentials = new NetworkCredential (urib.UserName, urib.Password);
+                executeHttpRequest = WpsProvider.CreateWebRequest (StatusLocation, credentials, context.Username);
+            }
+            if (StatusLocation.Contains ("gpod.eo.esa.int")) {
+                executeHttpRequest.Headers.Add ("X-UserID", context.GetConfigValue ("GpodWpsUser"));
+            }
+
+            using (var remoteWpsResponseStream = new MemoryStream ()) {
+                context.LogDebug (this, string.Format (string.Format ("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
+
+                try {
+                    using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse ())
+                    using (var remotestream = remoteWpsResponse.GetResponseStream ())
+                        remotestream.CopyTo (remoteWpsResponseStream);
+                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                    execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
+
+                } catch (WebException we) {
+                    context.LogError (this, string.Format (we.Message));
+                    //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
+                    if (StatusLocation.Contains ("gpod.eo.esa.int")) {
+                        using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream ()) remotestream.CopyTo (remoteWpsResponseStream);
+                        remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                        execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
+                    } else if (we.Response != null && we.Response is HttpWebResponse) {
+                        return new HttpResult (we.Message, ((HttpWebResponse)we.Response).StatusCode);
+                    } else {
+                        return new HttpResult (we.Message, HttpStatusCode.BadGateway);
+                    }
+                } catch (Exception e) {
+                    OpenGis.Wps.ExceptionReport exceptionReport = null;
+                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                    try {
+                        exceptionReport = (OpenGis.Wps.ExceptionReport)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExceptionReport)).Deserialize (remoteWpsResponseStream);
+                    } catch (Exception e2) { }
+                    remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
+                    string errormsg = null;
+                    using (StreamReader reader = new StreamReader (remoteWpsResponseStream)) {
+                        errormsg = reader.ReadToEnd ();
+                    }
+                    remoteWpsResponseStream.Close ();
+                    context.LogError (this, errormsg);
+                    if (exceptionReport != null && exceptionReport.Exception != null) return new HttpResult (exceptionReport.Exception [0].ExceptionText [0], HttpStatusCode.BadRequest);
+                    else return new HttpResult (errormsg, HttpStatusCode.BadRequest);
+                }
+            }
+
+            execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + Identifier;
+
+            if (execResponse.ProcessOutputs != null) {
+                foreach (var output in execResponse.ProcessOutputs) {
+                    try {
+                        if (output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals ("result_metadata")) {
+                            context.LogDebug (this, string.Format ("Case result_metadata"));
+                            var item = new ComplexDataType ();
+                            var reference = new OutputReferenceType ();
+                            reference.mimeType = "application/opensearchdescription+xml";
+                            reference.href = context.BaseUrl + "/proxy/wps/" + Identifier + "/description";
+                            item.Reference = reference;
+                            item.Any = null;
+                            item.mimeType = "application/xml";
+                            output.Identifier = new CodeType { Value = "result_osd" };
+                            output.Item = new DataType ();
+                            ((DataType)(output.Item)).Item = item;
+                        } else if (output.Identifier != null && output.Identifier.Value != null && output.Identifier.Value.Equals ("result_osd")) {
+                            if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                context.LogDebug (this, string.Format ("Case result_osd"));
+                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                var reference = item.Reference as OutputReferenceType;
+                                reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
+                                item.Reference = reference;
+                                ((DataType)(output.Item)).Item = item;
+                            } else if (output.Item is OutputReferenceType) {
+                                context.LogDebug (this, string.Format ("Case result_osd"));
+                                var reference = output.Item as OutputReferenceType;
+                                reference.href = context.BaseUrl + "/proxy?url=" + HttpUtility.UrlEncode (reference.href);
+                                output.Item = reference;
+                            }
+                        } else {
+                            if (output.Identifier != null && output.Identifier.Value != null) context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
+                            if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                if (item.Any != null) {
+                                    var reference = new OutputReferenceType ();
+                                    reference.mimeType = "application/opensearchdescription+xml";
+                                    reference.href = context.BaseUrl + "/proxy/wps/" + Identifier + "/description";
+                                    item.Reference = reference;
+                                    item.Any = null;
+                                    item.mimeType = "application/xml";
+                                    output.Identifier = new CodeType { Value = "result_osd" };
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        context.LogError (this, e.Message);
+                    }
+                }
+            }
+            Uri uri = new Uri (execResponse.serviceInstance);
+            execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
+            ResultServletCache.Set (new CacheItem (StatusLocation, execResponse), new CacheItemPolicy () { AbsoluteExpiration = DateTimeOffset.Now.AddHours (12) });
+            return execResponse;
+        }
     }
 }
 
