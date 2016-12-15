@@ -1,6 +1,5 @@
 using System;
 using Terradue.Portal;
-using Terradue.Portal.OpenSearch;
 using System.Collections.Generic;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
@@ -21,7 +20,7 @@ namespace Terradue.Tep {
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.
     /// </summary>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-    public class WpsJob : Entity, IEntityAtomizable, IComparable<WpsJob> {
+    public class WpsJob : Entity, IAtomizable, IComparable<WpsJob> {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -81,13 +80,30 @@ namespace Terradue.Tep {
         /// </summary>
         /// <value>The provider.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
+        //public WpsProvider Provider {
+        //    get {
+        //        if (Process != null)
+        //            return Process.Provider;
+        //        else return null;
+        //    }
+        //}
+        private WpsProvider provider { get; set; }
         public WpsProvider Provider {
             get {
-                if (Process != null)
+                if (provider == null) {
+                    try {
+                        provider = (WpsProvider)WpsProvider.FromIdentifier (context, WpsId);
+                    } catch (Exception) {
+                        provider = null;    
+                    }
+                }
+                return provider;
+                if (Process != null) 
                     return Process.Provider;
                 else return null;
             }
         }
+
 
         private WpsProcessOffering process { get; set; }
 
