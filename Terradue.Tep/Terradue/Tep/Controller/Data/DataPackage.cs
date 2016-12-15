@@ -125,7 +125,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <value>is owned by a \ref User</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public UserTep Owner {
+        public User Owner {
             get;
             set;
         }
@@ -392,25 +392,28 @@ namespace Terradue.Tep {
         #endregion
 
         #region IAtomizable implementation
-
-        public Terradue.OpenSearch.Result.AtomItem ToAtomItem(NameValueCollection parameters) {
-
+        public bool IsSearchable (NameValueCollection parameters) {
             string identifier = this.Identifier;
             string name = (this.Name != null ? this.Name : this.Identifier);
-            string description = null;
             string text = (this.TextContent != null ? this.TextContent : "");
 
-            if (parameters["q"] != null) {
-                string q = parameters["q"].ToLower();
-                if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
-                    return null;
+            if (parameters ["q"] != null) {
+                string q = parameters ["q"].ToLower ();
+                if (!(name.ToLower ().Contains (q) || this.Identifier.ToLower ().Contains (q) || text.ToLower ().Contains (q)))
+                    return false;
             }
+            return true;
+        }
+        public Terradue.OpenSearch.Result.AtomItem ToAtomItem(NameValueCollection parameters) {
+
+            string name = (this.Name != null ? this.Name : this.Identifier);
+
+            if (!IsSearchable (parameters)) return null;
 
             AtomItem atomEntry = null;
-            var entityType = EntityType.GetEntityType(typeof(DataPackage));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
             try {
-                atomEntry = new AtomItem(identifier, name, null, id.ToString(), DateTime.UtcNow);
+                atomEntry = new AtomItem(Identifier, name, null, id.ToString(), DateTime.UtcNow);
             } catch (Exception e) {
                 atomEntry = new AtomItem();
             }
@@ -419,10 +422,10 @@ namespace Terradue.Tep {
 
             atomEntry.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
 
-            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + (IsDefault ? "default" : identifier) + "/description");
+            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + (IsDefault ? "default" : Identifier) + "/description");
             atomEntry.Links.Add(new SyndicationLink(search.Uri, "search", name, "application/atom+xml", 0));
 
-            search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + identifier + "/search");
+            search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + Identifier + "/search");
             search.Query = "key=" + this.AccessKey;
 
             atomEntry.Links.Add(new SyndicationLink(search.Uri, "public", name, "application/atom+xml", 0));
