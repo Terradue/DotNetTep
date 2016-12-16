@@ -276,6 +276,28 @@ namespace Terradue.Tep {
             string providerUrl = null;
             string identifier = this.Identifier;
 
+            if(Provider == null){
+                string[] identifierParams = this.ProcessId.Split("-".ToCharArray());
+                if (identifierParams.Length == 3) {
+                    switch (identifierParams[0]) {
+                        case "one":
+                            CloudWpsFactory wpstep = new CloudWpsFactory(context);
+                            if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
+                            try{
+                                context.LogDebug (this, "Get process from one -- " + identifierParams [1] + " -- " + identifierParams [2]);
+                                process = wpstep.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
+                                context.LogDebug (this, "Get provider from one");
+                                Provider = process.Provider;
+                            }catch(Exception e2){
+                                context.LogError (this, e2.Message);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
             if (Provider != null && Process != null) {
                 if (Provider.Proxy) {
                     identifier = Process.Identifier;
