@@ -102,6 +102,9 @@ namespace Terradue.Tep {
                     return Process.Provider;
                 else return null;
             }
+            private set {
+                provider = value;
+            }
         }
 
 
@@ -276,27 +279,34 @@ namespace Terradue.Tep {
             string providerUrl = null;
             string identifier = this.Identifier;
 
-            if(Provider == null){
-                string[] identifierParams = this.ProcessId.Split("-".ToCharArray());
+            var savedAdminMode = context.AdminMode;
+            try {
+                if (this.IsPublic ()) context.AdminMode = true;
+                process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier (context, this.ProcessId);
+                provider = (WpsProvider)WpsProvider.FromIdentifier (context, this.WpsId);
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                string [] identifierParams = this.ProcessId.Split ("-".ToCharArray ());
                 if (identifierParams.Length == 3) {
-                    switch (identifierParams[0]) {
-                        case "one":
-                            CloudWpsFactory wpstep = new CloudWpsFactory(context);
-                            if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
-                            try{
-                                context.LogDebug (this, "Get process from one -- " + identifierParams [1] + " -- " + identifierParams [2]);
-                                process = wpstep.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
-                                context.LogDebug (this, "Get provider from one");
-                                Provider = process.Provider;
-                            }catch(Exception e2){
-                                context.LogError (this, e2.Message);
-                            }
-                            break;
-                        default:
-                            break;
+                    switch (identifierParams [0]) {
+                    case "one":
+                        CloudWpsFactory wpstep = new CloudWpsFactory (context);
+                        if (this.IsPublic ()) wpstep.StartDelegate (this.OwnerId);
+                        try {
+                            context.LogDebug (this, "Get process -- " + identifierParams [1] + " -- " + identifierParams [2]);
+                            process = wpstep.CreateWpsProcessOfferingForOne (identifierParams [1], identifierParams [2]);
+                            context.LogDebug (this, "Get provider");
+                            provider = process.Provider;
+                        } catch (Exception e2) {
+                            context.LogError (this, e2.Message);
+                        }
+                        break;
+                    default:
+                        break;
                     }
                 }
             }
+            context.AdminMode = savedAdminMode;
 
             if (Provider != null && Process != null) {
                 if (Provider.Proxy) {
@@ -428,12 +438,14 @@ namespace Terradue.Tep {
         #endregion
 
         public object GetExecuteResponse () { 
-            var cacheItem = ResultServletCache.GetCacheItem (StatusLocation);
-            if (cacheItem != null && CanCache) {
-                return (ExecuteResponse)cacheItem.Value;
-            } else {
-                return GetAndCacheExecuteResponse ();
-            }
+            //var cacheItem = ResultServletCache.GetCacheItem (StatusLocation);
+            //if (cacheItem != null && CanCache) {
+            //    return (ExecuteResponse)cacheItem.Value;
+            //} else {
+            //    return GetAndCacheExecuteResponse ();
+            //}
+            //TODO: we should only when status is success or failed
+            return GetAndCacheExecuteResponse ();
         }
 
         private object GetAndCacheExecuteResponse () {
@@ -544,7 +556,8 @@ namespace Terradue.Tep {
             }
             Uri uri = new Uri (execResponse.serviceInstance);
             execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
-            ResultServletCache.Set (new CacheItem (StatusLocation, execResponse), new CacheItemPolicy () { AbsoluteExpiration = DateTimeOffset.Now.AddHours (12) });
+            //TODO: we should only when status is success or failed
+            //ResultServletCache.Set (new CacheItem (StatusLocation, execResponse), new CacheItemPolicy () { AbsoluteExpiration = DateTimeOffset.Now.AddHours (12) });
             return execResponse;
         }
     }
