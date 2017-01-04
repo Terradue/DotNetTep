@@ -89,12 +89,20 @@ namespace Terradue.Tep {
                         if(vm.USER_TEMPLATE == null) continue;
                         try{
                             XmlNode[] user_template = (XmlNode[])vm.USER_TEMPLATE;
+                            bool isWPS = false, isSandbox = false;
                             foreach(XmlNode nodeUT in user_template){
-                                if(nodeUT.Name == "WPS"){
-                                    context.LogDebug(this,string.Format("WPS found : {0} - {1}",vm.ID, vm.GNAME));
-                                    result.Add(CreateWpsProviderForOne(context, vm));
-                                    break;
+                                if (nodeUT.Name == "WPS") {
+                                    context.LogDebug (this, string.Format ("WPS found : {0} - {1}", vm.ID, vm.GNAME));
+                                    isWPS = true;
+                                } else if (nodeUT.Name == "sandbox"){//TODO: check with cesare
+                                    context.LogDebug (this, string.Format ("Sandbox found : {0} - {1}", vm.ID, vm.GNAME));
+                                    isSandbox = true;
                                 }
+                            }
+                            if (isWPS) {
+                                var wps = CreateWpsProviderForOne (context, vm);
+                                wps.IsSandbox = isSandbox;
+                                result.Add (wps);
                             }
                         }catch(Exception e){
 
@@ -131,7 +139,7 @@ namespace Terradue.Tep {
             wps.Identifier = "one-" + vm.ID;
             wps.Proxy = true;
 
-            wps.Description = vm.UNAME + " from laboratory " + vm.GNAME;
+            wps.Description = vm.NAME + " by " +vm.UNAME + " from laboratory " + vm.GNAME;
             XmlNode[] template = (XmlNode[])vm.TEMPLATE;
             foreach (XmlNode nodeT in template) {
                 context.LogDebug (context, "node name = " + nodeT.Name);
@@ -140,6 +148,7 @@ namespace Terradue.Tep {
                     context.LogDebug (context, "wpsbaseurl = " + wps.BaseUrl);
                     break;
                 }
+                //TODO: get categories (see with cesare)
             }
             return wps;
         }
