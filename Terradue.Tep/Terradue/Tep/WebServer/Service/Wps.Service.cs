@@ -112,6 +112,29 @@ namespace Terradue.Tep.WebServer.Services {
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
         }
 
+        public object Get (GetWPSProcessDescription request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/description GET"));
+
+                EntityList<WpsProcessOffering> wpsservices = new EntityList<WpsProcessOffering> (context);
+                wpsservices.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+
+                OpenSearchDescription osd = wpsservices.GetOpenSearchDescription ();
+
+                context.Close ();
+
+                return new HttpResult (osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+        }
+
+
         public object Get(GetWPSServices request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             List<WebServiceTep> result = new List<WebServiceTep>();
