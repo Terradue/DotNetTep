@@ -8,3 +8,7 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('t2portal-usr-defaultPlan', 'string', 'T2 Corporate portal default plan', 'T2 Corporate portal default plan', 'Explorer', 
 '0');
 -- RESULT
+
+-- resourceset name
+ALTER TABLE resourceset MODIFY name VARCHAR(300);
+-- RESULT
