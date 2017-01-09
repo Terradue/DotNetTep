@@ -60,11 +60,13 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 return text;
             }catch(WebException e){
-                using (var stream = e.Response.GetResponseStream ()){
-                    var reader = new StreamReader (stream, System.Text.Encoding.UTF8);
-                    text = reader.ReadToEnd();
+                if (e.Response != null) {
+                    using (var stream = e.Response.GetResponseStream ()) {
+                        var reader = new StreamReader (stream, System.Text.Encoding.UTF8);
+                        text = reader.ReadToEnd ();
+                    }
+                    log.ErrorFormat (text);
                 }
-                log.ErrorFormat(text);
                 throw e;
             }catch(Exception e){
                 log.ErrorFormat("{0} - {1}",e.Message, e.StackTrace);
