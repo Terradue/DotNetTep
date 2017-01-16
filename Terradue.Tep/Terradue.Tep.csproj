@@ -270,6 +270,7 @@
     <Compile Include="Terradue\Tep\WebServer\Authorization\Role.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\Privilege.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\ThematicGroup.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Community\Community.Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
