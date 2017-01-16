@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
+using Terradue.OpenSearch;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 
@@ -88,7 +91,44 @@ namespace Terradue.Tep.WebServer.Services{
         }
 
         public object Get (CommunitySearchActivitiesRequestTep request) {
-            return new WebResponseBool (true);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            context.Open ();
+            context.LogInfo (this, string.Format ("/activity/search GET"));
+
+            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable> ();
+
+            EntityList<Activity> activities = new EntityList<Activity> (context);
+            activities.Load ();
+
+            List<Activity> tmplist = new List<Activity> ();
+            tmplist = activities.GetItemsAsList ();
+            tmplist.Sort ();
+            tmplist.Reverse ();
+
+            activities = new EntityList<Activity> (context);
+            activities.Identifier = "activity";
+            foreach (Activity item in tmplist) {
+                if ((item.Privilege != null && item.Privilege.EntityType != null && item.Privilege.EntityType.Id != EntityType.GetEntityType (typeof (UserTep)).Id && !item.Privilege.Operation.Equals ("l")))
+                    activities.Include (item);
+            }
+            osentities.Add (activities);
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            var ose = MasterCatalogue.OpenSearchEngine;
+
+            var multiOSE = new MultiGenericOpenSearchable (osentities, ose);
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            var osr = ose.Query (multiOSE, httpRequest.QueryString, responseType);
+
+            multiOSE.Identifier = "activity";
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (multiOSE, osr);
+
+            context.Close ();
+            return new HttpResult (osr.SerializeToString (), osr.ContentType);
         }
     }
 }
