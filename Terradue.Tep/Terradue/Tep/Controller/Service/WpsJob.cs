@@ -521,9 +521,7 @@ namespace Terradue.Tep
         result.Summary = new TextSyndicationContent(name);
         result.ReferenceData = this;
 
-        //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
-        result.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreatedTime, DateTimeKind.Utc));
-        //            result.PublishDate = new DateTimeOffset(this.CreatedTime);
+        result.PublishDate = new DateTimeOffset(this.CreatedTime);
 
         var basepath = new UriBuilder(context.BaseUrl);
         basepath.Path = "user";
@@ -708,9 +706,7 @@ namespace Terradue.Tep
 
         OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
-        //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
-        entry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreatedTime, DateTimeKind.Utc));
-        //            entry.PublishDate = new DateTimeOffset(this.CreatedTime);
+        entry.PublishDate = new DateTimeOffset(this.CreatedTime);
 
         entry.Publisher = Owner.Username;
 

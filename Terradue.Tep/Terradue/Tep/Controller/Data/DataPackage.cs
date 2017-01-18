@@ -439,9 +439,7 @@ namespace Terradue.Tep {
             atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             atomEntry.ReferenceData = this;
 
-            //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
-            atomEntry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreationTime, DateTimeKind.Utc));
-//            atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
+            atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
 
             User owner = User.FromId(context, this.OwnerId);
             var basepath = new UriBuilder(context.BaseUrl);
