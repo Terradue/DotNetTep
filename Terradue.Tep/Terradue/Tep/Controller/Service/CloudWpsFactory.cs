@@ -4,6 +4,7 @@ using Terradue.OpenNebula;
 using System.Collections.Generic;
 using System.Xml;
 using Terradue.Cloud;
+using System.Linq;
 
 
 /*!
@@ -89,19 +90,23 @@ namespace Terradue.Tep {
                         if(vm.USER_TEMPLATE == null) continue;
                         try{
                             XmlNode[] user_template = (XmlNode[])vm.USER_TEMPLATE;
-                            bool isWPS = false, isSandbox = false;
+                            bool isWPS = false, isSandbox = true;
+                            List<string> tags = new List<string>();
                             foreach(XmlNode nodeUT in user_template){
                                 if (nodeUT.Name == "WPS") {
-                                    context.LogDebug (this, string.Format ("WPS found : {0} - {1}", vm.ID, vm.GNAME));
+                                    context.LogDebug(this, string.Format("WPS found : {0} - {1}", vm.ID, vm.GNAME));
                                     isWPS = true;
-                                } else if (nodeUT.Name == "sandbox"){//TODO: check with cesare
-                                    context.LogDebug (this, string.Format ("Sandbox found : {0} - {1}", vm.ID, vm.GNAME));
-                                    isSandbox = true;
+                                } else if (nodeUT.Name == "OPERATIONAL") {
+                                    context.LogDebug(this, string.Format("Operational VM found : {0} - {1}", vm.ID, vm.GNAME));
+                                    isSandbox = false;
+                                } else if (nodeUT.Name == "TAGS") {
+                                    tags = nodeUT.Value.Split(',').ToList(); 
                                 }
                             }
                             if (isWPS) {
                                 var wps = CreateWpsProviderForOne (context, vm);
                                 wps.IsSandbox = isSandbox;
+                                wps.Tags = tags;
                                 result.Add (wps);
                             }
                         }catch(Exception e){
