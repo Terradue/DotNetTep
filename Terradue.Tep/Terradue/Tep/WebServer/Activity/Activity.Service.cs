@@ -35,7 +35,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
-            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+            //List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
             EntityList<Activity> activities = new EntityList<Activity>(context);
             activities.Load();
@@ -53,20 +53,22 @@ namespace Terradue.Tep.WebServer.Services {
 //                    EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
                     activities.Include(item);
             }
-            osentities.Add(activities);
+            //osentities.Add(activities);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+            //MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
 
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
+            //IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
+            IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
 
-            multiOSE.Identifier = "activity";
+            //multiOSE.Identifier = "activity";
+            activities.Identifier = "activity";
 
-            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(multiOSE, osr);
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(activities, osr);
 
             context.Close();
             return new HttpResult(osr.SerializeToString(), osr.ContentType);

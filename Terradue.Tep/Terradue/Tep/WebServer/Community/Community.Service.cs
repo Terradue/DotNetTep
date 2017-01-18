@@ -22,11 +22,24 @@ namespace Terradue.Tep.WebServer.Services{
         public int Id { get; set; }
     }
 
-    [Route ("/community/{id}/activity/search", "GET", Summary = "GET the activities of the community", Notes = "")]
-    public class CommunitySearchActivitiesRequestTep : IReturn<HttpResult>
+    [Route ("/job/wps/{id}/community/{cid}", "PUT", Summary = "PUT the wpsjob to the community", Notes = "")]
+    public class CommunityAddWpsJobRequestTep : IReturn<WebResponseBool>
     {
-        [ApiMember (Name = "id", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        [ApiMember (Name = "id", Description = "Id of the wps job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public int Id { get; set; }
+
+        [ApiMember (Name = "cid", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int CId { get; set; }
+    }
+
+    [Route ("/data/package/{id}/community/{cid}", "PUT", Summary = "PUT the data package to the community", Notes = "")]
+    public class CommunityAddDataPackageRequestTep : IReturn<WebResponseBool>
+    {
+        [ApiMember (Name = "id", Description = "Id of the data package", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember (Name = "cid", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int CId { get; set; }
     }
 
     [Api ("Tep Terradue webserver")]
@@ -90,45 +103,48 @@ namespace Terradue.Tep.WebServer.Services{
             return new WebResponseBool (true);
         }
 
-        public object Get (CommunitySearchActivitiesRequestTep request) {
-            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
-            context.AccessLevel = EntityAccessLevel.Administrator;
-            context.Open ();
-            context.LogInfo (this, string.Format ("/activity/search GET"));
+        public object Put (CommunityAddWpsJobRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
 
-            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable> ();
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/{{Id}}/community/{{cId}} PUT Id='{0}', CId='{1}", request.Id, request.CId));
 
-            EntityList<Activity> activities = new EntityList<Activity> (context);
-            activities.Load ();
+                var wpsjob = WpsJob.FromId (context, request.Id);
+                wpsjob.DomainId = request.CId;
+                wpsjob.Store ();
 
-            List<Activity> tmplist = new List<Activity> ();
-            tmplist = activities.GetItemsAsList ();
-            tmplist.Sort ();
-            tmplist.Reverse ();
-
-            activities = new EntityList<Activity> (context);
-            activities.Identifier = "activity";
-            foreach (Activity item in tmplist) {
-                if ((item.Privilege != null && item.Privilege.EntityType != null && item.Privilege.EntityType.Id != EntityType.GetEntityType (typeof (UserTep)).Id && !item.Privilege.Operation.Equals ("l")))
-                    activities.Include (item);
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
             }
-            osentities.Add (activities);
 
-            // Load the complete request
-            HttpRequest httpRequest = HttpContext.Current.Request;
-            var ose = MasterCatalogue.OpenSearchEngine;
+            return new WebResponseBool (true);
+        }
 
-            var multiOSE = new MultiGenericOpenSearchable (osentities, ose);
+        public object Put (CommunityAddDataPackageRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
-            var osr = ose.Query (multiOSE, httpRequest.QueryString, responseType);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/data/package/{{Id}}/community/{{cId}} PUT Id='{0}', CId='{1}", request.Id, request.CId));
 
-            multiOSE.Identifier = "activity";
+                var dp = DataPackage.FromId (context, request.Id);
+                dp.DomainId = request.CId;
+                dp.Store ();
 
-            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (multiOSE, osr);
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
 
-            context.Close ();
-            return new HttpResult (osr.SerializeToString (), osr.ContentType);
+            return new WebResponseBool (true);
         }
     }
 }
