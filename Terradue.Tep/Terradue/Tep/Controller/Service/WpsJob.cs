@@ -220,7 +220,7 @@ namespace Terradue.Tep
         /// </summary>
         public override void Store()
         {
-            DomainId = Owner.Domain.Id;
+            if(DomainId == 0) DomainId = Owner.Domain.Id;
             if (this.Id == 0) {
                 this.CreatedTime = DateTime.UtcNow;
             }
