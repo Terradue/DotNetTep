@@ -164,7 +164,7 @@
       <HintPath>..\packages\Terradue.Github.1.0.6\lib\net40\Terradue.Github.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.WebService.Model">
-      <HintPath>..\packages\Terradue.WebService.Model.1.1.14\lib\net40\Terradue.WebService.Model.dll</HintPath>
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.15\lib\net40\Terradue.WebService.Model.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.13.2\lib\net40\Terradue.OpenSearch.dll</HintPath>

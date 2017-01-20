@@ -421,12 +421,16 @@ namespace Terradue.Tep {
 
         public new AtomItem ToAtomItem (NameValueCollection parameters){
             
-            var entityType = EntityType.GetEntityType (typeof (WpsJob));
+            var entityType = EntityType.GetEntityType (typeof (User));
             Uri id = new Uri (context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
             if (!string.IsNullOrEmpty (parameters ["q"])) {
                 string q = parameters ["q"].ToLower ();
-                if (!(this.FirstName.ToLower ().Contains (q) || this.Identifier.ToLower ().Contains (q) || this.LastName.ToLower ().Contains (q)))
+                if (!
+                    (!string.IsNullOrEmpty(this.Identifier) && this.Identifier.ToLower().Contains(q)) ||
+                    (!string.IsNullOrEmpty(this.FirstName) && this.FirstName.ToLower().Contains (q)) ||
+                    (!string.IsNullOrEmpty(this.LastName) && this.LastName.ToLower().Contains(q))
+                    )
                     return null;
             }
 
@@ -437,18 +441,34 @@ namespace Terradue.Tep {
             result.Content = new TextSyndicationContent (this.FirstName + " " + this.LastName);
 
             result.ElementExtensions.Add ("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            if (!string.IsNullOrEmpty(Country)) result.ElementExtensions.Add(new SyndicationElementExtension("country", "http://purl.org/dc/elements/1.1/", Country));
+            if (!string.IsNullOrEmpty(Affiliation)) result.ElementExtensions.Add(new SyndicationElementExtension("affiliation", "http://purl.org/dc/elements/1.1/", Affiliation));
             result.ReferenceData = this;
 
-            result.PublishDate = new DateTimeOffset (this.CreatedTime);
+            this.LoadRegistrationInfo();
+            var lastlogin = GetLastLoginDate();
 
-            var basepath = new UriBuilder (context.BaseUrl);
-            basepath.Path = "user";
+            if(this.RegistrationDate != DateTime.MinValue) result.PublishDate = new DateTimeOffset (this.RegistrationDate);
+            if(lastlogin != DateTime.MinValue) result.LastUpdatedTime = new DateTimeOffset(lastlogin);
+
+            var basepath = new UriBuilder(context.BaseUrl);
+            basepath.Path = entityType.Keyword;
+            string usrUri = basepath.Uri.AbsoluteUri + "/" + Username;
+            string usrName = (!String.IsNullOrEmpty(FirstName) && !String.IsNullOrEmpty(LastName) ? FirstName + " " + LastName : Username);
+            SyndicationPerson author = new SyndicationPerson(Email, usrName, usrUri);
+            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Username));  
+
+            result.Authors.Add(author);
 
             result.Links.Add (new SyndicationLink (id, "self", this.Identifier, "application/atom+xml", 0));
 
             return result;
         }
 
+        public NameValueCollection GetOpenSearchParameters ()
+        {
+            return OpenSearchFactory.GetBaseOpenSearchParameter ();
+        }
     }
 }
 

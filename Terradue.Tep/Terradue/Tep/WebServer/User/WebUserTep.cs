@@ -97,12 +97,6 @@ namespace Terradue.Tep.WebServer {
         public int UsrId { get; set; }
     }
 
-    [Route ("/user/search", "GET", Summary = "GET user as opensearch", Notes = "")]
-    public class UserSearchRequestTep : IReturn<HttpResult> { }
-
-    [Route ("/user/description", "GET", Summary = "GET user as opensearch", Notes = "")]
-    public class UserDescriptionRequestTep : IReturn<HttpResult> { }
-
     //-------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------

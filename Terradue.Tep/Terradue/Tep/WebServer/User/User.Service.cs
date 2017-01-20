@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Web;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using Terradue.OpenNebula;
+using Terradue.OpenSearch;
+using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch.Result;
+using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
@@ -460,7 +465,7 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
-        public object Get (UserSearchRequestTep request)
+        public object Get (UserSearchRequest request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             object result;
