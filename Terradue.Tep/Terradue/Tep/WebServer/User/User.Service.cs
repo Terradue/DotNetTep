@@ -460,6 +460,59 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get (UserSearchRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            object result;
+            context.Open ();
+            context.LogInfo (this, string.Format ("/user/search GET"));
+
+            EntityList<UserTep> users = new EntityList<UserTep> (context);
+            users.Load ();
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            string format;
+            if (Request.QueryString ["format"] == null)
+                format = "atom";
+            else
+                format = Request.QueryString ["format"];
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (users, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (users, osr);
+            //            OpenSearchFactory.ReplaceSelfLinks(wpsjobs, httpRequest.QueryString, osr.Result, EntrySelfLinkTemplate);
+
+            context.Close ();
+            return new HttpResult (osr.SerializeToString (), osr.ContentType);
+        }
+
+        public object Get (UserDescriptionRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/description GET"));
+
+                EntityList<UserTep> users = new EntityList<UserTep> (context);
+                users.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+
+                OpenSearchDescription osd = users.GetOpenSearchDescription ();
+
+                context.Close ();
+
+                return new HttpResult (osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+        }
+
     }
 }
 

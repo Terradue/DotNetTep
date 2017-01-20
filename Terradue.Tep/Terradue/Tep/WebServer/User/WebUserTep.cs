@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Text;
 using System.Web;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using ServiceStack.ServiceInterface.ServiceModel;
@@ -95,6 +96,12 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "usrId", Description = "id of the user", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int UsrId { get; set; }
     }
+
+    [Route ("/user/search", "GET", Summary = "GET user as opensearch", Notes = "")]
+    public class UserSearchRequestTep : IReturn<HttpResult> { }
+
+    [Route ("/user/description", "GET", Summary = "GET user as opensearch", Notes = "")]
+    public class UserDescriptionRequestTep : IReturn<HttpResult> { }
 
     //-------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------

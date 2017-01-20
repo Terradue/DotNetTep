@@ -10,6 +10,10 @@ using System.Collections.Generic;
 using System.Web;
 using System.Net;
 using System.IO;
+using Terradue.OpenSearch.Result;
+using Terradue.ServiceModel.Syndication;
+using Terradue.OpenSearch;
+using System.Collections.Specialized;
 
 namespace Terradue.Tep {
 
@@ -24,7 +28,7 @@ namespace Terradue.Tep {
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepCommunity
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
-    public class UserTep : User {
+    public class UserTep : User, IAtomizable {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -411,6 +415,36 @@ namespace Terradue.Tep {
                     result.Add(reader.GetInt32(0));
             }
             reader.Close();
+
+            return result;
+        }
+
+        public new AtomItem ToAtomItem (NameValueCollection parameters){
+            
+            var entityType = EntityType.GetEntityType (typeof (WpsJob));
+            Uri id = new Uri (context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+
+            if (!string.IsNullOrEmpty (parameters ["q"])) {
+                string q = parameters ["q"].ToLower ();
+                if (!(this.FirstName.ToLower ().Contains (q) || this.Identifier.ToLower ().Contains (q) || this.LastName.ToLower ().Contains (q)))
+                    return null;
+            }
+
+            AtomItem result = new AtomItem ();
+
+            result.Id = id.ToString ();
+            result.Title = new TextSyndicationContent (this.Identifier);
+            result.Content = new TextSyndicationContent (this.FirstName + " " + this.LastName);
+
+            result.ElementExtensions.Add ("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            result.ReferenceData = this;
+
+            result.PublishDate = new DateTimeOffset (this.CreatedTime);
+
+            var basepath = new UriBuilder (context.BaseUrl);
+            basepath.Path = "user";
+
+            result.Links.Add (new SyndicationLink (id, "self", this.Identifier, "application/atom+xml", 0));
 
             return result;
         }
