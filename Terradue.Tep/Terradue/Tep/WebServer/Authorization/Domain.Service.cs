@@ -146,7 +146,7 @@ namespace Terradue.Tep.WebServer.Services
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             object result;
             context.Open ();
-            context.LogInfo (this, string.Format ("/job/wps/search GET"));
+            context.LogInfo (this, string.Format ("/domain/search GET"));
 
             EntityList<ThematicGroup> domains = new EntityList<ThematicGroup> (context);
             domains.Load ();

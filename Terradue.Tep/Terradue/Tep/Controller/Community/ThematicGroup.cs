@@ -8,8 +8,10 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep
 {
 
-    public class ThematicGroup : Domain, IAtomizable
-    {
+    public class ThematicGroup : Domain, IAtomizable{
+
+        public const string MANAGER = "manager";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicGroup"/> class.
         /// </summary>
@@ -175,7 +177,7 @@ namespace Terradue.Tep
             //owner
             if (Owner != null) {
                 var ownerUri = Owner.GetUserPageLink ();
-                SyndicationPerson ownerPerson = new SyndicationPerson (Owner.Email, Owner.Name, ownerUri);
+                SyndicationPerson ownerPerson = new SyndicationPerson(Owner.Email, Owner.FirstName + " " + Owner.LastName, ownerUri);
                 ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
                 ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", RoleTep.OWNER));
                 result.Authors.Add (ownerPerson);
@@ -189,7 +191,7 @@ namespace Terradue.Tep
                 foreach (var usrId in usrs) {
                     UserTep usr = UserTep.FromId (context, usrId);
                     var usrUri = usr.GetUserPageLink ();
-                    SyndicationPerson author = new SyndicationPerson (usr.Email, usr.Name, usrUri);
+                    SyndicationPerson author = new SyndicationPerson (usr.Email, usr.FirstName + " " + usr.LastName, usrUri);
                     author.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", usr.Username));
                     author.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", role.Name));
                     result.Authors.Add (author);

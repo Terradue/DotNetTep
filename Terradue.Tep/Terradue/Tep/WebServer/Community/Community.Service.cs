@@ -22,6 +22,16 @@ namespace Terradue.Tep.WebServer.Services{
         public int Id { get; set; }
     }
 
+    [Route ("/community/{id}/user/{uid}", "DELETE", Summary = "DELETE the current user from the community", Notes = "")]
+    public class CommunityRemoveUserByManagerRequestTep : IReturn<WebResponseBool>
+    {
+        [ApiMember (Name = "id", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember (Name = "uid", Description = "Id of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int Uid { get; set; }
+    }
+
     [Route ("/job/wps/{id}/community/{cid}", "PUT", Summary = "PUT the wpsjob to the community", Notes = "")]
     public class CommunityAddWpsJobRequestTep : IReturn<WebResponseBool>
     {
@@ -91,6 +101,40 @@ namespace Terradue.Tep.WebServer.Services{
                 Domain domain = Domain.FromId (context, request.Id);
                 User user = User.FromId (context, context.UserId);
                 var roles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
+                foreach (var role in roles) role.RevokeFromUser (user, domain);
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+
+            return new WebResponseBool (true);
+        }
+
+        public object Delete (CommunityRemoveUserByManagerRequestTep request) { 
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/community/{{Id}}/user/{{Uid}} DELETE Id='{0}', UserId='{1}'", request.Id, request.Uid));
+
+                Domain domain = Domain.FromId (context, request.Id);
+
+                //current user must be manager of the domain
+                var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
+                bool ismanager = false;
+                foreach (var role in roles){
+                    if (role.Identifier.Equals (ThematicGroup.MANAGER)) {
+                        ismanager = true;
+                        break;
+                    }
+                }
+                if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+
+                User user = User.FromId (context, request.Uid);
+                roles = Role.GetUserRolesForDomain (context, request.Uid, domain.Id);
                 foreach (var role in roles) role.RevokeFromUser (user, domain);
 
                 context.Close ();
