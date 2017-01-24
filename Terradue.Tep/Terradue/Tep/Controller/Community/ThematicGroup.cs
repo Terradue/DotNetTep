@@ -11,6 +11,7 @@ namespace Terradue.Tep
     public class ThematicGroup : Domain, IAtomizable{
 
         public const string MANAGER = "manager";
+        public const string MEMBER = "member";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicGroup"/> class.

@@ -9,27 +9,34 @@ using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services{
 
-    [Route ("/community/{id}/user", "POST", Summary = "POST the current user into the community", Notes = "")]
+    [Route ("/community/user", "POST", Summary = "POST the user into the community", Notes = "")]
     public class CommunityAddUserRequestTep : IReturn<WebResponseBool> {
-        [ApiMember (Name = "id", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int Id { get; set; }
+        [ApiMember (Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        [ApiMember (Name = "username", Description = "Username of the user (current user if null)", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Username { get; set; }
+        [ApiMember (Name = "role", Description = "Role of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Role { get; set; }
     }
 
-    [Route ("/community/{id}/user", "DELETE", Summary = "DELETE the current user from the community", Notes = "")]
+    [Route ("/community/user", "PUT", Summary = "PUT the user into the community", Notes = "")]
+    public class CommunityUpdateUserRequestTep : IReturn<WebResponseBool>
+    {
+        [ApiMember (Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        [ApiMember (Name = "username", Description = "Username of the user (current user if null)", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Username { get; set; }
+        [ApiMember (Name = "role", Description = "Role of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Role { get; set; }
+    }
+
+    [Route ("/community/user", "DELETE", Summary = "POST the current user into the community", Notes = "")]
     public class CommunityRemoveUserRequestTep : IReturn<WebResponseBool>
     {
-        [ApiMember (Name = "id", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int Id { get; set; }
-    }
-
-    [Route ("/community/{id}/user/{uid}", "DELETE", Summary = "DELETE the current user from the community", Notes = "")]
-    public class CommunityRemoveUserByManagerRequestTep : IReturn<WebResponseBool>
-    {
-        [ApiMember (Name = "id", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int Id { get; set; }
-
-        [ApiMember (Name = "uid", Description = "Id of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int Uid { get; set; }
+        [ApiMember (Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        [ApiMember (Name = "username", Description = "Username of the user (current user if null)", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Username { get; set; }
     }
 
     [Route ("/job/wps/{id}/community/{cid}", "PUT", Summary = "PUT the wpsjob to the community", Notes = "")]
@@ -70,11 +77,27 @@ namespace Terradue.Tep.WebServer.Services{
 
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/community/{{Id}}/user POST Id='{0}'", request.Id));
+                if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
 
-                Domain domain = Domain.FromId (context, request.Id);
-                Role role = Role.FromIdentifier (context, "member");
-                User user = User.FromId (context, context.UserId);
+                User user = string.IsNullOrEmpty(request.Username) ? User.FromId (context, context.UserId) : User.FromUsername(context, request.Username);
+                Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? ThematicGroup.MEMBER : request.Role);
+                context.LogInfo (this, string.Format ("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
+
+                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+
+                if (string.IsNullOrEmpty (request.Username)) { 
+                    //current user must be manager of the domain
+                    var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
+                    bool ismanager = false;
+                    foreach (var r in roles) {
+                        if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
+                            ismanager = true;
+                            break;
+                        }
+                    }
+                    if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                }
+
                 role.GrantToUser (user, domain);
 
                 context.Close ();
@@ -88,20 +111,42 @@ namespace Terradue.Tep.WebServer.Services{
         }
 
         /// <summary>
-        /// Delete the specified request.
+        /// Put the specified request.
         /// </summary>
         /// <param name="request">Request.</param>
-        public object Delete (CommunityRemoveUserRequestTep request) {
+        public object Put (CommunityUpdateUserRequestTep request)
+        {
             var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
 
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/community/{{Id}}/user DELETE Id='{0}'", request.Id));
+                if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
+                if (string.IsNullOrEmpty (request.Username)) throw new Exception ("Invalid request - missing username");
+                if (string.IsNullOrEmpty (request.Role)) throw new Exception ("Invalid request - missing role");
 
-                Domain domain = Domain.FromId (context, request.Id);
-                User user = User.FromId (context, context.UserId);
-                var roles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
-                foreach (var role in roles) role.RevokeFromUser (user, domain);
+                User user = User.FromUsername (context, request.Username);
+                Role role = Role.FromIdentifier (context, request.Role);
+                context.LogInfo (this, string.Format ("/community/user PUT Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
+
+                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+
+                //current user must be manager of the domain
+                var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
+                bool ismanager = false;
+                foreach (var r in roles) {
+                    if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
+                        ismanager = true;
+                        break;
+                    }
+                }
+                if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+
+                //delete previous role(s)
+                roles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
+                foreach (var r in roles) r.RevokeFromUser (user, domain);
+
+                //add new role
+                role.GrantToUser (user, domain);
 
                 context.Close ();
             } catch (Exception e) {
@@ -113,29 +158,35 @@ namespace Terradue.Tep.WebServer.Services{
             return new WebResponseBool (true);
         }
 
-        public object Delete (CommunityRemoveUserByManagerRequestTep request) { 
+        public object Delete (CommunityRemoveUserRequestTep request)
+        {
             var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
 
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/community/{{Id}}/user/{{Uid}} DELETE Id='{0}', UserId='{1}'", request.Id, request.Uid));
+                if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
 
-                Domain domain = Domain.FromId (context, request.Id);
+                User user = string.IsNullOrEmpty (request.Username) ? User.FromId (context, context.UserId) : User.FromUsername (context, request.Username);
+                context.LogInfo (this, string.Format ("/community/user DELETE Identifier='{0}', Username='{1}'", request.Identifier, request.Username));
 
-                //current user must be manager of the domain
-                var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
-                bool ismanager = false;
-                foreach (var role in roles){
-                    if (role.Identifier.Equals (ThematicGroup.MANAGER)) {
-                        ismanager = true;
-                        break;
+                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+
+                if (string.IsNullOrEmpty (request.Username)) {
+                    //current user must be manager of the domain
+                    var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
+                    bool ismanager = false;
+                    foreach (var r in roles) {
+                        if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
+                            ismanager = true;
+                            break;
+                        }
                     }
+                    if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
                 }
-                if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
-                User user = User.FromId (context, request.Uid);
-                roles = Role.GetUserRolesForDomain (context, request.Uid, domain.Id);
-                foreach (var role in roles) role.RevokeFromUser (user, domain);
+                //delete previous role(s)
+                var uroles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
+                foreach (var r in uroles) r.RevokeFromUser (user, domain);
 
                 context.Close ();
             } catch (Exception e) {

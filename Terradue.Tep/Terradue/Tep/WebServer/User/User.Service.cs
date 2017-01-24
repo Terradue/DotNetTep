@@ -467,7 +467,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get (UserSearchRequest request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
             object result;
             context.Open ();
             context.LogInfo (this, string.Format ("/user/search GET"));
