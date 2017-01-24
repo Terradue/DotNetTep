@@ -193,7 +193,7 @@ namespace Terradue.Tep
                     var usrUri = usr.GetUserPageLink ();
                     SyndicationPerson author = new SyndicationPerson (usr.Email, usr.FirstName + " " + usr.LastName, usrUri);
                     author.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", usr.Username));
-                    author.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", role.Name));
+                    author.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", role.Identifier));
                     result.Authors.Add (author);
                 }
             }
