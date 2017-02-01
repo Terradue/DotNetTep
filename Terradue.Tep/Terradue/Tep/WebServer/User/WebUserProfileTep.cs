@@ -73,13 +73,13 @@ namespace Terradue.Tep.WebServer {
             context.AccessLevel = EntityAccessLevel.Administrator;
             EntityList<WpsJob> jobs = new EntityList<WpsJob>(context);
             jobs.UserId = this.Id;
-            jobs.OwnedItemsOnly = true;
+            jobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             jobs.Load();
             CreatedJobs = jobs.Count;
 
             EntityList<DataPackage> dp = new EntityList<DataPackage>(context);
             dp.UserId = this.Id;
-            dp.OwnedItemsOnly = true;
+            dp.ItemVisibility = EntityItemVisibility.OwnedOnly;
             dp.Load();
             CreatedDataPackages = dp.Count;
 

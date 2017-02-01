@@ -35,37 +35,17 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
-            //List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+            var domain = Domain.FromId(context, 32);
 
             EntityList<Activity> activities = new EntityList<Activity>(context);
-            activities.Load();
-
-            List<Activity> tmplist = new List<Activity>();
-            tmplist = activities.GetItemsAsList();
-            tmplist.Sort();
-            tmplist.Reverse();
-
-            activities = new EntityList<Activity>(context);
-            activities.Identifier = "activity";
-            foreach (Activity item in tmplist) {
-                if(!request.nologin || 
-                   (item.Privilege != null && item.Privilege.EntityType != null && item.Privilege.EntityType.Id != EntityType.GetEntityType(typeof(UserTep)).Id && !item.Privilege.Operation.Equals("l")))
-//                    EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
-                    activities.Include(item);
-            }
-            //osentities.Add(activities);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            //MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
-
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            //IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
             IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
 
-            //multiOSE.Identifier = "activity";
             activities.Identifier = "activity";
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(activities, osr);
@@ -80,10 +60,10 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/activity/description GET"));
 
-                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-                wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+                EntityList<Activity> activities = new EntityList<Activity>(context);
+                activities.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
-                OpenSearchDescription osd = wpsjobs.GetOpenSearchDescription();
+                OpenSearchDescription osd = activities.GetOpenSearchDescription();
 
                 context.Close();
 

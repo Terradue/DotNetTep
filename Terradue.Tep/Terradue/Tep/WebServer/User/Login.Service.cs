@@ -28,56 +28,7 @@ namespace Terradue.Tep.WebServer.Services
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        		
-        /// <summary>
-        /// Username/password login
-        /// </summary>
-        /// <param name="request">Request.</param>
-        public object Get(LoginRequestTep request) 
-		{
-            TepWebContext context = new TepWebContext(PagePrivileges.EverybodyView);
-            Terradue.WebService.Model.WebUser response = null;
-            Terradue.Portal.User user = null;
-			try{
-                context.Open();
-                context.LogInfo(this,string.Format("/login GET Username='{0}'", request.username));
-
-                user = TepWebContext.passwordAuthenticationType.AuthenticateUser(context, request.username, request.password);
-
-                response = new Terradue.WebService.Model.WebUser(user);
-
-				context.Close();
-			}
-			catch (Exception e){
-                context.LogError(this, e.Message);
-				context.Close();
-                throw e;
-			}
-            return response;
-		}
-
-        public object Post(LoginAuthRequestTep request) 
-        {
-            TepWebContext context = new TepWebContext(PagePrivileges.EverybodyView);
-            Terradue.WebService.Model.WebUser response = null;
-            Terradue.Portal.User user = null;
-            try{
-                context.Open();
-                context.LogInfo(this,string.Format("/auth POST Username='{0}'", request.username));
-
-                user = TepWebContext.passwordAuthenticationType.AuthenticateUser(context, request.username, request.password);
-                response = new Terradue.WebService.Model.WebUser(user);
-
-                context.Close();
-            }
-            catch (Exception e){
-                context.LogError(this, e.Message);
-                context.Close();
-                throw e;
-            }
-            return response;
-        }
-
+      
         /// <summary>
         /// Get the specified request.
         /// </summary>
