@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.Tep", "Terradue.Tep\Terradue.Tep.csproj", "{8574A459-7B9E-4EF1-8D96-9AFE91B64607}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.Portal", "..\Terradue.Portal\Terradue.Portal\Terradue.Portal.csproj", "{2E8D7875-8347-4205-936B-F1BBA2164D87}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.Tep.Test", "Terradue.Tep.Test\Terradue.Tep.Test.csproj", "{030C2CDF-3B69-464C-B9DC-438D1A115BE8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.Tep.Test", "Terradue.Tep.Test\Terradue.Tep.Test.csproj", "{1B0ADA25-20DE-416E-A6E1-A27880165708}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,13 +15,9 @@ Global
 		{8574A459-7B9E-4EF1-8D96-9AFE91B64607}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8574A459-7B9E-4EF1-8D96-9AFE91B64607}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8574A459-7B9E-4EF1-8D96-9AFE91B64607}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2E8D7875-8347-4205-936B-F1BBA2164D87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E8D7875-8347-4205-936B-F1BBA2164D87}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E8D7875-8347-4205-936B-F1BBA2164D87}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E8D7875-8347-4205-936B-F1BBA2164D87}.Release|Any CPU.Build.0 = Release|Any CPU
-		{030C2CDF-3B69-464C-B9DC-438D1A115BE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{030C2CDF-3B69-464C-B9DC-438D1A115BE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{030C2CDF-3B69-464C-B9DC-438D1A115BE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{030C2CDF-3B69-464C-B9DC-438D1A115BE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

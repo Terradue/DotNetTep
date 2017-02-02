@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Terradue.Portal;
 
@@ -15,9 +16,11 @@ namespace Terradue.Tep.Test
             base.FixtureSetup ();
             context.BaseUrl = "http://localhost:8080/api";
             context.AccessLevel = EntityAccessLevel.Administrator;
+            CreateUsers ();
         }
 
-        private void CreateUsers () {
+        private void CreateUsers ()
+        {
             User usr1 = new User (context);
             usr1.Username = "testusr1";
             usr1.Store ();
@@ -64,7 +67,8 @@ namespace Terradue.Tep.Test
             return process;
         }
 
-        private WpsJob CreateWpsJob (string name, WpsProcessOffering wps, int OwnerId) {
+        private WpsJob CreateWpsJob (string name, WpsProcessOffering wps, int OwnerId)
+        {
             WpsJob wpsjob = new WpsJob (context);
             wpsjob.Name = name;
             wpsjob.RemoteIdentifier = Guid.NewGuid ().ToString ();
@@ -74,6 +78,8 @@ namespace Terradue.Tep.Test
             wpsjob.WpsId = wps.Provider.Identifier;
             wpsjob.ProcessId = wps.Identifier;
             wpsjob.CreatedTime = DateTime.UtcNow;
+            wpsjob.Parameters = new List<KeyValuePair<string, string>> ();
+            wpsjob.StatusLocation = "http://dem.terradue.int:8080/wps/WebProcessingService";
             return wpsjob;
         }
 
@@ -93,7 +99,7 @@ namespace Terradue.Tep.Test
             //Create one wpsjob restricted
             WpsJob job2 = CreateWpsJob ("restricted-job", process, usr1.Id);
             job2.Store ();
-            job2.GrantPermissionsToUsers (new int[] {usr2.Id});
+            job2.GrantPermissionsToUsers (new int [] { usr2.Id });
 
             //Create one wpsjob private
             WpsJob job3 = CreateWpsJob ("public-job", process, usr1.Id);
