@@ -107,9 +107,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Wpsjob.Test.cs" />
     <Compile Include="BaseTest.cs" />
     <Compile Include="Mono.Options\Options.cs" />
+    <Compile Include="Wpsjob.Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
