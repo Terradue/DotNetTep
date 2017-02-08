@@ -189,7 +189,7 @@
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
 	<Reference Include="Terradue.WebService.Model">
-	  <HintPath>..\packages\Terradue.WebService.Model.1.1.15-build20170207T165608\lib\net40\Terradue.WebService.Model.dll</HintPath>
+	  <HintPath>..\packages\Terradue.WebService.Model.1.1.15-build20170207T165323\lib\net40\Terradue.WebService.Model.dll</HintPath>
 	</Reference>
 	<Reference Include="Terradue.Portal">
 	  <HintPath>..\packages\Terradue.Portal.2.7.2-build20170207T164302\lib\net40\Terradue.Portal.dll</HintPath>
