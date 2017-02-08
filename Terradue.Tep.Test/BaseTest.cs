@@ -15,7 +15,7 @@ namespace Terradue.Tep.Test {
         protected string BaseDirectory { get; set; }
 
         public string GetConnectionString() {
-            string result = "Server=localhost; Port=3306; User Id=root; Password=root; Database=TerradueTepTest";
+            string result = "Server=localhost; Port=3306; User Id=root; Database=TerradueTepTest";
             bool replaceDatabaseName = (DatabaseName != null);
             Match match = Regex.Match(result, "Database=([^;]+)");
             if (replaceDatabaseName) {

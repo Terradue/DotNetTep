@@ -6,7 +6,7 @@
     <ProjectGuid>{1B0ADA25-20DE-416E-A6E1-A27880165708}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Terradue.Tep.Test2</RootNamespace>
-    <AssemblyName>Terradue.Tep.Test2</AssemblyName>
+    <AssemblyName>Terradue.Tep.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -17,6 +17,16 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CustomCommands>
+      <CustomCommands>
+        <Command>
+          <type>AfterBuild</type>
+          <command>initTest.sh</command>
+          <workingdir>${ProjectDir}</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -97,13 +107,13 @@
       <HintPath>..\packages\Terradue.Util.1.4.0\lib\net40\Terradue.Util.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.0-fteo20170202T153130\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.2-build20170208T154305\lib\net40\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.0-fteo20170202T153130\lib\net40\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.2-build20170208T154305\lib\net40\Terradue.Portal.Agent.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.0-fteo20170202T153130\lib\net40\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.2-build20170208T154305\lib\net40\Terradue.Portal.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

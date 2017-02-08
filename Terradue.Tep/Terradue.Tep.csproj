@@ -161,7 +161,7 @@
       <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net40\System.Net.Http.WebRequest.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Github">
-      <HintPath>..\packages\Terradue.Github.1.0.6\lib\net40\Terradue.Github.dll</HintPath>
+      <HintPath>..\packages\Terradue.Github.1.0.7\lib\net40\Terradue.Github.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.13.2\lib\net40\Terradue.OpenSearch.dll</HintPath>
@@ -189,7 +189,10 @@
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
 	<Reference Include="Terradue.Portal">
-	  <HintPath>..\packages\Terradue.Portal.2.7.0-fteo20170202T153130\lib\net40\Terradue.Portal.dll</HintPath>
+	  <HintPath>..\packages\Terradue.Portal.2.7.2-build20170208T154305\lib\net40\Terradue.Portal.dll</HintPath>
+	</Reference>
+	<Reference Include="Terradue.WebService.Model">
+	  <HintPath>..\packages\Terradue.WebService.Model.1.1.15-build20170207T165323\lib\net40\Terradue.WebService.Model.dll</HintPath>
 	</Reference>
   </ItemGroup>
   <ItemGroup>

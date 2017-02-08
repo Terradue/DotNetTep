@@ -13,7 +13,12 @@ namespace Terradue.Tep.Test {
             base.FixtureSetup();
             context.BaseUrl = "http://localhost:8080/api";
             context.AccessLevel = EntityAccessLevel.Administrator;
-            Init ();
+            try{
+                Init ();
+            } catch (Exception e) {
+                Console.Error.WriteLine (e.Message);
+                throw;
+            }
 
             context.ConsoleDebug = true;
             EntityType et = EntityType.GetOrAddEntityType (typeof (WpsJob));
