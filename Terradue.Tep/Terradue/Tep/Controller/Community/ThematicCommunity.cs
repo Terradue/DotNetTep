@@ -152,9 +152,10 @@ namespace Terradue.Tep
         /// </summary>
         /// <returns>The thematic application.</returns>
         public ThematicApplication GetThematicApplication () {
-            EntityList<ThematicApplication> apps = new EntityList<ThematicApplication> (context);
-            apps.Template.Kind = ThematicApplication.KINDRESOURCESETAPPS;
-            apps.Template.DomainId = this.Id;
+            var apps = new EntityList<ThematicApplication> (context);
+            apps.SetFilter ("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString ());
+            apps.SetFilter ("DomainId", Id.ToString ());
+            apps.Load ();
 
             var items = apps.GetItemsAsList ();
             if (items != null && items.Count > 0) {
@@ -295,6 +296,7 @@ namespace Terradue.Tep
                 result.Links.Add (new SyndicationLink (uri, "icon", "", GetImageMimeType(IconUrl), 0));
             }
 
+            AppsLink = LoadAppsLink ();
             if(!string.IsNullOrEmpty(AppsLink)) result.Links.Add (new SyndicationLink (new Uri(AppsLink), "via", "", "application/atom+xml", 0));
 
             result.Categories.Add (new SyndicationCategory ("visibility", null, ispublic ? "public" : "private"));

@@ -1,4 +1,5 @@
 ﻿using System;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.WebService.Model;
@@ -68,6 +69,9 @@ namespace Terradue.Tep
         [ApiMember (Name = "cid", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
         public int CId { get; set; }
     }
+
+    [Route ("/community/search", "GET", Summary = "GET community as opensearch", Notes = "")]
+    public class CommunitySearchRequestTep : IReturn<HttpResult> { }
 
     public class WebCommunityTep : WebDomain {
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "string", IsRequired = true)]

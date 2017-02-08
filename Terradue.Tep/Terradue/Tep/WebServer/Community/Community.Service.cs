@@ -4,6 +4,8 @@ using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.OpenSearch;
+using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch.Result;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 
@@ -193,6 +195,36 @@ namespace Terradue.Tep.WebServer.Services{
             }
 
             return new WebResponseBool (true);
+        }
+
+        public object Get (CommunitySearchRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            object result;
+            context.Open ();
+            context.LogInfo (this, string.Format ("/community/search GET"));
+
+            EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity> (context);
+            domains.Load ();
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            string format;
+            if (Request.QueryString ["format"] == null)
+                format = "atom";
+            else
+                format = Request.QueryString ["format"];
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (domains, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (domains, osr);
+
+            context.Close ();
+            return new HttpResult (osr.SerializeToString (), osr.ContentType);
         }
     }
 }
