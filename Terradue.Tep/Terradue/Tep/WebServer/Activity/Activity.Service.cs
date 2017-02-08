@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Web;
 using ServiceStack.Common.Web;
@@ -43,25 +43,16 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
-            //We only want some Privileges
-            var privlist = new List<int> ();
-            var privs = Privilege.Get (EntityType.GetEntityType (typeof (WpsJob)));
-            foreach (var priv in privs) privlist.Add (priv.Id);
-            privs = Privilege.Get (EntityType.GetEntityType (typeof (DataPackage)));
-            foreach (var priv in privs) privlist.Add (priv.Id);
-
             EntityList<Activity> activities = new EntityList<Activity>(context);
-            activities.AddSort ("CreationTime", SortDirection.Descending);
-            activities.SetFilter ("PrivilegeId", string.Join (",", privlist));
-            activities.Identifier = "activity";
-            activities.Load ();
-            
+
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
             IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
+
+            activities.Identifier = "activity";
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(activities, osr);
 
@@ -130,10 +121,10 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/activity/description GET"));
 
-                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-                wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+                EntityList<Activity> activities = new EntityList<Activity>(context);
+                activities.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
-                OpenSearchDescription osd = wpsjobs.GetOpenSearchDescription();
+                OpenSearchDescription osd = activities.GetOpenSearchDescription();
 
                 context.Close();
 

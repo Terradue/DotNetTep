@@ -34,7 +34,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/job/wps GET"));
 
                 EntityList<WpsJob> services = new EntityList<WpsJob>(context);
-                if(context.UserLevel != UserLevel.Administrator) services.OwnedItemsOnly = true;
+                if(context.UserLevel != UserLevel.Administrator) services.ItemVisibility = EntityItemVisibility.OwnedOnly;
                 services.Load();
 
                 foreach (WpsJob job in services) {
@@ -56,6 +56,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebWpsJobTep result = new WebWpsJobTep();
             try {
                 context.Open();
+                context.ConsoleDebug = true;
                 context.LogInfo(this,string.Format("/job/wps/{{Id}} GET Id='{0}'", request.Id));
 
                 WpsJob job = WpsJob.FromId(context, request.Id);
@@ -77,15 +78,16 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/job/wps/search GET"));
 
-            EntityList<WpsJob> tmp = new EntityList<WpsJob>(context);
-            tmp.Load();
-
-            List<WpsJob> jobs = tmp.GetItemsAsList();
-            jobs.Sort();
-            jobs.Reverse();
-
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            foreach (WpsJob job in jobs) wpsjobs.Include(job);
+            wpsjobs.AccessLevel = EntityAccessLevel.Privilege;//for admin not to get all items when visibility is set
+            //tmp.Load();
+
+            //List<WpsJob> jobs = tmp.GetItemsAsList();
+            //jobs.Sort();
+            //jobs.Reverse();
+
+            //EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+            //foreach (WpsJob job in jobs) wpsjobs.Include(job);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
@@ -207,7 +209,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogDebug(this,string.Format("WpsJob '{0}' created",job.Name));
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            wpsjobs.OwnedItemsOnly = true;
+            wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             wpsjobs.Load();
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
@@ -246,7 +248,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            wpsjobs.OwnedItemsOnly = true;
+            wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             wpsjobs.Load();
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;

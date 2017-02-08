@@ -196,3 +196,7 @@ CREATE TABLE rolegrant_pending (
 ) Engine=InnoDB COMMENT 'Assignments of users/groups to roles for domains';
 
 /*****************************************************************************/
+
+INSERT INTO role (identifier, name, description) VALUES ('member', 'member', 'Community default member');
+
+/*****************************************************************************/
