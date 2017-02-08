@@ -74,19 +74,26 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
             context.AccessLevel = EntityAccessLevel.Administrator;
             context.Open ();
-            context.LogInfo (this, string.Format ("/activity/search GET "));
+            context.LogInfo (this, string.Format ("/community/{{community}}/activity/search GET - community='{0}'", request.Domain));
+
+            ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Domain);
 
             //We only want some Privileges
             var privlist = new List<int> ();
+
             var privs = Privilege.Get (EntityType.GetEntityType (typeof (WpsJob)));
             foreach (var priv in privs) privlist.Add (priv.Id);
+
             privs = Privilege.Get (EntityType.GetEntityType (typeof (DataPackage)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+
+            privs = Privilege.Get (EntityType.GetEntityType (typeof (Series)));
             foreach (var priv in privs) privlist.Add (priv.Id);
 
             EntityList<Activity> activities = new EntityList<Activity> (context);
             activities.AddSort ("CreationTime", SortDirection.Descending);
             activities.SetFilter ("PrivilegeId", string.Join (",", privlist));
-            activities.SetFilter ("DomainId","eboissier");
+            activities.SetFilter ("DomainId",domain.Id.ToString());
             activities.Identifier = "activity";
             activities.Load ();
 

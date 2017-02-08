@@ -50,6 +50,18 @@ namespace Terradue.Tep
             return result;
         }
 
+        public static new ThematicCommunity FromIdentifier (IfyContext context, string identifier)
+        {
+            ThematicCommunity result = new ThematicCommunity (context);
+            result.Identifier = identifier;
+            try {
+                result.Load ();
+            } catch (Exception e) {
+                throw e;
+            }
+            return result;
+        }
+
         public override void Load () {
             base.Load ();
             AppsLink = LoadAppsLink ();

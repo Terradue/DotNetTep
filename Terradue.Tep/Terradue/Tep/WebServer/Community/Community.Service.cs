@@ -35,7 +35,7 @@ namespace Terradue.Tep.WebServer.Services{
                 Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? ThematicCommunity.MEMBER : request.Role);
                 context.LogInfo (this, string.Format ("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
-                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 if (string.IsNullOrEmpty (request.Username)) { 
                     if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
@@ -71,7 +71,7 @@ namespace Terradue.Tep.WebServer.Services{
                 Role role = Role.FromIdentifier (context, request.Role);
                 context.LogInfo (this, string.Format ("/community/user PUT Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
-                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
@@ -102,7 +102,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.LogInfo (this, string.Format ("/community PUT Identifier='{0}'", request.Identifier));
 
-                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 if (!domain.IsUserManager(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
@@ -131,7 +131,7 @@ namespace Terradue.Tep.WebServer.Services{
                 User user = string.IsNullOrEmpty (request.Username) ? User.FromId (context, context.UserId) : User.FromUsername (context, request.Username);
                 context.LogInfo (this, string.Format ("/community/user DELETE Identifier='{0}', Username='{1}'", request.Identifier, request.Username));
 
-                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
