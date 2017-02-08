@@ -30,22 +30,13 @@ namespace Terradue.Tep.WebServer.Services{
                 if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
 
                 User user = string.IsNullOrEmpty(request.Username) ? User.FromId (context, context.UserId) : User.FromUsername(context, request.Username);
-                Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? ThematicGroup.MEMBER : request.Role);
+                Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? ThematicCommunity.MEMBER : request.Role);
                 context.LogInfo (this, string.Format ("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
-                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
 
                 if (string.IsNullOrEmpty (request.Username)) { 
-                    //current user must be manager of the domain
-                    var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
-                    bool ismanager = false;
-                    foreach (var r in roles) {
-                        if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
-                            ismanager = true;
-                            break;
-                        }
-                    }
-                    if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                    if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
                 }
 
                 role.GrantToUser (user, domain);
@@ -78,21 +69,12 @@ namespace Terradue.Tep.WebServer.Services{
                 Role role = Role.FromIdentifier (context, request.Role);
                 context.LogInfo (this, string.Format ("/community/user PUT Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
-                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
 
-                //current user must be manager of the domain
-                var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
-                bool ismanager = false;
-                foreach (var r in roles) {
-                    if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
-                        ismanager = true;
-                        break;
-                    }
-                }
-                if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
                 //delete previous role(s)
-                roles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
+                var roles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
                 foreach (var r in roles) r.RevokeFromUser (user, domain);
 
                 //add new role
@@ -118,18 +100,9 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.LogInfo (this, string.Format ("/community PUT Identifier='{0}'", request.Identifier));
 
-                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
 
-                //current user must be manager of the domain
-                var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
-                bool ismanager = false;
-                foreach (var r in roles) {
-                    if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
-                        ismanager = true;
-                        break;
-                    }
-                }
-                if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                if (!domain.IsUserManager(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
                 domain.Description = request.Description;
                 domain.Name = request.Name;
@@ -156,19 +129,12 @@ namespace Terradue.Tep.WebServer.Services{
                 User user = string.IsNullOrEmpty (request.Username) ? User.FromId (context, context.UserId) : User.FromUsername (context, request.Username);
                 context.LogInfo (this, string.Format ("/community/user DELETE Identifier='{0}', Username='{1}'", request.Identifier, request.Username));
 
-                Domain domain = Domain.FromIdentifier (context, request.Identifier);
+                ThematicCommunity domain = (ThematicCommunity)Domain.FromIdentifier (context, request.Identifier);
+
+                if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
                 if (string.IsNullOrEmpty (request.Username)) {
-                    //current user must be manager of the domain
-                    var roles = Role.GetUserRolesForDomain (context, context.UserId, domain.Id);
-                    bool ismanager = false;
-                    foreach (var r in roles) {
-                        if (r.Identifier.Equals (ThematicGroup.MANAGER)) {
-                            ismanager = true;
-                            break;
-                        }
-                    }
-                    if (!ismanager) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                    if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
                 }
 
                 //delete previous role(s)

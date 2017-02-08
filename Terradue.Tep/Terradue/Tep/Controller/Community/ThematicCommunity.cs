@@ -9,34 +9,12 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep
 {
 
-    public class ThematicGroup : Domain, IAtomizable{
+    public class ThematicCommunity : Domain, IAtomizable{
 
         public const string MANAGER = "manager";
         public const string MEMBER = "member";
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicGroup"/> class.
-        /// </summary>
-        /// <param name="context">Context.</param>
-        public ThematicGroup (IfyContext context) : base (context) { }
-
-        /// <summary>
-        /// Froms the identifier.
-        /// </summary>
-        /// <returns>The identifier.</returns>
-        /// <param name="context">Context.</param>
-        /// <param name="id">Identifier.</param>
-        public static new ThematicGroup FromId (IfyContext context, int id)
-        {
-            ThematicGroup result = new ThematicGroup (context);
-            result.Id = id;
-            try {
-                result.Load ();
-            } catch (Exception e) {
-                throw e;
-            }
-            return result;
-        }
+        public string AppsLink { get; set; }
 
         private UserTep owner;
         public UserTep Owner {
@@ -46,6 +24,41 @@ namespace Terradue.Tep
                 }
                 return owner;
             }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicGroup"/> class.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        public ThematicCommunity (IfyContext context) : base (context) { }
+
+        /// <summary>
+        /// Froms the identifier.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="id">Identifier.</param>
+        public static new ThematicCommunity FromId (IfyContext context, int id)
+        {
+            ThematicCommunity result = new ThematicCommunity (context);
+            result.Id = id;
+            try {
+                result.Load ();
+            } catch (Exception e) {
+                throw e;
+            }
+            return result;
+        }
+
+        public override void Load () {
+            base.Load ();
+            AppsLink = LoadAppsLink ();
+        }
+
+        public override void Store ()
+        {
+            base.Store ();
+            StoreAppsLink (AppsLink);
         }
 
         /// <summary>
@@ -154,7 +167,7 @@ namespace Terradue.Tep
         /// Gets the apps link.
         /// </summary>
         /// <returns>The apps link.</returns>
-        public string GetAppsLink () {
+        private string LoadAppsLink () {
             var app = GetThematicApplication ();
             if (app == null) return string.Empty;
 
@@ -167,7 +180,7 @@ namespace Terradue.Tep
             return string.Empty;
         }
 
-        public void SetAppLink (string link) {
+        private void StoreAppsLink (string link) {
             var app = GetThematicApplication ();
             if (app == null) return;
 
@@ -182,6 +195,23 @@ namespace Terradue.Tep
             appResource.Location = link;
             appResource.ResourceSet = app;
             appResource.Store ();
+        }
+
+        /// <summary>
+        /// Is the user manager.
+        /// </summary>
+        /// <returns><c>true</c>, if user is manager of the community, <c>false</c> otherwise.</returns>
+        /// <param name="userid">Userid.</param>
+        public bool IsUserManager (int userid) { 
+            var roles = Role.GetUserRolesForDomain (context, userid, this.Id);
+            bool ismanager = false;
+            foreach (var r in roles) {
+                if (r.Identifier.Equals (ThematicCommunity.MANAGER)) {
+                    ismanager = true;
+                    break;
+                }
+            }
+            return ismanager;
         }
 
         #region IAtomizable
@@ -264,6 +294,8 @@ namespace Terradue.Tep
 
                 result.Links.Add (new SyndicationLink (uri, "icon", "", GetImageMimeType(IconUrl), 0));
             }
+
+            if(!string.IsNullOrEmpty(AppsLink)) result.Links.Add (new SyndicationLink (new Uri(AppsLink), "via", "", "application/atom+xml", 0));
 
             result.Categories.Add (new SyndicationCategory ("visibility", null, ispublic ? "public" : "private"));
 

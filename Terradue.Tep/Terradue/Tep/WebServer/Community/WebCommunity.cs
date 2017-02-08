@@ -36,6 +36,8 @@ namespace Terradue.Tep
         public string Description { get; set; }
         [ApiMember (Name = "name", Description = "Name of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Name { get; set; }
+        [ApiMember (Name = "apps", Description = "Apps link of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Apps { get; set; }
     }
 
     [Route ("/community/user", "DELETE", Summary = "POST the current user into the community", Notes = "")]
@@ -77,8 +79,8 @@ namespace Terradue.Tep
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebWpsJob"/> class.
         /// </summary>
         /// <param name="entity">Entity.</param>
-        public WebCommunityTep(ThematicGroup entity, IfyContext context = null) : base(entity) {
-            Apps = entity.GetAppsLink ();
+        public WebCommunityTep(ThematicCommunity entity, IfyContext context = null) : base(entity) {
+            Apps = entity.AppsLink;
         }
 
         /// <summary>
@@ -87,10 +89,10 @@ namespace Terradue.Tep
         /// <returns>The entity.</returns>
         /// <param name="context">Context.</param>
         /// <param name="input">Input.</param>
-        public ThematicGroup ToEntity(IfyContext context, ThematicGroup input){
-            ThematicGroup entity = (input == null ? new ThematicGroup(context) : input);
+        public ThematicCommunity ToEntity(IfyContext context, ThematicCommunity input){
+            ThematicCommunity entity = (input == null ? new ThematicCommunity(context) : input);
 
-            entity.SetAppLink (Apps);
+            entity.AppsLink = Apps;
             return entity;
         }
 

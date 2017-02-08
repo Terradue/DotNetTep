@@ -148,7 +148,7 @@ namespace Terradue.Tep.WebServer.Services
             context.Open ();
             context.LogInfo (this, string.Format ("/domain/search GET"));
 
-            EntityList<ThematicGroup> domains = new EntityList<ThematicGroup> (context);
+            EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity> (context);
             domains.Load ();
 
             // Load the complete request
@@ -257,7 +257,7 @@ namespace Terradue.Tep.WebServer.Services
             try {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/domain/{{id}}/owner POST Id='{0}', UserId='{1}'", request.Id, request.UserId));
-                ThematicGroup domain = ThematicGroup.FromId (context, request.Id);
+                ThematicCommunity domain = ThematicCommunity.FromId (context, request.Id);
                 UserTep owner = UserTep.FromId (context, request.UserId);
                 domain.SetOwner (owner);
 
@@ -279,7 +279,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open ();
                 context.LogInfo (this, string.Format ("/domain/{{id}}/user POST Id='{0}', UserId='{1}', RoleId='{2}'", request.Id, request.UserId, request.RoleId));
 
-                ThematicGroup domain = ThematicGroup.FromId (context, request.Id);
+                ThematicCommunity domain = ThematicCommunity.FromId (context, request.Id);
                 if (!string.IsNullOrEmpty (request.Key)) {
                     if (!domain.IsKeyValid (request.Key)) throw new UnauthorizedAccessException (CustomErrorMessages.WRONG_ACCESSKEY);
                     if (request.UserId != context.UserId) throw new UnauthorizedAccessException ("Cannot validate invitation for another user");
