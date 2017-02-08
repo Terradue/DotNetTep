@@ -122,12 +122,11 @@ namespace Terradue.Tep.WebServer {
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebDataPackageTep"/> class.
         /// </summary>
         /// <param name="entity">Entity.</param>
-        public WebDataPackageTep(DataPackage entity, IfyContext context = null)
+        public WebDataPackageTep(DataPackage entity, IfyContext context = null) : base(entity)
         {
             this.Id = entity.Id;
             this.Name = entity.Name;
             this.Identifier = entity.Identifier;
-            this.IsDefault = entity.IsDefault;
             this.AccessKey = entity.AccessKey;
             this.IsPublic = entity.IsPublic();
             this.Items = new List<WebDataPackageItem>();
@@ -152,7 +151,7 @@ namespace Terradue.Tep.WebServer {
 
             result.Name = this.Name;
             result.Identifier = this.Identifier;
-            result.IsDefault = this.IsDefault;
+            if (!string.IsNullOrEmpty (this.DomainId)) result.DomainId = Int32.Parse (this.DomainId);
             result.Items = new EntityList<RemoteResource>(context);
             result.Items.Template.ResourceSet = result;
             if (this.Items != null) {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
@@ -131,6 +132,56 @@ namespace Terradue.Tep
             Role role = Role.FromId (context, roleId);
             Group grp = Group.FromId (context, groupId);
             role.GrantToGroup (grp, this);
+        }
+
+        /// <summary>
+        /// Gets the thematic application.
+        /// </summary>
+        /// <returns>The thematic application.</returns>
+        public ThematicApplication GetThematicApplication () {
+            EntityList<ThematicApplication> apps = new EntityList<ThematicApplication> (context);
+            apps.Template.Kind = ThematicApplication.KINDRESOURCESETAPPS;
+            apps.Template.DomainId = this.Id;
+
+            var items = apps.GetItemsAsList ();
+            if (items != null && items.Count > 0) {
+                return items [0];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the apps link.
+        /// </summary>
+        /// <returns>The apps link.</returns>
+        public string GetAppsLink () {
+            var app = GetThematicApplication ();
+            if (app == null) return string.Empty;
+
+            app.LoadItems ();
+            var resources = app.Items.GetItemsAsList();
+            if (resources != null && resources.Count > 0) {
+                //we assume for now that we have only one link per Community
+                return resources [0].Location;
+            }
+            return string.Empty;
+        }
+
+        public void SetAppLink (string link) {
+            var app = GetThematicApplication ();
+            if (app == null) return;
+
+            //delete old links
+            app.LoadItems ();
+            foreach (var resource in app.Items) {
+                resource.Delete ();
+            }
+
+            //add new link
+            var appResource = new RemoteResource (context);
+            appResource.Location = link;
+            appResource.ResourceSet = app;
+            appResource.Store ();
         }
 
         #region IAtomizable

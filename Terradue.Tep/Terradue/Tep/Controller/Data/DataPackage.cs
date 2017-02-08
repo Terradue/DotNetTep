@@ -211,7 +211,7 @@ namespace Terradue.Tep {
         public static DataPackage GetTemporaryForUser(IfyContext context, User user){
             DataPackage result = new DataPackage(context);
             result.OwnerId = user.Id;
-            result.IsDefault = true;
+            result.Kind = KINDRESOURCESETUSER;
             try {
                 result.Load();
             } catch (Exception e) {
@@ -220,13 +220,14 @@ namespace Terradue.Tep {
                 result.Name = "temporary workspace";
                 result.CreationTime = DateTime.UtcNow;
                 result.DomainId = user.Domain.Id;
+                result.Kind = KINDRESOURCESETUSER;
                 result.Store();
             }
             return result;
         }
 
         public override string GetIdentifyingConditionSql (){
-            if (OwnerId != 0 && IsDefault) return String.Format("t.id_usr={0} AND t.is_default={1}",OwnerId,IsDefault); 
+            if (OwnerId != 0 && Kind == KINDRESOURCESETUSER) return String.Format("t.id_usr={0} AND t.kind={1}",OwnerId,Kind); 
             return null;
         }
 
@@ -279,7 +280,7 @@ namespace Terradue.Tep {
                 }
                 base.Store();
 
-                if (IsDefault)
+                if (Kind == KINDRESOURCESETUSER)
                     this.GrantPermissionsToUsers (new int [] { Owner.Id }, true);
 
                 Resources.StoreExactly();
@@ -328,11 +329,11 @@ namespace Terradue.Tep {
         }
 
         public virtual OpenSearchUrl GetSearchBaseUrl(string mimeType) {
-            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/search?key={2}", context.BaseUrl, (IsDefault ? "default" : this.Identifier), this.AccessKey));
+            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/search?key={2}", context.BaseUrl, (Kind == KINDRESOURCESETUSER ? "default" : this.Identifier), this.AccessKey));
         }
 
         public virtual OpenSearchUrl GetDescriptionBaseUrl() {
-            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/description?key={2}", context.BaseUrl, (IsDefault ? "default" : this.Identifier), this.AccessKey));
+            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/description?key={2}", context.BaseUrl, (Kind == KINDRESOURCESETUSER ? "default" : this.Identifier), this.AccessKey));
         }
 
         /// <summary>
@@ -366,7 +367,7 @@ namespace Terradue.Tep {
 
             osd.Url = urls.ToArray();
 
-            if (this.IsDefault) {
+            if (Kind == KINDRESOURCESETUSER) {
                 osd.ShortName = "Default datapackage";
             }
 
@@ -427,7 +428,7 @@ namespace Terradue.Tep {
 
             atomEntry.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
 
-            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + (IsDefault ? "default" : identifier) + "/description");
+            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + (Kind == KINDRESOURCESETUSER ? "default" : identifier) + "/description");
             atomEntry.Links.Add(new SyndicationLink(search.Uri, "search", name, "application/atom+xml", 0));
 
             search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + identifier + "/search");
@@ -450,7 +451,7 @@ namespace Terradue.Tep {
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", owner.Username));
             atomEntry.Authors.Add(author);
             atomEntry.Categories.Add(new SyndicationCategory("visibility", null, IsPublic() ? "public" : (IsRestricted() ? "restricted" : "private")));
-            if (IsDefault) {
+            if (Kind == KINDRESOURCESETUSER) {
                 atomEntry.Categories.Add(new SyndicationCategory("default", null, "true"));
             }
 

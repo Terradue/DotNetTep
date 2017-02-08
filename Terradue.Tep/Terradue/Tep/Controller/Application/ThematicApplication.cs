@@ -50,6 +50,8 @@ namespace Terradue.Tep
     public class ThematicApplication : DataPackage
     {
 
+        public static readonly int KINDRESOURCESETAPPS = 2;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicApplicationSet"/> class.
         /// </summary>
@@ -74,6 +76,11 @@ namespace Terradue.Tep
                 throw e;
             }
             return result;
+        }
+
+        public new void Store () {
+            this.Kind = KINDRESOURCESETAPPS;
+            base.Store ();
         }
 
         /// <summary>

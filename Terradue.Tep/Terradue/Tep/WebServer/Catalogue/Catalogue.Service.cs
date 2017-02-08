@@ -273,7 +273,7 @@ namespace Terradue.Tep.WebServer.Services
                 tmp_datapackages.Load();
 
                 foreach (DataPackage dp in tmp_datapackages) {
-                    if (!dp.IsDefault) {
+                    if (dp.Kind == RemoteResourceSet.KINDRESOURCESETNORMAL) {
                         datapackages.Include (dp);
                         Console.WriteLine ("DataPackage = " + dp.Id);
                         context.LogDebug (this, "DataPackage = " + dp.Id);

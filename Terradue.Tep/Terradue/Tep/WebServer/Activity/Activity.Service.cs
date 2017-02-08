@@ -21,6 +21,14 @@ namespace Terradue.Tep.WebServer.Services {
     [Route("/activity/description", "GET", Summary = "GET activity description", Notes = "")]
     public class ActivityDescriptionRequestTep : IReturn<HttpResult>{}
 
+    [Route ("/community/{domain}/activity/search", "GET", Summary = "search activities per community", Notes = "")]
+    public class ActivityByCommunitySearchRequestTep : IReturn<List<HttpResult>>
+    {
+        [ApiMember (Name = "domain", Description = "identifier of the domain", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Domain { get; set; }
+    }
+
+
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
@@ -35,43 +43,78 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
-            //List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+            //We only want some Privileges
+            var privlist = new List<int> ();
+            var privs = Privilege.Get (EntityType.GetEntityType (typeof (WpsJob)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+            privs = Privilege.Get (EntityType.GetEntityType (typeof (DataPackage)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
 
             EntityList<Activity> activities = new EntityList<Activity>(context);
-            activities.Load();
-
-            List<Activity> tmplist = new List<Activity>();
-            tmplist = activities.GetItemsAsList();
-            tmplist.Sort();
-            tmplist.Reverse();
-
-            activities = new EntityList<Activity>(context);
+            activities.AddSort ("CreationTime", SortDirection.Descending);
+            activities.SetFilter ("PrivilegeId", string.Join (",", privlist));
             activities.Identifier = "activity";
-            foreach (Activity item in tmplist) {
-                if(!request.nologin || 
-                   (item.Privilege != null && item.Privilege.EntityType != null && item.Privilege.EntityType.Id != EntityType.GetEntityType(typeof(UserTep)).Id && !item.Privilege.Operation.Equals("l")))
-//                    EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
-                    activities.Include(item);
-            }
-            //osentities.Add(activities);
-
+            activities.Load ();
+            
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            //MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
-
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            //IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
             IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
-
-            //multiOSE.Identifier = "activity";
-            activities.Identifier = "activity";
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(activities, osr);
 
             context.Close();
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
+        }
+
+        public object Get (ActivityByCommunitySearchRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            context.Open ();
+            context.LogInfo (this, string.Format ("/activity/search GET "));
+
+            //We only want some Privileges
+            var privlist = new List<int> ();
+            var privs = Privilege.Get (EntityType.GetEntityType (typeof (WpsJob)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+            privs = Privilege.Get (EntityType.GetEntityType (typeof (DataPackage)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+
+            EntityList<Activity> activities = new EntityList<Activity> (context);
+            activities.AddSort ("CreationTime", SortDirection.Descending);
+            activities.SetFilter ("PrivilegeId", string.Join (",", privlist));
+            activities.SetFilter ("DomainId","eboissier");
+            activities.Identifier = "activity";
+            activities.Load ();
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (activities, osr);
+
+            context.Close ();
+            return new HttpResult (osr.SerializeToString (), osr.ContentType);
+        }
+
+        private IOpenSearchResultCollection GetActivityResultCollection (EntityList<Activity> activities) { 
+            
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (activities, osr);
+
+            return osr;
         }
             
         public object Get(ActivityDescriptionRequestTep request) {

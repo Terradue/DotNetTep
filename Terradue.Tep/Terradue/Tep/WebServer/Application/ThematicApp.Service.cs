@@ -31,37 +31,65 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get (ThematicAppSearchRequestTep request)
         {
             IfyWebContext context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
-            IOpenSearchResultCollection result = null;
             context.Open ();
             context.LogInfo (this, string.Format ("/apps/search GET"));
 
-            ThematicApplication apps;
-            apps = ThematicApplication.FromIdentifier (context, "_apps");
 
-            apps.SetOpenSearchEngine (MasterCatalogue.OpenSearchEngine);
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
-            result = ose.Query (apps, Request.QueryString, responseType);
-           
-            var openSearchDescription = apps.GetLocalOpenSearchDescription ();
-            var uri_s = apps.GetSearchBaseUrl ();
-            OpenSearchDescriptionUrl openSearchUrlByRel = OpenSearchFactory.GetOpenSearchUrlByRel (openSearchDescription, "self");
-            Uri uri_d;
-            if (openSearchUrlByRel != null) {
-                uri_d = new Uri (openSearchUrlByRel.Template);
-            } else {
-                uri_d = openSearchDescription.Originator;
-            }
-            if (uri_d != null) {
-                result.Links.Add (new SyndicationLink (uri_d, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
-            }
-            if (uri_s != null) {
-                result.Links.Add (new SyndicationLink (uri_s, "self", "OpenSearch Search link", "application/atom+xml", 0));
-            }
+            var apps = new EntityList<ThematicApplication> (context);
+            apps.Template.Kind = ThematicApplication.KINDRESOURCESETAPPS;
+            apps.Load ();
+            var result = GetAppsResultCollection (apps);
 
             context.Close ();
             return new HttpResult (result.SerializeToString (), result.ContentType);
+        }
+
+        public object Get (ThematicAppByCommunitySearchRequestTep request)
+        {
+            IfyWebContext context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            context.Open ();
+            context.LogInfo (this, string.Format ("/community/{{domain}}/apps/search GET domain='{0}'",request.Domain));
+
+            var domain = Domain.FromIdentifier (context, request.Domain);
+            var apps = new EntityList<ThematicApplication> (context);
+            apps.SetFilter ("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString ());
+            apps.SetFilter ("DomainId", domain.Id.ToString());
+            apps.Load ();
+            var result = GetAppsResultCollection (apps);
+
+            context.Close ();
+            return new HttpResult (result.SerializeToString (), result.ContentType);
+        }
+
+        private IOpenSearchResultCollection GetAppsResultCollection (EntityList<ThematicApplication> apps) { 
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+            apps.OpenSearchEngine = ose;
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
+            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable> ();
+            foreach (var app in apps.Items) {
+                app.OpenSearchEngine = ose;
+                osentities.Add (app);
+            }
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, ose);
+            var result = ose.Query (multiOSE, Request.QueryString, responseType);
+
+            //var openSearchDescription = apps.GetLocalOpenSearchDescription ();
+            //var uri_s = apps.GetSearchBaseUrl ();
+            //OpenSearchDescriptionUrl openSearchUrlByRel = OpenSearchFactory.GetOpenSearchUrlByRel (openSearchDescription, "self");
+            //Uri uri_d;
+            //if (openSearchUrlByRel != null) {
+            //    uri_d = new Uri (openSearchUrlByRel.Template);
+            //} else {
+            //    uri_d = openSearchDescription.Originator;
+            //}
+            //if (uri_d != null) {
+            //    result.Links.Add (new SyndicationLink (uri_d, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
+            //}
+            //if (uri_s != null) {
+            //    result.Links.Add (new SyndicationLink (uri_s, "self", "OpenSearch Search link", "application/atom+xml", 0));
+            //}
+            return result;
         }
 
         /// <summary>

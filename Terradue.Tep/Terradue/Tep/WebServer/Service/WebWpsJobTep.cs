@@ -144,6 +144,7 @@ namespace Terradue.Tep.WebServer {
 			entity.Name = this.Name;
             entity.OwnerId = context.UserId;
             entity.ProcessId = this.ProcessId;
+            if (!string.IsNullOrEmpty (this.DomainId)) entity.DomainId = Int32.Parse (this.DomainId);
             if (String.IsNullOrEmpty(this.WpsId) && !String.IsNullOrEmpty(this.ProcessId)) {
                 entity.WpsId = entity.Process.Provider.Identifier;
             }

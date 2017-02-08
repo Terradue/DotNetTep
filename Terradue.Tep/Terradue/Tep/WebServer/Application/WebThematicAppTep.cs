@@ -14,8 +14,13 @@ namespace Terradue.Tep.WebServer {
     public class ThematicAppDescriptionRequestTep : IReturn<List<HttpResult>>{
     }
 
-    [Route("/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
-    public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>>{
+    [Route ("/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
+    public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>> {}
+
+    [Route("/community/{domain}/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
+    public class ThematicAppByCommunitySearchRequestTep : IReturn<List<HttpResult>>{
+        [ApiMember (Name = "domain", Description = "identifier of the domain", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Domain { get; set; }
     }
 
     public class WebThematicAppTep : WebDataPackageTep {

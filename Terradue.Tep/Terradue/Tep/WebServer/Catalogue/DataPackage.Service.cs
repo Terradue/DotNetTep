@@ -345,7 +345,7 @@ namespace Terradue.Tep.WebServer.Services
                 }
                 //def.Store();
 
-                if(!def.IsDefault){ //we dont store activities about the temporary data package
+                if(def.Kind == RemoteResourceSet.KINDRESOURCESETNORMAL){ //we dont store activities about the temporary data package
                     Activity activity = new Activity(context, def, EntityOperationType.View);
                     activity.Store();
                 }
