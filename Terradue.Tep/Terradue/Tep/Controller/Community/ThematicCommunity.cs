@@ -236,38 +236,10 @@ namespace Terradue.Tep
 
         public AtomItem ToAtomItem (NameValueCollection parameters)
         {
-            bool ispublic = this.Kind == DomainKind.Public;
-            bool isprivate = this.Kind == DomainKind.Private;
+            AtomItem result = base.ToAtomItem (parameters);
+            if (result == null) return null;
 
-            //we only want thematic groups domains (public or private)
-            if (!ispublic && !isprivate) return null;
-
-            //if private, lets check the current user can access it (have a role in the domain)
-            if (isprivate) {
-                var proles = Role.GetUserRolesForDomain (context, context.UserId, this.Id);
-                if (proles == null || proles.Length == 0) return null;
-            }
-
-            var entityType = EntityType.GetEntityType (typeof (Domain));
-            Uri id = new Uri (context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
-
-            if (!string.IsNullOrEmpty (parameters ["q"])) {
-                string q = parameters ["q"].ToLower ();
-                if (!this.Identifier.ToLower ().Contains (q) && !(Description != null && Description.ToLower ().Contains (q)))
-                    return null;
-            }
-
-            AtomItem result = new AtomItem ();
-
-            result.Id = id.ToString ();
-            result.Title = new TextSyndicationContent (Identifier);
-            result.Content = new TextSyndicationContent (Identifier);
-
-            result.ElementExtensions.Add ("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
-            result.Summary = new TextSyndicationContent (Description);
-            result.ReferenceData = this;
-
-            result.PublishDate = new DateTimeOffset (DateTime.UtcNow);
+            //TODO: entity keyword specific to Community ?
 
             //owner
             if (Owner != null) {
@@ -276,69 +248,15 @@ namespace Terradue.Tep
                 ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
                 ownerPerson.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", RoleTep.OWNER));
                 result.Authors.Add (ownerPerson);
-
-            }
-            //members
-            var roles = new EntityList<Role> (context);
-            roles.Load ();
-            foreach (var role in roles) {
-                var usrs = role.GetUsers (this.Id);
-                foreach (var usrId in usrs) {
-                    UserTep usr = UserTep.FromId (context, usrId);
-                    var usrUri = usr.GetUserPageLink ();
-                    SyndicationPerson author = new SyndicationPerson (usr.Email, usr.FirstName + " " + usr.LastName, usrUri);
-                    author.ElementExtensions.Add (new SyndicationElementExtension ("identifier", "http://purl.org/dc/elements/1.1/", usr.Username));
-                    author.ElementExtensions.Add (new SyndicationElementExtension ("role", "http://purl.org/dc/elements/1.1/", role.Identifier));
-                    result.Authors.Add (author);
-                }
-            }
-
-            result.Links.Add (new SyndicationLink (id, "self", Identifier, "application/atom+xml", 0));
-            if (!string.IsNullOrEmpty (IconUrl)) {
-
-                Uri uri;
-                if (IconUrl.StartsWith ("http")) {
-                    uri = new Uri (IconUrl);
-                } else {
-                    var urib = new UriBuilder (System.Web.HttpContext.Current.Request.Url);
-                    urib.Path = IconUrl;
-                    uri = urib.Uri;
-                }
-
-                result.Links.Add (new SyndicationLink (uri, "icon", "", GetImageMimeType(IconUrl), 0));
             }
 
             AppsLink = LoadAppsLink ();
             if(!string.IsNullOrEmpty(AppsLink)) result.Links.Add (new SyndicationLink (new Uri(AppsLink), "via", "", "application/atom+xml", 0));
 
-            result.Categories.Add (new SyndicationCategory ("visibility", null, ispublic ? "public" : "private"));
-
             return result;
         }
 
-        private string GetImageMimeType (string filename) { 
-            string extension = filename.Substring (filename.LastIndexOf (".") + 1);
-            string result;
 
-            switch (extension.ToLower ()) {
-            case "gif":
-                result = "image/gif";
-                break;
-            case "gtiff":
-                result = "image/tiff";
-                break;
-            case "jpeg":
-                result = "image/jpg";
-                break;
-            case "png":
-                result = "image/png";
-                break;
-            default:
-                result = "application/octet-stream";
-                break;
-            }
-            return result;
-        }
         #endregion
     }
 

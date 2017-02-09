@@ -22,7 +22,7 @@ namespace Terradue.Tep
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.
     /// </summary>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-    public class WpsJob : EntitySearchable, IAtomizable, IComparable<WpsJob>
+    public class WpsJob : EntitySearchable, IComparable<WpsJob>
     {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
@@ -480,7 +480,7 @@ namespace Terradue.Tep
             return nvc;
         }
 
-        public new AtomItem ToAtomItem(NameValueCollection parameters){
+        public override AtomItem ToAtomItem(NameValueCollection parameters){
 
             bool ispublic = this.IsPublic();
 
