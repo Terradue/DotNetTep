@@ -15,15 +15,13 @@ using System.Linq;
 using Terradue.Tep.OpenSearch;
 using Terradue.Portal.OpenSearch;
 
-namespace Terradue.Tep
-{
+namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true)]
     /// <summary>
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.
     /// </summary>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-    public class WpsJob : EntitySearchable, IAtomizable, IComparable<WpsJob>
-    {
+    public class WpsJob : EntitySearchable, IAtomizable, IComparable<WpsJob> {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -56,17 +54,14 @@ namespace Terradue.Tep
         /// </remarks>
         /// <value>The parameters.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        public List<KeyValuePair<string, string>> Parameters
-        {
-            get
-            {
+        public List<KeyValuePair<string, string>> Parameters {
+            get {
                 List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
                 if (parameters != null)
                     result = (List<KeyValuePair<string, string>>)ServiceStack.Text.JsonSerializer.DeserializeFromString<List<KeyValuePair<string, string>>>(parameters);
                 return result;
             }
-            set
-            {
+            set {
                 parameters = ServiceStack.Text.JsonSerializer.SerializeToString<List<KeyValuePair<string, string>>>(value);
             }
         }
@@ -78,18 +73,12 @@ namespace Terradue.Tep
         /// </summary>
         /// <value>The provider.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        public WpsProvider Provider
-        {
-            get
-            {
-                if (provider == null)
-                {
-                    try
-                    {
+        public WpsProvider Provider {
+            get {
+                if (provider == null) {
+                    try {
                         provider = (WpsProvider)WpsProvider.FromIdentifier(context, WpsId);
-                    }
-                    catch (Exception)
-                    {
+                    } catch (Exception) {
                         provider = null;
                     }
                 }
@@ -104,28 +93,20 @@ namespace Terradue.Tep
         /// </summary>
         /// <value>The process service.</value>
         /// \xrefitem uml "UML" "UML Diagram"
-        public WpsProcessOffering Process
-        {
-            get
-            {
-                if (process == null)
-                {
-                    try
-                    {
+        public WpsProcessOffering Process {
+            get {
+                if (process == null) {
+                    try {
                         process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, ProcessId);
-                    }
-                    catch (Exception e)
-                    {
-                        string[] identifierParams = ProcessId.Split("-".ToCharArray());
-                        if (identifierParams.Length == 3)
-                        {
-                            switch (identifierParams[0])
-                            {
-                                case "one":
-                                    process = new CloudWpsFactory(context).CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
-                                    break;
-                                default:
-                                    break;
+                    } catch (Exception e) {
+                        string [] identifierParams = ProcessId.Split("-".ToCharArray());
+                        if (identifierParams.Length == 3) {
+                            switch (identifierParams [0]) {
+                            case "one":
+                                process = new CloudWpsFactory(context).CreateWpsProcessOfferingForOne(identifierParams [1], identifierParams [2]);
+                                break;
+                            default:
+                                break;
                             }
                         }
                         if (process == null) throw e;
@@ -140,7 +121,7 @@ namespace Terradue.Tep
         public UserTep Owner {
             get {
                 if (owner == null) {
-                    if (OwnerId != 0) owner = UserTep.FromId (context, OwnerId);
+                    if (OwnerId != 0) owner = UserTep.FromId(context, OwnerId);
                 }
                 return owner;
             }
@@ -150,10 +131,8 @@ namespace Terradue.Tep
         /// Gets the total results.
         /// </summary>
         /// <value>The total results.</value>
-        public long TotalResults
-        {
-            get
-            {
+        public long TotalResults {
+            get {
                 throw new NotImplementedException();
             }
         }
@@ -162,10 +141,8 @@ namespace Terradue.Tep
         /// Gets the default type of the MIME.
         /// </summary>
         /// <value>The default type of the MIME.</value>
-        public string DefaultMimeType
-        {
-            get
-            {
+        public string DefaultMimeType {
+            get {
                 throw new NotImplementedException();
             }
         }
@@ -174,10 +151,8 @@ namespace Terradue.Tep
         /// Gets a value indicating whether this <see cref="T:Terradue.Tep.WpsJob"/> can cache.
         /// </summary>
         /// <value><c>true</c> if can cache; otherwise, <c>false</c>.</value>
-        public bool CanCache
-        {
-            get
-            {
+        public bool CanCache {
+            get {
                 throw new NotImplementedException();
             }
         }
@@ -194,8 +169,7 @@ namespace Terradue.Tep
         /// <returns>The identifier.</returns>
         /// <param name="context">Context.</param>
         /// <param name="id">Identifier.</param>
-        public static WpsJob FromId(IfyContext context, int id)
-        {
+        public static WpsJob FromId(IfyContext context, int id) {
             WpsJob result = new WpsJob(context);
             result.Id = id;
             result.Load();
@@ -208,8 +182,7 @@ namespace Terradue.Tep
         /// <returns>The identifier.</returns>
         /// <param name="context">Context.</param>
         /// <param name="id">Identifier.</param>
-        public static WpsJob FromIdentifier(IfyContext context, string id)
-        {
+        public static WpsJob FromIdentifier(IfyContext context, string id) {
             WpsJob result = new WpsJob(context);
             result.Identifier = id;
             result.Load();
@@ -219,9 +192,8 @@ namespace Terradue.Tep
         /// <summary>
         /// Store this instance.
         /// </summary>
-        public override void Store()
-        {
-            if(DomainId == 0) DomainId = Owner.Domain.Id;
+        public override void Store() {
+            if (DomainId == 0) DomainId = Owner.Domain.Id;
             if (this.Id == 0) {
                 this.CreatedTime = DateTime.UtcNow;
             }
@@ -232,8 +204,7 @@ namespace Terradue.Tep
         /// Is the job public.
         /// </summary>
         /// <returns><c>true</c>, if public was ised, <c>false</c> otherwise.</returns>
-        public bool IsPublic()
-        {
+        public bool IsPublic() {
             return DoesGrantGlobalPermission();
         }
 
@@ -241,8 +212,7 @@ namespace Terradue.Tep
         /// Is the job private.
         /// </summary>
         /// <returns><c>true</c>, if private was ised, <c>false</c> otherwise.</returns>
-        public bool IsPrivate()
-        {
+        public bool IsPrivate() {
             return !IsPublic() && !IsRestricted();
         }
 
@@ -250,14 +220,12 @@ namespace Terradue.Tep
         /// Is the job restricted.
         /// </summary>
         /// <returns><c>true</c>, if restricted was ised, <c>false</c> otherwise.</returns>
-        public bool IsRestricted()
-        {
+        public bool IsRestricted() {
             string sql = String.Format("SELECT COUNT(*) FROM wpsjob_perm WHERE id_wpsjob={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue(sql) > 0;
         }
 
-        public NetworkCredential GetCredentials()
-        {
+        public NetworkCredential GetCredentials() {
             var urib = new UriBuilder(StatusLocation);
             if (!string.IsNullOrEmpty(urib.UserName) && !string.IsNullOrEmpty(urib.Password))
                 return new NetworkCredential(urib.UserName, urib.Password);
@@ -269,8 +237,7 @@ namespace Terradue.Tep
         /// Gets the execute response.
         /// </summary>
         /// <returns>The execute response.</returns>
-        public object GetStatusLocationContent()
-        {
+        public object GetStatusLocationContent() {
             //Create Web request
             HttpWebRequest executeHttpRequest;
             if (Provider != null)
@@ -284,37 +251,29 @@ namespace Terradue.Tep
             }
 
             // G-POD case: identified with HTTP header as GpodWpsUser
-            if (StatusLocation.Contains("gpod.eo.esa.int"))
-            {
+            if (StatusLocation.Contains("gpod.eo.esa.int")) {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));
             }
 
             //create response
             OpenGis.Wps.ExecuteResponse execResponse = null;
 
-            using (var remoteWpsResponseStream = new MemoryStream())
-            {
+            using (var remoteWpsResponseStream = new MemoryStream()) {
                 context.LogDebug(this, string.Format(string.Format("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
 
                 // HTTP request
-                try
-                {
-                    using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse())
-                    {
-                        using (var remotestream = remoteWpsResponse.GetResponseStream())
-                        {
+                try {
+                    using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
+                        using (var remotestream = remoteWpsResponse.GetResponseStream()) {
                             remotestream.CopyTo(remoteWpsResponseStream);
                         }
                     }
 
-                }
-                catch (WebException we)
-                {
+                } catch (WebException we) {
                     context.LogError(this, string.Format(we.Message));
 
                     //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
-                    if (StatusLocation.Contains("gpod.eo.esa.int"))
-                    {
+                    if (StatusLocation.Contains("gpod.eo.esa.int")) {
                         using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream()) remotestream.CopyTo(remoteWpsResponseStream);
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
@@ -325,28 +284,21 @@ namespace Terradue.Tep
                 }
 
                 // Deserialization
-                try
-                {
+                try {
                     remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                     execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
                     return execResponse;
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     // Maybe an exceptionReport
                     OpenGis.Wps.ExceptionReport exceptionReport = null;
                     remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                    try
-                    {
+                    try {
                         exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
                         return exceptionReport;
-                    }
-                    catch (Exception e2)
-                    {
+                    } catch (Exception e2) {
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         string errormsg = null;
-                        using (StreamReader reader = new StreamReader(remoteWpsResponseStream))
-                        {
+                        using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
                             errormsg = reader.ReadToEnd();
                         }
                         remoteWpsResponseStream.Close();
@@ -362,13 +314,12 @@ namespace Terradue.Tep
         /// </summary>
         /// <returns>The result URL from execute response.</returns>
         /// <param name="execResponse">Exec response.</param>
-        public IOpenSearchable GetProductOpenSearchable()
-        {
+        public IOpenSearchable GetProductOpenSearchable() {
             var content = GetStatusLocationContent();
 
             if (content is ExceptionReport)
                 throw new ImpossibleSearchException("WPS job status raised an exception : "
-                                                    + (content as ExceptionReport).Exception[0].ExceptionText[0]);
+                                                    + (content as ExceptionReport).Exception [0].ExceptionText [0]);
 
             if (!(content is ExecuteResponse))
                 throw new ImpossibleSearchException("WPS job status did not return an ExecuteResponse : "
@@ -382,33 +333,26 @@ namespace Terradue.Tep
 
             // Search for an Opensearch Description Document ouput url
             var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_osd"));
-            if (result_osd.Count() > 0)
-            {
+            if (result_osd.Count() > 0) {
                 var po = result_osd.First();
                 string url = null;
                 //Get result Url
-                if (po.Item is DataType && ((DataType)(po.Item)).Item != null)
-                {
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
                     var item = ((DataType)(po.Item)).Item as ComplexDataType;
                     var reference = item.Reference as OutputReferenceType;
                     url = reference.href;
-                }
-                else if (po.Item is OutputReferenceType)
-                {
+                } else if (po.Item is OutputReferenceType) {
                     var reference = po.Item as OutputReferenceType;
                     url = reference.href;
                 }
                 if (string.IsNullOrEmpty(url))
                     throw new ImpossibleSearchException("Ouput result_osd found but no Url set");
 
-               
+
                 OpenSearchUrl osUrl = null;
-                try
-                {
+                try {
                     osUrl = new OpenSearchUrl(url);
-                }
-                catch (Exception)
-                {
+                } catch (Exception) {
                     throw new ImpossibleSearchException("Ouput result_osd found invalid url : " + url);
                 }
 
@@ -417,39 +361,31 @@ namespace Terradue.Tep
 
             // Search for a static metadata file
             result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_metadata"));
-            if (result_osd.Count() > 0)
-            {
+            if (result_osd.Count() > 0) {
                 var po = result_osd.First();
                 string url = null;
                 //Get result Url
-                if (po.Item is DataType && ((DataType)(po.Item)).Item != null)
-                {
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
                     var item = ((DataType)(po.Item)).Item as ComplexDataType;
                     var reference = item.Reference as OutputReferenceType;
                     url = reference.href;
-                }
-                else if (po.Item is OutputReferenceType)
-                {
+                } else if (po.Item is OutputReferenceType) {
                     var reference = po.Item as OutputReferenceType;
                     url = reference.href;
                 }
                 if (string.IsNullOrEmpty(url))
                     throw new ImpossibleSearchException("Ouput result_metadata found but no Url set");
                 AtomFeed feed = null;
-                try
-                {
+                try {
                     HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(url);
                     httpRequest.Credentials = GetCredentials();
                     if (httpRequest.Credentials != null)
                         httpRequest.PreAuthenticate = true;
-                    using (var httpResp = httpRequest.GetResponse())
-                    {
+                    using (var httpResp = httpRequest.GetResponse()) {
                         feed = AtomFeed.Load(XmlReader.Create(httpResp.GetResponseStream()));
                         feed.Id = url;
                     }
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     throw new ImpossibleSearchException("Ouput result_metadata found but impossible to load url : " + url + e.Message);
                 }
                 return new AtomFeedOpenSearchable(feed);
@@ -480,7 +416,7 @@ namespace Terradue.Tep
             return nvc;
         }
 
-        public new AtomItem ToAtomItem(NameValueCollection parameters){
+        public new AtomItem ToAtomItem(NameValueCollection parameters) {
 
             bool ispublic = this.IsPublic();
 
@@ -491,15 +427,13 @@ namespace Terradue.Tep
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
-            if (!string.IsNullOrEmpty(parameters["q"]))
-            {
-                string q = parameters["q"].ToLower();
+            if (!string.IsNullOrEmpty(parameters ["q"])) {
+                string q = parameters ["q"].ToLower();
                 if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
                     return null;
             }
 
-            if (!string.IsNullOrEmpty(parameters["public"]) && parameters["public"].Equals("true"))
-            {
+            if (!string.IsNullOrEmpty(parameters ["public"]) && parameters ["public"].Equals("true")) {
                 if (this.IsPrivate()) return null;
             }
 
@@ -507,24 +441,19 @@ namespace Terradue.Tep
             AtomItem result = new AtomItem();
             string statusloc = this.StatusLocation;
 
-            try
-            {
+            try {
                 provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
 
                 if (provider.Proxy) statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
 
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 //if provider not on db, then it is proxied
                 statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
             }
 
-            if (string.IsNullOrEmpty(parameters["basicrequest"]) || parameters["basicrequest"] != "true")
-            {
+            if (string.IsNullOrEmpty(parameters ["basicrequest"]) || parameters ["basicrequest"] != "true") {
                 result = GetFullWpsJobAtomItem();
-                if (result == null)
-                {
+                if (result == null) {
                     result = new AtomItem();
                     ispublic = false;
                 }
@@ -559,8 +488,7 @@ namespace Terradue.Tep
             return result;
         }
 
-        private AtomItem GetFullWpsJobAtomItem()
-        {
+        private AtomItem GetFullWpsJobAtomItem() {
 
             OwcOffering offering = new OwcOffering();
             List<OwcOperation> operations = new List<OwcOperation>();
@@ -576,48 +504,37 @@ namespace Terradue.Tep
             WpsProcessOffering process = null;
             WpsProvider provider = null;
 
-            try
-            {
+            try {
                 process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, this.ProcessId);
                 provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 context.LogError(this, e.Message);
-                string[] identifierParams = this.ProcessId.Split("-".ToCharArray());
-                if (identifierParams.Length == 3)
-                {
-                    switch (identifierParams[0])
-                    {
-                        case "one":
-                            CloudWpsFactory wpstep = new CloudWpsFactory(context);
-                            if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
-                            try
-                            {
-                                context.LogDebug(this, "Get process -- " + identifierParams[1] + " -- " + identifierParams[2]);
-                                process = wpstep.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
-                                context.LogDebug(this, "Get provider");
-                                provider = process.Provider;
-                            }
-                            catch (Exception e2)
-                            {
-                                context.LogError(this, e2.Message);
-                            }
-                            break;
-                        default:
-                            break;
+                string [] identifierParams = this.ProcessId.Split("-".ToCharArray());
+                if (identifierParams.Length == 3) {
+                    switch (identifierParams [0]) {
+                    case "one":
+                        CloudWpsFactory wpstep = new CloudWpsFactory(context);
+                        if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
+                        try {
+                            context.LogDebug(this, "Get process -- " + identifierParams [1] + " -- " + identifierParams [2]);
+                            process = wpstep.CreateWpsProcessOfferingForOne(identifierParams [1], identifierParams [2]);
+                            context.LogDebug(this, "Get provider");
+                            provider = process.Provider;
+                        } catch (Exception e2) {
+                            context.LogError(this, e2.Message);
+                        }
+                        break;
+                    default:
+                        break;
                     }
                 }
             }
 
-            if (provider != null && process != null)
-            {
-                if (provider.Proxy)
-                {
+            if (provider != null && process != null) {
+                if (provider.Proxy) {
                     identifier = process.Identifier;
                     providerUrl = context.BaseUrl + "/wps/WebProcessingService";
-                }
-                else {
+                } else {
                     identifier = process.RemoteIdentifier;
                     providerUrl = provider.BaseUrl;
                 }
@@ -627,12 +544,10 @@ namespace Terradue.Tep
             if (process == null || provider == null)
                 return null;
 
-            if (provider.Proxy)
-            {
+            if (provider.Proxy) {
                 identifier = process.Identifier;
                 providerUrl = context.BaseUrl + "/wps/WebProcessingService";
-            }
-            else {
+            } else {
                 identifier = process.RemoteIdentifier;
                 providerUrl = provider.BaseUrl;
             }
@@ -650,8 +565,7 @@ namespace Terradue.Tep
                                          "&identifier=" + identifier);
 
             //getcapabilities
-            var operation = new OwcOperation
-            {
+            var operation = new OwcOperation {
                 Method = "GET",
                 Code = "GetCapabilities",
                 Href = capabilitiesUri.AbsoluteUri
@@ -668,7 +582,7 @@ namespace Terradue.Tep
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            operation.Request.Any = (XmlElement)nodes[0];
+            operation.Request.Any = (XmlElement)nodes [0];
             operations.Add(operation);
 
             //describeProcess
@@ -688,7 +602,7 @@ namespace Terradue.Tep
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            operation.Request.Any = (XmlElement)nodes[0];
+            operation.Request.Any = (XmlElement)nodes [0];
             operations.Add(operation);
 
             //execute
@@ -696,8 +610,7 @@ namespace Terradue.Tep
             OpenGis.Wps.Execute execute = new OpenGis.Wps.Execute();
             execute.Identifier = new OpenGis.Wps.CodeType { Value = identifier };
             execute.DataInputs = new List<OpenGis.Wps.InputType>();
-            foreach (var param in this.Parameters)
-            {
+            foreach (var param in this.Parameters) {
                 OpenGis.Wps.InputType input = new OpenGis.Wps.InputType();
                 input.Identifier = new OpenGis.Wps.CodeType { Value = param.Key };
                 input.Data = new OpenGis.Wps.DataType { Item = new OpenGis.Wps.LiteralDataType { Value = param.Value } };
@@ -717,7 +630,7 @@ namespace Terradue.Tep
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            operation.Request.Any = (XmlElement)nodes[0];
+            operation.Request.Any = (XmlElement)nodes [0];
             operations.Add(operation);
 
             offering.Operations = operations.ToArray();
@@ -739,8 +652,7 @@ namespace Terradue.Tep
 
         #region IComparable implementation
 
-        public int CompareTo(WpsJob other)
-        {
+        public int CompareTo(WpsJob other) {
             if (other == null)
                 return 1;
             else
@@ -749,7 +661,7 @@ namespace Terradue.Tep
 
         #endregion
 
-}
+    }
 }
 
 
