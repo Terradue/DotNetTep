@@ -188,9 +188,6 @@
       <HintPath>..\packages\Terradue.Cloud.1.3.0\lib\net40\Terradue.Cloud.dll</HintPath>
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
-	<Reference Include="Terradue.Portal">
-	  <HintPath>..\packages\Terradue.Portal.2.7.2-build20170208T154305\lib\net40\Terradue.Portal.dll</HintPath>
-	</Reference>
 	<Reference Include="Terradue.WebService.Model">
 	  <HintPath>..\packages\Terradue.WebService.Model.1.1.15-build20170207T165323\lib\net40\Terradue.WebService.Model.dll</HintPath>
 	</Reference>
@@ -289,5 +286,11 @@
     <Folder Include="Terradue\Tep\WebServer\Application\" />
     <Folder Include="Terradue\Tep\Controller\OpenSearch\" />
     <Folder Include="Terradue\Tep\WebServer\Authorization\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Terradue.Portal\Terradue.Portal\Terradue.Portal.csproj">
+      <Project>{2E8D7875-8347-4205-936B-F1BBA2164D87}</Project>
+      <Name>Terradue.Portal</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

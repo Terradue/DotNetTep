@@ -461,9 +461,8 @@ namespace Terradue.Tep
         #region IEntitySearchable implementation
         public new KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
-            case "entitytype":
-                var t = EntityType.GetEntityTypeFromKeyword(value);
-                return new KeyValuePair<string, string>("EntityTypeId", t.Id.ToString());
+            case "q":
+                return new KeyValuePair<string, string>("Name", value);
             default:
                 return base.GetFilterForParameter(parameter, value);
             }

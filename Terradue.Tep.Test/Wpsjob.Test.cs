@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using NUnit.Framework;
+using Terradue.Tep;
+using Terradue.OpenSearch.Result;
 using Terradue.Portal;
 
 namespace Terradue.Tep.Test {
@@ -13,6 +16,10 @@ namespace Terradue.Tep.Test {
             base.FixtureSetup();
             context.BaseUrl = "http://localhost:8080/api";
             context.AccessLevel = EntityAccessLevel.Administrator;
+
+            EntityType et = EntityType.GetOrAddEntityType (typeof (UserTep));
+            Console.WriteLine ("CLASS {0} {1}", et.ClassType.AssemblyQualifiedName, et.Id);
+
             try{
                 Init ();
             } catch (Exception e) {
@@ -21,8 +28,7 @@ namespace Terradue.Tep.Test {
             }
 
             context.ConsoleDebug = true;
-            EntityType et = EntityType.GetOrAddEntityType (typeof (WpsJob));
-            Console.WriteLine ("CLASS {0} {1}", et.ClassType.AssemblyQualifiedName, et.Id);
+
         }
 
         private void Init() {
@@ -45,12 +51,12 @@ namespace Terradue.Tep.Test {
 
             //create domains
             Domain domain = new Domain (context);
-            domain.Name = "myDomainTest";
+            domain.Identifier = "myDomainTest";
             domain.Kind = DomainKind.Public;
             domain.Store ();
 
             Domain domain2 = new Domain (context);
-            domain2.Name = "otherDomainTest";
+            domain2.Identifier = "otherDomainTest";
             domain2.Kind = DomainKind.Private;
             domain2.Store ();
 
@@ -292,6 +298,19 @@ namespace Terradue.Tep.Test {
             jobList.Load ();
             items = jobList.GetItemsAsList ();
             Assert.AreEqual (0, items.Count);
+        }
+
+        [Test]
+        public void SearchWpsJobs () { 
+            context.AccessLevel = EntityAccessLevel.Privilege;
+
+            EntityList<WpsJob> wpsjobs = new EntityList<WpsJob> (context);
+            var ose = MasterCatalogue.OpenSearchEngine;
+
+            var parameters = new NameValueCollection ();
+
+            IOpenSearchResultCollection osr = ose.Query (wpsjobs, parameters);
+            Assert.That (osr.Items != null);
         }
 
     }

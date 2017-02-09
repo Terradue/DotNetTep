@@ -9,7 +9,7 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep
 {
 
-    public class ThematicCommunity : Domain, IAtomizable{
+    public class ThematicCommunity : Domain, IAtomizable {
 
         public const string MANAGER = "manager";
         public const string MEMBER = "member";
