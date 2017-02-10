@@ -6,6 +6,7 @@ using ServiceStack.ServiceHost;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
+using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 
@@ -32,16 +33,18 @@ namespace Terradue.Tep.WebServer.Services{
                 if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
 
                 User user = string.IsNullOrEmpty(request.Username) ? User.FromId (context, context.UserId) : User.FromUsername(context, request.Username);
-                Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? ThematicCommunity.MEMBER : request.Role);
+                Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? RoleTep.MEMBER : request.Role);
                 context.LogInfo (this, string.Format ("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
-                if (string.IsNullOrEmpty (request.Username)) { 
-                    if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                if (string.IsNullOrEmpty(request.Username)) {
+                    //case user auto Join 
+                    domain.JoinCurrentUser();
+                } else { 
+                    //case owner add user with role
+                    domain.SetUserAsTemporaryMember(user.Id, role.Id);
                 }
-
-                role.GrantToUser (user, domain);
 
                 context.Close ();
             } catch (Exception e) {
@@ -73,14 +76,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
-                if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
-
-                //delete previous role(s)
-                var roles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
-                foreach (var r in roles) r.RevokeFromUser (user, domain);
-
-                //add new role
-                role.GrantToUser (user, domain);
+                domain.SetUserRole(user, role);
 
                 context.Close ();
             } catch (Exception e) {
@@ -104,10 +100,11 @@ namespace Terradue.Tep.WebServer.Services{
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
-                if (!domain.IsUserManager(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                if (!domain.IsUserOwner(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
                 domain.Description = request.Description;
                 domain.Name = request.Name;
+                domain.AppsLink = request.Apps;
                 domain.Store ();
 
                 context.Close ();
@@ -133,15 +130,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
-                if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
-
-                if (string.IsNullOrEmpty (request.Username)) {
-                    if (!domain.IsUserManager (context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
-                }
-
-                //delete previous role(s)
-                var uroles = Role.GetUserRolesForDomain (context, user.Id, domain.Id);
-                foreach (var r in uroles) r.RevokeFromUser (user, domain);
+                domain.RemoveUser(user);
 
                 context.Close ();
             } catch (Exception e) {
@@ -224,6 +213,27 @@ namespace Terradue.Tep.WebServer.Services{
 
             context.Close ();
             return new HttpResult (osr.SerializeToString (), osr.ContentType);
+        }
+
+        public object Get(CommunityDescriptionRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/community/description GET"));
+
+                EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity>(context);
+                domains.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+
+                OpenSearchDescription osd = domains.GetOpenSearchDescription();
+
+                context.Close();
+
+                return new HttpResult(osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
         }
     }
 }

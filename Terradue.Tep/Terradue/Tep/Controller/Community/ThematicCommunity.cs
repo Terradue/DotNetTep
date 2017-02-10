@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
@@ -10,10 +11,7 @@ namespace Terradue.Tep
 {
 
     public class ThematicCommunity : Domain, IAtomizable {
-
-        public const string MANAGER = "manager";
-        public const string MEMBER = "member";
-
+        
         public string AppsLink { get; set; }
 
         private UserTep owner;
@@ -74,7 +72,16 @@ namespace Terradue.Tep
         }
 
         /// <summary>
-        /// Gets the owner.
+        /// Is the user owner.
+        /// </summary>
+        /// <returns><c>true</c>, if user is owner of the community, <c>false</c> otherwise.</returns>
+        /// <param name="userid">Userid.</param>
+        public bool IsUserOwner(int userid) {
+            return (Owner != null && Owner.Id == userid);
+        }
+
+        /// <summary>
+        /// Gets the owner (or manager) of the Community
         /// </summary>
         /// <returns>The owner.</returns>
         private UserTep GetOwner () {
@@ -89,9 +96,44 @@ namespace Terradue.Tep
         /// Sets the owner.
         /// </summary>
         /// <param name="user">User.</param>
-        public void SetOwner (UserTep user) { 
+        public void SetOwner (UserTep user) {
+            //only admin can do this
+            if (context.AccessLevel != EntityAccessLevel.Administrator) throw new UnauthorizedAccessException("Only administrators can change the owner of this entity");
             var role = Role.FromIdentifier (context, RoleTep.OWNER);
             role.GrantToUser (user, this);
+        }
+
+        /// <summary>
+        /// Sets the user role.
+        /// </summary>
+        /// <param name="user">User.</param>
+        /// <param name="role">Role.</param>
+        public void SetUserRole(User user, Role role) { 
+            //only owner can do this
+            if(!IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
+
+            //delete previous roles
+            var roles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
+            foreach (var r in roles) r.RevokeFromUser(user, this);
+
+            //add new role
+            role.GrantToUser(user, this);
+        }
+
+        /// <summary>
+        /// Joins the current user.
+        /// </summary>
+        public void JoinCurrentUser() { 
+            Role role = Role.FromIdentifier(context, RoleTep.MEMBER);
+
+            if (this.Kind == DomainKind.Public) {
+                //public community -> user can always join
+                role.GrantToUser(context.UserId, this.Id);
+            } else {
+                //other communities, it means the user has been invited and must be on pending table
+                if (!IsUserPending(context.UserId)) throw new UnauthorizedAccessException("Current user not pending in Community");
+                SetUserAsDefinitiveMember(context.UserId);
+            }
         }
 
         /// <summary>
@@ -113,31 +155,34 @@ namespace Terradue.Tep
         }
 
         /// <summary>
+        /// Is the user pending.
+        /// </summary>
+        /// <returns><c>true</c>, if user is pending, <c>false</c> otherwise.</returns>
+        /// <param name="usrId">Usr identifier.</param>
+        public bool IsUserPending(int usrId) { 
+            var ids = context.GetQueryIntegerValues(string.Format("SELECT id_usr FROM rolegrant_pending WHERE id_domain={0};", this.Id));
+            return ids.Contains(usrId);
+        }
+
+        /// <summary>
         /// Sets user or group as temporary member.
         /// </summary>
         /// <param name="id">User or Group Identifier.</param>
         /// <param name="roleId">Role identifier.</param>
         /// <param name="forGroup">If set to <c>true</c> for group.</param>
         private void SetAsTemporaryMember (int id, int roleId, bool forGroup) {
+            //only owner can do this
+            if (!IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
+
             context.Execute (string.Format ("DELETE FROM rolegrant_pending WHERE {2}={0} AND id_domain={1};", id, this.Id, forGroup ? "id_grp" : "id_usr")); // avoid duplicates
             context.Execute (string.Format ("INSERT INTO rolegrant_pending ({0}, id_role, id_domain) VALUES ({1},{2},{3});", forGroup ? "id_grp" : "id_usr", id, roleId, this.Id));
-        }
-
-        /// <summary>
-        /// Is the key valid.
-        /// </summary>
-        /// <returns><c>true</c>, if key is valid, <c>false</c> otherwise.</returns>
-        /// <param name="key">Key.</param>
-        public bool IsKeyValid (string key) {
-            var id = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE access_key='{0}' AND id_domain={1};", key, this.Id));
-            return id != 0;
         }
 
         /// <summary>
         /// Sets the user as definitive member.
         /// </summary>
         /// <param name="userId">User identifier.</param>
-        public void SetUserAsDefinitiveMember (int userId) { 
+        private void SetUserAsDefinitiveMember (int userId) { 
             var roleId = context.GetQueryIntegerValue (string.Format ("SELECT id_role FROM rolegrant_pending WHERE id_usr={0} AND id_domain={1};", userId, this.Id));
             context.Execute (string.Format ("DELETE FROM rolegrant_pending WHERE id_usr={0} AND id_domain={1};", userId, this.Id)); // remove from pending table
 
@@ -157,6 +202,18 @@ namespace Terradue.Tep
             Role role = Role.FromId (context, roleId);
             Group grp = Group.FromId (context, groupId);
             role.GrantToGroup (grp, this);
+        }
+
+        /// <summary>
+        /// Removes the user.
+        /// </summary>
+        /// <param name="user">User.</param>
+        public void RemoveUser(User user) { 
+            if(context.UserId != user.Id && !IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can remove users");
+                
+            //delete previous role(s)
+            var uroles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
+            foreach (var r in uroles) r.RevokeFromUser(user, this);
         }
 
         /// <summary>
@@ -210,22 +267,6 @@ namespace Terradue.Tep
             appResource.Store ();
         }
 
-        /// <summary>
-        /// Is the user manager.
-        /// </summary>
-        /// <returns><c>true</c>, if user is manager of the community, <c>false</c> otherwise.</returns>
-        /// <param name="userid">Userid.</param>
-        public bool IsUserManager (int userid) { 
-            var roles = Role.GetUserRolesForDomain (context, userid, this.Id);
-            bool ismanager = false;
-            foreach (var r in roles) {
-                if (r.Identifier.Equals (ThematicCommunity.MANAGER)) {
-                    ismanager = true;
-                    break;
-                }
-            }
-            return ismanager;
-        }
 
         #region IAtomizable
 
@@ -234,10 +275,20 @@ namespace Terradue.Tep
             return OpenSearchFactory.GetBaseOpenSearchParameter ();
         }
 
+        public override bool IsPostFiltered(NameValueCollection parameters) {
+            return true;
+        }
+
         public AtomItem ToAtomItem (NameValueCollection parameters)
         {
+            bool isprivate = this.Kind == DomainKind.Private;
             AtomItem result = base.ToAtomItem (parameters);
-            if (result == null) return null;
+            if (result == null) {
+                //if private, lets check if user is pending
+                if (isprivate) {
+                    if (!IsUserPending(context.UserId)) return null;
+                } else return null;
+            }
 
             //TODO: entity keyword specific to Community ?
 

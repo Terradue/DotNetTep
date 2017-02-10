@@ -148,7 +148,7 @@ namespace Terradue.Tep.WebServer.Services
             context.Open ();
             context.LogInfo (this, string.Format ("/domain/search GET"));
 
-            EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity> (context);
+            EntityList<Domain> domains = new EntityList<Domain> (context);
             domains.Load ();
 
             // Load the complete request
@@ -270,32 +270,6 @@ namespace Terradue.Tep.WebServer.Services
                 throw e;
             }
             return result;
-        }
-
-        public object Post (CreateDomainUserRequest request)
-        {
-            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
-            try {
-                context.Open ();
-                context.LogInfo (this, string.Format ("/domain/{{id}}/user POST Id='{0}', UserId='{1}', RoleId='{2}'", request.Id, request.UserId, request.RoleId));
-
-                ThematicCommunity domain = ThematicCommunity.FromId (context, request.Id);
-                if (!string.IsNullOrEmpty (request.Key)) {
-                    if (!domain.IsKeyValid (request.Key)) throw new UnauthorizedAccessException (CustomErrorMessages.WRONG_ACCESSKEY);
-                    if (request.UserId != context.UserId) throw new UnauthorizedAccessException ("Cannot validate invitation for another user");
-                    domain.SetUserAsDefinitiveMember (request.UserId);
-                } else {
-                    if(domain.Owner == null || domain.Owner.Id != context.UserId) throw new UnauthorizedAccessException ("You are not owner of the domain");
-                    domain.SetUserAsTemporaryMember (request.UserId, request.RoleId);
-                }
-
-                context.Close ();
-            } catch (Exception e) {
-                context.LogError (this, e.Message);
-                context.Close ();
-                throw e;
-            }
-            return new WebResponseBool(true);
         }
 
         //public object Put (UpdateDomainUserRequest request)

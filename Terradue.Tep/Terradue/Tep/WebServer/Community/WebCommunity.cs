@@ -73,6 +73,9 @@ namespace Terradue.Tep
     [Route ("/community/search", "GET", Summary = "GET community as opensearch", Notes = "")]
     public class CommunitySearchRequestTep : IReturn<HttpResult> { }
 
+    [Route("/community/description", "GET", Summary = "GET community as opensearch description", Notes = "")]
+    public class CommunityDescriptionRequestTep : IReturn<HttpResult> { }
+
     public class WebCommunityTep : WebDomain {
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Apps { get; set; }

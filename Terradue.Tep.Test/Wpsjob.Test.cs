@@ -15,13 +15,11 @@ namespace Terradue.Tep.Test {
         public override void FixtureSetup() {
             base.FixtureSetup();
             context.BaseUrl = "http://localhost:8080/api";
-            context.AccessLevel = EntityAccessLevel.Administrator;
-
-            EntityType et = EntityType.GetOrAddEntityType(typeof(UserTep));
-            Console.WriteLine("CLASS {0} {1}", et.ClassType.AssemblyQualifiedName, et.Id);
 
             try {
+                context.AccessLevel = EntityAccessLevel.Administrator;
                 Init();
+                CreateWpsJobs();
             } catch (Exception e) {
                 Console.Error.WriteLine(e.Message);
                 throw;
@@ -124,8 +122,19 @@ namespace Terradue.Tep.Test {
             return wpsjob;
         }
 
-        [Test]
-        public void CreateWpsJobs() {
+        private int NBJOBS_ALL = 10;
+        private int NBJOBS_PUBLIC = 2;
+        private int NBJOBS_USR1_ALL = 6;
+        private int NBJOBS_USR1_OWNED = 3;
+        private int NBJOBS_USR1_OWNED_USR2 = 3;
+        private int NBJOBS_USR1_OWNED_USR3 = 0;
+        private int NBJOBS_USR1_PUBLIC = 1;
+        private int NBJOBS_USR1_RESTRICTED = 2;
+        private int NBJOBS_USR1_RESTRICTED_OWNED = 1;
+        private int NBJOBS_USR1_PRIVATE = 1;
+        private int NBJOBS_USR1_DOMAIN = 1;
+
+        private void CreateWpsJobs() {
 
             WpsProcessOffering process = CreateProcess(false);
             var usr1 = User.FromUsername(context, "testusr1");
@@ -140,12 +149,12 @@ namespace Terradue.Tep.Test {
             job.GrantGlobalPermissions();
 
             //Create one wpsjob with domain where usr1 is member
-            job = CreateWpsJob("public-job-d", process, usr2);
+            job = CreateWpsJob("domain1-job-usr2", process, usr2);
             job.Domain = domain;
             job.Store();
 
             //Create one wpsjob with domain where usr1 is not member
-            job = CreateWpsJob("public-job-d", process, usr3);
+            job = CreateWpsJob("domain2-job-usr3", process, usr3);
             job.Domain = domain2;
             job.Store();
 
@@ -181,11 +190,15 @@ namespace Terradue.Tep.Test {
             job = CreateWpsJob("private-job-usr3", process, usr3);
             job.Store();
 
+        }
+
+        [Test]
+        public void LoadWpsJobAsAdmin() {
             context.AccessLevel = EntityAccessLevel.Administrator;
             EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
             jobList.Load();
             var items = jobList.GetItemsAsList();
-            Assert.AreEqual(10, items.Count);
+            Assert.AreEqual(NBJOBS_ALL, items.Count);
         }
 
         [Test]
@@ -196,63 +209,75 @@ namespace Terradue.Tep.Test {
             var usr1 = User.FromUsername(context, "testusr1");
             context.StartImpersonation(usr1.Id);
 
-            //Test Visibility OWNED
-            EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
-            jobList.AccessLevel = EntityAccessLevel.Privilege;
-            jobList.ItemVisibility = EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            var items = jobList.GetItemsAsList();
-            Assert.AreEqual(3, items.Count);
+            try {
 
-            //Test Visibility PUBLIC
-            jobList = new EntityList<WpsJob>(context);
-            jobList.ItemVisibility = EntityItemVisibility.Public;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(2, items.Count);
-            foreach (var item in items) Assert.That(item.Name.Contains("public"));
+                //Test Visibility ALL
+                EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.All;
+                jobList.Load();
+                var items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_ALL, items.Count);
 
-            //Test Visibility PUBLIC | OWNED 
-            jobList = new EntityList<WpsJob>(context);
-            jobList.ItemVisibility = EntityItemVisibility.Public | EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(1, items.Count);
-            Assert.That(items [0].Name == "public-job-usr1");
+                //Test Visibility OWNED
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.All | EntityItemVisibility.OwnedOnly;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_OWNED, items.Count);
+                foreach (var item in items) Assert.That(item.Name.Contains("usr1"));
 
-            //Test Visibility RESTRICTED
-            jobList = new EntityList<WpsJob>(context);
-            jobList.ItemVisibility = EntityItemVisibility.Restricted;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(2, items.Count);
-            foreach (var item in items) Assert.That(item.Name.Contains("restricted"));
+                //Test Visibility PUBLIC
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.Public;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_PUBLIC, items.Count);
+                foreach (var item in items) Assert.That(item.Name.Contains("public"));
 
-            //Test Visibility RESTRICTED | OWNED
-            jobList = new EntityList<WpsJob>(context);
-            jobList.ItemVisibility = EntityItemVisibility.Restricted | EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(1, items.Count);
-            Assert.That(items [0].Name == "restricted-job-usr1");
+                //Test Visibility PUBLIC | OWNED 
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.Public | EntityItemVisibility.OwnedOnly;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_PUBLIC, items.Count);
+                Assert.AreEqual("public-job-usr1", items [0].Name);
 
-            //Test Visibility PRIVATE
-            jobList = new EntityList<WpsJob>(context);
-            jobList.ItemVisibility = EntityItemVisibility.Private;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(1, items.Count);
-            Assert.That(items [0].Name == "private-job-usr1");
+                //Test Visibility RESTRICTED
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.Restricted;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_RESTRICTED, items.Count);
+                foreach (var item in items) Assert.That(item.Name.Contains("restricted"));
 
-            //Test Visibility PRIVATE | OWNED
-            jobList = new EntityList<WpsJob>(context);
-            jobList.ItemVisibility = EntityItemVisibility.Private | EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(1, items.Count);
-            Assert.That(items [0].Name == "private-job-usr1");
+                //Test Visibility RESTRICTED | OWNED
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.Restricted | EntityItemVisibility.OwnedOnly;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_RESTRICTED_OWNED, items.Count);
+                Assert.AreEqual("restricted-job-usr1", items [0].Name);
 
-            context.EndImpersonation();
+                //Test Visibility PRIVATE
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.Private;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_PRIVATE, items.Count);
+                Assert.AreEqual("private-job-usr1", items [0].Name);
+
+                //Test Visibility PRIVATE | OWNED
+                jobList = new EntityList<WpsJob>(context);
+                jobList.ItemVisibility = EntityItemVisibility.Private | EntityItemVisibility.OwnedOnly;
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_PRIVATE, items.Count);
+                Assert.AreEqual("private-job-usr1", items [0].Name);
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
         }
 
         [Test]
@@ -267,7 +292,7 @@ namespace Terradue.Tep.Test {
             jobList.SetFilter("DomainId", domain.Id.ToString());
             jobList.Load();
             var items = jobList.GetItemsAsList();
-            Assert.AreEqual(1, items.Count);
+            Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
             Assert.That(items [0].Name == "public-job-d");
 
             context.EndImpersonation();
@@ -282,41 +307,127 @@ namespace Terradue.Tep.Test {
             var usr3 = User.FromUsername(context, "testusr3");
             context.StartImpersonation(usr1.Id);
 
-            EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
-            jobList.UserId = usr1.Id;
-            jobList.ItemVisibility = EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            var items = jobList.GetItemsAsList();
-            Assert.AreEqual(3, items.Count);
+            try {
+                EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
+                //jobList.UserId = usr1.Id;
+                jobList.SetFilter("OwnerId", usr1.Id.ToString());
+                jobList.Load();
+                var items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_OWNED, items.Count);
 
-            jobList = new EntityList<WpsJob>(context);
-            jobList.UserId = usr2.Id;
-            jobList.ItemVisibility = EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(2, items.Count);
+                jobList = new EntityList<WpsJob>(context);
+                //jobList.UserId = usr2.Id;
+                jobList.SetFilter("OwnerId", usr2.Id.ToString());
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_OWNED_USR2, items.Count);
 
-            jobList = new EntityList<WpsJob>(context);
-            jobList.UserId = usr3.Id;
-            jobList.ItemVisibility = EntityItemVisibility.OwnedOnly;
-            jobList.Load();
-            items = jobList.GetItemsAsList();
-            Assert.AreEqual(0, items.Count);
-
-            context.EndImpersonation();
+                jobList = new EntityList<WpsJob>(context);
+                //jobList.UserId = usr3.Id;
+                jobList.SetFilter("OwnerId", usr3.Id.ToString());
+                jobList.Load();
+                items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_OWNED_USR3, items.Count);
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
         }
 
         [Test]
-        public void SearchWpsJobs() {
+        public void SearchAllWpsJobs() {
             context.AccessLevel = EntityAccessLevel.Privilege;
+            var usr1 = User.FromUsername(context, "testusr1");
+            context.StartImpersonation(usr1.Id);
 
-            EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+            try {
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                var ose = MasterCatalogue.OpenSearchEngine;
+
+                //get all jobs
+                var parameters = new NameValueCollection();
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(NBJOBS_USR1_ALL, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void SearchWpsJobsByQ() {
+            context.AccessLevel = EntityAccessLevel.Privilege;
+            var usr1 = User.FromUsername(context, "testusr1");
+            context.StartImpersonation(usr1.Id);
+
+            try {
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                var ose = MasterCatalogue.OpenSearchEngine;
+                wpsjobs.OpenSearchEngine = ose;
+
+                var parameters = new NameValueCollection();
+                parameters.Set("q", "usr1");
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(NBJOBS_USR1_OWNED, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void SearchWpsJobsByDomain() {
+            context.AccessLevel = EntityAccessLevel.Privilege;
+            var usr1 = User.FromUsername(context, "testusr1");
+            context.StartImpersonation(usr1.Id);
+
+            try {
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                var ose = MasterCatalogue.OpenSearchEngine;
+                wpsjobs.OpenSearchEngine = ose;
+
+                var parameters = new NameValueCollection();
+                parameters.Set("domain", "myDomainTest");
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(NBJOBS_USR1_DOMAIN, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void SearchWpsJobsByVisibility() {
+            context.AccessLevel = EntityAccessLevel.Privilege;
+            var usr1 = User.FromUsername(context, "testusr1");
             var ose = MasterCatalogue.OpenSearchEngine;
 
-            var parameters = new NameValueCollection();
+            try {
+                context.StartImpersonation(usr1.Id);
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
 
-            IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
-            Assert.That(osr.Items != null);
+                var parameters = new NameValueCollection();
+                parameters.Set("visibility", "owned");
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(NBJOBS_USR1_OWNED, osr.TotalResults);
+
+                parameters = new NameValueCollection();
+                parameters.Set("visibility", "public");
+                osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(NBJOBS_PUBLIC, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
         }
 
     }
