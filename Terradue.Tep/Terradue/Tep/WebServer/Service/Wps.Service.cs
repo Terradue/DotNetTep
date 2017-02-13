@@ -609,8 +609,10 @@ namespace Terradue.Tep.WebServer.Services
                         EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
                         wpsjobs.Load();
                         foreach(var job in wpsjobs){
-                            job.WpsId = wps.Identifier;
-                            job.Store();
+                            if (job.WpsId == namebefore) {
+                                job.WpsId = wps.Identifier;
+                                job.Store();
+                            }
                         }
                     }
                 }

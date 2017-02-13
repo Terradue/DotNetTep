@@ -98,9 +98,9 @@ namespace Terradue.Tep {
                     }
                 }
                 return provider;
-                if (Process != null) 
-                    return Process.Provider;
-                else return null;
+                //if (Process != null) 
+                //    return Process.Provider;
+                //else return null;
             }
             private set {
                 provider = value;
