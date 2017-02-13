@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using NUnit.Framework;
@@ -288,13 +288,13 @@ namespace Terradue.Tep.Test {
             context.StartImpersonation(usr1.Id);
             var domain = Domain.FromIdentifier(context, "myDomainTest");
 
-            try{
-                EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
-                jobList.SetFilter("DomainId", domain.Id.ToString());
-                jobList.Load();
-                var items = jobList.GetItemsAsList();
-                Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
-                Assert.That(items [0].Name == "domain1-job-usr2");
+			try{
+            EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
+            jobList.SetFilter("DomainId", domain.Id.ToString());
+            jobList.Load();
+            var items = jobList.GetItemsAsList();
+            Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
+            Assert.AreEqual("domain1-job-usr2", items[0].Name);
 
             } catch (Exception e) {
                 Assert.Fail(e.Message);
