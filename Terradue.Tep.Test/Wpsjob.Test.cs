@@ -293,7 +293,7 @@ namespace Terradue.Tep.Test {
             jobList.Load();
             var items = jobList.GetItemsAsList();
             Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
-            Assert.That(items [0].Name == "public-job-d");
+            Assert.AreEqual("domain1-job-usr2", items[0].Name);
 
             context.EndImpersonation();
         }
