@@ -152,6 +152,7 @@ namespace Terradue.Tep.Test {
 
                 //check how many communities user can see
                 communities = new EntityList<ThematicCommunity>(context);
+                communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC + 1, osr.TotalResults);
@@ -165,6 +166,7 @@ namespace Terradue.Tep.Test {
 
                 //check how many communities user can see
                 communities = new EntityList<ThematicCommunity>(context);
+                communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC + 1, osr.TotalResults);
