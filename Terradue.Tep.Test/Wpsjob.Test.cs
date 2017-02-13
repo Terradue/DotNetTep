@@ -288,14 +288,19 @@ namespace Terradue.Tep.Test {
             context.StartImpersonation(usr1.Id);
             var domain = Domain.FromIdentifier(context, "myDomainTest");
 
-            EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
-            jobList.SetFilter("DomainId", domain.Id.ToString());
-            jobList.Load();
-            var items = jobList.GetItemsAsList();
-            Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
-            Assert.That(items [0].Name == "public-job-d");
+            try{
+                EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
+                jobList.SetFilter("DomainId", domain.Id.ToString());
+                jobList.Load();
+                var items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
+                Assert.That(items [0].Name == "domain1-job-usr2");
 
-            context.EndImpersonation();
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
         }
 
         [Test]

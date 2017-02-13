@@ -7,6 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Terradue.Tep.Test</RootNamespace>
     <AssemblyName>Terradue.Tep.Test</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,11 +37,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-    </Reference>
+    <Reference Include="System.Core" />
     <Reference Include="GeoAPI">
-      <HintPath>..\packages\GeoAPI.1.7.3\lib\net40-client\GeoAPI.dll</HintPath>
+      <HintPath>..\packages\GeoAPI.1.7.3\lib\net45-client\GeoAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Web.XmlTransform">
       <HintPath>..\packages\Microsoft.Web.Xdt.2.1.1\lib\net40\Microsoft.Web.XmlTransform.dll</HintPath>
@@ -49,29 +51,34 @@
       <HintPath>..\packages\Mono.Addins.1.2\lib\net40\Mono.Addins.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data">
-      <HintPath>..\packages\MySql.Data.6.9.9\lib\net40\MySql.Data.dll</HintPath>
+      <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="NetTopologySuite">
-      <HintPath>..\packages\NetTopologySuite.1.13.3.2\lib\net40\NetTopologySuite.dll</HintPath>
+      <HintPath>..\packages\NetTopologySuite.1.13.3.2\lib\net45\NetTopologySuite.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="PowerCollections">
-      <HintPath>..\packages\NetTopologySuite.1.13.3.2\lib\net40\PowerCollections.dll</HintPath>
+      <HintPath>..\packages\NetTopologySuite.1.13.3.2\lib\net45\PowerCollections.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="System.Core" />
     <Reference Include="NetTopologySuite.IO.GeoTools">
-      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net40\NetTopologySuite.IO.GeoTools.dll</HintPath>
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net45\NetTopologySuite.IO.GeoTools.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="NetTopologySuite.IO.MsSqlSpatial">
-      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net40\NetTopologySuite.IO.MsSqlSpatial.dll</HintPath>
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net45\NetTopologySuite.IO.MsSqlSpatial.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="NetTopologySuite.IO.PostGis">
-      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net40\NetTopologySuite.IO.PostGis.dll</HintPath>
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net45\NetTopologySuite.IO.PostGis.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="NetTopologySuite.IO.ShapeFile">
-      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net40\NetTopologySuite.IO.ShapeFile.dll</HintPath>
+      <HintPath>..\packages\NetTopologySuite.IO.1.13.3.2\lib\net45\NetTopologySuite.IO.ShapeFile.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NuGet.Core">
       <HintPath>..\packages\NuGet.Core.2.10.1\lib\net40-Client\NuGet.Core.dll</HintPath>
@@ -82,40 +89,64 @@
     <Reference Include="NuGet4Mono.Extensions">
       <HintPath>..\packages\NuGet4Mono.Extensions.0.3.0\lib\net40\NuGet4Mono.Extensions.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Metadata">
-      <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.ServiceModel.Ogc">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.1.1.6\lib\net40\Terradue.ServiceModel.Ogc.dll</HintPath>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
       <HintPath>..\packages\Terradue.GeoJson.1.7.12\lib\net40\Terradue.GeoJson.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.ServiceModel.Syndication">
-      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.ServiceModel.Ogc.OwsContext">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.1.1\lib\net40\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Util">
-      <HintPath>..\packages\Terradue.Util.1.4.0\lib\net40\Terradue.Util.dll</HintPath>
-    </Reference>
-    <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.7\lib\net40-full\log4net.dll</HintPath>
+    <Reference Include="Terradue.Metadata">
+      <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.14.0\lib\net40\Terradue.OpenSearch.dll</HintPath>
     </Reference>
+    <Reference Include="Terradue.ServiceModel.Ogc">
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.1.1.6\lib\net40\Terradue.ServiceModel.Ogc.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.ServiceModel.Ogc.OwsContext">
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.1.1\lib\net40\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.ServiceModel.Syndication">
+      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Util">
+      <HintPath>..\packages\Terradue.Util.1.4.0\lib\net40\Terradue.Util.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseTest.cs" />
-    <Compile Include="Mono.Options\Options.cs" />
     <Compile Include="Wpsjob.Test.cs" />
     <Compile Include="Community.Test.cs" />
+    <Compile Include="Mono.Options\Options.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="app.config" />
+    <None Include="core\db\db-create.sql" />
+    <None Include="core\db\db-2.7.3.2#.sql" />
+    <None Include="core\db\db-2.7.3.1#.sql" />
+    <None Include="core\db\db-2.7.3#.sql" />
+    <None Include="core\db\db-2.7.2#.sql" />
+    <None Include="core\db\db-2.7.1#.sql" />
+    <None Include="core\db\db-2.7#.sql" />
+    <None Include="core\db\db-2.6.66#.sql" />
+    <None Include="core\db\db-2.6.59#.sql" />
+    <None Include="core\db\db-2.6.58#.sql" />
+    <None Include="core\db\db-2.6.49#.sql" />
+    <None Include="core\db\db-2.6.43#.sql" />
+    <None Include="core\db\db-2.6.36#.sql" />
+    <None Include="core\db\db-2.6.35#.sql" />
+    <None Include="core\db\db-2.6.31#.sql" />
+    <None Include="core\db\db-2.6.30#.sql" />
+    <None Include="core\db\db-2.6.29#.sql" />
+    <None Include="core\db\db-2.6.22#.sql" />
+    <None Include="core\db\db-2.6.19#.sql" />
+    <None Include="core\db\db-2.6.18#.sql" />
+    <None Include="core\db\db-2.5c.sql" />
+    <None Include="core\db\db-2.5#.sql" />
+    <None Include="core\db\db-2.4c.sql" />
+    <None Include="core\db\db-2.4#.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Terradue.Tep\Terradue.Tep.csproj">
