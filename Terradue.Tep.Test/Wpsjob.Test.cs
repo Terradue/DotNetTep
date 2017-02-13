@@ -217,7 +217,7 @@ namespace Terradue.Tep.Test {
 
                 //Test Visibility OWNED
                 jobList = new EntityList<WpsJob>(context);
-                jobList.ItemVisibility = EntityItemVisibility.All | EntityItemVisibility.OwnedOnly;
+                jobList.ItemVisibility = EntityItemVisibility.OwnedOnly;
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_OWNED, items.Count);
