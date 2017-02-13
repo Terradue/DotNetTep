@@ -25,8 +25,6 @@ namespace Terradue.Tep.Test {
                 throw;
             }
 
-            context.ConsoleDebug = true;
-
         }
 
         private void Init() {
@@ -112,7 +110,6 @@ namespace Terradue.Tep.Test {
             wpsjob.RemoteIdentifier = Guid.NewGuid().ToString();
             wpsjob.Identifier = Guid.NewGuid().ToString();
             wpsjob.OwnerId = owner.Id;
-            wpsjob.UserId = owner.Id;
             wpsjob.WpsId = wps.Provider.Identifier;
             wpsjob.ProcessId = wps.Identifier;
             wpsjob.CreatedTime = DateTime.UtcNow;
@@ -256,7 +253,7 @@ namespace Terradue.Tep.Test {
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_RESTRICTED_OWNED, items.Count);
-                Assert.AreEqual("restricted-job-usr1", items [0].Name);
+                Assert.AreEqual("restricted-job-usr1-2", items [0].Name);
 
                 //Test Visibility PRIVATE
                 jobList = new EntityList<WpsJob>(context);
@@ -314,25 +311,23 @@ namespace Terradue.Tep.Test {
 
             try {
                 EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
-                //jobList.UserId = usr1.Id;
                 jobList.SetFilter("OwnerId", usr1.Id.ToString());
                 jobList.Load();
                 var items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_OWNED, items.Count);
 
                 jobList = new EntityList<WpsJob>(context);
-                //jobList.UserId = usr2.Id;
                 jobList.SetFilter("OwnerId", usr2.Id.ToString());
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_OWNED_USR2, items.Count);
 
                 jobList = new EntityList<WpsJob>(context);
-                //jobList.UserId = usr3.Id;
                 jobList.SetFilter("OwnerId", usr3.Id.ToString());
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_OWNED_USR3, items.Count);
+
             } catch (Exception e) {
                 Assert.Fail(e.Message);
             } finally {
