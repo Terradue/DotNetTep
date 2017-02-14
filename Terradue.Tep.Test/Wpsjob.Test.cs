@@ -5,11 +5,14 @@ using NUnit.Framework;
 using Terradue.Tep;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
+using Terradue.OpenSearch.Engine;
 
 namespace Terradue.Tep.Test {
 
     [TestFixture]
     public class WpsJobTest : BaseTest {
+
+        private OpenSearchEngine ose;
 
         [TestFixtureSetUp]
         public override void FixtureSetup() {
@@ -24,6 +27,8 @@ namespace Terradue.Tep.Test {
                 Console.Error.WriteLine(e.Message);
                 throw;
             }
+
+            ose = MasterCatalogue.OpenSearchEngine;
 
         }
 
@@ -68,6 +73,13 @@ namespace Terradue.Tep.Test {
             role.GrantToUser(usr2, domain);
             role.GrantToUser(usr3, domain);
             role.GrantToUser(usr3, domain2);
+
+            //create community
+            ThematicCommunity community1 = new ThematicCommunity(context);
+            community1.Identifier = "community-public-1";
+            community1.Kind = DomainKind.Public;
+            community1.Store();
+            community1.SetOwner(usr3);
         }
 
         private WpsProvider CreateProvider(string identifier, string name, string url, bool proxy) {
@@ -108,7 +120,7 @@ namespace Terradue.Tep.Test {
             WpsJob wpsjob = new WpsJob(context);
             wpsjob.Name = name;
             wpsjob.RemoteIdentifier = Guid.NewGuid().ToString();
-            wpsjob.Identifier = Guid.NewGuid().ToString();
+            wpsjob.Identifier = name;
             wpsjob.OwnerId = owner.Id;
             wpsjob.WpsId = wps.Provider.Identifier;
             wpsjob.ProcessId = wps.Identifier;
@@ -343,7 +355,6 @@ namespace Terradue.Tep.Test {
 
             try {
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-                var ose = MasterCatalogue.OpenSearchEngine;
 
                 //get all jobs
                 var parameters = new NameValueCollection();
@@ -365,7 +376,6 @@ namespace Terradue.Tep.Test {
 
             try {
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-                var ose = MasterCatalogue.OpenSearchEngine;
                 wpsjobs.OpenSearchEngine = ose;
 
                 var parameters = new NameValueCollection();
@@ -388,7 +398,6 @@ namespace Terradue.Tep.Test {
 
             try {
                 EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-                var ose = MasterCatalogue.OpenSearchEngine;
                 wpsjobs.OpenSearchEngine = ose;
 
                 var parameters = new NameValueCollection();
@@ -404,10 +413,30 @@ namespace Terradue.Tep.Test {
         }
 
         [Test]
+        public void SearchWpsJobsByIdentifier() {
+            context.AccessLevel = EntityAccessLevel.Privilege;
+            var usr1 = User.FromUsername(context, "testusr1");
+
+            try {
+                context.StartImpersonation(usr1.Id);
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+
+                var parameters = new NameValueCollection();
+                parameters.Set("uid", "private-job-usr1");
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(NBJOBS_USR1_PRIVATE, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
         public void SearchWpsJobsByVisibility() {
             context.AccessLevel = EntityAccessLevel.Privilege;
             var usr1 = User.FromUsername(context, "testusr1");
-            var ose = MasterCatalogue.OpenSearchEngine;
 
             try {
                 context.StartImpersonation(usr1.Id);
@@ -422,6 +451,150 @@ namespace Terradue.Tep.Test {
                 parameters.Set("visibility", "public");
                 osr = ose.Query(wpsjobs, parameters);
                 Assert.AreEqual(NBJOBS_PUBLIC, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void ShareWpsJobToCommunity() { 
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            ThematicCommunity community = ThematicCommunity.FromIdentifier(context, "community-public-1");
+            var wpsjob = WpsJob.FromIdentifier(context, "private-job-usr1");
+            var wpsjob2 = WpsJob.FromIdentifier(context, "private-job-usr2");
+
+            context.AccessLevel = EntityAccessLevel.Privilege;
+
+            var usr1 = User.FromUsername(context, "testusr1");
+            context.StartImpersonation(usr1.Id);
+
+            try {
+
+                //share as non owner
+                try {
+                    community.ShareEntity(wpsjob2);
+                    Assert.Fail("Cannot share as non owner");
+                } catch (Exception) { }
+
+                //share as owner and not member of community
+                try {
+                    community.ShareEntity(wpsjob2);
+                    Assert.Fail("Cannot share as non member");
+                } catch (Exception) { }
+
+                community.JoinCurrentUser();
+
+                //share as owner and member of community
+                community.ShareEntity(wpsjob);
+
+                Assert.True(wpsjob.IsSharedToCommunity());
+
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                var parameters = new NameValueCollection();
+                parameters.Set("q", "private-job-usr1");
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(1, osr.TotalResults);
+                bool hasSharedLink = false;
+                foreach (var item in osr.Items) {
+                    if (item.Identifier == "private-job-usr1") {
+                        foreach (var link in item.Links) {
+                            if (link.RelationshipType == "results") hasSharedLink = true;
+                        }
+                    }
+                }
+                Assert.True(hasSharedLink);
+
+                //unshare the job
+                community.UnShareEntity(wpsjob);
+
+                Assert.False(wpsjob.IsSharedToCommunity());
+
+                wpsjobs = new EntityList<WpsJob>(context);
+                parameters = new NameValueCollection();
+                parameters.Set("q", "private-job-usr1");
+                osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(1, osr.TotalResults);
+                hasSharedLink = false;
+                foreach (var item in osr.Items) {
+                    if (item.Identifier == "private-job-usr1") {
+                        foreach (var link in item.Links) {
+                            if (link.RelationshipType == "results") hasSharedLink = true;
+                        }
+                    }
+                }
+                Assert.False(hasSharedLink);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void ShareWpsJobToUser() {
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            var wpsjob = WpsJob.FromIdentifier(context, "restricted-job-usr1-2");
+            var usr1 = User.FromUsername(context, "testusr1");
+
+            context.AccessLevel = EntityAccessLevel.Privilege;
+            context.StartImpersonation(usr1.Id);
+
+            try {
+                Assert.True(wpsjob.IsSharedToUser());
+
+                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+                var parameters = new NameValueCollection();
+                parameters.Set("q", "restricted-job-usr1-2");
+                IOpenSearchResultCollection osr = ose.Query(wpsjobs, parameters);
+                Assert.AreEqual(1, osr.TotalResults);
+                bool hasSharedLink = false;
+                foreach (var item in osr.Items) {
+                    if (item.Identifier == "restricted-job-usr1-2") {
+                        foreach (var link in item.Links) {
+                            if (link.RelationshipType == "results") hasSharedLink = true;
+                        }
+                    }
+                }
+                Assert.True(hasSharedLink);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void SearchCommunitiesForWpsJob() { 
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            ThematicCommunity community = ThematicCommunity.FromIdentifier(context, "community-public-1");
+            var wpsjob = WpsJob.FromIdentifier(context, "private-job-usr1");
+
+            context.AccessLevel = EntityAccessLevel.Privilege;
+
+            var usr1 = User.FromUsername(context, "testusr1");
+            context.StartImpersonation(usr1.Id);
+
+            try {
+                community.JoinCurrentUser();
+
+                //share as owner and member of community
+                community.ShareEntity(wpsjob);
+
+                EntityList<ThematicCommunity> communities = new EntityList<ThematicCommunity>(context);
+                var parameters = new NameValueCollection();
+                parameters.Set("correlatedTo", string.Format("{0}/job/wps/search?uid={1}", context.BaseUrl, "private-job-usr1"));
+                IOpenSearchResultCollection osr = ose.Query(communities, parameters);
+                Assert.AreEqual(1, osr.TotalResults);
+
+                //unshare the job
+                community.UnShareEntity(wpsjob);
+
+                Assert.False(wpsjob.IsSharedToCommunity());
 
             } catch (Exception e) {
                 Assert.Fail(e.Message);

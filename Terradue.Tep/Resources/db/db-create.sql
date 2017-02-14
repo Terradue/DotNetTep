@@ -198,5 +198,6 @@ CREATE TABLE rolegrant_pending (
 /*****************************************************************************/
 
 INSERT INTO role (identifier, name, description) VALUES ('member', 'member', 'Community default member');
+INSERT INTO role (identifier, name, description) VALUES ('pending', 'pending', 'Community pending user');
 
 /*****************************************************************************/

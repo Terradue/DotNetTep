@@ -319,6 +319,23 @@ namespace Terradue.Tep {
             return !IsPublic() && !IsRestricted();
         }
 
+        /// <summary>
+        /// Is the job shared to community.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        public bool IsSharedToCommunity() {
+            return (this.Owner != null && this.DomainId != this.Owner.DomainId);
+        }
+
+        /// <summary>
+        /// Is the job shared to user.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        public bool IsSharedToUser() {
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Id);
+        }
+
         public bool IsRestricted(){
 			string sql = String.Format("SELECT COUNT(*) FROM resourceset_perm WHERE id_resourceset={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue(sql) > 0;
@@ -442,17 +459,28 @@ namespace Terradue.Tep {
 
             atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
 
-            User owner = User.FromId(context, this.OwnerId);
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";
-            string usrUri = basepath.Uri.AbsoluteUri + "/" + owner.Username ;
-            string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(owner.LastName) ? owner.FirstName + " " + owner.LastName : owner.Username);
-            SyndicationPerson author = new SyndicationPerson(owner.Email, usrName, usrUri);
-            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", owner.Username));
+            string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username ;
+            string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(Owner.LastName) ? Owner.FirstName + " " + Owner.LastName : Owner.Username);
+            SyndicationPerson author = new SyndicationPerson(Owner.Email, usrName, usrUri);
+            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
             atomEntry.Authors.Add(author);
             atomEntry.Categories.Add(new SyndicationCategory("visibility", null, IsPublic() ? "public" : (IsRestricted() ? "restricted" : "private")));
             if (Kind == KINDRESOURCESETUSER) {
                 atomEntry.Categories.Add(new SyndicationCategory("default", null, "true"));
+            }
+
+            if (Owner.Id == context.UserId) {
+                //for owner only, we give the link to know with who the data package is shared
+                Uri sharedUrl = null;
+                //if shared with users
+                if (IsSharedToUser()) {
+                    sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                } else if (IsSharedToCommunity()) {
+                    sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                }
+                if (sharedUrl != null) atomEntry.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
             }
 
             return atomEntry;

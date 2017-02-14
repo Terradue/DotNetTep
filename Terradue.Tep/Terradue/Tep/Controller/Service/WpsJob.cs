@@ -14,6 +14,7 @@ using OpenGis.Wps;
 using System.Linq;
 using Terradue.Tep.OpenSearch;
 using Terradue.Portal.OpenSearch;
+using System.Web;
 
 namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true)]
@@ -214,6 +215,23 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if private was ised, <c>false</c> otherwise.</returns>
         public bool IsPrivate() {
             return !IsPublic() && !IsRestricted();
+        }
+
+        /// <summary>
+        /// Is the job shared to community.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        public bool IsSharedToCommunity() {
+            return (this.Owner != null && this.DomainId != this.Owner.DomainId);
+        }
+
+        /// <summary>
+        /// Is the job shared to user.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        public bool IsSharedToUser() {
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Owner.Id));
         }
 
         /// <summary>
@@ -481,6 +499,17 @@ namespace Terradue.Tep {
             Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
+            if (Owner.Id == context.UserId) {
+                //for owner only, we give the link to know with who the wpsjob is shared
+                Uri sharedUrl = null;
+                //if shared with users
+                if (IsSharedToUser()) {
+                    sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                } else if (IsSharedToCommunity()) {
+                    sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                }
+                if(sharedUrl != null) result.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
+            }
 
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (IsRestricted() ? "restricted" : "private")));

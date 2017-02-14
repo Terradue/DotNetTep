@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Terradue.Tep;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
+using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep.Test {
 
@@ -99,6 +100,7 @@ namespace Terradue.Tep.Test {
         public void JoinPublicCommunity() {
             context.AccessLevel = EntityAccessLevel.Privilege;
             var usr1 = User.FromUsername(context, "testusr1");
+            var usr2 = User.FromUsername(context, "testusr2");
             context.StartImpersonation(usr1.Id);
 
             try {
@@ -108,12 +110,29 @@ namespace Terradue.Tep.Test {
                 //user not part of community
                 Assert.AreEqual(0, roles.Length);
 
-                Role role = Role.FromIdentifier(context, RoleTep.MEMBER);
-                role.GrantToUser(usr1, community);
+                community.JoinCurrentUser();
                 roles = Role.GetUserRolesForDomain(context, usr1.Id, community.Id);
 
                 //user part of community
                 Assert.AreEqual(1, roles.Length);
+                Assert.AreEqual(RoleTep.MEMBER, roles [0].Name);
+
+                //check user cannot joins twice
+                community.JoinCurrentUser();
+                roles = Role.GetUserRolesForDomain(context, usr1.Id, community.Id);
+                Assert.AreEqual(1, roles.Length);
+
+                context.EndImpersonation();
+                context.StartImpersonation(usr2.Id);
+
+                var role = Role.FromIdentifier(context, RoleTep.STARTER);
+
+                community.SetUserRole(usr1, role);
+                roles = Role.GetUserRolesForDomain(context, usr1.Id, community.Id);
+
+                //user part of community
+                Assert.AreEqual(1, roles.Length);
+                Assert.AreEqual(RoleTep.STARTER, roles [0].Name);
 
             } catch (Exception e) {
                 Assert.Fail(e.Message);
@@ -150,6 +169,9 @@ namespace Terradue.Tep.Test {
                 community.SetUserAsTemporaryMember(usr1.Id, role.Id);
                 Assert.True(community.IsUserPending(usr1.Id));
 
+                context.EndImpersonation();
+                context.StartImpersonation(usr1.Id);
+
                 //check how many communities user can see
                 communities = new EntityList<ThematicCommunity>(context);
                 communities.Identifier = "community";
@@ -157,8 +179,32 @@ namespace Terradue.Tep.Test {
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC + 1, osr.TotalResults);
 
-                context.EndImpersonation();
-                context.StartImpersonation(usr1.Id);
+                //check visibility is private + pending
+                var items = osr.Items;
+                bool isprivate = false, isVisibilityPending = false, ispublic = false, isUserPending = false;
+                foreach (var item in items) {
+                    if (item.Title.Text == "community-private-1") {
+                        foreach (var cat in item.Categories) {
+                            if (cat.Name == "visibility") {
+                                if (cat.Label == "private") isprivate = true;
+                                else if (cat.Label == "public") ispublic = true;
+                            } else if (cat.Name == "userStatus" && cat.Label == "pending") isVisibilityPending = true;
+                        }
+                        foreach (var author in item.Authors) {
+                            bool isUsr1 = false;
+                            var elements = author.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
+                            if (elements.Count == 1 && elements [0] == usr1.Username) isUsr1 = true;
+                            if (isUsr1) {
+                                elements = author.ElementExtensions.ReadElementExtensions<string>("status", "http://purl.org/dc/elements/1.1/");
+                                if (elements.Count == 1 && elements [0] == RoleTep.PENDING) isUserPending = true;
+                            }
+                        }
+                    }
+                }
+                Assert.True(isprivate);
+                Assert.True(isVisibilityPending);
+                Assert.True(isUserPending);
+                Assert.False(ispublic);
 
                 //usr1 validates
                 community.JoinCurrentUser();
@@ -171,12 +217,53 @@ namespace Terradue.Tep.Test {
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC + 1, osr.TotalResults);
 
+                //check visibility is private only
+                items = osr.Items;
+                isprivate = false;
+                isVisibilityPending = false;
+                ispublic = false;
+                isUserPending = false;
+                foreach (var item in items) {
+                    if (item.Title.Text == "community-private-1") {
+                        foreach (var cat in item.Categories) {
+                            if (cat.Name == "visibility") {
+                                if (cat.Label == "private") isprivate = true;
+                                else if (cat.Label == "public") ispublic = true;
+                            } else if (cat.Name == "userStatus" && cat.Label == "pending") isVisibilityPending = true;
+                        }
+                        foreach (var author in item.Authors) {
+                            bool isUsr1 = false;
+                            var elements = author.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
+                            if (elements.Count == 1 && elements [0] == usr1.Username) isUsr1 = true;
+                            if (isUsr1) {
+                                elements = author.ElementExtensions.ReadElementExtensions<string>("status", "http://purl.org/dc/elements/1.1/");
+                                if (elements.Count == 1 && elements [0] == RoleTep.PENDING) isUserPending = true;
+                            }
+                        }
+                    }
+                }
+                Assert.True(isprivate);
+                Assert.False(isVisibilityPending);
+                Assert.False(isUserPending);
+                Assert.False(ispublic);
+
+                //remove from community
+                community.RemoveUser(usr1);
+
+                //check how many communities user can see
+                communities = new EntityList<ThematicCommunity>(context);
+                communities.Identifier = "community";
+                communities.OpenSearchEngine = ose;
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
+
             } catch (Exception e) {
                 Assert.Fail(e.Message);
             } finally {
                 context.EndImpersonation();
             }
         }
+
 
     }
 }

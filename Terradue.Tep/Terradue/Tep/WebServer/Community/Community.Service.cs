@@ -151,8 +151,8 @@ namespace Terradue.Tep.WebServer.Services{
                 context.LogInfo (this, string.Format ("/job/wps/{{Id}}/community/{{cId}} PUT Id='{0}', CId='{1}", request.Id, request.CId));
 
                 var wpsjob = WpsJob.FromId (context, request.Id);
-                wpsjob.DomainId = request.CId;
-                wpsjob.Store ();
+                var community = ThematicCommunity.FromId(context, request.CId);
+                community.ShareEntity(wpsjob);
 
                 context.Close ();
             } catch (Exception e) {
@@ -173,8 +173,8 @@ namespace Terradue.Tep.WebServer.Services{
                 context.LogInfo (this, string.Format ("/data/package/{{Id}}/community/{{cId}} PUT Id='{0}', CId='{1}", request.Id, request.CId));
 
                 var dp = DataPackage.FromId (context, request.Id);
-                dp.DomainId = request.CId;
-                dp.Store ();
+                var community = ThematicCommunity.FromId(context, request.CId);
+                community.ShareEntity(dp);
 
                 context.Close ();
             } catch (Exception e) {

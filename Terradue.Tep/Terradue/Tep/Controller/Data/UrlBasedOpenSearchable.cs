@@ -54,11 +54,8 @@ namespace Terradue.Tep {
                             }
 
                             if (match.Groups[1].Value == "/data/package") {
-//                                string datapackageId = match.Groups[2].Value;
-//                                DataPackage dp = DataPackage.FromIdentifier(context, datapackageId);
-//                                entity = dp;
                                 EntityList<DataPackage> list = new EntityList<DataPackage>(context);
-                                list.Load();
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 
@@ -81,11 +78,8 @@ namespace Terradue.Tep {
                             }
 
                             if (match.Groups[1].Value == "/job/wps") {
-//                                string jobId = match.Groups[2].Value;
-//                                WpsJob job = WpsJob.FromIdentifier(context, jobId);
                                 EntityList<WpsJob> list = new EntityList<WpsJob>(context);
-                                list.Load();
-//                                list.Include(job);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 

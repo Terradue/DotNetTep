@@ -26,6 +26,10 @@ namespace Terradue.Tep {
         public static readonly string OWNER = "owner";
         public static readonly string MANAGER = "manager";
         public static readonly string MEMBER = "member";
+        public static readonly string PENDING = "pending";
+        public static readonly string VISITOR = "visitor";
+        public static readonly string STARTER = "starter";
+        public static readonly string EXPLORER = "explorer";
 
         public RoleTep() : base(null) {
         }
