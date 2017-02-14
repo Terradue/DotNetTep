@@ -416,7 +416,10 @@ namespace Terradue.Tep {
         public new KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
             case "q":
-                return new KeyValuePair<string, string>("Name", value);
+                if (!string.IsNullOrEmpty(value))
+                    return new KeyValuePair<string, string>("Name", "*" + value + "*");
+                else
+                    return new KeyValuePair<string, string>();
             default:
                 return base.GetFilterForParameter(parameter, value);
             }

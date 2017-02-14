@@ -144,6 +144,18 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Is the user joined.
+        /// </summary>
+        /// <returns><c>true</c>, if user is joined, <c>false</c> otherwise.</returns>
+        /// <param name="usrId">Usr identifier.</param>
+        public bool IsUserJoined(int usrId) {
+            if (IsUserPending(usrId)) return false;
+
+            var uroles = Role.GetUserRolesForDomain(context, usrId, this.Id);
+            return uroles.Length > 0;
+        }
+
+        /// <summary>
         /// Sets user as temporary member.
         /// </summary>
         /// <param name="id">User or Group Identifier.</param>
@@ -304,49 +316,94 @@ namespace Terradue.Tep {
             return true;
         }
 
-        public new AtomItem ToAtomItem(NameValueCollection parameters) {
-            AtomItem result = base.ToAtomItem(parameters);
-            if (result == null) return null;
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+            bool ispublic = this.Kind == DomainKind.Public;
+            bool isprivate = this.Kind == DomainKind.Private;
 
-            //TODO: entity keyword specific to Community ?
+            AtomItem result = new AtomItem();
+
+            //we only want thematic groups domains (public or private)
+            if (!ispublic && !isprivate) return null;
+
+            if (IsUserPending(context.UserId)) {
+                result.Categories.Add(new SyndicationCategory("status", null, "pending"));
+            } else if (IsUserJoined(context.UserId)) {
+                result.Categories.Add(new SyndicationCategory("status", null, "joined"));
+            } else if (!ispublic) return null;
+
+            var entityType = EntityType.GetEntityType(typeof(ThematicCommunity));
+            Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+
+            result.Id = id.ToString();
+            result.Title = new TextSyndicationContent(Identifier);
+            result.Content = new TextSyndicationContent(Identifier);
+
+            result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            result.Summary = new TextSyndicationContent(Description);
+            result.ReferenceData = this;
+            result.PublishDate = new DateTimeOffset(DateTime.UtcNow);
 
             //owner
             if (Owner != null) {
                 var ownerUri = Owner.GetUserPageLink();
                 SyndicationPerson ownerPerson = new SyndicationPerson(Owner.Email, Owner.FirstName + " " + Owner.LastName, ownerUri);
                 ownerPerson.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
-                ownerPerson.ElementExtensions.Add(new SyndicationElementExtension("role", "http://purl.org/dc/elements/1.1/", RoleTep.OWNER));
                 result.Authors.Add(ownerPerson);
             }
 
-            //check pending users (only for non public communities)
-            if (this.Kind != DomainKind.Public) {
-                //remove authors
-                result.Authors.Clear();
-                var roles = new EntityList<Role>(context);
-                roles.Load();
-                foreach (var role in roles) {
-                    if (role.Identifier != RoleTep.PENDING) {
-                        var usrs = role.GetUsers(this.Id);
-                        foreach (var usrId in usrs) {
-                            User usr = User.FromId(context, usrId);
-                            SyndicationPerson author = new SyndicationPerson(usr.Email, usr.FirstName + " " + usr.LastName, "");
-                            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", usr.Username));
-                            author.ElementExtensions.Add(new SyndicationElementExtension("role", "http://purl.org/dc/elements/1.1/", role.Identifier));
-                            if (IsUserPending(usr.Id)) {
-                                author.ElementExtensions.Add(new SyndicationElementExtension("status", "http://purl.org/dc/elements/1.1/", RoleTep.PENDING));
-                            }
-                            result.Authors.Add(author);
-                        }
+            result.Links.Add(new SyndicationLink(id, "self", Identifier, "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(IconUrl)) {
+                Uri uri;
+                if (IconUrl.StartsWith("http")) {
+                    uri = new Uri(IconUrl);
+                } else {
+                    var urib = new UriBuilder(System.Web.HttpContext.Current.Request.Url);
+                    urib.Path = IconUrl;
+                    uri = urib.Uri;
+                }
+
+                result.Links.Add(new SyndicationLink(uri, "icon", "", base.GetImageMimeType(IconUrl), 0));
+            }
+
+            result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : "private"));
+
+            //overview
+            var roles = new EntityList<Role>(context);
+            roles.Load();
+            var rolesOverview = new List<RoleOverview>();
+            foreach (var role in roles) {
+                if (role.Identifier != RoleTep.PENDING) {
+                    var usersIds = role.GetUsers(this.Id).ToList();
+                    if (usersIds.Count > 0) {
+                        rolesOverview.Add(new RoleOverview { Count = usersIds.Count, Value = role.Identifier });
                     }
                 }
             }
+            result.ElementExtensions.Add("overview", "https://standards.terradue.com", rolesOverview);
 
-            AppsLink = LoadAppsLink();
-            if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "via", "", "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"])) {
+                AppsLink = LoadAppsLink();
+                if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "https://standards.terradue.com", "application/atom+xml", 0));
 
-            if (IsUserPending(context.UserId)) {
-                result.Categories.Add(new SyndicationCategory("userStatus", null, "pending"));
+                var usersCommunity = new List<UserRole>();
+                foreach (var role in roles) {
+                    if (role.Identifier != RoleTep.PENDING) {
+                        var usersIds = role.GetUsers(this.Id).ToList();
+                        if (usersIds.Count > 0) {
+                            foreach (var usrId in usersIds) {
+                                var user = User.FromId(context, usrId);
+                                usersCommunity.Add(new UserRole {
+                                    Username = user.Username,
+                                    Name = user.FirstName + " " + user.LastName,
+                                    Email = user.Email,
+                                    Role = role.Identifier,
+                                    Status = IsUserPending(usrId) ? "pending" : "joined"
+                                });
+                            }
+                        }
+                    }
+                }
+                result.ElementExtensions.Add("users", "https://standards.terradue.com", usersCommunity);
             }
 
             return result;
@@ -354,13 +411,17 @@ namespace Terradue.Tep {
 
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
+            case "uid":
+                return new KeyValuePair<string, string>("Identifier", value);
+            case "id":
+                return new KeyValuePair<string, string>("Identifier", value);
             case "correlatedTo":
                 var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
                 if (entity is EntityList<WpsJob>) {
                     var entitylist = entity as EntityList<WpsJob>;
                     var items = entitylist.GetItemsAsList();
-                    if (items.Count > 0) { 
-                        return new KeyValuePair<string, string>("Id", items[0].DomainId.ToString());
+                    if (items.Count > 0) {
+                        return new KeyValuePair<string, string>("Id", items [0].DomainId.ToString());
                     }
                 } else if (entity is EntityList<DataPackage>) {
                     var entitylist = entity as EntityList<DataPackage>;
@@ -377,6 +438,25 @@ namespace Terradue.Tep {
 
 
         #endregion
+    }
+
+    public class RoleOverview {
+        public int Count { get; set; }
+        public string Value { get; set; }
+
+        public RoleOverview() { }
+
+    }
+
+    public class UserRole {
+        public string Username { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+        public string Status { get; set; }
+
+        public UserRole() { }
+
     }
 
     public class ThematicGroupFactory {
