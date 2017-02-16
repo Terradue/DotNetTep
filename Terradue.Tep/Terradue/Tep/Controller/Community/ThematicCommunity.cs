@@ -381,7 +381,8 @@ namespace Terradue.Tep {
             }
             result.ElementExtensions.Add("overview", "https://standards.terradue.com", rolesOverview);
 
-            if (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"])) {
+            //we show these info only for owner and only for specific id view
+            if (IsUserOwner(context.UserId) && (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"]))) {
                 AppsLink = LoadAppsLink();
                 if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "https://standards.terradue.com", "application/atom+xml", 0));
 
