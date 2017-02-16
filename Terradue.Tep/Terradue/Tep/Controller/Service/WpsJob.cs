@@ -433,7 +433,7 @@ namespace Terradue.Tep {
 
         public new NameValueCollection GetOpenSearchParameters() {
             NameValueCollection nvc = base.GetOpenSearchParameters();
-            nvc.Add("basicrequest", "{t2:visibility?}");
+            nvc.Add("basic", "{t2:basic?}");
             return nvc;
         }
 
@@ -448,15 +448,15 @@ namespace Terradue.Tep {
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
-            if (!string.IsNullOrEmpty(parameters ["q"])) {
-                string q = parameters ["q"].ToLower();
-                if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
-                    return null;
-            }
+            //if (!string.IsNullOrEmpty(parameters ["q"])) {
+            //    string q = parameters ["q"].ToLower();
+            //    if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
+            //        return null;
+            //}
 
-            if (!string.IsNullOrEmpty(parameters ["public"]) && parameters ["public"].Equals("true")) {
-                if (this.IsPrivate()) return null;
-            }
+            //if (!string.IsNullOrEmpty(parameters ["public"]) && parameters ["public"].Equals("true")) {
+            //    if (this.IsPrivate()) return null;
+            //}
 
             WpsProvider provider = null;
             AtomItem result = new AtomItem();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.Serialization;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
@@ -384,7 +385,7 @@ namespace Terradue.Tep {
             //we show these info only for owner and only for specific id view
             if (IsUserOwner(context.UserId) && (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"]))) {
                 AppsLink = LoadAppsLink();
-                if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "https://standards.terradue.com", "application/atom+xml", 0));
+                if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
 
                 var usersCommunity = new List<UserRole>();
                 foreach (var role in roles) {
@@ -441,19 +442,28 @@ namespace Terradue.Tep {
         #endregion
     }
 
+    [DataContract]
     public class RoleOverview {
+        [DataMember]
         public int Count { get; set; }
+        [DataMember]
         public string Value { get; set; }
 
         public RoleOverview() { }
 
     }
 
+    [DataContract]
     public class UserRole {
+        [DataMember]
         public string Username { get; set; }
+        [DataMember]
         public string Name { get; set; }
+        [DataMember]
         public string Email { get; set; }
+        [DataMember]
         public string Role { get; set; }
+        [DataMember]
         public string Status { get; set; }
 
         public UserRole() { }
