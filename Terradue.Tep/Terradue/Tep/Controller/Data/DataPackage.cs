@@ -320,7 +320,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Is the job shared to community.
+        /// Is the data package shared to community.
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         public bool IsSharedToCommunity() {
@@ -328,12 +328,22 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Is the job shared to user.
+        /// Is the data package shared to user.
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         public bool IsSharedToUser() {
             var sharedUsersIds = this.GetAuthorizedUserIds();
-            return sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Id);
+            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Id));
+        }
+
+        /// <summary>
+        /// Is the data package shared to user.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        /// <param name="id">Identifier.</param>
+        public bool IsSharedToUser(int id) {
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 
         public bool IsRestricted(){
