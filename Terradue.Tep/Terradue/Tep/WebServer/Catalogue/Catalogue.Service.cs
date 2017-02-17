@@ -261,24 +261,14 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/search GET"));
 
-                EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage>(context);
                 EntityList<Terradue.Tep.DataPackage> datapackages = new EntityList<DataPackage>(context);
                 if (!string.IsNullOrEmpty (request.Key)) {
                     UserTep user = UserTep.FromApiKey (context, request.Key);
-                    tmp_datapackages.UserId = user.Id;
+                    datapackages.UserId = user.Id;
                     context.AccessLevel = EntityAccessLevel.Privilege;
                 }
-                context.ConsoleDebug = true;
-
-                tmp_datapackages.Load();
-
-                foreach (DataPackage dp in tmp_datapackages) {
-                    if (dp.Kind == RemoteResourceSet.KINDRESOURCESETNORMAL) {
-                        datapackages.Include (dp);
-                        Console.WriteLine ("DataPackage = " + dp.Id);
-                        context.LogDebug (this, "DataPackage = " + dp.Id);
-                    }
-                }
+                datapackages.SetFilter("Kind", RemoteResourceSet.KINDRESOURCESETNORMAL.ToString());
+               
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
