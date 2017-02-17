@@ -29,17 +29,7 @@ namespace Terradue.Tep
     }
 
     [Route ("/community", "PUT", Summary = "PUT the the community", Notes = "")]
-    public class CommunityUpdateRequestTep : IReturn<WebResponseBool>
-    {
-        [ApiMember (Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Identifier { get; set; }
-        [ApiMember (Name = "description", Description = "Description of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Description { get; set; }
-        [ApiMember (Name = "name", Description = "Name of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Name { get; set; }
-        [ApiMember (Name = "apps", Description = "Apps link of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Apps { get; set; }
-    }
+    public class CommunityUpdateRequestTep : WebCommunityTep, IReturn<WebResponseBool> {}
 
     [Route ("/community/user", "DELETE", Summary = "POST the current user into the community", Notes = "")]
     public class CommunityRemoveUserRequestTep : IReturn<WebResponseBool>
@@ -80,6 +70,9 @@ namespace Terradue.Tep
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Apps { get; set; }
 
+        [ApiMember(Name = "DiscussCategory", Description = "Discuss category", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string DiscussCategory { get; set; }
+
         public WebCommunityTep() {}
 
         /// <summary>
@@ -88,6 +81,7 @@ namespace Terradue.Tep
         /// <param name="entity">Entity.</param>
         public WebCommunityTep(ThematicCommunity entity, IfyContext context = null) : base(entity) {
             Apps = entity.AppsLink;
+            DiscussCategory = entity.DiscussCategory;
         }
 
         /// <summary>
@@ -99,6 +93,7 @@ namespace Terradue.Tep
         public ThematicCommunity ToEntity(IfyContext context, ThematicCommunity input){
             ThematicCommunity entity = (input == null ? new ThematicCommunity(context) : input);
 
+            entity.DiscussCategory = DiscussCategory;
             entity.AppsLink = Apps;
             return entity;
         }

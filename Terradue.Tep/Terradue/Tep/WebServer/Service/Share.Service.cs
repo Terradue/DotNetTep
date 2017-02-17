@@ -19,13 +19,13 @@ namespace Terradue.Tep.WebServer.Services {
         [ApiMember(Name="url", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string url { get; set; }
 
-        [ApiMember(Name="id", Description = "thematic applicaiton id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        [ApiMember(Name="id", Description = "thematic application id", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string id { get; set; }
 
         [ApiMember(Name="visibility", Description = "type of sharing", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string visibility { get; set; }
 
-        [ApiMember(Name="groups", Description = "group identifier", ParameterType = "query", DataType = "int", IsRequired = true)]
+        [ApiMember(Name="domain", Description = "group identifier", ParameterType = "query", DataType = "int", IsRequired = true)]
         public List<int> groups { get; set; }
     }
 
@@ -48,7 +48,6 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(ShareCreateRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            object result;
             context.Open();
             context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, request.groups != null ? string.Join("'",request.groups) : "null"));
                             

@@ -468,12 +468,11 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get (UserSearchRequest request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
-            object result;
             context.Open ();
             context.LogInfo (this, string.Format ("/user/search GET"));
 
             EntityList<UserTep> users = new EntityList<UserTep> (context);
-            users.Load ();
+            users.AddSort("Identifier", SortDirection.Ascending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
@@ -490,7 +489,6 @@ namespace Terradue.Tep.WebServer.Services {
             IOpenSearchResultCollection osr = ose.Query (users, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (users, osr);
-            //            OpenSearchFactory.ReplaceSelfLinks(wpsjobs, httpRequest.QueryString, osr.Result, EntrySelfLinkTemplate);
 
             context.Close ();
             return new HttpResult (osr.SerializeToString (), osr.ContentType);
@@ -501,7 +499,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/job/wps/description GET"));
+                context.LogInfo (this, string.Format ("/user/description GET"));
 
                 EntityList<UserTep> users = new EntityList<UserTep> (context);
                 users.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;

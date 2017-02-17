@@ -30,9 +30,13 @@ namespace Terradue.Tep.WebServer {
     }
 
     [Route("/user/current/logstatus", "GET", Summary = "GET the status of the current user", Notes = "true = is logged, false = is not logged")]
-    public class UserCurrentIsLoggedRequestTep : IReturn<WebResponseBool>
-    {
-    }
+    public class UserCurrentIsLoggedRequestTep : IReturn<WebResponseBool> {}
+
+    [Route("/user/search", "GET", Summary = "GET user as opensearch", Notes = "")]
+    public class UserSearchRequestTep : IReturn<HttpResult> { }
+
+    [Route("/user/description", "GET", Summary = "GET user as opensearch", Notes = "")]
+    public class UserDescriptionRequestTep : IReturn<HttpResult> { }
 
     [Route("/user/current/sso", "GET", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserGetCurrentSSORequestTep : IReturn<WebUserTep> {}

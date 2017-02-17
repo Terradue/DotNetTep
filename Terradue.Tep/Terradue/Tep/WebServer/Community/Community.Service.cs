@@ -43,7 +43,7 @@ namespace Terradue.Tep.WebServer.Services{
                     domain.JoinCurrentUser();
                 } else { 
                     //case owner add user with role
-                    domain.SetUserAsTemporaryMember(user.Id, role.Id);
+                    domain.SetUserAsTemporaryMember(user, role.Id);
                 }
 
                 context.Close ();
@@ -102,9 +102,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 if (!domain.IsUserOwner(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
-                domain.Description = request.Description;
-                domain.Name = request.Name;
-                domain.AppsLink = request.Apps;
+                domain = request.ToEntity(context, domain);
                 domain.Store ();
 
                 context.Close ();

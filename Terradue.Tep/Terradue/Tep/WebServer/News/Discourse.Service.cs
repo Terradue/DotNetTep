@@ -22,6 +22,11 @@ namespace Terradue.Tep.WebServer.Services {
             return GetDiscourseRequest(string.Format("c/{0}/l/latest.json", request.catId));
         }
 
+        public object Get(GetDiscourseTopTopicsPerCategory request) {
+            log.InfoFormat("/discourse/c/{{catId}}/l/top GET catId='{0}'", request.catId);
+            return GetDiscourseRequest(string.Format("c/{0}/l/top.json", request.catId));
+        }
+
         public object Get(GetDiscourseTopic request){
             log.InfoFormat("/discourse/t/{{topicId}} GET topicId='{0}'", request.topicId);
             return GetDiscourseRequest(string.Format("t/{0}.json", request.topicId));
@@ -80,6 +85,12 @@ namespace Terradue.Tep.WebServer.Services {
     public class GetDiscourseLatestTopicsPerCategory {
         [ApiMember(Name="catId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int catId{ get; set; }
+    }
+
+    [Route("/discourse/c/{catId}/l/top", "GET", Summary = "", Notes = "")]
+    public class GetDiscourseTopTopicsPerCategory {
+        [ApiMember(Name = "catId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int catId { get; set; }
     }
 
     [Route("/discourse/c/{catId}/search", "GET", Summary = "", Notes = "")]

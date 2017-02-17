@@ -23,9 +23,6 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class WpsJobServiceTep : ServiceStack.ServiceInterface.Service {
 
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
-            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         public object Get(WpsJobsGetRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             List<WebWpsJobTep> result = new List<WebWpsJobTep>();
@@ -74,20 +71,12 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(WpsJobSearchRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            object result;
             context.Open();
             context.LogInfo(this,string.Format("/job/wps/search GET"));
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
             wpsjobs.AccessLevel = EntityAccessLevel.Privilege;//for admin not to get all items when visibility is set
-            //tmp.Load();
-
-            //List<WpsJob> jobs = tmp.GetItemsAsList();
-            //jobs.Sort();
-            //jobs.Reverse();
-
-            //EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            //foreach (WpsJob job in jobs) wpsjobs.Include(job);
+            wpsjobs.AddSort("Id", SortDirection.Descending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
@@ -173,8 +162,6 @@ namespace Terradue.Tep.WebServer.Services {
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 HttpRequest httpRequest = HttpContext.Current.Request;
-                var type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                var nvc = httpRequest.QueryString;
 
                 WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);
                 OpenSearchDescription osd = wpsjobProductOs.GetProxyOpenSearchDescription ();
@@ -191,13 +178,12 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(WpsJobCreateRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            HttpResult result = null;
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
             try{
                 job.Store();
-            }catch(DuplicateEntityIdentifierException e){
+            }catch(DuplicateEntityIdentifierException){
                 job = WpsJob.FromIdentifier(context, request.Identifier);
                 job.Name = request.Name;
                 job.Store();
@@ -234,7 +220,6 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Put(WpsJobUpdateRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            HttpResult result = null;
             context.Open();
             context.LogInfo(this,string.Format("/job/wps PUT Id='{0}'",request.Id));
 

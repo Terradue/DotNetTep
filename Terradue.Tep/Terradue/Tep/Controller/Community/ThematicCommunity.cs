@@ -11,9 +11,13 @@ using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
 
+    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
     public class ThematicCommunity : Domain {
 
         public string AppsLink { get; set; }
+
+        [EntityDataField("discuss")]
+        public string DiscussCategory { get; set; }
 
         private UserTep owner;
         public UserTep Owner {
@@ -157,21 +161,33 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Sets user as temporary member.
+        /// Sets the user as temporary member.
         /// </summary>
-        /// <param name="id">User or Group Identifier.</param>
+        /// <param name="user">User.</param>
         /// <param name="roleId">Role identifier.</param>
-        public void SetUserAsTemporaryMember(int id, int roleId) {
+        public void SetUserAsTemporaryMember(User user, int roleId) {
             //only owner can do this
             if (!IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
 
             //to set as temporary user we give a temporary pending role
             Role role = Role.FromIdentifier(context, RoleTep.PENDING);
-            role.GrantToUser(id, this.Id);
+            role.GrantToUser(user.Id, this.Id);
 
             //we now put to the role the manager wanted
             role = Role.FromId(context, roleId);
-            role.GrantToUser(id, this.Id);
+            role.GrantToUser(user.Id, this.Id);
+
+            //TODO: send email
+            try {
+                string emailFrom = context.GetConfigValue("MailSenderAddress");
+                string subject = context.GetConfigValue("CommunityJoinEmailSubject");
+                subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                subject = subject.Replace("$(COMMUNITY)", this.Name);
+                subject = subject.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
+                string body = context.GetConfigValue("CommunityJoinEmailBody");
+                body = body.Replace("$(COMMUNITY)", this.Name);
+                context.SendMail(emailFrom, user.Email, subject, body);
+            } catch (Exception){}
         }
 
         /// <summary>
@@ -182,7 +198,7 @@ namespace Terradue.Tep {
         public void SetGroupAsTemporaryMember(int grpId, int roleId) {
             Group grp = Group.FromId(context, grpId);
             var users = grp.GetUsers();
-            foreach (var usr in users) SetUserAsTemporaryMember(usr.Id, roleId);
+            foreach (var usr in users) SetUserAsTemporaryMember(usr, roleId);
         }
 
         /// <summary>
@@ -231,7 +247,13 @@ namespace Terradue.Tep {
             if (items != null && items.Count > 0) {
                 return items [0];
             }
-            return null;
+
+            //the Thematic Application does not exists, we create it
+            ThematicApplication app = new ThematicApplication(context);
+            app.Kind = ThematicApplication.KINDRESOURCESETAPPS;
+            app.Identifier = "_apps_" + this.Id;
+            app.Store();
+            return app;
         }
 
         /// <summary>
@@ -253,7 +275,6 @@ namespace Terradue.Tep {
 
         private void StoreAppsLink(string link) {
             var app = GetThematicApplication();
-            if (app == null) return;
 
             //delete old links
             app.LoadItems();
@@ -383,29 +404,33 @@ namespace Terradue.Tep {
             result.ElementExtensions.Add("overview", "https://standards.terradue.com", rolesOverview);
 
             //we show these info only for owner and only for specific id view
-            if (IsUserOwner(context.UserId) && (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"]))) {
-                AppsLink = LoadAppsLink();
-                if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
-
-                var usersCommunity = new List<UserRole>();
-                foreach (var role in roles) {
-                    if (role.Identifier != RoleTep.PENDING) {
-                        var usersIds = role.GetUsers(this.Id).ToList();
-                        if (usersIds.Count > 0) {
-                            foreach (var usrId in usersIds) {
-                                var user = User.FromId(context, usrId);
-                                usersCommunity.Add(new UserRole {
-                                    Username = user.Username,
-                                    Name = user.FirstName + " " + user.LastName,
-                                    Email = user.Email,
-                                    Role = role.Identifier,
-                                    Status = IsUserPending(usrId) ? "pending" : "joined"
-                                });
+            if (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"])) {
+                if (IsUserOwner(context.UserId)) {
+                    AppsLink = LoadAppsLink();
+                    if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
+                    if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
+                }
+                if (IsUserJoined(context.UserId)) {
+                    var usersCommunity = new List<UserRole>();
+                    foreach (var role in roles) {
+                        if (role.Identifier != RoleTep.PENDING) {
+                            var usersIds = role.GetUsers(this.Id).ToList();
+                            if (usersIds.Count > 0) {
+                                foreach (var usrId in usersIds) {
+                                    var user = User.FromId(context, usrId);
+                                    usersCommunity.Add(new UserRole {
+                                        Username = user.Username,
+                                        Name = user.FirstName + " " + user.LastName,
+                                        Email = user.Email,
+                                        Role = role.Identifier,
+                                        Status = IsUserPending(usrId) ? "pending" : "joined"
+                                    });
+                                }
                             }
                         }
                     }
+                    result.ElementExtensions.Add("users", "https://standards.terradue.com", usersCommunity);
                 }
-                result.ElementExtensions.Add("users", "https://standards.terradue.com", usersCommunity);
             }
 
             return result;

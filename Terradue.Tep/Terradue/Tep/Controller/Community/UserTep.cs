@@ -14,6 +14,7 @@ using Terradue.OpenSearch.Result;
 using Terradue.ServiceModel.Syndication;
 using Terradue.OpenSearch;
 using System.Collections.Specialized;
+using Terradue.Portal.OpenSearch;
 
 namespace Terradue.Tep {
 
@@ -28,21 +29,18 @@ namespace Terradue.Tep {
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepCommunity
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
-    public class UserTep : User, IAtomizable {
-
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
-            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+    public class UserTep : User {
 
         /// <summary>
         /// Gets or sets the private domain of the user.
         /// </summary>
         /// <value>The domain.</value>
-        public override Domain Domain { 
+        public override Domain Domain {
             get {
                 if (base.Domain == null) {
                     try {
-                        base.Domain = Domain.FromIdentifier (context, Username);
-                    } catch (Exception e) {}
+                        base.Domain = Domain.FromIdentifier(context, Username);
+                    } catch (Exception e) { }
                 }
                 return base.Domain;
             }
@@ -110,7 +108,7 @@ namespace Terradue.Tep {
         /// Gets or sets the API key.
         /// </summary>
         /// <value>The API key.</value>
-        [EntityDataField ("apikey")]
+        [EntityDataField("apikey")]
         public string ApiKey {
             get;
             set;
@@ -141,25 +139,25 @@ namespace Terradue.Tep {
         }
 
         public override string GetIdentifyingConditionSql() {
-            if (!string.IsNullOrEmpty (ApiKey))
-                return String.Format ("t.apikey='{0}'", ApiKey);
+            if (!string.IsNullOrEmpty(ApiKey))
+                return String.Format("t.apikey='{0}'", ApiKey);
             else return null;
         }
 
-        public static UserTep GetPublicUser(IfyContext context, int id){
+        public static UserTep GetPublicUser(IfyContext context, int id) {
             context.AccessLevel = EntityAccessLevel.Administrator;
             UserTep usr = new UserTep(context, User.FromId(context, id));
             return usr;
         }
 
-        public override void Load(){
+        public override void Load() {
             base.Load();
             this.LoadCloudUsername();
 
-            if (Domain == null) CreatePrivateDomain ();
+            if (Domain == null) CreatePrivateDomain();
         }
 
-        public override void Store(){
+        public override void Store() {
             bool isnew = (this.Id == 0);
             base.Store();
             if (isnew) {
@@ -175,18 +173,17 @@ namespace Terradue.Tep {
         /// <returns>The identifier.</returns>
         /// <param name="context">Context.</param>
         /// <param name="id">Identifier.</param>
-        public new static UserTep FromId(IfyContext context, int id){
+        public new static UserTep FromId(IfyContext context, int id) {
             UserTep user = new UserTep(context);
             user.Id = id;
             user.Load();
             return user;
         }
 
-        public new static UserTep FromApiKey (IfyContext context, string key)
-        {
-            UserTep user = new UserTep (context);
+        public static UserTep FromApiKey(IfyContext context, string key) {
+            UserTep user = new UserTep(context);
             user.ApiKey = key;
-            user.Load ();
+            user.Load();
             return user;
         }
 
@@ -194,8 +191,8 @@ namespace Terradue.Tep {
         /// Gets the user page link.
         /// </summary>
         /// <returns>The user page link.</returns>
-        public string GetUserPageLink () { 
-            var basepath = new UriBuilder (context.BaseUrl);
+        public string GetUserPageLink() {
+            var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";
             return basepath.Uri.AbsoluteUri + "/" + Username;
         }
@@ -203,7 +200,7 @@ namespace Terradue.Tep {
         /// <summary>
         /// Loads the cloud username.
         /// </summary>
-        public void LoadCloudUsername(){
+        public void LoadCloudUsername() {
             LoadCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
         }
 
@@ -212,12 +209,12 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The cloud username.</returns>
         /// <param name="providerId">Provider identifier.</param>
-        public void LoadCloudUsername(int providerId){
+        public void LoadCloudUsername(int providerId) {
             if (providerId == 0) return;
-            try{
+            try {
                 Terradue.Cloud.CloudUser cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
                 this.TerradueCloudUsername = cusr.CloudUsername;
-            }catch(Exception){
+            } catch (Exception) {
                 this.TerradueCloudUsername = null;
             }
         }
@@ -225,7 +222,7 @@ namespace Terradue.Tep {
         /// <summary>
         /// Stores the cloud username.
         /// </summary>
-        public void StoreCloudUsername(){
+        public void StoreCloudUsername() {
             StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
         }
 
@@ -234,14 +231,14 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="providerId">Provider identifier.</param>
         /// <param name="cloudusername">Cloudusername.</param>
-        public void StoreCloudUsername(int providerId){
+        public void StoreCloudUsername(int providerId) {
             //In case user has no record in db for the cloud provider
-            context.Execute (String.Format ("INSERT IGNORE INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, providerId));
+            context.Execute(String.Format("INSERT IGNORE INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, providerId));
 
             Terradue.Cloud.CloudUser cusr;
-            try{
+            try {
                 cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
-            }catch(Exception e){
+            } catch (Exception e) {
                 //record does not exist in db
                 cusr = new Terradue.Cloud.CloudUser(context);
                 cusr.ProviderId = providerId;
@@ -254,22 +251,22 @@ namespace Terradue.Tep {
         /// <summary>
         /// Finds the terradue cloud username.
         /// </summary>
-        public void FindTerradueCloudUsername(){
+        public void FindTerradueCloudUsername() {
             var url = string.Format("{0}?token={1}&eosso={2}&email={3}",
                                     context.GetConfigValue("t2portal-usr-endpoint"),
                                     context.GetConfigValue("t2portal-sso-token"),
-                                    this.Username, 
+                                    this.Username,
                                     this.Email);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Proxy = null;
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
-            using (var httpResponse = (HttpWebResponse)request.GetResponse ()) {
-                using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
-                    this.TerradueCloudUsername = streamReader.ReadToEnd ();
-                    this.StoreCloudUsername (context.GetConfigIntegerValue ("One-default-provider"));
-                    context.LogDebug (this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    this.TerradueCloudUsername = streamReader.ReadToEnd();
+                    this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+                    context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
                 }
             }
         }
@@ -277,37 +274,37 @@ namespace Terradue.Tep {
         /// <summary>
         /// Creates the private domain.
         /// </summary>
-        public void CreatePrivateDomain () {
+        public void CreatePrivateDomain() {
             //create new domain with Identifier = Username
-            var privatedomain = new Domain (context);
+            var privatedomain = new Domain(context);
             privatedomain.Identifier = Username;
             privatedomain.Description = "Domain of user " + Username;
             privatedomain.Kind = DomainKind.User;
-            privatedomain.Store ();
+            privatedomain.Store();
 
             //set the userdomain
             Domain = privatedomain;
 
             //Get role owner
-            var userRole = Role.FromIdentifier (context, RoleTep.OWNER);
+            var userRole = Role.FromIdentifier(context, RoleTep.OWNER);
 
             //Grant role for user
-            userRole.GrantToUser (this, Domain);
+            userRole.GrantToUser(this, Domain);
 
         }
 
         /// <summary>
         /// Generates the API key.
         /// </summary>
-        public void GenerateApiKey () {
-            this.ApiKey = Guid.NewGuid ().ToString ();
+        public void GenerateApiKey() {
+            this.ApiKey = Guid.NewGuid().ToString();
         }
 
         /// <summary>
         /// Creates the SSO account.
         /// </summary>
         /// <param name="password">Password.</param>
-        public void CreateSSOAccount(string password){
+        public void CreateSSOAccount(string password) {
             var url = context.GetConfigValue("t2portal-usr-endpoint");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
@@ -324,8 +321,8 @@ namespace Terradue.Tep {
                 "\"username\":\"" + validatedUserName + "\"," +
                 "\"eosso\":\"" + this.Username + "\"," +
                 "\"email\":\"" + this.Email + "\"," +
-                "\"password\":\"" + password + "\"," + 
-                "\"plan\":\"" + context.GetConfigValue ("t2portal-usr-defaultPlan") + "\"" +
+                "\"password\":\"" + password + "\"," +
+                "\"plan\":\"" + context.GetConfigValue("t2portal-usr-defaultPlan") + "\"" +
                 "}";
 
             using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
@@ -333,13 +330,13 @@ namespace Terradue.Tep {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)request.GetResponse ()) {
-                    using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {//TODO in case of error
-                        var result = streamReader.ReadToEnd ();
-                        User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User> (result);
+                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
+                        var result = streamReader.ReadToEnd();
+                        User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User>(result);
                         this.TerradueCloudUsername = resUser.Username;
-                        context.LogDebug (this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
-                        this.StoreCloudUsername ();
+                        context.LogDebug(this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
+                        this.StoreCloudUsername();
                     }
                 }
             }
@@ -348,9 +345,9 @@ namespace Terradue.Tep {
         /// <summary>
         /// Loads the SSH pub key.
         /// </summary>
-        public void LoadSSHPubKey(){
-            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
-            if(string.IsNullOrEmpty(this.TerradueCloudUsername)) return;
+        public void LoadSSHPubKey() {
+            if (string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
+            if (string.IsNullOrEmpty(this.TerradueCloudUsername)) return;
 
             var url = string.Format("{0}?token={1}&username={2}&request=sshPublicKey",
                                     context.GetConfigValue("t2portal-usrinfo-endpoint"),
@@ -363,11 +360,11 @@ namespace Terradue.Tep {
             request.Accept = "application/json";
             request.Proxy = null;
 
-            using (var httpResponse = (HttpWebResponse)request.GetResponse ()){
-                using (var streamReader = new StreamReader (httpResponse.GetResponseStream ())) {
-                    this.SshPubKey = streamReader.ReadToEnd ();
-                    this.SshPubKey = this.SshPubKey.Replace ("\"", "");
-                    context.LogDebug (this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
+            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    this.SshPubKey = streamReader.ReadToEnd();
+                    this.SshPubKey = this.SshPubKey.Replace("\"", "");
+                    context.LogDebug(this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
                 }
             }
         }
@@ -376,15 +373,15 @@ namespace Terradue.Tep {
         /// Gets the first login date.
         /// </summary>
         /// <returns>The first login date.</returns>
-        public DateTime GetFirstLoginDate(){
+        public DateTime GetFirstLoginDate() {
             DateTime value = DateTime.MinValue;
-            try{
+            try {
                 System.Data.IDbConnection dbConnection = context.GetDbConnection();
-                string sql = String.Format("SELECT log_time FROM usrsession WHERE id_usr={0} ORDER BY log_time ASC LIMIT 1;",this.Id);
+                string sql = String.Format("SELECT log_time FROM usrsession WHERE id_usr={0} ORDER BY log_time ASC LIMIT 1;", this.Id);
                 System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
                 if (reader.Read()) value = context.GetDateTimeValue(reader, 0);
                 reader.Close();
-            }catch(Exception){}
+            } catch (Exception) { }
             return value;
         }
 
@@ -392,23 +389,23 @@ namespace Terradue.Tep {
         /// Gets the last login date.
         /// </summary>
         /// <returns>The last login date.</returns>
-        public DateTime GetLastLoginDate(){
+        public DateTime GetLastLoginDate() {
             DateTime value = DateTime.MinValue;
-            try{
+            try {
                 System.Data.IDbConnection dbConnection = context.GetDbConnection();
-                string sql = String.Format("SELECT log_time FROM usrsession WHERE id_usr={0} ORDER BY log_time DESC LIMIT 1;",this.Id);
+                string sql = String.Format("SELECT log_time FROM usrsession WHERE id_usr={0} ORDER BY log_time DESC LIMIT 1;", this.Id);
                 System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
                 if (reader.Read()) value = context.GetDateTimeValue(reader, 0);
                 reader.Close();
-            }catch(Exception){}
+            } catch (Exception) { }
             return value;
         }
 
-        public List<int> GetGroups(){
+        public List<int> GetGroups() {
             List<int> result = new List<int>();
 
             System.Data.IDbConnection dbConnection = context.GetDbConnection();
-            string sql = String.Format("SELECT id_grp FROM usr_grp WHERE id_usr={0};",this.Id);
+            string sql = String.Format("SELECT id_grp FROM usr_grp WHERE id_usr={0};", this.Id);
             System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
             while (reader.Read()) {
                 if (reader.GetValue(0) != DBNull.Value)
@@ -419,28 +416,65 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public new AtomItem ToAtomItem (NameValueCollection parameters){
-            
-            var entityType = EntityType.GetEntityType (typeof (User));
-            Uri id = new Uri (context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+        public override bool IsPostFiltered(NameValueCollection parameters) {
+            foreach (var key in parameters.AllKeys) {
+                switch (parameters[key]) {
+                case "correlatedTo":
+                    return true;
+                default:
+                    return false;
+                }
+            }
+            return false;
+        }
 
-            if (!string.IsNullOrEmpty (parameters ["q"])) {
-                string q = parameters ["q"].ToLower ();
-                if (!
-                    (!string.IsNullOrEmpty(this.Identifier) && this.Identifier.ToLower().Contains(q)) ||
-                    (!string.IsNullOrEmpty(this.FirstName) && this.FirstName.ToLower().Contains (q)) ||
-                    (!string.IsNullOrEmpty(this.LastName) && this.LastName.ToLower().Contains(q))
-                    )
-                    return null;
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+            switch (parameter) {
+            case "q":
+                return new KeyValuePair<string, string>("Identifier", string.Format("*{0}*",value));
+            case "uid":
+                return new KeyValuePair<string, string>("Identifier", value);
+            case "id":
+                return new KeyValuePair<string, string>("Identifier", value);
+            default:
+                return base.GetFilterForParameter(parameter, value);
+            }
+        }
+
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+
+            var entityType = EntityType.GetEntityType(typeof(User));
+            Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+
+            if (!string.IsNullOrEmpty(parameters["correlatedTo"])) {
+                var self = parameters["correlatedTo"];
+                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), MasterCatalogue.OpenSearchEngine).Entity;
+
+                if (entity is EntityList<WpsJob>) {
+                    var entitylist = entity as EntityList<WpsJob>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        var job = items[0];
+                        if (!job.IsSharedToUser(this.Id)) return null;
+                    }
+                } else if (entity is EntityList<DataPackage>) {
+                    var entitylist = entity as EntityList<DataPackage>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        var dp = items[0];
+                        if (!dp.IsSharedToUser(this.Id)) return null;
+                    }
+                }
+
             }
 
-            AtomItem result = new AtomItem ();
+            AtomItem result = new AtomItem();
 
-            result.Id = id.ToString ();
-            result.Title = new TextSyndicationContent (this.Identifier);
-            result.Content = new TextSyndicationContent (this.FirstName + " " + this.LastName);
+            result.Id = id.ToString();
+            result.Title = new TextSyndicationContent(this.Identifier);
+            result.Content = new TextSyndicationContent(this.FirstName + " " + this.LastName);
 
-            result.ElementExtensions.Add ("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             if (!string.IsNullOrEmpty(Country)) result.ElementExtensions.Add(new SyndicationElementExtension("country", "http://purl.org/dc/elements/1.1/", Country));
             if (!string.IsNullOrEmpty(Affiliation)) result.ElementExtensions.Add(new SyndicationElementExtension("affiliation", "http://purl.org/dc/elements/1.1/", Affiliation));
             result.ReferenceData = this;
@@ -448,26 +482,25 @@ namespace Terradue.Tep {
             this.LoadRegistrationInfo();
             var lastlogin = GetLastLoginDate();
 
-            if(this.RegistrationDate != DateTime.MinValue) result.PublishDate = new DateTimeOffset (this.RegistrationDate);
-            if(lastlogin != DateTime.MinValue) result.LastUpdatedTime = new DateTimeOffset(lastlogin);
+            if (this.RegistrationDate != DateTime.MinValue) result.PublishDate = new DateTimeOffset(this.RegistrationDate);
+            if (lastlogin != DateTime.MinValue) result.LastUpdatedTime = new DateTimeOffset(lastlogin);
 
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = entityType.Keyword;
             string usrUri = basepath.Uri.AbsoluteUri + "/" + Username;
             string usrName = (!String.IsNullOrEmpty(FirstName) && !String.IsNullOrEmpty(LastName) ? FirstName + " " + LastName : Username);
             SyndicationPerson author = new SyndicationPerson(Email, usrName, usrUri);
-            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Username));  
+            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Username));
 
             result.Authors.Add(author);
 
-            result.Links.Add (new SyndicationLink (id, "self", this.Identifier, "application/atom+xml", 0));
+            result.Links.Add(new SyndicationLink(id, "self", this.Identifier, "application/atom+xml", 0));
 
             return result;
         }
 
-        public NameValueCollection GetOpenSearchParameters ()
-        {
-            return OpenSearchFactory.GetBaseOpenSearchParameter ();
+        public NameValueCollection GetOpenSearchParameters() {
+            return OpenSearchFactory.GetBaseOpenSearchParameter();
         }
     }
 }

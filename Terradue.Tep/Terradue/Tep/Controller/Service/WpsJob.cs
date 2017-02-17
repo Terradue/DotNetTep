@@ -24,8 +24,6 @@ namespace Terradue.Tep {
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
     public class WpsJob : EntitySearchable, IComparable<WpsJob> {
 
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
-            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         [EntityDataField("remote_identifier")]
@@ -235,6 +233,16 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Is the job shared to user.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        /// <param name="id">Identifier.</param>
+        public bool IsSharedToUser(int id) { 
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds != null && (sharedUsersIds.Contains(id));
+        }
+
+        /// <summary>
         /// Is the job restricted.
         /// </summary>
         /// <returns><c>true</c>, if restricted was ised, <c>false</c> otherwise.</returns>
@@ -413,12 +421,12 @@ namespace Terradue.Tep {
         }
 
         #region IEntitySearchable implementation
-        public new KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
             case "q":
-                if (!string.IsNullOrEmpty(value))
-                    return new KeyValuePair<string, string>("Name", "*" + value + "*");
-                else
+                //if (!string.IsNullOrEmpty(value))
+                //    return new KeyValuePair<string, string>("Name", "*" + value + "*");
+                //else
                     return new KeyValuePair<string, string>();
             default:
                 return base.GetFilterForParameter(parameter, value);
@@ -437,26 +445,34 @@ namespace Terradue.Tep {
             return nvc;
         }
 
+        public override bool IsPostFiltered(NameValueCollection parameters) {
+            foreach (var key in parameters.AllKeys) {
+                switch (parameters[key]) {
+                case "q":
+                    return true;
+                default:
+                    return false;
+                }
+            }
+            return false;
+        }
+
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
 
             bool ispublic = this.IsPublic();
+            var status = ispublic ? "public" : "private";
 
             string identifier = null;
             string name = (this.Name != null ? this.Name : this.Identifier);
-            string description = null;
             string text = (this.TextContent != null ? this.TextContent : "");
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
-            //if (!string.IsNullOrEmpty(parameters ["q"])) {
-            //    string q = parameters ["q"].ToLower();
-            //    if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
-            //        return null;
-            //}
-
-            //if (!string.IsNullOrEmpty(parameters ["public"]) && parameters ["public"].Equals("true")) {
-            //    if (this.IsPrivate()) return null;
-            //}
+            if (!string.IsNullOrEmpty(parameters ["q"])) {
+                string q = parameters ["q"].ToLower();
+                if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q) || Owner.Username.ToLower().Contains(q) || Owner.FirstName.ToLower().Contains(q) || Owner.LastName.ToLower().Contains(q)))
+                    return null;
+            }
 
             WpsProvider provider = null;
             AtomItem result = new AtomItem();
@@ -508,14 +524,16 @@ namespace Terradue.Tep {
                 //if shared with users
                 if (IsSharedToUser()) {
                     sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    status = "community";
                 } else if (IsSharedToCommunity()) {
                     sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    status = "restricted";
                 }
                 if(sharedUrl != null) result.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
             }
 
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
-            result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (IsRestricted() ? "restricted" : "private")));
+            result.Categories.Add(new SyndicationCategory("visibility", null, status));
 
             return result;
         }
