@@ -90,7 +90,7 @@ namespace Terradue.Tep {
             var role = Role.FromIdentifier(context, RoleTep.OWNER);
             var usrs = role.GetUsers(this.Id);
             if (usrs != null && usrs.Length > 0)
-                return UserTep.FromId(context, usrs [0]);
+                return UserTep.FromId(context, usrs[0]);
             else return null;
         }
 
@@ -187,7 +187,7 @@ namespace Terradue.Tep {
                 string body = context.GetConfigValue("CommunityJoinEmailBody");
                 body = body.Replace("$(COMMUNITY)", this.Name);
                 context.SendMail(emailFrom, user.Email, subject, body);
-            } catch (Exception){}
+            } catch (Exception) { }
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace Terradue.Tep {
 
             var items = apps.GetItemsAsList();
             if (items != null && items.Count > 0) {
-                return items [0];
+                return items[0];
             }
 
             //the Thematic Application does not exists, we create it
@@ -268,7 +268,7 @@ namespace Terradue.Tep {
             var resources = app.Items.GetItemsAsList();
             if (resources != null && resources.Count > 0) {
                 //we assume for now that we have only one link per Community
-                return resources [0].Location;
+                return resources[0].Location;
             }
             return string.Empty;
         }
@@ -328,8 +328,9 @@ namespace Terradue.Tep {
 
         public override bool IsPostFiltered(NameValueCollection parameters) {
             foreach (var key in parameters.AllKeys) {
-                switch (parameters [key]) {
+                switch (parameters[key]) {
                 case "correlatedTo":
+                case "status":
                     return true;
                 default:
                     return true;
@@ -347,9 +348,18 @@ namespace Terradue.Tep {
             //we only want thematic groups domains (public or private)
             if (!ispublic && !isprivate) return null;
 
-            if (IsUserPending(context.UserId)) {
+            bool isJoined = IsUserJoined(context.UserId);
+            bool isPending = IsUserPending(context.UserId);
+
+            if (!string.IsNullOrEmpty(parameters["status"])) {
+                if (parameters["status"] == "joined" && !isJoined) return null;
+                else if (parameters["status"] == "pending" && !isPending) return null;
+                else if (parameters["status"] == "unjoined" && isJoined) return null;
+            }
+                
+            if (isPending) {
                 result.Categories.Add(new SyndicationCategory("status", null, "pending"));
-            } else if (IsUserJoined(context.UserId)) {
+            } else if (isJoined) {
                 result.Categories.Add(new SyndicationCategory("status", null, "joined"));
             } else if (!ispublic) return null;
 
@@ -404,13 +414,13 @@ namespace Terradue.Tep {
             result.ElementExtensions.Add("overview", "https://standards.terradue.com", rolesOverview);
 
             //we show these info only for owner and only for specific id view
-            if (!string.IsNullOrEmpty(parameters ["uid"]) || !string.IsNullOrEmpty(parameters ["id"])) {
+            if (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) {
                 if (IsUserOwner(context.UserId)) {
                     AppsLink = LoadAppsLink();
                     if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
                     if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
                 }
-                if (IsUserJoined(context.UserId)) {
+                if (isJoined) {
                     var usersCommunity = new List<UserRole>();
                     foreach (var role in roles) {
                         if (role.Identifier != RoleTep.PENDING) {
@@ -448,13 +458,13 @@ namespace Terradue.Tep {
                     var entitylist = entity as EntityList<WpsJob>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
-                        return new KeyValuePair<string, string>("Id", items [0].DomainId.ToString());
+                        return new KeyValuePair<string, string>("Id", items[0].DomainId.ToString());
                     }
                 } else if (entity is EntityList<DataPackage>) {
                     var entitylist = entity as EntityList<DataPackage>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
-                        return new KeyValuePair<string, string>("Id", items [0].DomainId.ToString());
+                        return new KeyValuePair<string, string>("Id", items[0].DomainId.ToString());
                     }
                 }
                 return new KeyValuePair<string, string>("DomainId", "0");
@@ -462,6 +472,13 @@ namespace Terradue.Tep {
                 return base.GetFilterForParameter(parameter, value);
             }
         }
+
+        public new NameValueCollection GetOpenSearchParameters() {
+            NameValueCollection nvc = base.GetOpenSearchParameters();
+            nvc.Add("status", "{t2:status?}");
+            return nvc;
+        }
+
 
 
         #endregion

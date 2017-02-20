@@ -187,7 +187,6 @@ namespace Terradue.Tep.WebServer.Services{
         public object Get (CommunitySearchRequestTep request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
-            object result;
             context.Open ();
             context.LogInfo (this, string.Format ("/community/search GET"));
 
@@ -198,14 +197,16 @@ namespace Terradue.Tep.WebServer.Services{
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            string format;
-            if (Request.QueryString ["format"] == null)
-                format = "atom";
-            else
-                format = Request.QueryString ["format"];
-
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+
+            //IOpenSearchResultCollection result;
+
+            //httpRequest.QueryString.Set("status", "joined");
             IOpenSearchResultCollection osr = ose.Query (domains, httpRequest.QueryString, responseType);
+            //result = osr;
+
+            //httpRequest.QueryString.Set("status", "unjoined");
+            //osr = ose.Query(domains, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (domains, osr);
 
