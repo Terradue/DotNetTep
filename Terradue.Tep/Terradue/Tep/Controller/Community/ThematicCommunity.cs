@@ -415,12 +415,10 @@ namespace Terradue.Tep {
 
             //we show these info only for owner and only for specific id view
             if (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) {
-                if (IsUserOwner(context.UserId)) {
+                if (isJoined) {
                     AppsLink = LoadAppsLink();
                     if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
                     if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
-                }
-                if (isJoined) {
                     var usersCommunity = new List<UserRole>();
                     foreach (var role in roles) {
                         if (role.Identifier != RoleTep.PENDING) {

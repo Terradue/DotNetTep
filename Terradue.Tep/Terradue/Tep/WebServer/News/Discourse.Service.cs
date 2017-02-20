@@ -13,18 +13,18 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Get(GetDiscourseTopicsPerCategory request){
-            log.InfoFormat("/discourse/c/{{catId}} GET catId='{0}',page='{1}',order='{2}'", request.catId, request.page, request.order);
-            return GetDiscourseRequest(string.Format("c/{0}.json?page={1}&order={2}", request.catId, request.page, request.order ?? "activity")); 
+            log.InfoFormat("/discourse/c/{{catId}} GET catId='{0}',page='{1}',order='{2}'", request.category, request.page, request.order);
+            return GetDiscourseRequest(string.Format("c/{0}.json?page={1}&order={2}", request.category, request.page, request.order ?? "activity")); 
         }
 
         public object Get(GetDiscourseLatestTopicsPerCategory request){
-            log.InfoFormat("/discourse/c/{{catId}}/l/latest GET catId='{0}'", request.catId);
-            return GetDiscourseRequest(string.Format("c/{0}/l/latest.json", request.catId));
+            log.InfoFormat("/discourse/c/{{catId}}/l/latest GET catId='{0}'", request.category);
+            return GetDiscourseRequest(string.Format("c/{0}/l/latest.json", request.category));
         }
 
         public object Get(GetDiscourseTopTopicsPerCategory request) {
-            log.InfoFormat("/discourse/c/{{catId}}/l/top GET catId='{0}'", request.catId);
-            return GetDiscourseRequest(string.Format("c/{0}/l/top.json", request.catId));
+            log.InfoFormat("/discourse/c/{{catId}}/l/top GET catId='{0}'", request.category);
+            return GetDiscourseRequest(string.Format("c/{0}/l/top.json", request.category));
         }
 
         public object Get(GetDiscourseTopic request){
@@ -33,8 +33,8 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetDiscourseSearchTopicsPerCategory request){
-            log.InfoFormat("/discourse/c/{{catId}} GET catId='{0}'", request.catId);
-            return GetDiscourseRequest(string.Format("search.json?q={0}%20category%3A{1}", request.q, request.catId));
+            log.InfoFormat("/discourse/c/{{catId}} GET catId='{0}'", request.category);
+            return GetDiscourseRequest(string.Format("search.json?q={0}%20category%3A{1}", request.q, request.category));
         }
             
         private object GetDiscourseRequest(string query){
@@ -46,7 +46,7 @@ namespace Terradue.Tep.WebServer.Services {
                 return (true);
             };
 
-            var discourseBaseUrl = "https://discuss.terradue.com";
+            var discourseBaseUrl = "http://discuss.terradue.com";
             var discourseUrl = string.Format("{0}/{1}", discourseBaseUrl, query);
             log.DebugFormat("Discourse url : {0}",discourseUrl);
             HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(discourseUrl);
@@ -81,31 +81,31 @@ namespace Terradue.Tep.WebServer.Services {
 
     }
 
-    [Route("/discourse/c/{catId}/l/latest", "GET", Summary = "", Notes = "")]
+    [Route("/discourse/c/latest", "GET", Summary = "", Notes = "")]
     public class GetDiscourseLatestTopicsPerCategory {
-        [ApiMember(Name="catId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int catId{ get; set; }
+        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string category{ get; set; }
     }
 
-    [Route("/discourse/c/{catId}/l/top", "GET", Summary = "", Notes = "")]
+    [Route("/discourse/c/top", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopTopicsPerCategory {
-        [ApiMember(Name = "catId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int catId { get; set; }
+        [ApiMember(Name = "category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string category { get; set; }
     }
 
-    [Route("/discourse/c/{catId}/search", "GET", Summary = "", Notes = "")]
+    [Route("/discourse/c/search", "GET", Summary = "", Notes = "")]
     public class GetDiscourseSearchTopicsPerCategory {
-        [ApiMember(Name="catId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int catId{ get; set; }
+        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string category{ get; set; }
 
         [ApiMember(Name="q", Description = "query", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string q{ get; set; }
     }
 
-    [Route("/discourse/c/{catId}", "GET", Summary = "", Notes = "")]
+    [Route("/discourse/c", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopicsPerCategory {
-        [ApiMember(Name="catId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int catId{ get; set; }
+        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string category{ get; set; }
 
         [ApiMember(Name="page", Description = "request", ParameterType = "query", DataType = "int", IsRequired = false)]
         public int page{ get; set; }
@@ -117,7 +117,7 @@ namespace Terradue.Tep.WebServer.Services {
     [Route("/discourse/t/{topicId}", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopic {
         [ApiMember(Name="topicId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int topicId{ get; set; }
+        public string topicId{ get; set; }
     }
 }
 
