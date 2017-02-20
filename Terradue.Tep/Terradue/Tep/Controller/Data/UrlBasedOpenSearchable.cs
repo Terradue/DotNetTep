@@ -83,6 +83,18 @@ namespace Terradue.Tep {
                                 entity = list;
                             }
 
+                            if (match.Groups[1].Value == "/user") {
+                                EntityList<UserTep> list = new EntityList<UserTep>(context);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+                                entity = list;
+                            }
+
+                            if (match.Groups[1].Value == "/community") {
+                                EntityList<ThematicCommunity> list = new EntityList<ThematicCommunity>(context);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+                                entity = list;
+                            }
+
                         }
 
                     }
