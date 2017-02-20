@@ -496,7 +496,6 @@ namespace Terradue.Tep {
                 }
             }
 
-
             result.Id = id.ToString();
             result.Title = new TextSyndicationContent(identifier);
             result.Content = new TextSyndicationContent(name);
@@ -520,16 +519,17 @@ namespace Terradue.Tep {
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             if (Owner.Id == context.UserId) {
                 //for owner only, we give the link to know with who the wpsjob is shared
-                Uri sharedUrl = null;
                 //if shared with users
                 if (IsSharedToUser()) {
-                    sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
-                    status = "community";
-                } else if (IsSharedToCommunity()) {
-                    sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    Uri sharedUrlUsr = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    result.Links.Add(new SyndicationLink(sharedUrlUsr, "results", name, "application/atom+xml", 0));
                     status = "restricted";
                 }
-                if(sharedUrl != null) result.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
+                if (IsSharedToCommunity()) {
+                    Uri sharedUrlCommunity = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    result.Links.Add(new SyndicationLink(sharedUrlCommunity, "results", name, "application/atom+xml", 0));
+                    status = "restricted";
+                }
             }
 
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));

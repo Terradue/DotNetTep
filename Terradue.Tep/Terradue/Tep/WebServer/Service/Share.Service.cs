@@ -16,17 +16,20 @@ namespace Terradue.Tep.WebServer.Services {
 
     [Route("/share", "POST", Summary = "share an entity", Notes = "")]
     public class ShareCreateRequestTep : IReturn<WebResponseBool>{
-        [ApiMember(Name="url", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string url { get; set; }
+        [ApiMember(Name="self", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string self { get; set; }
+
+        [ApiMember(Name = "to", Description = "url(s) representing the item to which the entity is shared", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> to { get; set; }
 
         [ApiMember(Name="id", Description = "thematic application id", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string id { get; set; }
+    }
 
-        [ApiMember(Name="visibility", Description = "type of sharing", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string visibility { get; set; }
-
-        [ApiMember(Name="domain", Description = "group identifier", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public List<int> groups { get; set; }
+    [Route("/share", "DELETE", Summary = "share an entity", Notes = "")]
+    public class ShareDeleteRequestTep : IReturn<WebResponseBool> {
+        [ApiMember(Name = "self", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string self { get; set; }
     }
 
     [Route("/share", "GET", Summary = "share an entity", Notes = "")]
@@ -46,14 +49,93 @@ namespace Terradue.Tep.WebServer.Services {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        public object Delete(ShareDeleteRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            context.Open();
+            context.LogInfo(this, string.Format("/share DELETE self='{0}'", request.self));
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose).Entity;
+
+            if (entitySelf is EntityList<WpsJob>) {
+                var entitylist = entitySelf as EntityList<WpsJob>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count > 0) {
+                    foreach (var item in items) {
+                        item.RevokeGlobalPermission();
+                        if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
+                            item.DomainId = item.Owner.DomainId;
+                            item.Store();
+                        }
+                    }
+                }
+            } else if (entitySelf is EntityList<DataPackage>) {
+                var entitylist = entitySelf as EntityList<DataPackage>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count > 0) {
+                    foreach (var item in items) {
+                        item.RevokeGlobalPermission();
+                        if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
+                            item.DomainId = item.Owner.DomainId;
+                            item.Store();
+                        }
+                    }
+                }
+            }
+
+            context.Close();
+            return new WebResponseBool(true);
+        }
+
         public object Post(ShareCreateRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             context.Open();
-            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, request.groups != null ? string.Join("'",request.groups) : "null"));
+            context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, string.Join("", request.to)));
                             
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            UrlBasedOpenSearchable urlToShare = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.url), ose);
+            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose).Entity;
+
+            if (entitySelf is EntityList<WpsJob>) {
+                var entitylist = entitySelf as EntityList<WpsJob>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count == 0) return null;
+
+                //if to is null, we share publicly
+                if (request.to == null) {
+                    foreach(var item in items) item.GrantGlobalPermissions();
+                }
+
+                foreach (var to in request.to) {
+                    var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
+
+                    //case community
+
+                    //case user
+                }
+
+            } else if (entity is EntityList<DataPackage>) {
+                var entitylist = entitySelf as EntityList<DataPackage>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count == 0) return null;
+
+                //if to is null, we share publicly
+                if (request.to == null) {
+                    foreach(var item in items) item.GrantGlobalPermissions();
+                }
+
+                foreach (var to in request.to) {
+                    var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
+
+                    //case community
+
+                    //case user
+                }
+            }
+
+
+            UrlBasedOpenSearchable urlToShare = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose);
             IOpenSearchResultCollection searchResult = null;
             try{
                 searchResult = ose.Query(urlToShare, new System.Collections.Specialized.NameValueCollection());
