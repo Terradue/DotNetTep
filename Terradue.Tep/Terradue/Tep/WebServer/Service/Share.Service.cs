@@ -115,7 +115,7 @@ namespace Terradue.Tep.WebServer.Services {
                     //case user
                 }
 
-            } else if (entity is EntityList<DataPackage>) {
+            } else if (entitySelf is EntityList<DataPackage>) {
                 var entitylist = entitySelf as EntityList<DataPackage>;
                 var items = entitylist.GetItemsAsList();
                 if (items.Count == 0) return null;
@@ -141,31 +141,6 @@ namespace Terradue.Tep.WebServer.Services {
                 searchResult = ose.Query(urlToShare, new System.Collections.Specialized.NameValueCollection());
             }catch(Exception e){
                 throw e;
-            }
-
-            foreach (IOpenSearchResultItem item in searchResult.Items) {
-                if (item is AtomItem && ((AtomItem)item).ReferenceData is Entity) {
-                    Entity ent = ((AtomItem)item).ReferenceData as Entity;
-                    if (ent.OwnerId == context.UserId) {
-                        string visibility = (request.visibility != null ? request.visibility : "public");
-                        switch (visibility){
-                            case "public":
-                                ent.GrantGlobalPermissions();
-                                break;
-                            case "restricted":
-                                ent.RevokeGlobalPermission();
-                                if(request.groups != null && request.groups.Count > 0)
-                                    ent.GrantPermissionsToGroups(request.groups.ToArray(), true);
-                                break;
-                            case "private":
-                                ent.GrantPermissionsToGroups(new int[0], true);
-                                ent.RevokeGlobalPermission();
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
             }
 
             context.Close ();
