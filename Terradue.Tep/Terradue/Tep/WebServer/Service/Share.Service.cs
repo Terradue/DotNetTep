@@ -91,56 +91,94 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(ShareCreateRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
             context.Open();
-            context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, string.Join("", request.to)));
+            context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, request.to != null ? string.Join("", request.to) : ""));
                             
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
             var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose).Entity;
 
+            //case WpsJob
             if (entitySelf is EntityList<WpsJob>) {
                 var entitylist = entitySelf as EntityList<WpsJob>;
-                var items = entitylist.GetItemsAsList();
-                if (items.Count == 0) return null;
+                var wpsjobs = entitylist.GetItemsAsList();
+                if (wpsjobs.Count == 0) return new WebResponseBool(false);
 
                 //if to is null, we share publicly
                 if (request.to == null) {
-                    foreach(var item in items) item.GrantGlobalPermissions();
+                    foreach (var job in wpsjobs) { //the entitySelf can return several entities
+                        job.GrantGlobalPermissions();
+                    }
                 }
 
-                foreach (var to in request.to) {
-                    var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
+                //we share with restriction (community + users)
+                else {
+                    foreach (var job in wpsjobs) { //the entitySelf can return several entities
+                        foreach (var to in request.to) {
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
 
-                    //case community
+                            //case community
+                            if (entityTo is EntityList<ThematicCommunity>) {
+                                var entityTolist = entityTo as EntityList<ThematicCommunity>;
+                                var communities = entityTolist.GetItemsAsList();
+                                if (communities.Count == 0) return new WebResponseBool(false);
+                                //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
+                                job.DomainId = communities[0].DomainId;
+                                job.Store();
+                            }
 
-                    //case user
+                            //case user
+                            else if (entityTo is EntityList<UserTep>) {
+                                var entityTolist = entityTo as EntityList<UserTep>;
+                                var users = entityTolist.GetItemsAsList();
+                                if (users.Count == 0) return new WebResponseBool(false);
+                                job.GrantPermissionsToUsers(users);
+                            }
+                        }
+                    }
                 }
 
-            } else if (entitySelf is EntityList<DataPackage>) {
-                var entitylist = entitySelf as EntityList<DataPackage>;
-                var items = entitylist.GetItemsAsList();
-                if (items.Count == 0) return null;
-
-                //if to is null, we share publicly
-                if (request.to == null) {
-                    foreach(var item in items) item.GrantGlobalPermissions();
-                }
-
-                foreach (var to in request.to) {
-                    var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
-
-                    //case community
-
-                    //case user
-                }
             }
 
+            //case DataPackage
+            else if (entitySelf is EntityList<DataPackage>) {
+                var entitylist = entitySelf as EntityList<DataPackage>;
+                var datapackages = entitylist.GetItemsAsList();
+                if (datapackages.Count == 0) return new WebResponseBool(false);
 
-            UrlBasedOpenSearchable urlToShare = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose);
-            IOpenSearchResultCollection searchResult = null;
-            try{
-                searchResult = ose.Query(urlToShare, new System.Collections.Specialized.NameValueCollection());
-            }catch(Exception e){
-                throw e;
+                //if to is null, we share publicly
+                if (request.to == null) {
+                    foreach (var dp in datapackages) { //the entitySelf can return several entities
+                        dp.GrantGlobalPermissions();
+                    }
+                }
+
+                //we share with restriction (community + users)
+                else {
+                    foreach (var dp in datapackages) { //the entitySelf can return several entities
+                        foreach (var to in request.to) {
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
+
+                            //case community
+                            if (entityTo is EntityList<ThematicCommunity>) {
+                                var entityTolist = entityTo as EntityList<ThematicCommunity>;
+                                var communities = entityTolist.GetItemsAsList();
+                                if (communities.Count == 0) return new WebResponseBool(false);
+                                //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
+                                dp.DomainId = communities[0].DomainId;
+                                dp.Store();
+                            }
+
+                            //case user
+                            else if (entityTo is EntityList<UserTep>) {
+                                var entityTolist = entityTo as EntityList<UserTep>;
+                                var users = entityTolist.GetItemsAsList();
+                                if (users.Count == 0) return new WebResponseBool(false);
+                                dp.GrantPermissionsToUsers(users);
+                            }
+                        }
+                    }
+                }
+
             }
 
             context.Close ();
