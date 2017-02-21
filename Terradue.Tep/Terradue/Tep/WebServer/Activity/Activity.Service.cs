@@ -81,7 +81,7 @@ namespace Terradue.Tep.WebServer.Services {
             privs = Privilege.Get (EntityType.GetEntityType (typeof (Series)));
             foreach (var priv in privs) privlist.Add (priv.Id);
 
-            EntityList<Activity> activities = new EntityList<Activity> (context);
+            EntityList<ActivityTep> activities = new EntityList<ActivityTep> (context);
             activities.AddSort ("CreationTime", SortDirection.Descending);
             activities.SetFilter ("PrivilegeId", string.Join (",", privlist));
             activities.SetFilter ("DomainId",domain.Id.ToString());

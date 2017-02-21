@@ -77,7 +77,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Series serie = new Series(context);
                 serie = request.ToEntity(context, serie);
                 serie.Store();
-                serie.GrantGlobalPermissions();
+                serie.GrantPermissionsToAll();
 
                 Activity activity = new Activity(context, serie, EntityOperationType.Create);
                 activity.Store();
@@ -111,12 +111,12 @@ namespace Terradue.Tep.WebServer.Services {
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":
-                            serie.GrantGlobalPermissions();
+                            serie.GrantPermissionsToAll();
                             Activity activity = new Activity(context, serie, EntityOperationType.Share);
                             activity.Store();
                             break;
                         case "private":
-                            serie.GrantGlobalPermissions();
+                            serie.GrantPermissionsToAll();
                             break;
                         default:
                             break;

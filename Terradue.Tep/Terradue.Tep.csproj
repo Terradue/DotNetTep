@@ -252,6 +252,7 @@
     <Compile Include="Terradue\Tep\Controller\Community\ThematicCommunity.cs" />
     <Compile Include="Terradue\Tep\WebServer\Community\Community.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Community\WebCommunity.cs" />
+    <Compile Include="Terradue\Tep\Controller\Accounting\ActivityTep.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

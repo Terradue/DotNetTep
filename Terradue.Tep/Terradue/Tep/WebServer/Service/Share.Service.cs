@@ -63,7 +63,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var items = entitylist.GetItemsAsList();
                 if (items.Count > 0) {
                     foreach (var item in items) {
-                        item.RevokeGlobalPermission();
+                        item.RevokePermissionsFromAll();
                         if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
                             item.DomainId = item.Owner.DomainId;
                             item.Store();
@@ -75,7 +75,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var items = entitylist.GetItemsAsList();
                 if (items.Count > 0) {
                     foreach (var item in items) {
-                        item.RevokeGlobalPermission();
+                        item.RevokePermissionsFromAll();
                         if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
                             item.DomainId = item.Owner.DomainId;
                             item.Store();
@@ -106,7 +106,10 @@ namespace Terradue.Tep.WebServer.Services {
                 //if to is null, we share publicly
                 if (request.to == null) {
                     foreach (var job in wpsjobs) { //the entitySelf can return several entities
-                        job.GrantGlobalPermissions();
+                        job.GrantPermissionsToAll();
+
+                        Activity activity = new Activity(context, job, EntityOperationType.Share);
+                        activity.Store();
                     }
                 }
 
@@ -124,6 +127,10 @@ namespace Terradue.Tep.WebServer.Services {
                                 //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
                                 job.DomainId = communities[0].DomainId;
                                 job.Store();
+
+                                ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
                             }
 
                             //case user
@@ -132,6 +139,10 @@ namespace Terradue.Tep.WebServer.Services {
                                 var users = entityTolist.GetItemsAsList();
                                 if (users.Count == 0) return new WebResponseBool(false);
                                 job.GrantPermissionsToUsers(users);
+
+                                ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
                             }
                         }
                     }
@@ -148,7 +159,10 @@ namespace Terradue.Tep.WebServer.Services {
                 //if to is null, we share publicly
                 if (request.to == null) {
                     foreach (var dp in datapackages) { //the entitySelf can return several entities
-                        dp.GrantGlobalPermissions();
+                        dp.GrantPermissionsToAll();
+
+                        Activity activity = new Activity(context, dp, EntityOperationType.Share);
+                        activity.Store();
                     }
                 }
 
@@ -166,6 +180,10 @@ namespace Terradue.Tep.WebServer.Services {
                                 //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
                                 dp.DomainId = communities[0].DomainId;
                                 dp.Store();
+
+                                ActivityTep activity = new ActivityTep(context, dp, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
                             }
 
                             //case user
@@ -174,6 +192,10 @@ namespace Terradue.Tep.WebServer.Services {
                                 var users = entityTolist.GetItemsAsList();
                                 if (users.Count == 0) return new WebResponseBool(false);
                                 dp.GrantPermissionsToUsers(users);
+
+                                ActivityTep activity = new ActivityTep(context, dp, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
                             }
                         }
                     }

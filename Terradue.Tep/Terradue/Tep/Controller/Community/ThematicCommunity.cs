@@ -7,6 +7,7 @@ using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
 using Terradue.Portal.OpenSearch;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
@@ -417,7 +418,13 @@ namespace Terradue.Tep {
             if (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) {
                 if (isJoined) {
                     AppsLink = LoadAppsLink();
-                    if (!string.IsNullOrEmpty(AppsLink)) result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
+                    if (!string.IsNullOrEmpty(AppsLink)) {
+                        result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
+
+                        //get all data collections
+                        var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(AppsLink), MasterCatalogue.OpenSearchEngine), new NameValueCollection());
+                        //var offerings = GetOwsOfferings(apps);
+                    }
                     if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
                     var usersCommunity = new List<UserRole>();
                     foreach (var role in roles) {
@@ -442,6 +449,18 @@ namespace Terradue.Tep {
             }
 
             return result;
+        }
+
+        public static object[] GetOwsOfferings(IOpenSearchResultCollection result) {
+            
+            foreach (IOpenSearchResultItem item in result.Items) {
+                var offerings = item.ElementExtensions.ReadElementExtensions<SyndicationElementExtension>("offering", OwcNamespaces.Owc);
+                var offerings2 = item.ElementExtensions.ReadElementExtensions<SyndicationElementExtension>("offering", "");
+                var offerings3 = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+                var offerings4 = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", "", new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+            }
+
+            return null;
         }
 
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {

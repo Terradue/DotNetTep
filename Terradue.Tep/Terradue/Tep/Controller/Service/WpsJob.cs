@@ -204,7 +204,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if public was ised, <c>false</c> otherwise.</returns>
         public bool IsPublic() {
-            return DoesGrantGlobalPermission();
+            return DoesGrantPermissionsToAll();
         }
 
         /// <summary>
@@ -423,11 +423,16 @@ namespace Terradue.Tep {
         #region IEntitySearchable implementation
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
-            case "q":
-                //if (!string.IsNullOrEmpty(value))
-                //    return new KeyValuePair<string, string>("Name", "*" + value + "*");
-                //else
-                    return new KeyValuePair<string, string>();
+                case "correlatedTo":
+                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
+                if (entity is EntityList<ThematicCommunity>) {
+                    var entitylist = entity as EntityList<ThematicCommunity>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                    }
+                }
+                return new KeyValuePair<string, string>();
             default:
                 return base.GetFilterForParameter(parameter, value);
             }

@@ -502,6 +502,26 @@ namespace Terradue.Tep {
         }
 
         #endregion
+
+        #region IEntitySearchable implementation
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+            switch (parameter) {
+            case "correlatedTo":
+                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
+                if (entity is EntityList<ThematicCommunity>) {
+                    var entitylist = entity as EntityList<ThematicCommunity>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                    }
+                }
+                return new KeyValuePair<string, string>();
+            default:
+                return base.GetFilterForParameter(parameter, value);
+            }
+        }
+
+        #endregion
     }
 }
 

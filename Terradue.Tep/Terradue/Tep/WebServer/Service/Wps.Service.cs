@@ -543,7 +543,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/cr/wps POST Id='{0}'", wpsProvider.Id));
 
                 //Make it public, the authorizations will then be done on the services
-                wpsProvider.GrantGlobalPermissions();
+                wpsProvider.GrantPermissionsToAll();
 
                 wpsProvider.StoreProcessOfferings();
 
@@ -709,10 +709,10 @@ namespace Terradue.Tep.WebServer.Services {
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":
-                            wps.GrantGlobalPermissions();
+                        wps.GrantPermissionsToAll();
                             break;
                         case "private":
-                            wps.RevokeGlobalPermission();
+                            wps.RevokePermissionsFromAll();
                             break;
                         default:
                             break;
