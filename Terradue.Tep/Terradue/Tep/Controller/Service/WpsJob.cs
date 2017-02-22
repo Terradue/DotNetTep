@@ -453,8 +453,6 @@ namespace Terradue.Tep {
         public override bool IsPostFiltered(NameValueCollection parameters) {
             foreach (var key in parameters.AllKeys) {
                 switch (parameters[key]) {
-                case "q":
-                    return true;
                 default:
                     return false;
                 }
@@ -472,12 +470,6 @@ namespace Terradue.Tep {
             string text = (this.TextContent != null ? this.TextContent : "");
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
-
-            if (!string.IsNullOrEmpty(parameters ["q"])) {
-                string q = parameters ["q"].ToLower();
-                if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q) || Owner.Username.ToLower().Contains(q) || Owner.FirstName.ToLower().Contains(q) || Owner.LastName.ToLower().Contains(q)))
-                    return null;
-            }
 
             WpsProvider provider = null;
             AtomItem result = new AtomItem();

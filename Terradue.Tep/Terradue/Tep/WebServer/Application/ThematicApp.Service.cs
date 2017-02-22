@@ -74,21 +74,6 @@ namespace Terradue.Tep.WebServer.Services {
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, ose);
             var result = ose.Query (multiOSE, Request.QueryString, responseType);
 
-            //var openSearchDescription = apps.GetLocalOpenSearchDescription ();
-            //var uri_s = apps.GetSearchBaseUrl ();
-            //OpenSearchDescriptionUrl openSearchUrlByRel = OpenSearchFactory.GetOpenSearchUrlByRel (openSearchDescription, "self");
-            //Uri uri_d;
-            //if (openSearchUrlByRel != null) {
-            //    uri_d = new Uri (openSearchUrlByRel.Template);
-            //} else {
-            //    uri_d = openSearchDescription.Originator;
-            //}
-            //if (uri_d != null) {
-            //    result.Links.Add (new SyndicationLink (uri_d, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));
-            //}
-            //if (uri_s != null) {
-            //    result.Links.Add (new SyndicationLink (uri_s, "self", "OpenSearch Search link", "application/atom+xml", 0));
-            //}
             return result;
         }
 

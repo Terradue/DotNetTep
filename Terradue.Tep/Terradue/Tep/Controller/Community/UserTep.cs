@@ -430,8 +430,6 @@ namespace Terradue.Tep {
 
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
-            case "q":
-                return new KeyValuePair<string, string>("Identifier", string.Format("*{0}*",value));
             case "uid":
                 return new KeyValuePair<string, string>("Identifier", value);
             case "id":

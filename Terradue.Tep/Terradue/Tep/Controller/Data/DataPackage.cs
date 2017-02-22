@@ -433,14 +433,7 @@ namespace Terradue.Tep {
 
             string identifier = this.Identifier;
             string name = (this.Name != null ? this.Name : this.Identifier);
-            string description = null;
             string text = (this.TextContent != null ? this.TextContent : "");
-
-            if (parameters["q"] != null) {
-                string q = parameters["q"].ToLower();
-                if (!(name.ToLower().Contains(q) || this.Identifier.ToLower().Contains(q) || text.ToLower().Contains(q)))
-                    return null;
-            }
 
             AtomItem atomEntry = null;
             var entityType = EntityType.GetEntityType(typeof(DataPackage));
