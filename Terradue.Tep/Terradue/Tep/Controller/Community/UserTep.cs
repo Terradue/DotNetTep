@@ -28,7 +28,7 @@ namespace Terradue.Tep {
     /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepCommunity
-    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
+    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class UserTep : User {
 
         /// <summary>
@@ -448,19 +448,21 @@ namespace Terradue.Tep {
                 var self = parameters["correlatedTo"];
                 var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), MasterCatalogue.OpenSearchEngine).Entity;
 
+                //var test = entity as EntityList<Entity>;
+
                 if (entity is EntityList<WpsJob>) {
                     var entitylist = entity as EntityList<WpsJob>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var job = items[0];
-                        if (!job.IsSharedToUser(this.Id)) return null;
+                        if (job.Owner.Id == this.Id || !job.IsSharedToUser(this.Id)) return null;
                     }
                 } else if (entity is EntityList<DataPackage>) {
                     var entitylist = entity as EntityList<DataPackage>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var dp = items[0];
-                        if (!dp.IsSharedToUser(this.Id)) return null;
+                        if (dp.Owner.Id == this.Id || !dp.IsSharedToUser(this.Id)) return null;
                     }
                 }
 

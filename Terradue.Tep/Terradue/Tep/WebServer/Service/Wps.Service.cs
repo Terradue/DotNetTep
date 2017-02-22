@@ -712,7 +712,7 @@ namespace Terradue.Tep.WebServer.Services {
                         wps.GrantPermissionsToAll();
                             break;
                         case "private":
-                            wps.RevokePermissionsFromAll();
+                            wps.RevokePermissionsFromAll(true, false);
                             break;
                         default:
                             break;

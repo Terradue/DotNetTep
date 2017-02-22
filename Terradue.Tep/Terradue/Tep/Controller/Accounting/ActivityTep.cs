@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
 using Terradue.ServiceModel.Syndication;
@@ -9,7 +11,7 @@ namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
     public class ActivityTep : Activity {
 
-        [EntityDataField ("id_app")]
+        [EntityDataField("id_app")]
         public string AppId { get; set; }
 
         public ActivityTep(IfyContext context) : base(context) {
@@ -65,10 +67,27 @@ namespace Terradue.Tep {
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", owner.Username));
             result.Authors.Add(author);
             result.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
-            Uri share = new Uri(context.BaseUrl + "/share?url=" + System.Web.HttpUtility.UrlEncode(id.AbsoluteUri) + (!string.IsNullOrEmpty(AppId) ? "&id="+AppId : ""));
+            Uri share = new Uri(context.BaseUrl + "/share?url=" + System.Web.HttpUtility.UrlEncode(id.AbsoluteUri) + (!string.IsNullOrEmpty(AppId) ? "&id=" + AppId : ""));
             result.Links.Add(new SyndicationLink(share, "via", "share", "application/atom+xml", 0));
 
             return result;
+        }
+
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+            switch (parameter) {
+            case "correlatedTo":
+                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
+                if (entity is EntityList<ThematicCommunity>) {
+                    var entitylist = entity as EntityList<ThematicCommunity>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                    }
+                }
+                return new KeyValuePair<string, string>();
+            default:
+                return base.GetFilterForParameter(parameter, value);
+            }
         }
 
     }

@@ -63,7 +63,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var items = entitylist.GetItemsAsList();
                 if (items.Count > 0) {
                     foreach (var item in items) {
-                        item.RevokePermissionsFromAll();
+                        item.RevokePermissionsFromAll(true, false);
                         if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
                             item.DomainId = item.Owner.DomainId;
                             item.Store();
@@ -75,7 +75,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var items = entitylist.GetItemsAsList();
                 if (items.Count > 0) {
                     foreach (var item in items) {
-                        item.RevokePermissionsFromAll();
+                        item.RevokePermissionsFromAll(true, false);
                         if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
                             item.DomainId = item.Owner.DomainId;
                             item.Store();
@@ -116,6 +116,14 @@ namespace Terradue.Tep.WebServer.Services {
                 //we share with restriction (community + users)
                 else {
                     foreach (var job in wpsjobs) { //the entitySelf can return several entities
+
+                        //remove previous visibility sharing
+                        job.RevokePermissionsFromAll(true, false);
+                        if (job.Owner != null && job.DomainId != job.Owner.DomainId) {
+                            job.DomainId = job.Owner.DomainId;
+                            job.Store();
+                        }
+
                         foreach (var to in request.to) {
                             var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
 
@@ -124,12 +132,14 @@ namespace Terradue.Tep.WebServer.Services {
                                 var entityTolist = entityTo as EntityList<ThematicCommunity>;
                                 var communities = entityTolist.GetItemsAsList();
                                 if (communities.Count == 0) return new WebResponseBool(false);
+
                                 //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
-                                job.DomainId = communities[0].DomainId;
+                                job.DomainId = communities[0].Id;
                                 job.Store();
 
                                 ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
                                 activity.AppId = request.id;
+                                activity.DomainId = communities[0].Id;
                                 activity.Store();
                             }
 
@@ -169,6 +179,13 @@ namespace Terradue.Tep.WebServer.Services {
                 //we share with restriction (community + users)
                 else {
                     foreach (var dp in datapackages) { //the entitySelf can return several entities
+                        //remove previous visibility sharing
+                        dp.RevokePermissionsFromAll(true, false);
+                        if (dp.Owner != null && dp.DomainId != dp.Owner.DomainId) {
+                            dp.DomainId = dp.Owner.DomainId;
+                            dp.Store();
+                        }
+
                         foreach (var to in request.to) {
                             var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
 
@@ -178,11 +195,12 @@ namespace Terradue.Tep.WebServer.Services {
                                 var communities = entityTolist.GetItemsAsList();
                                 if (communities.Count == 0) return new WebResponseBool(false);
                                 //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
-                                dp.DomainId = communities[0].DomainId;
+                                dp.DomainId = communities[0].Id;
                                 dp.Store();
 
                                 ActivityTep activity = new ActivityTep(context, dp, EntityOperationType.Share);
                                 activity.AppId = request.id;
+                                activity.DomainId = communities[0].Id;
                                 activity.Store();
                             }
 

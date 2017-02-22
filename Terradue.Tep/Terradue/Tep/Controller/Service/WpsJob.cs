@@ -17,7 +17,7 @@ using Terradue.Portal.OpenSearch;
 using System.Web;
 
 namespace Terradue.Tep {
-    [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true)]
+    [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true, AllowsKeywordSearch = true)]
     /// <summary>
     /// A Wps Job is processed via a process installed on a wps. It takes as an entry a list of parameters.
     /// </summary>
@@ -228,8 +228,8 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         public bool IsSharedToUser() {
-            var sharedUsersIds = this.GetAuthorizedUserIds();
-            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Owner.Id));
+            var sharedUsersIds = this.GetUsersWithPermissions();
+            return sharedUsersIds != null && (sharedUsersIds.Count > 1 || !sharedUsersIds.Contains(this.Owner.Id));
         }
 
         /// <summary>
@@ -238,7 +238,7 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         /// <param name="id">Identifier.</param>
         public bool IsSharedToUser(int id) { 
-            var sharedUsersIds = this.GetAuthorizedUserIds();
+            var sharedUsersIds = this.GetUsersWithPermissions();
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 

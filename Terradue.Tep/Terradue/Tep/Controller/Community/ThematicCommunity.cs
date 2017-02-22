@@ -12,7 +12,7 @@ using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
 
-    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
+    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class ThematicCommunity : Domain {
 
         public string AppsLink { get; set; }
@@ -431,7 +431,7 @@ namespace Terradue.Tep {
                                     if (off.Operations != null) {
                                         foreach (var ops in off.Operations) {
                                             var any = ops.Any != null ? ops.Any[0].InnerText : null;
-                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier + "#!context=" + any;
+                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier + "#!context=" + System.Web.HttpUtility.UrlEncode(any);
                                             result.Links.Add(new SyndicationLink(new Uri(url), "related", any + "(" + item.Identifier + ")", "application/atom+xml", 0));
                                         }
                                     }

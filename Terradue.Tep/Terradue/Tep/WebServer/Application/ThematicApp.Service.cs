@@ -69,8 +69,10 @@ namespace Terradue.Tep.WebServer.Services {
             List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable> ();
             foreach (var app in apps.Items) {
                 app.OpenSearchEngine = ose;
-                osentities.Add (app);
+                //osentities.Add (app);
+                osentities.AddRange(app.GetOpenSearchableArray());
             }
+
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, ose);
             var result = ose.Query (multiOSE, Request.QueryString, responseType);
 

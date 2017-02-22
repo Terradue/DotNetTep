@@ -100,7 +100,7 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepData
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
+    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class DataPackage : RemoteResourceSet, IAtomizable {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
@@ -332,8 +332,8 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         public bool IsSharedToUser() {
-            var sharedUsersIds = this.GetAuthorizedUserIds();
-            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Id));
+            var sharedUsersIds = this.GetUsersWithPermissions();
+            return sharedUsersIds != null && (sharedUsersIds.Count > 1 || !sharedUsersIds.Contains(this.Id));
         }
 
         /// <summary>
@@ -342,7 +342,7 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         /// <param name="id">Identifier.</param>
         public bool IsSharedToUser(int id) {
-            var sharedUsersIds = this.GetAuthorizedUserIds();
+            var sharedUsersIds = this.GetUsersWithPermissions();
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 
@@ -355,11 +355,11 @@ namespace Terradue.Tep {
             this.ose = ose;
         }
 
-        public virtual OpenSearchUrl GetSearchBaseUrl(string mimeType) {
+        public override OpenSearchUrl GetSearchBaseUrl(string mimeType) {
             return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/search?key={2}", context.BaseUrl, (Kind == KINDRESOURCESETUSER ? "default" : this.Identifier), this.AccessKey));
         }
 
-        public virtual OpenSearchUrl GetDescriptionBaseUrl() {
+        public override OpenSearchUrl GetDescriptionBaseUrl() {
             return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/description?key={2}", context.BaseUrl, (Kind == KINDRESOURCESETUSER ? "default" : this.Identifier), this.AccessKey));
         }
 
