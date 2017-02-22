@@ -422,8 +422,22 @@ namespace Terradue.Tep {
                         result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
 
                         //get all data collections
-                        var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(AppsLink), MasterCatalogue.OpenSearchEngine), new NameValueCollection());
-                        //var offerings = GetOwsOfferings(apps);
+                        var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(AppsLink), MasterCatalogue.OpenSearchEngine), new NameValueCollection(), typeof(AtomFeed));
+                        string shareBaseUrl = context.BaseUrl + "/share?url=";
+                        foreach (IOpenSearchResultItem item in apps.Items) {
+                            var offerings = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+                            if (offerings != null) {
+                                foreach (var off in offerings) {
+                                    if (off.Operations != null) {
+                                        foreach (var ops in off.Operations) {
+                                            var any = ops.Any != null ? ops.Any[0].InnerText : null;
+                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier + "#!context=" + any;
+                                            result.Links.Add(new SyndicationLink(new Uri(url), "related", any + "(" + item.Identifier + ")", "application/atom+xml", 0));
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                     if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
                     var usersCommunity = new List<UserRole>();
@@ -449,18 +463,6 @@ namespace Terradue.Tep {
             }
 
             return result;
-        }
-
-        public static object[] GetOwsOfferings(IOpenSearchResultCollection result) {
-            
-            foreach (IOpenSearchResultItem item in result.Items) {
-                var offerings = item.ElementExtensions.ReadElementExtensions<SyndicationElementExtension>("offering", OwcNamespaces.Owc);
-                var offerings2 = item.ElementExtensions.ReadElementExtensions<SyndicationElementExtension>("offering", "");
-                var offerings3 = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
-                var offerings4 = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", "", new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
-            }
-
-            return null;
         }
 
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
