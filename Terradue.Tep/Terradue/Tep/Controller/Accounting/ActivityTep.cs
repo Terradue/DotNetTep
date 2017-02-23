@@ -68,7 +68,7 @@ namespace Terradue.Tep {
             result.Authors.Add(author);
             result.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
             Uri share = new Uri(context.BaseUrl + "/share?url=" + System.Web.HttpUtility.UrlEncode(id.AbsoluteUri) + (!string.IsNullOrEmpty(AppId) ? "&id=" + AppId : ""));
-            result.Links.Add(new SyndicationLink(share, "via", "share", "application/atom+xml", 0));
+            result.Links.Add(new SyndicationLink(share, "related", "share", "application/atom+xml", 0));
 
             return result;
         }
