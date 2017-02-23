@@ -93,7 +93,7 @@
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
-      <HintPath>..\packages\Terradue.GeoJson.1.7.12\lib\net40\Terradue.GeoJson.dll</HintPath>
+      <HintPath>..\packages\Terradue.GeoJson.1.7.12\lib\net45\Terradue.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Metadata">
       <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>

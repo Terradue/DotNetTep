@@ -166,7 +166,7 @@ namespace Terradue.Tep.Test {
                 context.StartImpersonation(usr2.Id);
 
                 //add user in community
-                community.SetUserAsTemporaryMember(usr1.Id, role.Id);
+                community.SetUserAsTemporaryMember(usr1, role.Id);
                 Assert.True(community.IsUserPending(usr1.Id));
 
                 context.EndImpersonation();
