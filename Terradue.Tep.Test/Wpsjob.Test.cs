@@ -175,17 +175,17 @@ namespace Terradue.Tep.Test {
             //Create one wpsjob restricted for usr1
             job = CreateWpsJob("restricted-job-usr1-2", process, usr1);
             job.Store();
-            job.GrantPermissionsToUsers(new int [] { usr2.Id });
+            job.GrantPermissionsToUsers(new int[] { usr2.Id });
 
             //Create one wpsjob restricted for usr2
             job = CreateWpsJob("restricted-job-usr2-1", process, usr2);
             job.Store();
-            job.GrantPermissionsToUsers(new int [] { usr1.Id });
+            job.GrantPermissionsToUsers(new int[] { usr1.Id });
 
             //Create one wpsjob restricted for usr2
             job = CreateWpsJob("restricted-job-usr2-3", process, usr2);
             job.Store();
-            job.GrantPermissionsToUsers(new int [] { usr3.Id });
+            job.GrantPermissionsToUsers(new int[] { usr3.Id });
 
             //Create one wpsjob private for usr1
             job = CreateWpsJob("private-job-usr1", process, usr1);
@@ -249,7 +249,7 @@ namespace Terradue.Tep.Test {
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_PUBLIC, items.Count);
-                Assert.AreEqual("public-job-usr1", items [0].Name);
+                Assert.AreEqual("public-job-usr1", items[0].Name);
 
                 //Test Visibility RESTRICTED
                 jobList = new EntityList<WpsJob>(context);
@@ -265,7 +265,7 @@ namespace Terradue.Tep.Test {
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_RESTRICTED_OWNED, items.Count);
-                Assert.AreEqual("restricted-job-usr1-2", items [0].Name);
+                Assert.AreEqual("restricted-job-usr1-2", items[0].Name);
 
                 //Test Visibility PRIVATE
                 jobList = new EntityList<WpsJob>(context);
@@ -273,7 +273,7 @@ namespace Terradue.Tep.Test {
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_PRIVATE, items.Count);
-                Assert.AreEqual("private-job-usr1", items [0].Name);
+                Assert.AreEqual("private-job-usr1", items[0].Name);
 
                 //Test Visibility PRIVATE | OWNED
                 jobList = new EntityList<WpsJob>(context);
@@ -281,7 +281,7 @@ namespace Terradue.Tep.Test {
                 jobList.Load();
                 items = jobList.GetItemsAsList();
                 Assert.AreEqual(NBJOBS_USR1_PRIVATE, items.Count);
-                Assert.AreEqual("private-job-usr1", items [0].Name);
+                Assert.AreEqual("private-job-usr1", items[0].Name);
             } catch (Exception e) {
                 Assert.Fail(e.Message);
             } finally {
@@ -297,13 +297,13 @@ namespace Terradue.Tep.Test {
             context.StartImpersonation(usr1.Id);
             var domain = Domain.FromIdentifier(context, "myDomainTest");
 
-			try{
-            EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
-            jobList.SetFilter("DomainId", domain.Id.ToString());
-            jobList.Load();
-            var items = jobList.GetItemsAsList();
-            Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
-            Assert.AreEqual("domain1-job-usr2", items[0].Name);
+            try {
+                EntityList<WpsJob> jobList = new EntityList<WpsJob>(context);
+                jobList.SetFilter("DomainId", domain.Id.ToString());
+                jobList.Load();
+                var items = jobList.GetItemsAsList();
+                Assert.AreEqual(NBJOBS_USR1_DOMAIN, items.Count);
+                Assert.AreEqual("domain1-job-usr2", items[0].Name);
 
             } catch (Exception e) {
                 Assert.Fail(e.Message);
@@ -460,7 +460,7 @@ namespace Terradue.Tep.Test {
         }
 
         [Test]
-        public void ShareWpsJobToCommunity() { 
+        public void ShareWpsJobToCommunity() {
             context.AccessLevel = EntityAccessLevel.Administrator;
             ThematicCommunity community = ThematicCommunity.FromIdentifier(context, "community-public-1");
             var wpsjob = WpsJob.FromIdentifier(context, "private-job-usr1");
@@ -508,7 +508,9 @@ namespace Terradue.Tep.Test {
                 Assert.True(hasSharedLink);
 
                 //unshare the job
-                community.UnShareEntity(wpsjob);
+                wpsjob.RevokePermissionsFromAll(true, false);
+                wpsjob.DomainId = wpsjob.Owner.DomainId;
+                wpsjob.Store();
 
                 Assert.False(wpsjob.IsSharedToCommunity());
 
@@ -569,7 +571,7 @@ namespace Terradue.Tep.Test {
         }
 
         [Test]
-        public void SearchCommunitiesForWpsJob() { 
+        public void SearchCommunitiesForWpsJob() {
             context.AccessLevel = EntityAccessLevel.Administrator;
             ThematicCommunity community = ThematicCommunity.FromIdentifier(context, "community-public-1");
             var wpsjob = WpsJob.FromIdentifier(context, "private-job-usr1");
@@ -592,7 +594,9 @@ namespace Terradue.Tep.Test {
                 Assert.AreEqual(1, osr.TotalResults);
 
                 //unshare the job
-                community.UnShareEntity(wpsjob);
+                wpsjob.RevokePermissionsFromAll(true, false);
+                wpsjob.DomainId = wpsjob.Owner.DomainId;
+                wpsjob.Store();
 
                 Assert.False(wpsjob.IsSharedToCommunity());
 
