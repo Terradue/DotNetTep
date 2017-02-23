@@ -252,7 +252,7 @@ namespace Terradue.Tep {
             //the Thematic Application does not exists, we create it
             ThematicApplication app = new ThematicApplication(context);
             app.Kind = ThematicApplication.KINDRESOURCESETAPPS;
-            app.Identifier = "_apps_" + this.Id;
+            app.Identifier = Guid.NewGuid().ToString();
             app.DomainId = this.Id;
             app.Store();
             return app;
