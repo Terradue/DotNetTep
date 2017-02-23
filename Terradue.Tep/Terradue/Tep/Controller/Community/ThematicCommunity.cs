@@ -253,6 +253,7 @@ namespace Terradue.Tep {
             ThematicApplication app = new ThematicApplication(context);
             app.Kind = ThematicApplication.KINDRESOURCESETAPPS;
             app.Identifier = "_apps_" + this.Id;
+            app.DomainId = this.Id;
             app.Store();
             return app;
         }
