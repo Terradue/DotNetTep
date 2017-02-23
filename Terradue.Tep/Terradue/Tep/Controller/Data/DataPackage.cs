@@ -102,14 +102,14 @@ namespace Terradue.Tep {
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class DataPackage : RemoteResourceSet, IAtomizable {
-
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
-            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
+        
         protected EntityType entitytype { get; set; }
         protected EntityType entityType { 
-            get{ 
-                if(entitytype == null) entitytype = EntityType.GetEntityType(typeof(DataPackage));
+            get{
+                if (entitytype == null) {
+                    var type = this.GetType();
+                    entitytype = EntityType.GetEntityType(type);
+                }
                 return entitytype;
             } 
         }
@@ -367,7 +367,7 @@ namespace Terradue.Tep {
         /// Gets the local open search description.
         /// </summary>
         /// <returns>The local open search description.</returns>
-        public OpenSearchDescription GetLocalOpenSearchDescription() {
+        public virtual OpenSearchDescription GetLocalOpenSearchDescription() {
             OpenSearchDescription osd = base.GetOpenSearchDescription();
 
             List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
@@ -429,7 +429,7 @@ namespace Terradue.Tep {
 
         #region IAtomizable implementation
 
-        public Terradue.OpenSearch.Result.AtomItem ToAtomItem(NameValueCollection parameters) {
+        public override Terradue.OpenSearch.Result.AtomItem ToAtomItem(NameValueCollection parameters) {
 
             string identifier = this.Identifier;
             string name = (this.Name != null ? this.Name : this.Identifier);
@@ -487,11 +487,6 @@ namespace Terradue.Tep {
             }
 
             return atomEntry;
-        }
-
-
-        public NameValueCollection GetOpenSearchParameters() {
-            return OpenSearchFactory.GetBaseOpenSearchParameter();
         }
 
         #endregion

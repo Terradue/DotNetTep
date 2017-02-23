@@ -90,12 +90,7 @@ namespace Terradue.Tep
         /// <param name="mimeType">MIME type.</param>
         public override OpenSearchUrl GetSearchBaseUrl (string mimeType)
         {
-            return GetSearchBaseUrl ();
-        }
-
-        public new OpenSearchUrl GetSearchBaseUrl ()
-        {
-            return new OpenSearchUrl (string.Format ("{0}/" + entityType.Keyword + "/{1}/search", context.BaseUrl, Identifier));
+            return new OpenSearchUrl(string.Format("{0}/" + entityType.Keyword + "/search", context.BaseUrl));
         }
 
         /// <summary>
@@ -104,14 +99,14 @@ namespace Terradue.Tep
         /// <returns>The description base URL.</returns>
         public override OpenSearchUrl GetDescriptionBaseUrl ()
         {
-            return new OpenSearchUrl (string.Format ("{0}/" + entityType.Keyword + "/{1}/description", context.BaseUrl, Identifier));
+            return new OpenSearchUrl (string.Format ("{0}/" + entityType.Keyword + "/description", context.BaseUrl));
         }
 
         /// <summary>
         /// Gets the local open search description.
         /// </summary>
         /// <returns>The local open search description.</returns>
-        public new OpenSearchDescription GetLocalOpenSearchDescription ()
+        public override OpenSearchDescription GetLocalOpenSearchDescription ()
         {
             OpenSearchDescription osd = base.GetOpenSearchDescription ();
 
@@ -140,13 +135,6 @@ namespace Terradue.Tep
             osd.Url = urls.ToArray ();
 
             return osd;
-        }
-
-        public new NameValueCollection GetOpenSearchParameters (string mimeType)
-        {
-            if (mimeType != "application/atom+xml") return null;
-            var parameters = OpenSearchFactory.MergeOpenSearchParameters (GetOpenSearchableArray (), mimeType);
-            return parameters;
         }
     }
 }
