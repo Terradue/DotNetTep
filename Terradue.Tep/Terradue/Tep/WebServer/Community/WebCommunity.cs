@@ -95,6 +95,7 @@ namespace Terradue.Tep
 
             entity.DiscussCategory = DiscussCategory;
             entity.AppsLink = Apps;
+            entity.IconUrl = IconeUrl;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
         }
