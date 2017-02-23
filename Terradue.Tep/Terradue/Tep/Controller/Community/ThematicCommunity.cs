@@ -104,6 +104,8 @@ namespace Terradue.Tep {
             if (context.AccessLevel != EntityAccessLevel.Administrator) throw new UnauthorizedAccessException("Only administrators can change the owner of this entity");
             var role = Role.FromIdentifier(context, RoleTep.OWNER);
             role.GrantToUser(user, this);
+
+            context.LogInfo(this, string.Format("Set owner ({0}) of community {1}", user.Username, this.Identifier));
         }
 
         /// <summary>
@@ -114,6 +116,8 @@ namespace Terradue.Tep {
         public void SetUserRole(User user, Role role) {
             //only owner can do this
             if (!IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
+
+            context.LogInfo(this, string.Format("Set role {0} to user {1} for community {2}", role.Identifier, user.Username, this.Identifier));
 
             //delete previous roles
             var roles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
@@ -127,14 +131,17 @@ namespace Terradue.Tep {
         /// Joins the current user.
         /// </summary>
         public void JoinCurrentUser() {
-            Role role = Role.FromIdentifier(context, RoleTep.MEMBER);
-
+            
             if (this.Kind == DomainKind.Public) {
                 //public community -> user can always join
+                context.LogInfo(this, string.Format("Joining user {0} to PUBLIC community {1}", context.Username, this.Identifier));
+                Role role = Role.FromIdentifier(context, RoleTep.MEMBER);
                 role.GrantToUser(context.UserId, this.Id);
             } else {
                 //other communities, it means the user has been invited and must be on pending table
                 if (!IsUserPending(context.UserId)) throw new UnauthorizedAccessException("Current user not pending in Community");
+                context.LogInfo(this, string.Format("Joining user {0} to PRIVATE community {1}", context.Username, this.Identifier));
+
                 SetUserAsDefinitiveMember(context.UserId);
             }
         }
@@ -174,11 +181,12 @@ namespace Terradue.Tep {
             Role role = Role.FromIdentifier(context, RoleTep.PENDING);
             role.GrantToUser(user.Id, this.Id);
 
+            context.LogInfo(this, string.Format("User {0} set pending for community {1} with role {2}", user.Username, this.Identifier, role.Identifier));
+
             //we now put to the role the manager wanted
             role = Role.FromId(context, roleId);
             role.GrantToUser(user.Id, this.Id);
 
-            //TODO: send email
             try {
                 string emailFrom = context.GetConfigValue("MailSenderAddress");
                 string subject = context.GetConfigValue("CommunityJoinEmailSubject");
@@ -210,6 +218,8 @@ namespace Terradue.Tep {
             User user = User.FromId(context, userId);
             Role role = Role.FromIdentifier(context, RoleTep.PENDING);
             role.RevokeFromUser(user, this);
+
+            context.LogInfo(this, string.Format("User {0} set as definitive member for community {1}", user.Username, this.Identifier));
         }
 
         /// <summary>
@@ -232,6 +242,9 @@ namespace Terradue.Tep {
             //delete previous role(s)
             var uroles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
             foreach (var r in uroles) r.RevokeFromUser(user, this);
+
+            context.LogInfo(this, string.Format("User {0} removed from community {1} (all roles revoked)", user.Username, this.Identifier));
+
         }
 
         /// <summary>
@@ -296,9 +309,8 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="entity">Entity.</param>
         public void ShareEntity(Entity entity) {
-            //current user must own the entity
-            if (entity.OwnerId != context.UserId) throw new Exception("Only owner can share an entity");
-
+            context.LogInfo(this, string.Format("Share entity {0} ({2}) to community {1}", entity.Identifier, this.Identifier, entity.GetType().ToString()));
+ 
             //current user must have role in community
             var uroles = Role.GetUserRolesForDomain(context, context.UserId, this.Id);
             if (uroles.Length == 0) throw new Exception("Only a member of the community can share an entity");
@@ -307,24 +319,6 @@ namespace Terradue.Tep {
             entity.Store();
 
         }
-
-        /// <summary>
-        /// Unshare the entity.
-        /// </summary>
-        /// <param name="entity">Entity.</param>
-        public void UnShareEntity(Entity entity) {
-            //current user must own the entity
-            if (entity.OwnerId != context.UserId) throw new Exception("Only owner can share an entity");
-
-            //current user must have role in community
-            var uroles = Role.GetUserRolesForDomain(context, context.UserId, this.Id);
-            if (uroles.Length == 0) throw new Exception("Only a member of the community can share an entity");
-
-            var currentUser = User.FromId(context, context.UserId);
-            entity.DomainId = currentUser.DomainId;
-            entity.Store();
-        }
-
 
         #region IAtomizable
 

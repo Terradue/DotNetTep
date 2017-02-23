@@ -134,6 +134,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 if (communities.Count == 0) return new WebResponseBool(false);
 
                                 //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
+                                communities[0].ShareEntity(job);
                                 job.DomainId = communities[0].Id;
                                 job.Store();
 

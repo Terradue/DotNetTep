@@ -40,26 +40,6 @@ namespace Terradue.Tep
         public string Username { get; set; }
     }
 
-    [Route ("/job/wps/{id}/community/{cid}", "PUT", Summary = "PUT the wpsjob to the community", Notes = "")]
-    public class CommunityAddWpsJobRequestTep : IReturn<WebResponseBool>
-    {
-        [ApiMember (Name = "id", Description = "Id of the wps job", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int Id { get; set; }
-
-        [ApiMember (Name = "cid", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int CId { get; set; }
-    }
-
-    [Route ("/data/package/{id}/community/{cid}", "PUT", Summary = "PUT the data package to the community", Notes = "")]
-    public class CommunityAddDataPackageRequestTep : IReturn<WebResponseBool>
-    {
-        [ApiMember (Name = "id", Description = "Id of the data package", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int Id { get; set; }
-
-        [ApiMember (Name = "cid", Description = "Id of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public int CId { get; set; }
-    }
-
     [Route ("/community/search", "GET", Summary = "GET community as opensearch", Notes = "")]
     public class CommunitySearchRequestTep : IReturn<HttpResult> { }
 

@@ -36,6 +36,8 @@ namespace Terradue.Tep.WebServer.Services{
                 Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? RoleTep.MEMBER : request.Role);
                 context.LogInfo (this, string.Format ("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
+                //we use administrator access level to be able to load the community
+                context.AccessLevel = EntityAccessLevel.Administrator;
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 if (string.IsNullOrEmpty(request.Username)) {
@@ -129,50 +131,6 @@ namespace Terradue.Tep.WebServer.Services{
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 domain.RemoveUser(user);
-
-                context.Close ();
-            } catch (Exception e) {
-                context.LogError (this, e.Message);
-                context.Close ();
-                throw e;
-            }
-
-            return new WebResponseBool (true);
-        }
-
-        public object Put (CommunityAddWpsJobRequestTep request)
-        {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
-
-            try {
-                context.Open ();
-                context.LogInfo (this, string.Format ("/job/wps/{{Id}}/community/{{cId}} PUT Id='{0}', CId='{1}", request.Id, request.CId));
-
-                var wpsjob = WpsJob.FromId (context, request.Id);
-                var community = ThematicCommunity.FromId(context, request.CId);
-                community.ShareEntity(wpsjob);
-
-                context.Close ();
-            } catch (Exception e) {
-                context.LogError (this, e.Message);
-                context.Close ();
-                throw e;
-            }
-
-            return new WebResponseBool (true);
-        }
-
-        public object Put (CommunityAddDataPackageRequestTep request)
-        {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
-
-            try {
-                context.Open ();
-                context.LogInfo (this, string.Format ("/data/package/{{Id}}/community/{{cId}} PUT Id='{0}', CId='{1}", request.Id, request.CId));
-
-                var dp = DataPackage.FromId (context, request.Id);
-                var community = ThematicCommunity.FromId(context, request.CId);
-                community.ShareEntity(dp);
 
                 context.Close ();
             } catch (Exception e) {
