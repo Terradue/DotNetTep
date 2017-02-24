@@ -62,6 +62,7 @@ namespace Terradue.Tep
         public WebCommunityTep(ThematicCommunity entity, IfyContext context = null) : base(entity) {
             Apps = entity.AppsLink;
             DiscussCategory = entity.DiscussCategory;
+            Name = entity.Name ?? entity.Identifier;
         }
 
         /// <summary>
@@ -76,6 +77,8 @@ namespace Terradue.Tep
             entity.DiscussCategory = DiscussCategory;
             entity.AppsLink = Apps;
             entity.IconUrl = IconeUrl;
+            entity.Identifier = TepUtility.GenerateIdentifier(Identifier);
+            entity.Name = Name;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
         }

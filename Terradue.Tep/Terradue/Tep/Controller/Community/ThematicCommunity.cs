@@ -70,6 +70,8 @@ namespace Terradue.Tep {
         }
 
         public override void Store() {
+            if (string.IsNullOrEmpty(this.Identifier) && !string.IsNullOrEmpty(this.Name))
+                this.Identifier = TepUtility.GenerateIdentifier(this.Name);
             base.Store();
             StoreAppsLink(AppsLink);
         }
@@ -192,9 +194,9 @@ namespace Terradue.Tep {
                 string subject = context.GetConfigValue("CommunityJoinEmailSubject");
                 subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
                 subject = subject.Replace("$(COMMUNITY)", this.Name);
-                subject = subject.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
                 string body = context.GetConfigValue("CommunityJoinEmailBody");
                 body = body.Replace("$(COMMUNITY)", this.Name);
+                body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
                 context.SendMail(emailFrom, user.Email, subject, body);
             } catch (Exception) { }
         }
@@ -359,12 +361,14 @@ namespace Terradue.Tep {
                 result.Categories.Add(new SyndicationCategory("status", null, "joined"));
             } else if (!ispublic) return null;
 
+            if (string.IsNullOrEmpty(this.Name)) this.Name = this.Identifier;
+
             var entityType = EntityType.GetEntityType(typeof(ThematicCommunity));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
             result.Id = id.ToString();
-            result.Title = new TextSyndicationContent(Identifier);
-            result.Content = new TextSyndicationContent(Identifier);
+            result.Title = new TextSyndicationContent(Name);
+            result.Content = new TextSyndicationContent(Name);
 
             result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             result.Summary = new TextSyndicationContent(Description);

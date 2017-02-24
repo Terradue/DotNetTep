@@ -106,6 +106,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 Domain domain = (request.Id == 0 ? null : Domain.FromId(context, request.Id));
 				domain = request.ToEntity(context, domain);
+                domain.Identifier = TepUtility.GenerateIdentifier(domain.Identifier);
                 domain.Store();
                 result = new WebDomain(domain);
                 context.LogInfo(this,string.Format("/domain POST Id='{0}'", request.Id));
