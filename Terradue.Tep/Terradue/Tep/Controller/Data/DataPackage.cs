@@ -399,6 +399,7 @@ namespace Terradue.Tep {
             List<UrlBasedOpenSearchable> osResources = new List<UrlBasedOpenSearchable>(Resources.Count);
 
             foreach (RemoteResource res in Resources) {
+                if (string.IsNullOrEmpty(res.Location)) continue;
                 var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
                 var eosd = entity.GetOpenSearchDescription();
                 if (eosd.DefaultUrl != null && eosd.DefaultUrl.Type == "application/json") {
