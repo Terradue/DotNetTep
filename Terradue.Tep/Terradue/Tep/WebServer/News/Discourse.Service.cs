@@ -2,6 +2,8 @@
 using System.IO;
 using System.Net;
 using ServiceStack.ServiceHost;
+using Terradue.OpenSearch;
+using Terradue.Portal;
 
 namespace Terradue.Tep.WebServer.Services {
     [Api("Tep Terradue webserver")]
@@ -46,7 +48,10 @@ namespace Terradue.Tep.WebServer.Services {
                 return (true);
             };
 
-            var discourseBaseUrl = "http://discuss.terradue.com";
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            context.Open();
+            var discourseBaseUrl = context.GetConfigValue("discussBaseUrl");
+            context.Close();
             var discourseUrl = string.Format("{0}/{1}", discourseBaseUrl, query);
             log.DebugFormat("Discourse url : {0}",discourseUrl);
             HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(discourseUrl);
@@ -79,23 +84,58 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
+        public object Post(PostDiscourseTopic request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            string result;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/discourse/posts POST community='{0}'{1}{2}", 
+                               request.communityIdentifier, 
+                               !string.IsNullOrEmpty(request.subject) ? ", subject='"+request.subject+"'" : "",
+                               !string.IsNullOrEmpty(request.body) ? ", body='" + request.body + "'" : ""
+                                                   ));
+
+                if (string.IsNullOrEmpty(request.subject)) throw new Exception("Unable to post new topic, subject is null");
+                if (string.IsNullOrEmpty(request.body)) throw new Exception("Unable to post new topic, body is null");
+
+                var community = ThematicCommunity.FromIdentifier(context, request.communityIdentifier);
+                var discussCategory = community.DiscussCategory;
+                if (string.IsNullOrEmpty(discussCategory)) throw new Exception("Unable to post new topic, the selected community has no Discuss category associated");
+
+                var user = UserTep.FromId(context, context.UserId);
+                if (string.IsNullOrEmpty(user.TerradueCloudUsername)) throw new Exception("Unable to post new topic, please set first your Terradue Cloud username");
+
+                var discussClient = new DiscussClient(context.GetConfigValue("disucssBaseUrl"), context.GetConfigValue("discussApiKey"), user.TerradueCloudUsername);
+                var category = discussClient.GetCategory(discussCategory);
+                if (category == null) throw new Exception("Unable to post new topic, the selected community has no valid Discuss category associated");
+
+                var response = discussClient.PostTopic(category.id, request.subject, request.body);                                                                 
+                result = string.Format("{0}/t/{1}/{2}", discussClient.Host, response.topic_slug, response.id);
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
     }
 
     [Route("/discourse/c/latest", "GET", Summary = "", Notes = "")]
     public class GetDiscourseLatestTopicsPerCategory {
-        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string category{ get; set; }
     }
 
     [Route("/discourse/c/top", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopTopicsPerCategory {
-        [ApiMember(Name = "category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        [ApiMember(Name = "category", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string category { get; set; }
     }
 
     [Route("/discourse/c/search", "GET", Summary = "", Notes = "")]
     public class GetDiscourseSearchTopicsPerCategory {
-        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string category{ get; set; }
 
         [ApiMember(Name="q", Description = "query", ParameterType = "query", DataType = "string", IsRequired = false)]
@@ -104,7 +144,7 @@ namespace Terradue.Tep.WebServer.Services {
 
     [Route("/discourse/c", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopicsPerCategory {
-        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string category{ get; set; }
 
         [ApiMember(Name="page", Description = "request", ParameterType = "query", DataType = "int", IsRequired = false)]
@@ -116,8 +156,23 @@ namespace Terradue.Tep.WebServer.Services {
 
     [Route("/discourse/t/{topicId}", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopic {
-        [ApiMember(Name="topicId", Description = "request", ParameterType = "query", DataType = "int", IsRequired = true)]
+        [ApiMember(Name="topicId", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string topicId{ get; set; }
+    }
+
+    [Route("/discourse/posts", "POST", Summary = "", Notes = "")]
+    public class PostDiscourseTopic {
+        [ApiMember(Name = "communityIdentifier", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string communityIdentifier { get; set; }
+
+        //[ApiMember(Name = "entitySelf", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
+        //public string entitySelf { get; set; }
+
+        [ApiMember(Name = "subject", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string subject { get; set; }
+
+        [ApiMember(Name = "body", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string body { get; set; }
     }
 }
 
