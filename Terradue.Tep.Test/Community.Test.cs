@@ -80,19 +80,19 @@ namespace Terradue.Tep.Test {
         [Test]
         public void GetCommunityOwner() {
             ThematicCommunity community = ThematicCommunity.FromIdentifier(context, "community-public-1");
-            var usr = community.Owner;
+            var usr = community.Owners[0];
             Assert.AreEqual("testusr2", usr.Username);
 
             community = ThematicCommunity.FromIdentifier(context, "community-public-2");
-            usr = community.Owner;
+            usr = community.Owners[0];
             Assert.AreEqual("testusr2", usr.Username);
 
             community = ThematicCommunity.FromIdentifier(context, "community-private-1");
-            usr = community.Owner;
+            usr = community.Owners[0];
             Assert.AreEqual("testusr2", usr.Username);
 
             community = ThematicCommunity.FromIdentifier(context, "community-private-2");
-            usr = community.Owner;
+            usr = community.Owners[0];
             Assert.AreEqual("testusr2", usr.Username);
         }
 
