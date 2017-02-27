@@ -502,6 +502,14 @@ namespace Terradue.Tep {
         public NameValueCollection GetOpenSearchParameters() {
             return OpenSearchFactory.GetBaseOpenSearchParameter();
         }
+
+        public string GetAvatar() {
+            LoadCloudUsername();
+            var avatarusername = String.IsNullOrEmpty(TerradueCloudUsername) ? Username : TerradueCloudUsername;
+            avatarusername = avatarusername.Replace(" ", "");
+            if (avatarusername.Contains("@") || avatarusername.Contains("?") || avatarusername.Contains("&")) avatarusername = "na";
+            return string.Format("https://discuss.terradue.com/user_avatar/discuss.terradue.com/{0}/50/45_1.png", avatarusername);
+        }
     }
 }
 

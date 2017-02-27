@@ -23,7 +23,7 @@ namespace Terradue.Tep {
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
             if (!IsSearchable(parameters)) return null;
 
-            User owner = User.ForceFromId(context, this.OwnerId);
+            UserTep owner = (UserTep)UserTep.ForceFromId(context, this.OwnerId);
 
             //string identifier = null;
             string name = (Entity.Name != null ? Entity.Name : Entity.Identifier);
@@ -64,7 +64,9 @@ namespace Terradue.Tep {
             string usrUri = basepath.Uri.AbsoluteUri + "/" + owner.Username;
             string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(owner.LastName) ? owner.FirstName + " " + owner.LastName : owner.Username);
             SyndicationPerson author = new SyndicationPerson(owner.Email, usrName, usrUri);
-            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", owner.Username));
+            var ownername = string.IsNullOrEmpty(owner.FirstName) || string.IsNullOrEmpty(owner.LastName) ? owner.Username : owner.FirstName + " " + owner.LastName;
+            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", ownername));
+            author.ElementExtensions.Add(new SyndicationElementExtension("avatar", "http://purl.org/dc/elements/1.1/", owner.GetAvatar()));
             result.Authors.Add(author);
             result.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
             Uri share = new Uri(context.BaseUrl + "/share?url=" + System.Web.HttpUtility.UrlEncode(id.AbsoluteUri) + (!string.IsNullOrEmpty(AppId) ? "&id=" + AppId : ""));

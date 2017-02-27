@@ -440,7 +440,7 @@ namespace Terradue.Tep {
                                             if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue; 
                                             var any = ops.Any[0].InnerText.Trim();
                                             var anytrim = any.Replace(" ", "");
-                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(any);
+                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
                                             var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + item.Identifier + ")", "application/atom+xml", 0);
                                             if(any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
                                         }
@@ -456,13 +456,14 @@ namespace Terradue.Tep {
                             var usersIds = role.GetUsers(this.Id).ToList();
                             if (usersIds.Count > 0) {
                                 foreach (var usrId in usersIds) {
-                                    var user = User.FromId(context, usrId);
+                                    var user = UserTep.FromId(context, usrId);
                                     usersCommunity.Add(new UserRole {
                                         Username = user.Username,
                                         Name = user.FirstName + " " + user.LastName,
                                         Email = user.Email,
                                         Role = role.Identifier,
-                                        Status = IsUserPending(usrId) ? "pending" : "joined"
+                                        Status = IsUserPending(usrId) ? "pending" : "joined",
+                                        Avatar = user.GetAvatar()
                                     });
                                 }
                             }
@@ -536,6 +537,8 @@ namespace Terradue.Tep {
         public string Role { get; set; }
         [DataMember]
         public string Status { get; set; }
+        [DataMember]
+        public string Avatar { get; set; }
 
         public UserRole() { }
 
