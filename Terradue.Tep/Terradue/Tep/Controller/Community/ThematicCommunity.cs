@@ -20,13 +20,13 @@ namespace Terradue.Tep {
         [EntityDataField("discuss")]
         public string DiscussCategory { get; set; }
 
-        private UserTep owner;
-        public UserTep Owner {
+        private List<UserTep> owners;
+        public List<UserTep> Owners {
             get {
-                if (owner == null) {
-                    owner = GetOwner();
+                if (owners == null) {
+                    owners = GetOwners();
                 }
-                return owner;
+                return owners;
             }
         }
 
@@ -82,18 +82,24 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if user is owner of the community, <c>false</c> otherwise.</returns>
         /// <param name="userid">Userid.</param>
         public bool IsUserOwner(int userid) {
-            return (Owner != null && Owner.Id == userid);
+            if (Owners == null || Owners.Count == 0) return false;
+            foreach (var own in Owners)
+                if (own.Id == userid) return true;
+            return false;
         }
 
         /// <summary>
         /// Gets the owner (or manager) of the Community
         /// </summary>
         /// <returns>The owner.</returns>
-        private UserTep GetOwner() {
+        private List<UserTep> GetOwners() {
             var role = Role.FromIdentifier(context, RoleTep.OWNER);
             var usrs = role.GetUsers(this.Id);
-            if (usrs != null && usrs.Length > 0)
-                return UserTep.FromId(context, usrs[0]);
+            if (usrs != null && usrs.Length > 0) {
+                List<UserTep> users = new List<UserTep>();
+                foreach (var usr in usrs) users.Add(UserTep.FromId(context, usr));
+                return users;
+            }
             else return null;
         }
 
@@ -376,11 +382,13 @@ namespace Terradue.Tep {
             result.PublishDate = new DateTimeOffset(DateTime.UtcNow);
 
             //owner
-            if (Owner != null) {
-                var ownerUri = Owner.GetUserPageLink();
-                SyndicationPerson ownerPerson = new SyndicationPerson(Owner.Email, Owner.FirstName + " " + Owner.LastName, ownerUri);
-                ownerPerson.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
-                result.Authors.Add(ownerPerson);
+            if (Owners != null) {
+                foreach (var own in Owners) {
+                    var ownerUri = own.GetUserPageLink();
+                    SyndicationPerson ownerPerson = new SyndicationPerson(own.Email, own.FirstName + " " + own.LastName, ownerUri);
+                    ownerPerson.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", own.Username));
+                    result.Authors.Add(ownerPerson);
+                }
             }
 
             result.Links.Add(new SyndicationLink(id, "self", Identifier, "application/atom+xml", 0));
