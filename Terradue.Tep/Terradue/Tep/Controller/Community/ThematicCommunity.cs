@@ -337,10 +337,10 @@ namespace Terradue.Tep {
                 case "status":
                     return true;
                 default:
-                    return true;
+                    return false;
                 }
             }
-            return true;
+            return false;
         }
 
         public override AtomItem ToAtomItem(NameValueCollection parameters) {

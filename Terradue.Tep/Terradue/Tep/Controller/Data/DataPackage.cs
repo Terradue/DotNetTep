@@ -401,12 +401,12 @@ namespace Terradue.Tep {
             foreach (RemoteResource res in Resources) {
                 if (string.IsNullOrEmpty(res.Location)) continue;
                 var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
-                var eosd = entity.GetOpenSearchDescription();
-                if (eosd.DefaultUrl != null && eosd.DefaultUrl.Type == "application/json") {
-                    var atomUrl = eosd.Url.FirstOrDefault(u => u.Type == "application/atom+xml");
-                    if (atomUrl != null)
-                        eosd.DefaultUrl = atomUrl;
-                }
+                //var eosd = entity.GetOpenSearchDescription();
+                //if (eosd.DefaultUrl != null && eosd.DefaultUrl.Type == "application/json") {
+                //    var atomUrl = eosd.Url.FirstOrDefault(u => u.Type == "application/atom+xml");
+                //    if (atomUrl != null)
+                //        eosd.DefaultUrl = atomUrl;
+                //}
 
                 osResources.Add(entity);
             }
