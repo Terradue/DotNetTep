@@ -277,7 +277,8 @@ namespace Terradue.Tep {
         public void CreatePrivateDomain() {
             //create new domain with Identifier = Username
             var privatedomain = new Domain(context);
-            privatedomain.Identifier = Username;
+            privatedomain.Identifier = TepUtility.GenerateIdentifier(Username);
+            privatedomain.Name = Username;
             privatedomain.Description = "Domain of user " + Username;
             privatedomain.Kind = DomainKind.User;
             privatedomain.Store();
