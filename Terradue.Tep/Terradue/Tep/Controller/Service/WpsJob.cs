@@ -604,11 +604,11 @@ namespace Terradue.Tep {
 
             Uri describeUri = new Uri(providerUrl + "?service=WPS" +
                                           "&request=DescribeProcess" +
-                                      "&version=" + process.Version +
+                                      "&version=" + provider.WPSVersion +
                                           "&identifier=" + identifier);
             Uri executeUri = new Uri(providerUrl + "?service=WPS" +
                                          "&request=Execute" +
-                                     "&version=" + process.Version +
+                                     "&version=" + provider.WPSVersion +
                                          "&identifier=" + identifier);
 
             //getcapabilities
