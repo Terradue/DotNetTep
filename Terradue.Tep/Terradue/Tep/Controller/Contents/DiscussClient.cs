@@ -39,7 +39,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The categories.</returns>
         public CategoryList GetCategories() {
-            CategoryList categories = new CategoryList();
+            DiscourseCategoryList categories = new DiscourseCategoryList();
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/categories.json", this.Host));
             request.Method = "GET";
@@ -50,13 +50,13 @@ namespace Terradue.Tep {
                 using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                         string result = streamReader.ReadToEnd();
-                        categories = JsonSerializer.DeserializeFromString<CategoryList>(result);
+                        categories = JsonSerializer.DeserializeFromString<DiscourseCategoryList>(result);
                     }
                 }
             } catch (Exception e) {
                 throw e;
             }
-            return categories;
+            return categories.category_list;
         }
 
         /// <summary>
@@ -158,6 +158,12 @@ namespace Terradue.Tep {
         public object uploaded_background { get; set; }
         [DataMember]
         public bool? is_uncategorized { get; set; }
+    }
+
+    [DataContract]
+    public class DiscourseCategoryList {
+        [DataMember]
+        public CategoryList category_list { get; set; }
     }
 
     [DataContract]

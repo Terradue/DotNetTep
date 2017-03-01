@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var user = UserTep.FromId(context, context.UserId);
                 if (string.IsNullOrEmpty(user.TerradueCloudUsername)) throw new Exception("Unable to post new topic, please set first your Terradue Cloud username");
 
-                var discussClient = new DiscussClient(context.GetConfigValue("disucssBaseUrl"), context.GetConfigValue("discussApiKey"), user.TerradueCloudUsername);
+                var discussClient = new DiscussClient(context.GetConfigValue("discussBaseUrl"), context.GetConfigValue("discussApiKey"), user.TerradueCloudUsername);
                 var category = discussClient.GetCategory(discussCategory);
                 if (category == null) throw new Exception("Unable to post new topic, the selected community has no valid Discuss category associated");
 
