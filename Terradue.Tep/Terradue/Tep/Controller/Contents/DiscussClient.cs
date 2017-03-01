@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Runtime.Serialization;
+using System.Web;
 using ServiceStack.Text;
 
 namespace Terradue.Tep {
@@ -69,27 +70,23 @@ namespace Terradue.Tep {
         public PostTopicResponse PostTopic(int category, string subject, string body) { 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/posts", this.Host));
             request.Method = "POST";
-            request.ContentType = "application/json";
-            request.Accept = "application/json";
+            request.ContentType = "application/x-www-form-urlencoded";
             request.Proxy = null;
-
-            var jsonrequest = new PostTopicRequest {
-                title = subject,
-                raw = body, category = category
-            };
 
             PostTopicResponse response = new PostTopicResponse();
 
-            string json = JsonSerializer.SerializeToString<PostTopicRequest>(jsonrequest);
+            var dataStr = string.Format("api_key={0}&api_username={1}&category={2}&title={3}&raw={4}",this.ApiKey, this.ApiUsername, category, HttpUtility.UrlEncode(subject), HttpUtility.UrlEncode(body));
+            byte[] data = System.Text.Encoding.UTF8.GetBytes(dataStr);
 
-            using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
-                streamWriter.Write(json);
-                streamWriter.Flush();
-                streamWriter.Close();
+            request.ContentLength = data.Length;
+
+            using (var requestStream = request.GetRequestStream()) {
+                requestStream.Write(data, 0, data.Length);
+                requestStream.Close();
 
                 using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        string result = streamReader.ReadToEnd();
+                        var result = streamReader.ReadToEnd();
                         try {
                             response = JsonSerializer.DeserializeFromString<PostTopicResponse>(result);
                         } catch (Exception e) {
@@ -183,7 +180,15 @@ namespace Terradue.Tep {
     }
 
     [DataContract]
-    public class PostTopicRequest {
+    public class ApiRequest {
+        [DataMember]
+        public string api_key { get; set; }
+        [DataMember]
+        public string api_username { get; set; }
+    }
+
+    [DataContract]
+    public class PostTopicRequest : ApiRequest {
         [DataMember]
         public string title { get; set; }
         [DataMember]
