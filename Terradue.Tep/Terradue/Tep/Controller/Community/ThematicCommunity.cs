@@ -430,7 +430,6 @@ namespace Terradue.Tep {
 
                         //get all data collections
                         var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(AppsLink), MasterCatalogue.OpenSearchEngine), new NameValueCollection(), typeof(AtomFeed));
-                        string shareBaseUrl = context.BaseUrl + "/share?url=";
                         foreach (IOpenSearchResultItem item in apps.Items) {
                             var offerings = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
                             if (offerings != null) {
@@ -440,8 +439,9 @@ namespace Terradue.Tep {
                                             if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue; 
                                             var any = ops.Any[0].InnerText.Trim();
                                             var anytrim = any.Replace(" ", "");
+                                            var appTitle = item.Title != null ? item.Title.Text : item.Identifier;
                                             var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
-                                            var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + item.Identifier + ")", "application/atom+xml", 0);
+                                            var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
                                             if(any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
                                         }
                                     }
