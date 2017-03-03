@@ -36,9 +36,16 @@ namespace Terradue.Tep.WebServer.Services {
 
 
             var apps = new EntityList<ThematicApplication> (context);
-            apps.Template.Kind = ThematicApplication.KINDRESOURCESETAPPS;
+            apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
             apps.Load ();
-            var result = GetAppsResultCollection (apps);
+
+            // the opensearch cache system uses the query parameters
+            // we add to the parameters the filters added to the load in order to avoir wrong cache
+            // we use 't2-' in order to not interfer with possibly used query parameters
+            var qs = new NameValueCollection(Request.QueryString);
+            foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
+
+            var result = GetAppsResultCollection(apps, qs);
 
             context.Close ();
             return new HttpResult (result.SerializeToString (), result.ContentType);
@@ -55,13 +62,20 @@ namespace Terradue.Tep.WebServer.Services {
             apps.SetFilter ("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString ());
             apps.SetFilter ("DomainId", domain.Id.ToString());
             apps.Load ();
-            var result = GetAppsResultCollection (apps);
+
+            // the opensearch cache system uses the query parameters
+            // we add to the parameters the filters added to the load in order to avoir wrong cache
+            // we use 't2-' in order to not interfer with possibly used query parameters
+            var qs = new NameValueCollection(Request.QueryString);
+            foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
+
+            var result = GetAppsResultCollection (apps, qs);
 
             context.Close ();
             return new HttpResult (result.SerializeToString (), result.ContentType);
         }
 
-        private IOpenSearchResultCollection GetAppsResultCollection (EntityList<ThematicApplication> apps) { 
+        private IOpenSearchResultCollection GetAppsResultCollection (EntityList<ThematicApplication> apps, NameValueCollection nvc) { 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             apps.OpenSearchEngine = ose;
 
@@ -74,7 +88,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, ose);
-            var result = ose.Query (multiOSE, Request.QueryString, responseType);
+            var result = ose.Query (multiOSE, nvc, responseType);
 
             return result;
         }

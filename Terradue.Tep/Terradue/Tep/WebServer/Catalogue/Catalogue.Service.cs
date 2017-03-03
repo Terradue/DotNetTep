@@ -273,12 +273,14 @@ namespace Terradue.Tep.WebServer.Services
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-                string format;
-                if ( Request.QueryString["format"] == null ) format = "atom";
-                else format = Request.QueryString["format"];
+                // the opensearch cache system uses the query parameters
+                // we add to the parameters the filters added to the load in order to avoir wrong cache
+                // we use 't2-' in order to not interfer with possibly used query parameters
+                var qs = new NameValueCollection(Request.QueryString);
+                foreach (var filter in datapackages.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
 
                 Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                result = ose.Query(datapackages, httpRequest.QueryString, responseType);
+                result = ose.Query(datapackages, qs, responseType);
 
                 context.Close();
 

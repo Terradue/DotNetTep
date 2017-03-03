@@ -56,7 +56,6 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/domain GET"));
                 EntityList<Domain> domains = new EntityList<Domain>(context);
-                domains.SetFilter ("Kind", request.Kind.ToString());
                 domains.Load();
 
                 foreach (var domain in domains) result.Add (new WebDomain (domain));
@@ -145,7 +144,6 @@ namespace Terradue.Tep.WebServer.Services
         public object Get (DomainSearchRequestTep request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
-            object result;
             context.Open ();
             context.LogInfo (this, string.Format ("/domain/search GET"));
 

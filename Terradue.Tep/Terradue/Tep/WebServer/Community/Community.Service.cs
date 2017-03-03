@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -153,10 +154,14 @@ namespace Terradue.Tep.WebServer.Services{
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
-
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+
+            // the opensearch cache system uses the query parameters
+            // we add to the parameters the filters added to the load in order to avoir wrong cache
+            // we use 't2-' in order to not interfer with possibly used query parameters
+            var qs = new NameValueCollection(Request.QueryString);
+            foreach (var filter in domains.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
 
             //IOpenSearchResultCollection result;
 
