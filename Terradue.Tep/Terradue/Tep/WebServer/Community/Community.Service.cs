@@ -150,7 +150,8 @@ namespace Terradue.Tep.WebServer.Services{
             context.LogInfo (this, string.Format ("/community/search GET"));
 
             EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity> (context);
-            domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+            if(context.UserId == 0) domains.SetFilter("Kind", (int)DomainKind.Public + "");
+            else domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;

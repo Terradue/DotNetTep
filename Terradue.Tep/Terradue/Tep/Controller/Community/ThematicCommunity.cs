@@ -71,7 +71,7 @@ namespace Terradue.Tep {
 
         public override void Store() {
             if (string.IsNullOrEmpty(this.Identifier) && !string.IsNullOrEmpty(this.Name))
-                this.Identifier = TepUtility.GenerateIdentifier(this.Name);
+                this.Identifier = TepUtility.ValidateIdentifier(this.Name);
             base.Store();
             StoreAppsLink(AppsLink);
         }
@@ -160,6 +160,7 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if user is pending, <c>false</c> otherwise.</returns>
         /// <param name="usrId">Usr identifier.</param>
         public bool IsUserPending(int usrId) {
+            if (usrId == 0) return false;
             Role role = Role.FromIdentifier(context, RoleTep.PENDING);
             return role.IsGrantedTo(false, usrId, this.Id);
         }
@@ -170,7 +171,7 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if user is joined, <c>false</c> otherwise.</returns>
         /// <param name="usrId">Usr identifier.</param>
         public bool IsUserJoined(int usrId) {
-            if (IsUserPending(usrId)) return false;
+            if (usrId == 0 || IsUserPending(usrId)) return false;
 
             var uroles = Role.GetUserRolesForDomain(context, usrId, this.Id);
             return uroles.Length > 0;
@@ -337,10 +338,10 @@ namespace Terradue.Tep {
                 case "status":
                     return true;
                 default:
-                    return false;
+                    return true;
                 }
             }
-            return false;
+            return true;
         }
 
         public override AtomItem ToAtomItem(NameValueCollection parameters) {

@@ -63,7 +63,11 @@ namespace Terradue.Tep.WebServer {
     }
 
     [Route("/data/package", "POST", Summary = "POST a datapackage", Notes = "Add a new datapackage in database")]
-    public class DataPackageCreateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}
+    public class DataPackageCreateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>
+    {
+        [ApiMember(Name = "Overwrite", Description = "indicates if we overwrite the dp", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool Overwrite { get; set; }
+    }
 
     [Route("/data/package", "PUT", Summary = "PUT a datapackage", Notes = "Update a datapackage in database")]
     public class DataPackageUpdateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}

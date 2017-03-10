@@ -272,6 +272,7 @@ namespace Terradue.Tep {
                     this.AccessKey = Guid.NewGuid().ToString();
                     this.CreationTime = DateTime.UtcNow;
                 }
+                this.Identifier = TepUtility.ValidateIdentifier(this.Identifier);
                 base.Store();
 
                 if (Kind == KINDRESOURCESETUSER)

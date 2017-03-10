@@ -77,7 +77,7 @@ namespace Terradue.Tep
             entity.DiscussCategory = DiscussCategory;
             entity.AppsLink = Apps;
             entity.IconUrl = IconeUrl;
-            entity.Identifier = TepUtility.GenerateIdentifier(Identifier);
+            entity.Identifier = TepUtility.ValidateIdentifier(Identifier);
             entity.Name = Name;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
