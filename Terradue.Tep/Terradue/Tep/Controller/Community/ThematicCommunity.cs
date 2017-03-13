@@ -15,7 +15,18 @@ namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class ThematicCommunity : Domain {
 
-        public string AppsLink { get; set; }
+        private string appslink;
+        public string AppsLink { 
+            get {
+                if (string.IsNullOrEmpty(appslink)) {
+                    appslink = LoadAppsLink();
+                }
+                return appslink;
+            }
+            set {
+                appslink = value;
+            }
+        }
 
         [EntityDataField("discuss")]
         public string DiscussCategory { get; set; }
@@ -66,7 +77,6 @@ namespace Terradue.Tep {
 
         public override void Load() {
             base.Load();
-            AppsLink = LoadAppsLink();
         }
 
         public override void Store() {
@@ -431,7 +441,6 @@ namespace Terradue.Tep {
             //we show these info only for owner and only for specific id view
             if (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) {
                 if (isJoined) {
-                    AppsLink = LoadAppsLink();
                     if (!string.IsNullOrEmpty(AppsLink)) {
                         result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
 

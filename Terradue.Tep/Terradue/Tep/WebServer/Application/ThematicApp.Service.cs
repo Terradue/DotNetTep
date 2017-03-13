@@ -9,6 +9,7 @@ using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
+using Terradue.Portal.OpenSearch;
 using Terradue.ServiceModel.Syndication;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
@@ -34,18 +35,29 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open ();
             context.LogInfo (this, string.Format ("/apps/search GET"));
 
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
-            var apps = new EntityList<ThematicApplication> (context);
-            apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
-            apps.Load ();
+            //first we get the communities the user can see
+            var communities = new EntityList<ThematicCommunity>(context);
+            if (context.UserId == 0) communities.SetFilter("Kind", (int)DomainKind.Public + "");
+            else {
+                communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+                communities.AddSort("Kind", SortDirection.Ascending);
+            }
+            communities.Load();
 
-            // the opensearch cache system uses the query parameters
-            // we add to the parameters the filters added to the load in order to avoir wrong cache
-            // we use 't2-' in order to not interfer with possibly used query parameters
-            var qs = new NameValueCollection(Request.QueryString);
-            foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
+            //foreach community we get the apps link
+            foreach (var community in communities.Items) {
+                if (community.Kind == DomainKind.Public || community.IsUserJoined(context.UserId) || community.IsUserPending(context.UserId)) {
+                    if (!string.IsNullOrEmpty(community.AppsLink)) 
+                        osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(community.AppsLink), ose));
+                }
+            }
 
-            var result = GetAppsResultCollection(apps, qs);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+            var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
             context.Close ();
             return new HttpResult (result.SerializeToString (), result.ContentType);
@@ -58,7 +70,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogInfo (this, string.Format ("/community/{{domain}}/apps/search GET domain='{0}'",request.Domain));
 
             var domain = Domain.FromIdentifier (context, request.Domain);
-            var apps = new EntityList<ThematicApplication> (context);
+            var apps = new EntityList<DataPackage> (context);
             apps.SetFilter ("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString ());
             apps.SetFilter ("DomainId", domain.Id.ToString());
             apps.Load ();
@@ -75,7 +87,7 @@ namespace Terradue.Tep.WebServer.Services {
             return new HttpResult (result.SerializeToString (), result.ContentType);
         }
 
-        private IOpenSearchResultCollection GetAppsResultCollection (EntityList<ThematicApplication> apps, NameValueCollection nvc) { 
+        private IOpenSearchResultCollection GetAppsResultCollection (EntityList<DataPackage> apps, NameValueCollection nvc) { 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             apps.OpenSearchEngine = ose;
 
