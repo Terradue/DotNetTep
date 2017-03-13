@@ -86,6 +86,7 @@ It also integrates functions to "manipulate" the results and its metadata with a
 using Terradue.OpenSearch.Result;
 using Terradue.ServiceModel.Syndication;
 using System.Linq;
+using Terradue.Portal.OpenSearch;
 
 namespace Terradue.Tep {
 
@@ -397,18 +398,11 @@ namespace Terradue.Tep {
         }
 
         public override IOpenSearchable[] GetOpenSearchableArray() {
-            List<UrlBasedOpenSearchable> osResources = new List<UrlBasedOpenSearchable>(Resources.Count);
+            List<SmartGenericOpenSearchable> osResources = new List<SmartGenericOpenSearchable>(Resources.Count);
 
             foreach (RemoteResource res in Resources) {
                 if (string.IsNullOrEmpty(res.Location)) continue;
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
-                //var eosd = entity.GetOpenSearchDescription();
-                //if (eosd.DefaultUrl != null && eosd.DefaultUrl.Type == "application/json") {
-                //    var atomUrl = eosd.Url.FirstOrDefault(u => u.Type == "application/atom+xml");
-                //    if (atomUrl != null)
-                //        eosd.DefaultUrl = atomUrl;
-                //}
-
+                var entity = new SmartGenericOpenSearchable(new OpenSearchUrl(res.Location), ose);
                 osResources.Add(entity);
             }
 
