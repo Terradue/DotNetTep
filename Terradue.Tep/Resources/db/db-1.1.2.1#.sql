@@ -9,3 +9,7 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 
 /*****************************************************************************/
 
+-- Update table resource
+ALTER TABLE resource 
+CHANGE COLUMN `location` `location` TEXT NOT NULL COMMENT 'Resource location, e.g. URI' ;
+-- RESULT

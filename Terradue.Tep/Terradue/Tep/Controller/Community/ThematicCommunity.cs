@@ -335,13 +335,19 @@ namespace Terradue.Tep {
             foreach (var key in parameters.AllKeys) {
                 switch (parameters[key]) {
                 case "correlatedTo":
-                case "status":
-                    return true;
+                    return false;
                 default:
                     return true;
                 }
             }
             return true;
+        }
+
+        public override int GetEntityListTotalResults(IfyContext context, NameValueCollection parameters) {
+            //get all domains public + domains where current user has role which are not User private domains
+            var sql = string.Format("SELECT count(DISTINCT id) FROM domain AS d LEFT JOIN rolegrant AS rg ON d.id=rg.id_domain WHERE d.kind={0} OR (d.kind != {1} AND rg.id_usr={2});", (int)DomainKind.Public, (int)DomainKind.User, context.UserId);
+            var count = context.GetQueryIntegerValue(sql);
+            return count;
         }
 
         public override AtomItem ToAtomItem(NameValueCollection parameters) {

@@ -429,6 +429,20 @@ namespace Terradue.Tep {
             return false;
         }
 
+        //public override int GetEntityListTotalResults(IfyContext context, NameValueCollection parameters) {
+        //    foreach (var key in parameters.AllKeys) {
+        //        switch (parameters[key]) {
+        //        case "correlatedTo":
+
+        //        default:
+        //            break;
+        //        }
+        //    }
+        //    var sql = string.Format("SELECT count(DISTINCT id) FROM domain AS d LEFT JOIN rolegrant AS rg ON d.id=rg.id_domain WHERE d.kind={0} OR (d.kind != {1} AND rg.id_usr={2});", (int)DomainKind.Public, (int)DomainKind.User, context.UserId);
+        //    var count = context.GetQueryIntegerValue(sql);
+        //    return count;
+        //}
+
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
             case "uid":
@@ -440,6 +454,7 @@ namespace Terradue.Tep {
             }
         }
 
+
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
 
             var entityType = EntityType.GetEntityType(typeof(User));
@@ -448,8 +463,6 @@ namespace Terradue.Tep {
             if (!string.IsNullOrEmpty(parameters["correlatedTo"])) {
                 var self = parameters["correlatedTo"];
                 var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), MasterCatalogue.OpenSearchEngine).Entity;
-
-                //var test = entity as EntityList<Entity>;
 
                 if (entity is EntityList<WpsJob>) {
                     var entitylist = entity as EntityList<WpsJob>;
