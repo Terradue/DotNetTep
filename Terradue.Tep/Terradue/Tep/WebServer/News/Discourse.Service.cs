@@ -106,10 +106,10 @@ namespace Terradue.Tep.WebServer.Services {
                 if (string.IsNullOrEmpty(user.TerradueCloudUsername)) throw new Exception("Unable to post new topic, please set first your Terradue Cloud username");
 
                 var discussClient = new DiscussClient(context.GetConfigValue("discussBaseUrl"), context.GetConfigValue("discussApiKey"), user.TerradueCloudUsername);
-                //var category = discussClient.GetCategory(discussCategory);
-                //if (category == null) throw new Exception("Unable to post new topic, the selected community has no valid Discuss category associated");
-                //var catId = category.id;
-                var catId = 17;
+                var category = discussClient.GetCategory(discussCategory);
+                if (category == null) throw new Exception("Unable to post new topic, the selected community has no valid Discuss category associated");
+                var catId = category.id;
+
                 var response = discussClient.PostTopic(catId, request.subject, request.body);                                                                 
                 result = string.Format("{0}/t/{1}/{2}", discussClient.Host, response.topic_slug, response.topic_id);
             } catch (Exception e) {
