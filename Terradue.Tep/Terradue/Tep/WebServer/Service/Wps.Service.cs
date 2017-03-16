@@ -69,44 +69,26 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogInfo(this,string.Format("/service/wps/search GET"));
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-
-            EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
-            wpsProcesses.Template.Available = true;
-            wpsProcesses.Load();
-            wpsProcesses.OpenSearchEngine = ose;
-
-            //+ WPS from cloud
-            List<WpsProvider> wpss = new List<WpsProvider>();
-            try {
-                CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
-                wpss = wpsFinder.GetWPSFromVMs();
-            } catch (Exception e) {
-                //we do nothing, we will return the list without any WPS from the cloud
-            }
-            foreach (WpsProvider wps in wpss) {
-                try {
-                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
-                        wpsProcesses.Include(process);
-                    }
-                } catch (Exception e) {
-                    //we do nothing, we just dont add the process
-                }
-            }
-
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
-
-            string format;
-            if (Request.QueryString["format"] == null)
-                format = "atom";
-            else
-                format = Request.QueryString["format"];
-
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            IOpenSearchResultCollection osr = ose.Query(wpsProcesses, httpRequest.QueryString, responseType);
+
+            //Create EntityList from DB
+            EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+            wpsProcesses.SetFilter("Available", "true");
+            wpsProcesses.OpenSearchEngine = ose;
+
+            CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+            wpsOneProcesses.OpenSearchEngine = ose;
+            wpsProcesses.Identifier = wpsOneProcesses.Identifier;
+
+            wpsProcesses.Identifier = "service/wps";
+            var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, ose);
+            IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
-            //            OpenSearchFactory.ReplaceSelfLinks(wpsProcesses, httpRequest.QueryString, osr.Result, EntrySelfLinkTemplate );
 
             context.Close();
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
