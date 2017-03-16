@@ -355,14 +355,11 @@ namespace Terradue.Tep.WebServer.Services
                         tmpres.Location = res.Location;
                         def.AddResourceItem(tmpres);
                     }
+                    ActivityTep activity = new ActivityTep(context, tmp, EntityOperationType.View);
+                    activity.AddParam("items", tmp.Resources.Count + "");
+                    activity.Store();
                 }else{
                     def = (DataPackage)request.ToEntity(context, def);    
-                }
-                //def.Store();
-
-                if(def.Kind == RemoteResourceSet.KINDRESOURCESETNORMAL){ //we dont store activities about the temporary data package
-                    Activity activity = new Activity(context, def, EntityOperationType.View);
-                    activity.Store();
                 }
 
                 result = new WebDataPackageTep(def);

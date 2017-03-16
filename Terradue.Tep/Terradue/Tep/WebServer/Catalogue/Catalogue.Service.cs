@@ -208,8 +208,6 @@ namespace Terradue.Tep.WebServer.Services
                         datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                 }
 
-
-
                 datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
@@ -238,6 +236,10 @@ namespace Terradue.Tep.WebServer.Services
                 if (uri_s != null) {
                     result.Links.Add(new SyndicationLink(uri_s, "self", "OpenSearch Search link", "application/atom+xml", 0));
                 }
+
+                ActivityTep activity = new ActivityTep(context, datapackage, EntityOperationType.Search);
+                activity.AddParam("items", result.TotalResults + "");
+                activity.Store();
 
                 context.Close();
 

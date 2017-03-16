@@ -14,10 +14,65 @@ namespace Terradue.Tep {
         [EntityDataField("id_app")]
         public string AppId { get; set; }
 
+        [EntityDataField("params")]
+        public string Params { get; set; }
+
         public ActivityTep(IfyContext context) : base(context) {
         }
 
         public ActivityTep(IfyContext context, Entity entity, EntityOperationType operation) : base(context, entity, operation) {
+        }
+
+        /// <summary>
+        /// Froms the identifier.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="id">Identifier.</param>
+        public static new ActivityTep FromId(IfyContext context, int id) {
+            ActivityTep result = new ActivityTep(context);
+            result.Id = id;
+            result.Load();
+            return result;
+        }
+
+        /// <summary>
+        /// Froms the entity and privilege.
+        /// </summary>
+        /// <returns>The entity and privilege.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="entity">Entity.</param>
+        /// <param name="operation">Operation.</param>
+        public static new ActivityTep FromEntityAndPrivilege(IfyContext context, Entity entity, EntityOperationType operation) {
+            var etype = EntityType.GetEntityType(entity.GetType());
+            var priv = Privilege.Get(EntityType.GetEntityTypeFromId(etype.Id), Privilege.GetOperationType(((char)operation).ToString()));
+            ActivityTep result = new ActivityTep(context);
+            result.Entity = entity;
+            result.EntityTypeId = etype.Id;
+            result.Privilege = priv;
+            result.Load();
+            return result;
+        }
+
+        /// <summary>
+        /// Adds the parameter.
+        /// </summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value.</param>
+        public void AddParam(string key, string value) {
+            Params += string.Format("{0}{1}={2}", string.IsNullOrEmpty(Params) ? "" : "&", key, value);
+        }
+
+        /// <summary>
+        /// Gets the parameters.
+        /// </summary>
+        /// <returns>The parameters.</returns>
+        public NameValueCollection GetParams() {
+            NameValueCollection nvc = new NameValueCollection();
+            if (Params != null) {
+                nvc = System.Web.HttpUtility.ParseQueryString(Params);
+            }
+            return nvc;
         }
 
         public override AtomItem ToAtomItem(NameValueCollection parameters) {

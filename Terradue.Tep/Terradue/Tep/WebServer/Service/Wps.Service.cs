@@ -407,6 +407,18 @@ namespace Terradue.Tep.WebServer.Services {
                 else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                 else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
 
+                //save job status in activity
+                try {
+                    ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, wpsjob, EntityOperationType.Create);
+                    var activityParams = activity.GetParams();
+                    if (activityParams == null || activityParams["status"] == null) {
+                        if (execResponse.Status != null && execResponse.Status.Item != null) {
+                            if (execResponse.Status.Item is ProcessSucceededType) activity.AddParam("status", "succeeded");
+                            else if (execResponse.Status.Item is ProcessFailedType) activity.AddParam("status", "failed");
+                        }
+                    }
+                } catch (Exception) { }
+
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
