@@ -40,6 +40,13 @@ namespace Terradue.Tep
         public string Username { get; set; }
     }
 
+    [Route ("/community/{identifier}", "DELETE", Summary = "DELETE the current community", Notes = "")]
+    public class CommunityDeleteRequest : IReturn<WebResponseBool>
+    {
+        [ApiMember (Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
     [Route ("/community/search", "GET", Summary = "GET community as opensearch", Notes = "")]
     public class CommunitySearchRequestTep : IReturn<HttpResult> { }
 

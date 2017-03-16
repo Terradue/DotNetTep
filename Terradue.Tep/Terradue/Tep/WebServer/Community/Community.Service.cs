@@ -167,14 +167,7 @@ namespace Terradue.Tep.WebServer.Services{
             var qs = new NameValueCollection(Request.QueryString);
             foreach (var filter in domains.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
 
-            //IOpenSearchResultCollection result;
-
-            //httpRequest.QueryString.Set("status", "joined");
             IOpenSearchResultCollection osr = ose.Query (domains, httpRequest.QueryString, responseType);
-            //result = osr;
-
-            //httpRequest.QueryString.Set("status", "unjoined");
-            //osr = ose.Query(domains, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (domains, osr);
 
@@ -201,6 +194,28 @@ namespace Terradue.Tep.WebServer.Services{
                 context.Close();
                 throw e;
             }
+        }
+
+        /// <summary>
+        /// Delete the specified request.
+        /// </summary>
+        /// <param name="request">Request.</param>
+        public object Delete(CommunityDeleteRequest request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                context.LogInfo(this,string.Format("/community/{{Identifier}} DELETE Identifier='{0}'", request.Identifier));
+                ThematicCommunity domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
+                if (domain.IsUserOwner(context.UserId)) domain.Delete();
+                else throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+                context.LogDebug(this,string.Format("Community {0} deleted by user {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
         }
     }
 }
