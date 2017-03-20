@@ -238,4 +238,5 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 
 -- Activities ...\
 ALTER TABLE activity ADD COLUMN id_app VARCHAR(50) NULL DEFAULT NULL;
+ALTER TABLE activity ADD COLUMN params VARCHAR(200) NULL DEFAULT NULL;
 -- RESULT

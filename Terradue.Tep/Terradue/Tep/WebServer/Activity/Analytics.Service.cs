@@ -21,7 +21,7 @@ namespace Terradue.Tep.WebServer.Services {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public object Get(AnalyticsCurrentUserRequestTep requet) {
+        public object Get(AnalyticsCurrentUserRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebAnalytics result = new WebAnalytics();
             try {
@@ -32,6 +32,42 @@ namespace Terradue.Tep.WebServer.Services {
                 analytics.Load();
 
                 result = new WebAnalytics(analytics);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Get(AnalyticsRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            WebAnalytics result = new WebAnalytics();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/analytics GET - type='{0}', identifier='{1}'", request.Type, request.Identifier));
+
+                Analytics analytics = null;
+
+                switch (request.Type) {
+                    case "user":
+                    analytics = new Analytics(context, UserTep.FromIdentifier(context, request.Identifier));
+                    analytics.Load();
+                    break;
+                    case "community":
+                    analytics = new Analytics(context, ThematicCommunity.FromIdentifier(context, request.Identifier));
+                    analytics.Load();
+                    break;
+                    case "group":
+                    analytics = new Analytics(context, Group.FromIdentifier(context, request.Identifier));
+                    analytics.Load();
+                    break;
+                    default:
+                    break;
+                }
+                if(analytics != null) result = new WebAnalytics(analytics);
 
                 context.Close();
             } catch (Exception e) {

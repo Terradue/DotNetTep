@@ -46,6 +46,12 @@ namespace Terradue.Tep {
         /// <value>The wps job failed count.</value>
         public int WpsJobFailedCount { get; set; }
 
+        /// <summary>
+        /// Gets or sets the icon URL.
+        /// </summary>
+        /// <value>The icon URL.</value>
+        public string IconUrl { get; set; }
+
         /*-----------------------------------------------------------------------------------------------------------------------------------------*/
         /*-----------------------------------------------------------------------------------------------------------------------------------------*/
         /*-----------------------------------------------------------------------------------------------------------------------------------------*/
@@ -64,6 +70,7 @@ namespace Terradue.Tep {
             if (Entity is UserTep) {
                 var user = Entity as UserTep;
                 AddUserAnalytics(user);
+                IconUrl = user.GetAvatar();
             } else if (Entity is Domain) {
                 var domain = Entity as Domain;
                 //get all users of domain
@@ -80,11 +87,13 @@ namespace Terradue.Tep {
                         }
                     }
                 }
+                IconUrl = domain.IconUrl;
             } else if (Entity is Group) { 
                 var group = Entity as Group;
                 foreach (var user in group.GetUsers()) { 
                     AddUserAnalytics((UserTep)user);
                 }
+                IconUrl = "http://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Group_font_awesome.svg/512px-Group_font_awesome.svg.png";
             }
         }
 

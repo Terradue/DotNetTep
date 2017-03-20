@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Web;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
-using ServiceStack.ServiceInterface;
-using Terradue.OpenNebula;
+using Terradue.OpenSearch;
+using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch.Result;
+using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
-using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
@@ -257,6 +260,49 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return result;
+        }
+
+        public object Get(GroupSearchRequest request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            context.Open();
+            context.LogInfo(this, string.Format("/user/search GET"));
+
+            EntityList<Group> groups = new EntityList<Group>(context);
+            groups.AddSort("Identifier", SortDirection.Ascending);
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query(groups, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(groups, osr);
+
+            context.Close();
+            return new HttpResult(osr.SerializeToString(), osr.ContentType);
+        }
+
+        public object Get(GroupDescriptionRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/description GET"));
+
+                EntityList<Group> groups = new EntityList<Group>(context);
+                groups.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+
+                OpenSearchDescription osd = groups.GetOpenSearchDescription();
+
+                context.Close();
+
+                return new HttpResult(osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
         }
 
     }

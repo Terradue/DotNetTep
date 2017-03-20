@@ -10,6 +10,15 @@ namespace Terradue.Tep.WebServer {
     [Route("/analytics/user/current", "GET", Summary = "GET analytics for current user", Notes = "")]
     public class AnalyticsCurrentUserRequestTep : IReturn<WebAnalytics>{}
 
+    [Route("/analytics", "GET", Summary = "GET analytics for current user", Notes = "")]
+    public class AnalyticsRequestTep : IReturn<WebAnalytics> {
+        [ApiMember(Name = "identifier", Description = "user Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string Identifier { get; set; }
+
+        [ApiMember(Name = "type", Description = "analytics type (user/group/community)", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string Type { get; set; }
+    }
+
     public class WebAnalytics {
 
         [ApiMember(Name="CollectionQueriesCount", Description = "Collection Queries Count", ParameterType = "path", DataType = "int", IsRequired = false)]
@@ -30,6 +39,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name="WpsJobFailedCount", Description = "Wps Job Failed Count", ParameterType = "path", DataType = "int", IsRequired = false)]
         public int WpsJobFailedCount { get; set; }
 
+        [ApiMember(Name = "IconUrl", Description = "Icon Url", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string IconUrl { get; set; }
+
         public WebAnalytics() {}
 
         public WebAnalytics(Analytics entity){
@@ -39,6 +51,7 @@ namespace Terradue.Tep.WebServer {
             this.WpsJobSubmittedCount = entity.WpsJobSubmittedCount;
             this.WpsJobSuccessCount = entity.WpsJobSuccessCount;
             this.WpsJobFailedCount = entity.WpsJobFailedCount;
+            this.IconUrl = entity.IconUrl;
         }
 
     }

@@ -409,12 +409,17 @@ namespace Terradue.Tep.WebServer.Services {
 
                 //save job status in activity
                 try {
-                    ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, wpsjob, EntityOperationType.Create);
-                    var activityParams = activity.GetParams();
-                    if (activityParams == null || activityParams["status"] == null) {
-                        if (execResponse.Status != null && execResponse.Status.Item != null) {
-                            if (execResponse.Status.Item is ProcessSucceededType) activity.AddParam("status", "succeeded");
-                            else if (execResponse.Status.Item is ProcessFailedType) activity.AddParam("status", "failed");
+                    if (execResponse.Status != null && execResponse.Status.Item != null) {
+                        ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, wpsjob, EntityOperationType.Create);
+                        var activityParams = activity.GetParams();
+                        if (activityParams == null || activityParams["status"] == null) {
+                            if (execResponse.Status.Item is ProcessSucceededType) {
+                                activity.AddParam("status", "succeeded");
+                                activity.Store();
+                            } else if (execResponse.Status.Item is ProcessFailedType) {
+                                activity.AddParam("status", "failed");
+                                activity.Store();
+                            }
                         }
                     }
                 } catch (Exception) { }

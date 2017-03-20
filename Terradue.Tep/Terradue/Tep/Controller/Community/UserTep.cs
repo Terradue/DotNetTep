@@ -180,6 +180,13 @@ namespace Terradue.Tep {
             return user;
         }
 
+        public new static UserTep FromIdentifier(IfyContext context, string identifier) {
+            UserTep user = new UserTep(context);
+            user.Identifier = identifier;
+            user.Load();
+            return user;
+        }
+
         public static UserTep FromApiKey(IfyContext context, string key) {
             UserTep user = new UserTep(context);
             user.ApiKey = key;
