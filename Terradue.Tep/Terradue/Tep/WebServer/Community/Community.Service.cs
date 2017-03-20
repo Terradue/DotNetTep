@@ -149,7 +149,6 @@ namespace Terradue.Tep.WebServer.Services{
             context.Open ();
             context.LogInfo (this, string.Format ("/community/search GET"));
 
-            //EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity> (context);
             DomainCollection domains = new DomainCollection(context);
 
             if (context.UserId == 0) domains.SetFilter("Kind", (int)DomainKind.Public + "");
@@ -157,7 +156,6 @@ namespace Terradue.Tep.WebServer.Services{
                 domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
                 domains.AddSort("Kind", SortDirection.Ascending);
             }
-            domains.LoadRestricted();
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
