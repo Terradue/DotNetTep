@@ -114,11 +114,14 @@ namespace Terradue.Tep {
             set;
         }
 
+        private TransactionFactory TransactionFactory;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
         public UserTep(IfyContext context) : base(context) {
+            TransactionFactory = new TransactionFactory(context);
         }
 
         /// <summary>
@@ -524,13 +527,41 @@ namespace Terradue.Tep {
             return OpenSearchFactory.GetBaseOpenSearchParameter();
         }
 
+        /// <summary>
+        /// Gets the avatar based on discuss.
+        /// </summary>
+        /// <returns>The avatar.</returns>
         public string GetAvatar() {
             LoadCloudUsername();
             var avatarusername = String.IsNullOrEmpty(TerradueCloudUsername) ? Username : TerradueCloudUsername;
             avatarusername = avatarusername.Replace(" ", "");
             if (avatarusername.Contains("@") || avatarusername.Contains("?") || avatarusername.Contains("&")) avatarusername = "na";
-            return string.Format("https://discuss.terradue.com/user_avatar/discuss.terradue.com/{0}/50/45_1.png", avatarusername);
+            return string.Format("{0}/user_avatar/discuss.terradue.com/{1}/50/45_1.png", context.GetConfigValue("discussBaseUrl"), avatarusername);
         }
+
+        #region ACCOUNTING
+
+        /// <summary>
+        /// Gets the accounting balance.
+        /// </summary>
+        /// <returns>The accounting balance.</returns>
+        public double GetAccountingBalance() {
+            return TransactionFactory.GetUserBalance(this);
+        }
+
+        /// <summary>
+        /// Adds the accounting transaction.
+        /// </summary>
+        /// <param name="balance">Balance.</param>
+        public void AddAccountingTransaction(double balance) {
+            var transaction = new Transaction(context);
+            transaction.UserId = this.Id;
+            transaction.LogTime = DateTime.UtcNow;
+            transaction.Balance = balance;
+            transaction.Store();
+        }
+
+        #endregion
     }
 }
 

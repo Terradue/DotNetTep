@@ -79,7 +79,7 @@ namespace Terradue.Tep.WebServer.Services {
             // we add to the parameters the filters added to the load in order to avoir wrong cache
             // we use 't2-' in order to not interfer with possibly used query parameters
             var qs = new NameValueCollection(Request.QueryString);
-            foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value);
+            foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
             var result = GetAppsResultCollection (apps, qs);
 

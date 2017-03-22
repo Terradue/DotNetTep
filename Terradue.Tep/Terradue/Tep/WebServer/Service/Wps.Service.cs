@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.Caching;
 using System.Web;
 using System.Xml;
 using OpenGis.Wps;
@@ -254,7 +255,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/wps/WebProcessingService POST"));
 
-                Execute executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.Execute)).Deserialize (request.RequestStream);
+                var executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (Execute)).Deserialize (request.RequestStream);
                 context.LogDebug (this, string.Format ("Deserialization done"));
                 response = Execute (context, executeInput);
             } catch (Exception e){
@@ -269,11 +270,37 @@ namespace Terradue.Tep.WebServer.Services {
             WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, executeInput.Identifier.Value);
             object executeResponse = null;
             var stream = new System.IO.MemoryStream();
+            ObjectCache cache = MemoryCache.Default;
 
             try{
-                executeResponse = wps.Execute(executeInput);
+                bool withQuotation = false;
+                foreach (var input in executeInput.DataInputs)
+                    if (input.Identifier != null && input.Identifier.Value == "quotation") withQuotation = true;
 
-                if (executeResponse is ExecuteResponse) {
+                if(withQuotation){//TODO: TEMPORARY
+                    var random = new Random();
+                    int randomNumber = random.Next(0, 100);
+
+                    var policy = new CacheItemPolicy();
+                    policy.SlidingExpiration = new TimeSpan(1, 0, 0, 0);
+                    cache.Set("quotation-"+context.UserId , randomNumber, policy);
+
+                    //get quantities
+                    T2Accounting accounting = new T2Accounting();
+                    //calculate balance with rates
+                    double balance = 0;
+                    foreach (var quantity in accounting.quantity) {
+                        Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
+                        if (rates != null && rates.Unit != 0 && rates.Cost != 0)
+                            balance += (quantity.value / (rates.Unit * rates.Cost));
+                    }
+                } else {
+                    executeResponse = wps.Execute(executeInput);
+                }
+                 
+                if (executeResponse is QuotationResponse) {
+                    return executeResponse;
+                } else if (executeResponse is ExecuteResponse) {
                     context.LogDebug(this,string.Format("Execute response ok"));
                     var execResponse = executeResponse as ExecuteResponse;
 
@@ -281,6 +308,19 @@ namespace Terradue.Tep.WebServer.Services {
                     WpsJob wpsjob = null;
                     try{
                         wpsjob = CreateJobFromExecute(context, wps, execResponse, executeInput);
+
+                        //We store the accounting deposit
+                        var quotation = cache["quotation-" + context.UserId] as string;
+                        if (quotation == null) throw new Exception("Unable to read the quotation, please do a new one.");
+                        var transaction = new Transaction(context);
+                        transaction.Entity = wpsjob;
+                        transaction.UserId = context.UserId;
+                        transaction.Identifier = wpsjob.Identifier;
+                        transaction.LogTime = DateTime.UtcNow;
+                        transaction.ProviderId = wps.OwnerId;
+                        transaction.Balance = double.Parse(quotation);
+                        transaction.Deposit = true;
+                        transaction.Store();
                     }catch(Exception e){
                         context.LogError(this,string.Format(e.Message));
                         throw e;
