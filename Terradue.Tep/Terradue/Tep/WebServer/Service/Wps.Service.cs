@@ -287,7 +287,7 @@ namespace Terradue.Tep.WebServer.Services {
                     double randomNumber = random.Next(0, 100);
 
                     var policy = new CacheItemPolicy();
-                    policy.SlidingExpiration = new TimeSpan(1, 0, 0, 0);
+                    policy.SlidingExpiration = new TimeSpan(0, 0, 10, 0);//we keep it 10min in memory, then user must do a new one
                     cache.Set("quotation-"+cachekey , randomNumber, policy);
 
                     //get quantities
