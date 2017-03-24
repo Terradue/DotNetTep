@@ -258,6 +258,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (Execute)).Deserialize (request.RequestStream);
                 context.LogDebug (this, string.Format ("Deserialization done"));
                 response = Execute (context, executeInput);
+                if (response is double) response = new WebResponseString(response.ToString());
             } catch (Exception e){
                 context.Close ();
                 return new HttpError (e.Message);
@@ -273,27 +274,32 @@ namespace Terradue.Tep.WebServer.Services {
             ObjectCache cache = MemoryCache.Default;
 
             try{
+                var parameters = BuildWpsJobParameters(context, executeInput);
                 bool withQuotation = false;
-                foreach (var input in executeInput.DataInputs)
-                    if (input.Identifier != null && input.Identifier.Value == "quotation") withQuotation = true;
+                string cachekey = "";
+                foreach (var p in parameters) {
+                    if (p.Key == "Quotation") withQuotation = true;
+                    else cachekey += p.Key + p.Value;
+                }
 
                 if(withQuotation){//TODO: TEMPORARY
                     var random = new Random();
-                    int randomNumber = random.Next(0, 100);
+                    double randomNumber = random.Next(0, 100);
 
                     var policy = new CacheItemPolicy();
                     policy.SlidingExpiration = new TimeSpan(1, 0, 0, 0);
-                    cache.Set("quotation-"+context.UserId , randomNumber, policy);
+                    cache.Set("quotation-"+cachekey , randomNumber, policy);
 
                     //get quantities
                     T2Accounting accounting = new T2Accounting();
                     //calculate balance with rates
-                    double balance = 0;
-                    foreach (var quantity in accounting.quantity) {
-                        Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
-                        if (rates != null && rates.Unit != 0 && rates.Cost != 0)
-                            balance += (quantity.value / (rates.Unit * rates.Cost));
-                    }
+                    //double balance = 0;
+                    //foreach (var quantity in accounting.quantity) {
+                    //    Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
+                    //    if (rates != null && rates.Unit != 0 && rates.Cost != 0)
+                    //        balance += (quantity.value / (rates.Unit * rates.Cost));
+                    //}
+                    return randomNumber;
                 } else {
                     executeResponse = wps.Execute(executeInput);
                 }
@@ -310,8 +316,8 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsjob = CreateJobFromExecute(context, wps, execResponse, executeInput);
 
                         //We store the accounting deposit
-                        var quotation = cache["quotation-" + context.UserId] as string;
-                        if (quotation == null) throw new Exception("Unable to read the quotation, please do a new one.");
+                        var quotation = cache["quotation-" + cachekey] as string;
+                        if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
                         var transaction = new Transaction(context);
                         transaction.Entity = wpsjob;
                         transaction.UserId = context.UserId;
@@ -393,6 +399,14 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
 
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
+
+            wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
+            wpsjob.Store();
+
+            return wpsjob;
+        }
+
+        private List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput){
             List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
             foreach (var d in executeInput.DataInputs) {
                 context.LogDebug(this,string.Format("Input: " + d.Identifier.Value));
@@ -401,12 +415,12 @@ namespace Terradue.Tep.WebServer.Services {
                         context.LogDebug(this,string.Format("Value is LiteralDataType"));
                         output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));  
                     } else if (d.Data.Item is ComplexDataType) {
-                        context.LogDebug(this,string.Format("Value is ComplexDataType"));
+                        context.LogDebug(this, string.Format("Value is ComplexDataType"));
                         throw new Exception("Data Input ComplexDataType not yet implemented");
                     } else if (d.Data.Item is BoundingBoxType) {
                         //for BoundingBoxType, webportal creates LowerCorner and UpperCorner
                         //we just need to save both values as a concatained string
-                        context.LogDebug(this,string.Format("Value is BoundingBoxType"));
+                        context.LogDebug(this, string.Format("Value is BoundingBoxType"));
                         var bbox = d.Data.Item as BoundingBoxType;
                         var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
                         output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));  
@@ -414,7 +428,7 @@ namespace Terradue.Tep.WebServer.Services {
                         throw new Exception("unhandled type of Data");
                     } 
                 } else if (d.Reference != null){
-                    context.LogDebug(this,string.Format("Value is InputReferenceType"));
+                    context.LogDebug(this, string.Format("Value is InputReferenceType"));
                     if (!string.IsNullOrEmpty(d.Reference.href)) {
                         output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
                     } else if (d.Reference.Item != null){
@@ -422,12 +436,8 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }
             }
-            wpsjob.Parameters = output;
-            wpsjob.Store();
-
-            return wpsjob;
+            return output;
         }
-
 
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
