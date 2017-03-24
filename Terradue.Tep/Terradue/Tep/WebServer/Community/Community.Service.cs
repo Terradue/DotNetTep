@@ -149,7 +149,7 @@ namespace Terradue.Tep.WebServer.Services{
             context.Open ();
             context.LogInfo (this, string.Format ("/community/search GET"));
 
-            DomainCollection domains = new DomainCollection(context);
+            CommunityCollection domains = new CommunityCollection(context);
 
             if (context.UserId == 0) domains.SetFilter("Kind", (int)DomainKind.Public + "");
             else {

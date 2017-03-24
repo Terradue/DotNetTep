@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Data;
 using System.Linq;
 using System.Runtime.Serialization;
 using Terradue.OpenSearch;
@@ -597,6 +598,67 @@ namespace Terradue.Tep {
         }
 
         public void CreateExplorerRole() { }
+
+    }
+
+    public class CommunityCollection : EntityDictionary<ThematicCommunity> {
+
+        private EntityType entityType;
+
+        /// <summary>Indicates or decides whether the standard query is used for this domain collection.</summary>
+        /// <remarks>If the value is true, a call to <see cref="Load">Load</see> produces a list containing all domains in which the user has a role and domains that are public. The default is <c><false</c>, which means that the normal behaviour of EntityCollection applies.</remarks>
+        public bool UseNormalSelection { get; set; }
+
+        public CommunityCollection(IfyContext context) : base(context) {
+            this.entityType = GetEntityStructure();
+            this.UseNormalSelection = false;
+        }
+
+        public override void Load() {
+            if (UseNormalSelection) base.Load();
+            else LoadRestricted();
+        }
+
+        /// <summary>Loads a collection of domains restricted by kinds and a user's roles.</summary>
+        /// <param name="includedKinds">The domain kinds of domains on which a user has no explicit role but should in any case be included in the collection.</param>
+        public void LoadRestricted(DomainKind[] includedKinds = null) {
+
+            int[] kindIds;
+            if (includedKinds == null) {
+                kindIds = new int[] { (int)DomainKind.Public };
+            } else {
+                kindIds = new int[includedKinds.Length];
+                for (int i = 0; i < includedKinds.Length; i++) kindIds[i] = (int)includedKinds[i];
+            }
+
+            int[] domainIds = Domain.GetGrantScope(context, UserId, null, null);
+
+            string condition = String.Format("(t.id IN ({0}) OR t.kind IN ({1}))",
+                    domainIds.Length == 0 ? "0" : String.Join(",", domainIds),
+                    kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
+            );
+
+            Clear();
+
+            object[] queryParts = entityType.GetListQueryParts(context, this, UserId, null, condition);
+            string sql = entityType.GetCountQuery(queryParts);
+            if (context.ConsoleDebug) Console.WriteLine("SQL (COUNT): " + sql);
+            TotalResults = context.GetQueryLongIntegerValue(sql);
+
+            sql = entityType.GetQuery(queryParts);
+            if (context.ConsoleDebug) Console.WriteLine("SQL: " + sql);
+
+            IDbConnection dbConnection = context.GetDbConnection();
+            IDataReader reader = context.GetQueryResult(sql, dbConnection);
+            IsLoading = true;
+            while (reader.Read()) {
+                ThematicCommunity item = entityType.GetEntityInstance(context) as ThematicCommunity;
+                item.Load(entityType, reader, AccessLevel);
+                IncludeInternal(item);
+            }
+            IsLoading = false;
+            context.CloseQueryResult(reader, dbConnection);
+        }
 
     }
 }
