@@ -103,7 +103,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The owner.</returns>
         private List<UserTep> GetOwners() {
-            var role = Role.FromIdentifier(context, RoleTep.OWNER);
+            var role = Role.FromIdentifier(context, RoleTep.MANAGER);
             var usrs = role.GetUsers(this.Id);
             if (usrs != null && usrs.Length > 0) {
                 List<UserTep> users = new List<UserTep>();
@@ -120,7 +120,7 @@ namespace Terradue.Tep {
         public void SetOwner(UserTep user) {
             //only admin can do this
             if (context.AccessLevel != EntityAccessLevel.Administrator) throw new UnauthorizedAccessException("Only administrators can change the owner of this entity");
-            var role = Role.FromIdentifier(context, RoleTep.OWNER);
+            var role = Role.FromIdentifier(context, RoleTep.MANAGER);
             role.GrantToUser(user, this);
 
             context.LogInfo(this, string.Format("Set owner ({0}) of community {1}", user.Username, this.Identifier));

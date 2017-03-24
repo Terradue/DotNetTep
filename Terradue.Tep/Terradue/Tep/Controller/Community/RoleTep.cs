@@ -24,7 +24,7 @@ namespace Terradue.Tep {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public static readonly string OWNER = "owner";
-        //public static readonly string MANAGER = "manager";
+        public static readonly string MANAGER = "manager";
         public static readonly string MEMBER = "member";
         public static readonly string PENDING = "pending";
         public static readonly string VISITOR = "visitor";
