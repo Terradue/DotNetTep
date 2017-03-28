@@ -10,6 +10,7 @@ using System.Xml;
 using OpenGis.Wps;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
+using ServiceStack.Text;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
@@ -284,24 +285,27 @@ namespace Terradue.Tep.WebServer.Services {
 
                 var quotation = cache["quotation-" + cachekey] as string;
 
-                if(withQuotation){//TODO: TEMPORARY
-                    var random = new Random();
-                    double randomNumber = random.Next(0, 100);
+                if(withQuotation){
+                    
+                    executeResponse = wps.Execute(executeInput);
+                    if (!(executeResponse is ExecuteResponse)) throw new Exception("Wrong Execute response to quotation"); 
+                    var accountings = GetAccountingsFromExecute(executeResponse as ExecuteResponse);
+                    if(accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
+                    var quantities = accountings[0].quantity;
 
                     var policy = new CacheItemPolicy();
                     policy.SlidingExpiration = new TimeSpan(0, 0, 10, 0);//we keep it 10min in memory, then user must do a new one
-                    cache.Set("quotation-"+cachekey , randomNumber, policy);
 
-                    //get quantities
-                    T2Accounting accounting = new T2Accounting();
                     //calculate balance with rates
-                    //double balance = 0;
-                    //foreach (var quantity in accounting.quantity) {
-                    //    Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
-                    //    if (rates != null && rates.Unit != 0 && rates.Cost != 0)
-                    //        balance += (quantity.value / (rates.Unit * rates.Cost));
-                    //}
-                    return randomNumber;
+                    double balance = 0;
+                    foreach (var quantity in quantities) {
+                        Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
+                        if (rates != null && rates.Unit != 0 && rates.Cost != 0)
+                            balance += (quantity.value / (rates.Unit * rates.Cost));
+                    }
+
+                    cache.Set("quotation-" + cachekey, balance, policy);
+                    return balance;
                 } else {
                     var user = UserTep.FromId(context, context.UserId);
                     var balance = user.GetAccountingBalance();
@@ -360,6 +364,21 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogError(this, e.Message);
                 return new HttpError(e.Message);
             }
+        }
+
+        private List<T2Accounting> GetAccountingsFromExecute(ExecuteResponse executeresponse) {
+
+            foreach (var processOutput in executeresponse.ProcessOutputs) {
+                if (processOutput.Identifier != null && processOutput.Identifier.Value == "QUOTATION") {
+                    var data = processOutput.Item as DataType;
+                    var cdata = data != null ? data.Item as ComplexDataType : null;
+                    var json = cdata.Text;
+                    var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
+                    return accountings;
+                }
+            }
+
+            return new List<T2Accounting>();
         }
 
         private WpsJob CreateJobFromExecute(IfyContext context, WpsProcessOffering wps, ExecuteResponse execResponse, Execute executeInput){
