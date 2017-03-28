@@ -268,6 +268,10 @@
     <Compile Include="Terradue\Tep\Controller\Accounting\Analytics.cs" />
     <Compile Include="Terradue\Tep\WebServer\Activity\Analytics.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Activity\WebAnalytics.cs" />
+    <Compile Include="Terradue\Tep\Controller\Accounting\Transaction.cs" />
+    <Compile Include="Terradue\Tep\Controller\Accounting\TransactionFactory.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Accounting\WebTransaction.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Accounting\Transaction.Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -286,6 +290,7 @@
     <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
     <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
     <None Include="Resources\ne_110m_land\ne_110m_land.dbf" />
+    <None Include="core\db\db-2.7.4#.sql" />
     <None Include="core\db\db-create.sql" />
     <None Include="core\db\db-2.7.8#.sql" />
     <None Include="core\db\db-2.7.4#.sql" />
@@ -324,5 +329,6 @@
     <Folder Include="Terradue\Tep\WebServer\Application\" />
     <Folder Include="Terradue\Tep\Controller\OpenSearch\" />
     <Folder Include="Terradue\Tep\WebServer\Authorization\" />
+    <Folder Include="Terradue\Tep\WebServer\Accounting\" />
   </ItemGroup>
 </Project>

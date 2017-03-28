@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ServiceStack.Common.Web;
-using ServiceStack.ServiceHost;
-using Terradue.Portal;
-using Terradue.WebService.Model;
+﻿using ServiceStack.ServiceHost;
 
 namespace Terradue.Tep.WebServer {
 

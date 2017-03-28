@@ -4,11 +4,13 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.Caching;
 using System.Web;
 using System.Xml;
 using OpenGis.Wps;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
+using ServiceStack.Text;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
@@ -254,9 +256,10 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/wps/WebProcessingService POST"));
 
-                Execute executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.Execute)).Deserialize (request.RequestStream);
+                var executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (Execute)).Deserialize (request.RequestStream);
                 context.LogDebug (this, string.Format ("Deserialization done"));
                 response = Execute (context, executeInput);
+                if (response is double) response = new WebResponseString(response.ToString());
             } catch (Exception e){
                 context.Close ();
                 return new HttpError (e.Message);
@@ -269,10 +272,49 @@ namespace Terradue.Tep.WebServer.Services {
             WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, executeInput.Identifier.Value);
             object executeResponse = null;
             var stream = new System.IO.MemoryStream();
+            ObjectCache cache = MemoryCache.Default;
 
             try{
-                executeResponse = wps.Execute(executeInput);
+                var parameters = BuildWpsJobParameters(context, executeInput);
+                bool withQuotation = false;
+                string cachekey = "";
+                foreach (var p in parameters) {
+                    if (p.Key == "Quotation") withQuotation = true;
+                    else cachekey += p.Key + p.Value;
+                }
 
+                var quotation = cache["quotation-" + cachekey] as string;
+
+                if(withQuotation){
+                    
+                    executeResponse = wps.Execute(executeInput);
+                    if (!(executeResponse is ExecuteResponse)) throw new Exception("Wrong Execute response to quotation"); 
+                    var accountings = GetAccountingsFromExecute(executeResponse as ExecuteResponse);
+                    if(accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
+                    var quantities = accountings[0].quantity;
+
+                    var policy = new CacheItemPolicy();
+                    policy.SlidingExpiration = new TimeSpan(0, 0, 10, 0);//we keep it 10min in memory, then user must do a new one
+
+                    //calculate balance with rates
+                    double balance = 0;
+                    foreach (var quantity in quantities) {
+                        Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
+                        if (rates != null && rates.Unit != 0 && rates.Cost != 0)
+                            balance += (quantity.value / (rates.Unit * rates.Cost));
+                    }
+
+                    cache.Set("quotation-" + cachekey, balance, policy);
+                    return balance;
+                } else {
+                    var user = UserTep.FromId(context, context.UserId);
+                    var balance = user.GetAccountingBalance();
+
+                    if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
+                    if (double.Parse(quotation) < balance) throw new Exception("Sorry you don't have enough credit on your account.");
+                    executeResponse = wps.Execute(executeInput);
+                }
+                 
                 if (executeResponse is ExecuteResponse) {
                     context.LogDebug(this,string.Format("Execute response ok"));
                     var execResponse = executeResponse as ExecuteResponse;
@@ -281,6 +323,18 @@ namespace Terradue.Tep.WebServer.Services {
                     WpsJob wpsjob = null;
                     try{
                         wpsjob = CreateJobFromExecute(context, wps, execResponse, executeInput);
+
+                        //We store the accounting deposit
+                        if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
+                        var transaction = new Transaction(context);
+                        transaction.Entity = wpsjob;
+                        transaction.UserId = context.UserId;
+                        transaction.Identifier = wpsjob.Identifier;
+                        transaction.LogTime = DateTime.UtcNow;
+                        transaction.ProviderId = wps.OwnerId;
+                        transaction.Balance = double.Parse(quotation);
+                        transaction.Deposit = true;
+                        transaction.Store();
                     }catch(Exception e){
                         context.LogError(this,string.Format(e.Message));
                         throw e;
@@ -310,6 +364,21 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogError(this, e.Message);
                 return new HttpError(e.Message);
             }
+        }
+
+        private List<T2Accounting> GetAccountingsFromExecute(ExecuteResponse executeresponse) {
+
+            foreach (var processOutput in executeresponse.ProcessOutputs) {
+                if (processOutput.Identifier != null && processOutput.Identifier.Value == "QUOTATION") {
+                    var data = processOutput.Item as DataType;
+                    var cdata = data != null ? data.Item as ComplexDataType : null;
+                    var json = cdata.Text;
+                    var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
+                    return accountings;
+                }
+            }
+
+            return new List<T2Accounting>();
         }
 
         private WpsJob CreateJobFromExecute(IfyContext context, WpsProcessOffering wps, ExecuteResponse execResponse, Execute executeInput){
@@ -353,6 +422,14 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
 
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
+
+            wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
+            wpsjob.Store();
+
+            return wpsjob;
+        }
+
+        private List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput){
             List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
             foreach (var d in executeInput.DataInputs) {
                 context.LogDebug(this,string.Format("Input: " + d.Identifier.Value));
@@ -361,12 +438,12 @@ namespace Terradue.Tep.WebServer.Services {
                         context.LogDebug(this,string.Format("Value is LiteralDataType"));
                         output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));  
                     } else if (d.Data.Item is ComplexDataType) {
-                        context.LogDebug(this,string.Format("Value is ComplexDataType"));
+                        context.LogDebug(this, string.Format("Value is ComplexDataType"));
                         throw new Exception("Data Input ComplexDataType not yet implemented");
                     } else if (d.Data.Item is BoundingBoxType) {
                         //for BoundingBoxType, webportal creates LowerCorner and UpperCorner
                         //we just need to save both values as a concatained string
-                        context.LogDebug(this,string.Format("Value is BoundingBoxType"));
+                        context.LogDebug(this, string.Format("Value is BoundingBoxType"));
                         var bbox = d.Data.Item as BoundingBoxType;
                         var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
                         output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));  
@@ -374,7 +451,7 @@ namespace Terradue.Tep.WebServer.Services {
                         throw new Exception("unhandled type of Data");
                     } 
                 } else if (d.Reference != null){
-                    context.LogDebug(this,string.Format("Value is InputReferenceType"));
+                    context.LogDebug(this, string.Format("Value is InputReferenceType"));
                     if (!string.IsNullOrEmpty(d.Reference.href)) {
                         output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
                     } else if (d.Reference.Item != null){
@@ -382,12 +459,8 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }
             }
-            wpsjob.Parameters = output;
-            wpsjob.Store();
-
-            return wpsjob;
+            return output;
         }
-
 
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);

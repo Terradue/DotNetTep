@@ -62,7 +62,6 @@ namespace Terradue.Tep.WebServer {
         public string Password { get; set; }
     }
 
-
 //    [Route("/user/current/sso", "POST", Summary = "GET the current user", Notes = "User is the current user")]
 //    public class UserPostCurrentSSORequestTep : IReturn<WebUserTep> {
 //        [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
@@ -122,6 +121,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember (Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string ApiKey { get; set; }
 
+        [ApiMember(Name = "balance", Description = "User accounting balance", ParameterType = "query", DataType = "double", IsRequired = false)]
+        public double Balance { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
         /// </summary>
@@ -140,6 +142,7 @@ namespace Terradue.Tep.WebServer {
             this.T2Username = entity.TerradueCloudUsername;
             //only current user can know the api key
             if(context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
+            this.Balance = entity.GetAccountingBalance();
         }
 
         /// <summary>
