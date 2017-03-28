@@ -282,6 +282,8 @@ namespace Terradue.Tep.WebServer.Services {
                     else cachekey += p.Key + p.Value;
                 }
 
+                var quotation = cache["quotation-" + cachekey] as string;
+
                 if(withQuotation){//TODO: TEMPORARY
                     var random = new Random();
                     double randomNumber = random.Next(0, 100);
@@ -301,12 +303,15 @@ namespace Terradue.Tep.WebServer.Services {
                     //}
                     return randomNumber;
                 } else {
+                    var user = UserTep.FromId(context, context.UserId);
+                    var balance = user.GetAccountingBalance();
+
+                    if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
+                    if (double.Parse(quotation) < balance) throw new Exception("Sorry you don't have enough credit on your account.");
                     executeResponse = wps.Execute(executeInput);
                 }
                  
-                if (executeResponse is QuotationResponse) {
-                    return executeResponse;
-                } else if (executeResponse is ExecuteResponse) {
+                if (executeResponse is ExecuteResponse) {
                     context.LogDebug(this,string.Format("Execute response ok"));
                     var execResponse = executeResponse as ExecuteResponse;
 
@@ -316,7 +321,6 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsjob = CreateJobFromExecute(context, wps, execResponse, executeInput);
 
                         //We store the accounting deposit
-                        var quotation = cache["quotation-" + cachekey] as string;
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
                         var transaction = new Transaction(context);
                         transaction.Entity = wpsjob;
