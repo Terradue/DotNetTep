@@ -27,7 +27,7 @@ CREATE TABLE transaction (
    	deposit boolean NOT NULL DEFAULT false COMMENT 'If true, transaction is a deposit',
     CONSTRAINT pk_transaction PRIMARY KEY (id),
     CONSTRAINT fk_transaction_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE,
-    UNIQUE INDEX (identifier)
+    UNIQUE INDEX (reference)
 ) Engine=InnoDB COMMENT 'Accounting transactions';
 INSERT INTO type (pos, class, caption_sg, caption_pl, keyword) VALUES (@'0', 'Terradue.Tep.Transaction, Terradue.Tep', 'Transaction', 'Transactions', 'transaction');
 -- RESULT
