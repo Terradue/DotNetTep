@@ -273,21 +273,22 @@ namespace Terradue.Tep.WebServer.Services {
             object executeResponse = null;
             var stream = new System.IO.MemoryStream();
             ObjectCache cache = MemoryCache.Default;
+            WpsJob wpsjob = null;
 
             try{
                 var parameters = BuildWpsJobParameters(context, executeInput);
                 bool withQuotation = false;
-                string cachekey = "";
+                string cachekey = wps.Identifier;
                 foreach (var p in parameters) {
-                    if (p.Key == "Quotation") withQuotation = true;
+                    if (p.Key == "quotation" && p.Value == "true") withQuotation = true;
                     else cachekey += p.Key + p.Value;
                 }
 
-                var quotation = cache["quotation-" + cachekey] as string;
+                cachekey = "quotation-" + CalculateMD5Hash(cachekey);
+                var quotation = cache[cachekey] as string;
 
                 if(withQuotation){
-                    
-                    executeResponse = wps.Execute(executeInput);
+                    executeResponse = wps.Execute(executeInput, null);
                     if (!(executeResponse is ExecuteResponse)) throw new Exception("Wrong Execute response to quotation"); 
                     var accountings = GetAccountingsFromExecute(executeResponse as ExecuteResponse);
                     if(accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
@@ -304,7 +305,7 @@ namespace Terradue.Tep.WebServer.Services {
                             balance += (quantity.value / (rates.Unit * rates.Cost));
                     }
 
-                    cache.Set("quotation-" + cachekey, balance, policy);
+                    cache.Set(cachekey, balance, policy);
                     return balance;
                 } else {
                     var user = UserTep.FromId(context, context.UserId);
@@ -312,7 +313,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                     if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
                     if (double.Parse(quotation) < balance) throw new Exception("Sorry you don't have enough credit on your account.");
-                    executeResponse = wps.Execute(executeInput);
+                    wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
+                    executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
                 }
                  
                 if (executeResponse is ExecuteResponse) {
@@ -320,9 +322,8 @@ namespace Terradue.Tep.WebServer.Services {
                     var execResponse = executeResponse as ExecuteResponse;
 
                     context.LogDebug(this,string.Format("Creating job"));
-                    WpsJob wpsjob = null;
                     try{
-                        wpsjob = CreateJobFromExecute(context, wps, execResponse, executeInput);
+                        UpdateJobFromExecuteResponse(context, ref wpsjob, execResponse);
 
                         //We store the accounting deposit
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
@@ -366,8 +367,17 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
-        private List<T2Accounting> GetAccountingsFromExecute(ExecuteResponse executeresponse) {
+        private string CalculateMD5Hash(string input){
+            var md5 = System.Security.Cryptography.MD5.Create();
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hash = md5.ComputeHash(inputBytes);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < hash.Length; i++) sb.Append(hash[i].ToString("X2"));
+            return sb.ToString();
+        }
 
+
+        private List<T2Accounting> GetAccountingsFromExecute(ExecuteResponse executeresponse) {
             foreach (var processOutput in executeresponse.ProcessOutputs) {
                 if (processOutput.Identifier != null && processOutput.Identifier.Value == "QUOTATION") {
                     var data = processOutput.Item as DataType;
@@ -377,36 +387,16 @@ namespace Terradue.Tep.WebServer.Services {
                     return accountings;
                 }
             }
-
             return new List<T2Accounting>();
         }
 
-        private WpsJob CreateJobFromExecute(IfyContext context, WpsProcessOffering wps, ExecuteResponse execResponse, Execute executeInput){
-            Uri uri = new Uri(execResponse.statusLocation);
+        private WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput){
             string newId = Guid.NewGuid().ToString();
 
             //create WpsJob
-            context.LogDebug(this,string.Format("Get identifier from status location"));
-            string identifier = null;
-                var pos = uri.Query != null ? uri.Query.ToLower ().IndexOf ("id=") : 0;
-            if (pos > 0) identifier = uri.Query.Substring (pos + 3);
-            else {
-                context.LogDebug (this, string.Format ("identifier does not contain id="));
-                //statusLocation url is different for gpod
-                if (uri.AbsoluteUri.Contains ("gpod.eo.esa.int")) {
-                    context.LogDebug (this, string.Format ("identifier taken from gpod url : " + uri.AbsoluteUri));
-                    identifier = uri.AbsoluteUri.Substring (uri.AbsoluteUri.LastIndexOf ("status") + 7);
-                } else if (uri.AbsoluteUri.Contains ("pywps")) {
-                    identifier = uri.AbsoluteUri;
-                    identifier = identifier.Substring (identifier.LastIndexOf ("pywps-") + 6);
-                    identifier = identifier.Substring (0, identifier.LastIndexOf (".xml"));
-                }
-            }
-            context.LogDebug(this,string.Format("identifier = " + identifier));
             context.LogDebug(this,string.Format("Provider is null ? -> " + (wps.Provider == null ? "true" : "false")));
             WpsJob wpsjob = new WpsJob(context);
             wpsjob.Name = wps.Name;
-            wpsjob.RemoteIdentifier = identifier;
             wpsjob.Identifier = newId;
             wpsjob.OwnerId = context.UserId;
             wpsjob.UserId = context.UserId;
@@ -414,19 +404,44 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.ProcessId = wps.Identifier;
             wpsjob.CreatedTime = DateTime.UtcNow;
 
+            wpsjob.Parameters = new List<KeyValuePair<string, string>>();
+            wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
+
+            return wpsjob;
+        }
+
+        private void UpdateJobFromExecuteResponse(IfyContext context, ref WpsJob wpsjob, ExecuteResponse execResponse) {
+            Uri uri = new Uri(execResponse.statusLocation);
+            string newId = Guid.NewGuid().ToString();
+
+            //create WpsJob
+            context.LogDebug(this, string.Format("Get identifier from status location"));
+            string identifier = null;
+            var pos = uri.Query != null ? uri.Query.ToLower().IndexOf("id=") : 0;
+            if (pos > 0) identifier = uri.Query.Substring(pos + 3);
+            else {
+                context.LogDebug(this, string.Format("identifier does not contain id="));
+                //statusLocation url is different for gpod
+                if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
+                    context.LogDebug(this, string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
+                    identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
+                } else if (uri.AbsoluteUri.Contains("pywps")) {
+                    identifier = uri.AbsoluteUri;
+                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
+                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
+                }
+            }
+            context.LogDebug(this, string.Format("identifier = " + identifier));
+            wpsjob.RemoteIdentifier = identifier;
+
             //in case of username:password in the provider url, we take them from provider
-            var statusuri = new UriBuilder(wps.Provider.BaseUrl);
+            var statusuri = new UriBuilder(wpsjob.Provider.BaseUrl);
             var statusuri2 = new UriBuilder(execResponse.statusLocation);
             statusuri2.UserName = statusuri.UserName;
             statusuri2.Password = statusuri.Password;
             wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
 
-            wpsjob.Parameters = new List<KeyValuePair<string, string>>();
-
-            wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
             wpsjob.Store();
-
-            return wpsjob;
         }
 
         private List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput){
