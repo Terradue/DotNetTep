@@ -277,53 +277,62 @@ namespace Terradue.Tep.WebServer.Services {
 
             try{
                 var parameters = BuildWpsJobParameters(context, executeInput);
-                bool withQuotation = false;
+                bool quotationMode = false;
+                bool isQuotable = false;
                 string cachekey = wps.Identifier;
+
+                //check if the service is quotable (=has quotation parameter)
                 foreach (var p in parameters) {
-                    if (p.Key == "quotation" && p.Value == "true") withQuotation = true;
-                    else cachekey += p.Key + p.Value;
+                    if (p.Key == "quotation") {
+                        isQuotable = true;
+                        if (p.Value == "true") quotationMode = true;
+                    } else cachekey += p.Key + p.Value;
                 }
 
-                cachekey = "quotation-" + CalculateMD5Hash(cachekey);
-                var quotation = cache[cachekey] as string;
+                //part is quotable
+                if (isQuotable) {
+                    cachekey = "quotation-" + CalculateMD5Hash(cachekey);
+                    var quotation = cache[cachekey] as string;
 
-                if(withQuotation){
-                    executeResponse = wps.Execute(executeInput, null);
-                    if (!(executeResponse is ExecuteResponse)) throw new Exception("Wrong Execute response to quotation"); 
-                    var accountings = GetAccountingsFromExecute(executeResponse as ExecuteResponse);
-                    if(accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
-                    var quantities = accountings[0].quantity;
+                    if (quotationMode) {
+                        //we do a quotation request to the WPS service and then put the calculated estimation in the response
+                        //calculation is done from the rates associated to the wps service
 
-                    var policy = new CacheItemPolicy();
-                    policy.SlidingExpiration = new TimeSpan(0, 0, 10, 0);//we keep it 10min in memory, then user must do a new one
+                        var policy = new CacheItemPolicy();
+                        policy.SlidingExpiration = new TimeSpan(0, 0, 10, 0);//we keep it 10min in memory, then user must do a new one
 
-                    //calculate balance with rates
-                    double balance = 0;
-                    foreach (var quantity in quantities) {
-                        Rates rates = Rates.FromServiceAndIdentifier(context, wps, quantity.id);
-                        if (rates != null && rates.Unit != 0 && rates.Cost != 0)
-                            balance += (quantity.value / (rates.Unit * rates.Cost));
-                    }
+                        executeResponse = wps.Execute(executeInput);
 
-                    cache.Set(cachekey, balance, policy);
-                    return balance;
-                } else {
-                    var user = UserTep.FromId(context, context.UserId);
-                    var balance = user.GetAccountingBalance();
+                        if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
-                    if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
-                    if (double.Parse(quotation) < balance) throw new Exception("Sorry you don't have enough credit on your account.");
-                    wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
-                    executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
-                }
-                 
-                if (executeResponse is ExecuteResponse) {
-                    context.LogDebug(this,string.Format("Execute response ok"));
-                    var execResponse = executeResponse as ExecuteResponse;
+                        var executeresponse = executeResponse as ExecuteResponse;
+                        foreach (var processOutput in executeresponse.ProcessOutputs) {
+                            if (processOutput.Identifier != null && processOutput.Identifier.Value == "QUOTATION") {
+                                var data = processOutput.Item as DataType;
+                                var cdata = data != null ? data.Item as ComplexDataType : null;
+                                var json = cdata.Text;
+                                var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
+                                if (accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
+                                //calculate estimation with rates
+                                double estimation = Rates.GetBalanceFromRates(context, wps, accountings[0].quantity);
+                                cache.Set(cachekey, estimation, policy);
+                                cdata.Text = estimation + "";
+                                return executeresponse;
+                            }
+                        }
+                        throw new Exception("Wrong Execute response to quotation");
+                    } else {
+                        //we do a normal Execute request to a wps service which is quotable
+                        //it means that the quotation must have been done (found in cache) and that user has enough credit
+                        if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
 
-                    context.LogDebug(this,string.Format("Creating job"));
-                    try{
-                        UpdateJobFromExecuteResponse(context, ref wpsjob, execResponse);
+                        var user = UserTep.FromId(context, context.UserId);
+                        var balance = user.GetAccountingBalance();
+                        if (double.Parse(quotation) < balance) throw new Exception("User credit insufficiant for this request.");
+                        wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
+                        executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
+
+                        if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
                         //We store the accounting deposit
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
@@ -336,34 +345,47 @@ namespace Terradue.Tep.WebServer.Services {
                         transaction.Balance = double.Parse(quotation);
                         transaction.Deposit = true;
                         transaction.Store();
-                    }catch(Exception e){
-                        context.LogError(this,string.Format(e.Message));
-                        throw e;
                     }
-                    context.LogDebug(this,string.Format("job created"));
-
-                    Uri uri = new Uri(execResponse.serviceInstance);
-                    execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
-                    execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
-                    new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
-
-                    return new HttpResult(stream, "application/xml");
-                } else if (executeResponse is ExceptionReport) {
-                    context.LogDebug(this,string.Format("Exception report ok"));
-                    var exceptionReport = executeResponse as ExceptionReport;
-                    new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExceptionReport)).Serialize(stream, exceptionReport);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    using (StreamReader reader = new StreamReader(stream)) {
-                        string errormsg = reader.ReadToEnd();
-                        context.LogError(this,string.Format(errormsg));
-                        return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
-                    }
-                } else {
-                    return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
+                } else { 
+                    //case is not quotable
+                    wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
+                    executeResponse = wps.Execute(executeInput);
                 }
+
+                if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
+                 
+                context.LogDebug(this,string.Format("Execute response ok"));
+                var execResponse = executeResponse as ExecuteResponse;
+
+                UpdateJobFromExecuteResponse(context, ref wpsjob, execResponse);
+
+                Uri uri = new Uri(execResponse.serviceInstance);
+                execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
+                execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
+                new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
+
+                return new HttpResult(stream, "application/xml");
+
             }catch(Exception e){
                 context.LogError(this, e.Message);
                 return new HttpError(e.Message);
+            }
+        }
+
+        private object HandleWrongExecuteResponse(IfyContext context, object executeResponse) { 
+            if (executeResponse is ExceptionReport) {
+                var stream = new System.IO.MemoryStream();
+                context.LogDebug(this, string.Format("Exception report ok"));
+                var exceptionReport = executeResponse as ExceptionReport;
+                new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExceptionReport)).Serialize(stream, exceptionReport);
+                stream.Seek(0, SeekOrigin.Begin);
+                using (StreamReader reader = new StreamReader(stream)) {
+                    string errormsg = reader.ReadToEnd();
+                    context.LogError(this, string.Format(errormsg));
+                    return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
+                }
+            } else {
+                return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
             }
         }
 
@@ -391,6 +413,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput){
+            context.LogDebug(this, string.Format("Creating job from execute request"));
             string newId = Guid.NewGuid().ToString();
 
             //create WpsJob
@@ -411,8 +434,8 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private void UpdateJobFromExecuteResponse(IfyContext context, ref WpsJob wpsjob, ExecuteResponse execResponse) {
+            context.LogDebug(this, string.Format("Creating job from execute response"));
             Uri uri = new Uri(execResponse.statusLocation);
-            string newId = Guid.NewGuid().ToString();
 
             //create WpsJob
             context.LogDebug(this, string.Format("Get identifier from status location"));
@@ -445,6 +468,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput){
+            context.LogDebug(this, string.Format("Building job parameters from execute request"));
             List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
             foreach (var d in executeInput.DataInputs) {
                 context.LogDebug(this,string.Format("Input: " + d.Identifier.Value));

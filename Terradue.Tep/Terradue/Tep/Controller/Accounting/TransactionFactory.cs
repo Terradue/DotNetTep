@@ -81,27 +81,32 @@ namespace Terradue.Tep {
         /// <param name="user">User.</param>
         public double GetUserBalance(User user) { 
             double balance = 0;
+            try {
 
-            //first we sync transactions
-            SyncTransactions(user);
+                //first we sync transactions
+                SyncTransactions(user);
 
-            //get all transactions without reference
-            List<Transaction> transactions = GetUserTransactions(user.Id, false, true);
-            foreach (var transaction in transactions) balance += transaction.Balance;
+                //get all transactions without reference
+                List<Transaction> transactions = GetUserTransactions(user.Id, false, true);
+                foreach (var transaction in transactions) balance += transaction.Balance;
 
-            //get all references
-            var references = GetTransactionsReferences(user.Id);
+                //get all references
+                var references = GetTransactionsReferences(user.Id);
 
-            //foreach reference, calculate the balance (using deposit)
-            foreach (var reference in references) {
-                var deposit = GetDepositTransaction(reference);
-                double refBalance = 0;
-                var reftransactions = GetTransactionsByReference(reference);
-                foreach (var reftransaction in reftransactions) {
-                    if (reftransaction.Deposit) continue;
-                    refBalance += reftransaction.Balance;
+                //foreach reference, calculate the balance (using deposit)
+                foreach (var reference in references) {
+                    var deposit = GetDepositTransaction(reference);
+                    double refBalance = 0;
+                    var reftransactions = GetTransactionsByReference(reference);
+                    foreach (var reftransaction in reftransactions) {
+                        if (reftransaction.Deposit) continue;
+                        refBalance += reftransaction.Balance;
+                    }
+                    balance += GetBalanceByPolicy(refBalance, deposit.Balance);
                 }
-                balance += GetBalanceByPolicy(refBalance, deposit.Balance);
+            } catch (Exception e) {
+                context.LogError(this, e.Message + "-" + e.StackTrace);
+                balance = 0;
             }
 
             return balance;
@@ -175,14 +180,9 @@ namespace Terradue.Tep {
 
                     if (entityservice == null) continue;//TODO: remove when handling cases with no refs
 
-                    //get quantities
-                    double balance = 0;
-                    foreach (var quantity in accounting.quantity) {
-                        Rates rates = Rates.FromServiceAndIdentifier(context, entityservice, quantity.id);
-                        if (rates != null && rates.Unit != 0 && rates.Cost != 0)
-                            balance += (quantity.value / (rates.Unit * rates.Cost));
-                    }
-
+                    //get balance
+                    double balance = Rates.GetBalanceFromRates(context, entityservice, accounting.quantity);
+                       
                     var transaction = new Transaction(context);
                     transaction.Entity = entityself;
                     transaction.UserId = user.Id;

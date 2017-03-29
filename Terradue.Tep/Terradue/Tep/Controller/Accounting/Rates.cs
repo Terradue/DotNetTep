@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Terradue.Portal;
 
 namespace Terradue.Tep {
@@ -83,6 +84,23 @@ namespace Terradue.Tep {
             result.Identifier = identifier;
             result.Load();
             return result;
+        }
+
+        /// <summary>
+        /// Gets the balance from rates.
+        /// </summary>
+        /// <returns>The balance from rates.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="entity">Entity.</param>
+        /// <param name="quantities">Quantities.</param>
+        public static double GetBalanceFromRates(IfyContext context, Entity entity, List<T2AccountingQuantity> quantities) {
+            double balance = 0;
+            foreach (var quantity in quantities) {
+                Rates rates = Rates.FromServiceAndIdentifier(context, entity, quantity.id);
+                if (rates != null && rates.Unit != 0 && rates.Cost != 0)
+                    balance += ((quantity.value / rates.Unit) * rates.Cost);
+            }
+            return balance;
         }
     }
 }
