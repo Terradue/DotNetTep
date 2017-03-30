@@ -518,6 +518,10 @@ namespace Terradue.Tep {
 
             result.Authors.Add(author);
 
+            if (context.AccessLevel == EntityAccessLevel.Administrator || context.UserId == this.Id) {
+                result.Categories.Add(new SyndicationCategory("balance", null, GetAccountingBalance().ToString()));
+            }
+
             result.Links.Add(new SyndicationLink(id, "self", this.Identifier, "application/atom+xml", 0));
 
             return result;

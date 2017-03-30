@@ -11,7 +11,7 @@ using Terradue.Portal.OpenSearch;
 using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
-    [EntityTable("transaction", EntityTableConfiguration.Custom, IdentifierField = "reference")]
+    [EntityTable("transaction", EntityTableConfiguration.Custom, IdentifierField = "reference", HasOwnerReference = true)]
     public class Transaction : EntitySearchable {
 
         /// <summary>
