@@ -316,8 +316,12 @@ namespace Terradue.Tep.WebServer.Services {
                                 //calculate estimation with rates
                                 double estimation = Rates.GetBalanceFromRates(context, wps, accountings[0].quantity);
                                 cache.Set(cachekey, estimation, policy);
-                                cdata.Text = estimation + "";
-                                return executeresponse;
+                                var ldata = new LiteralDataType();
+                                ldata.Value = estimation.ToString();
+                                data.Item = ldata;
+
+                                new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, executeresponse);
+                                return new HttpResult(stream, "application/xml");
                             }
                         }
                         throw new Exception("Wrong Execute response to quotation");

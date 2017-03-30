@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
-using Terradue.Portal;
-using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer {
 
     [Route("/transaction/search", "GET", Summary = "GET transactions as opensearch", Notes = "")]
-    public class TransactionsSearchRequestTep : IReturn<List<WebTransaction>>{}
+    public class TransactionsSearchRequestTep : IReturn<HttpResult>{}
 
     [Route("/transaction/description", "GET", Summary = "GET transactions as opensearch", Notes = "")]
-    public class TransactionsDescriptionRequestTep : IReturn<List<WebTransaction>>{}
+    public class TransactionsDescriptionRequestTep : IReturn<HttpResult>{}
 
     [Route("/transaction/user", "POST", Summary = "POST the current user sso", Notes = "User is the current user")]
     public class UserAddTransactionRequestTep : WebTransaction, IReturn<WebUserTep> {

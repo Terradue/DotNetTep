@@ -263,6 +263,8 @@
     <Compile Include="Terradue\Tep\Controller\Accounting\TransactionFactory.cs" />
     <Compile Include="Terradue\Tep\WebServer\Accounting\WebTransaction.cs" />
     <Compile Include="Terradue\Tep\WebServer\Accounting\Transaction.Service.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Accounting\WebRates.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Accounting\Rates.Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -4,6 +4,7 @@ using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.OpenSearch;
+using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 
@@ -36,7 +37,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(TransactionsSearchRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            List<WebTransaction> result = new List<WebTransaction>();
+            IOpenSearchResultCollection result;
             try {
                 context.Open();
                 context.LogInfo(this, string.Format("/transaction/search GET"));
@@ -57,12 +58,9 @@ namespace Terradue.Tep.WebServer.Services {
                 var ose = MasterCatalogue.OpenSearchEngine;
 
                 Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                var osr = ose.Query(transactions, httpRequest.QueryString, responseType);
+                result = ose.Query(transactions, httpRequest.QueryString, responseType);
 
-                OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(transactions, osr);
-
-                context.Close();
-                return new HttpResult(osr.SerializeToString(), osr.ContentType);
+                OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(transactions, result);
 
                 context.Close();
             } catch (Exception e) {
@@ -70,7 +68,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            return result;
+            return new HttpResult(result.SerializeToString(), result.ContentType);
         }
 
         public object Get(TransactionsDescriptionRequestTep request) {
