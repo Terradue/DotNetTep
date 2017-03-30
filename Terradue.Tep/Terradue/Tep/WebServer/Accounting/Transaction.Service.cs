@@ -48,10 +48,10 @@ namespace Terradue.Tep.WebServer.Services {
                 EntityList<Transaction> transactions = new EntityList<Transaction>(context);
                 if (context.AccessLevel != EntityAccessLevel.Administrator || httpRequest.QueryString["author"] == null) {
                     //Only admin can see others transactions
-                    transactions.SetFilter("UserId", context.UserId + "");
+                    transactions.SetFilter("OwnerId", context.UserId + "");
                 } else {
                     var user = UserTep.FromIdentifier(context, httpRequest.QueryString["author"]);
-                    transactions.SetFilter("UserId", user.Id + "");
+                    transactions.SetFilter("OwnerId", user.Id + "");
                 }
                 transactions.AddSort("LogTime", SortDirection.Descending);
 
