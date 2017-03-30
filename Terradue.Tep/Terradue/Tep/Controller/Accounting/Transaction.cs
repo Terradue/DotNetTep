@@ -48,13 +48,6 @@ namespace Terradue.Tep {
         public int ProviderId { get; set; }
 
         /// <summary>
-        /// Gets or sets the user identifier.
-        /// </summary>
-        /// <value>The user identifier.</value>
-        [EntityDataField("id_usr")]
-        public new int UserId { get; set; }
-
-        /// <summary>
         /// Gets or sets the entity type identifier.
         /// </summary>
         /// <value>The entity type identifier.</value>

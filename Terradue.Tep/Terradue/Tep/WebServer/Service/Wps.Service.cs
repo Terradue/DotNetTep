@@ -342,7 +342,7 @@ namespace Terradue.Tep.WebServer.Services {
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
                         var transaction = new Transaction(context);
                         transaction.Entity = wpsjob;
-                        transaction.UserId = context.UserId;
+                        transaction.OwnerId = context.UserId;
                         transaction.Identifier = wpsjob.Identifier;
                         transaction.LogTime = DateTime.UtcNow;
                         transaction.ProviderId = wps.OwnerId;

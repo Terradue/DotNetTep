@@ -24,7 +24,7 @@ namespace Terradue.Tep {
             EntityList<Transaction> transactions = new EntityList<Transaction>(context);
             if (!withref && !withnoref) return new List<Transaction>();
 
-            transactions.SetFilter("UserId", usrid + "");
+            transactions.SetFilter("OwnerId", usrid + "");
             if (!withref || !withnoref) {
                 if (!withref) transactions.SetFilter("Identifier", SpecialSearchValue.Null);
                 else if (!withnoref) transactions.SetFilter("Identifier", SpecialSearchValue.NotNull);
@@ -40,7 +40,7 @@ namespace Terradue.Tep {
         /// <param name="usrid">Usrid.</param>
         public Transaction GetUserLastTransaction(int usrid) {
             EntityList<Transaction> transactions = new EntityList<Transaction>(context);
-            transactions.SetFilter("UserId", usrid + "");
+            transactions.SetFilter("OwnerId", usrid + "");
             transactions.AddSort("LogTime", SortDirection.Descending);
             transactions.ItemsPerPage = 1;
             transactions.Load();
@@ -185,7 +185,7 @@ namespace Terradue.Tep {
                        
                     var transaction = new Transaction(context);
                     transaction.Entity = entityself;
-                    transaction.UserId = user.Id;
+                    transaction.OwnerId = user.Id;
                     transaction.Identifier = identifier;
                     transaction.LogTime = accounting.timestamp;
                     transaction.ProviderId = entityservice.OwnerId;
