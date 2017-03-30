@@ -292,7 +292,6 @@ namespace Terradue.Tep.WebServer.Services {
                 //part is quotable
                 if (isQuotable) {
                     cachekey = "quotation-" + CalculateMD5Hash(cachekey);
-                    var quotation = cache[cachekey] as string;
 
                     if (quotationMode) {
                         //we do a quotation request to the WPS service and then put the calculated estimation in the response
@@ -315,7 +314,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 if (accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
                                 //calculate estimation with rates
                                 double estimation = Rates.GetBalanceFromRates(context, wps, accountings[0].quantity);
-                                cache.Set(cachekey, estimation, policy);
+								cache.Set(cachekey, estimation.ToString(), policy);
                                 var ldata = new LiteralDataType();
                                 ldata.Value = estimation.ToString();
                                 data.Item = ldata;
@@ -328,11 +327,12 @@ namespace Terradue.Tep.WebServer.Services {
                     } else {
                         //we do a normal Execute request to a wps service which is quotable
                         //it means that the quotation must have been done (found in cache) and that user has enough credit
+						var quotation = cache[cachekey] as string;
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
 
                         var user = UserTep.FromId(context, context.UserId);
                         var balance = user.GetAccountingBalance();
-                        if (double.Parse(quotation) < balance) throw new Exception("User credit insufficiant for this request.");
+                        if (double.Parse(quotation) > balance) throw new Exception("User credit insufficiant for this request.");
                         wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
