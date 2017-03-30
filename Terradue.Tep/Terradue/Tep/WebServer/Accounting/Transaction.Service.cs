@@ -13,7 +13,7 @@ namespace Terradue.Tep.WebServer.Services {
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
-    public class AccountingServiceTep : ServiceStack.ServiceInterface.Service {
+    public class TransactionServiceTep : ServiceStack.ServiceInterface.Service {
         
         public object Post(UserAddTransactionRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);

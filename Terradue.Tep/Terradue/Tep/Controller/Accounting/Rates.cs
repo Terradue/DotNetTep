@@ -78,6 +78,13 @@ namespace Terradue.Tep {
             return null;
         }
 
+        public static Rates FromId(IfyContext context, int id) {
+            Rates result = new Rates(context);
+            result.Id = id;
+            result.Load();
+            return result;
+        }
+
         public static Rates FromServiceAndIdentifier(IfyContext context, Entity service, string identifier) {
             Rates result = new Rates(context);
             result.Service = service;

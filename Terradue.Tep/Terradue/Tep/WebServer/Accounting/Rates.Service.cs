@@ -18,6 +18,7 @@ namespace Terradue.Tep.WebServer.Services {
         
         public object Post(AddRatesForServiceRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebRates result = null;
 
             try {
                 context.Open();
@@ -27,13 +28,15 @@ namespace Terradue.Tep.WebServer.Services {
                 Rates rate = request.ToEntity(context, service);
                 rate.Store();
 
+                result = new WebRates(rate);
+
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
                 context.Close();
                 throw e;
             }
-            return new WebResponseBool(true);
+            return result;
         }
 
         public object Delete(DeleteRatesFromServiceRequestTep request) {
@@ -41,11 +44,12 @@ namespace Terradue.Tep.WebServer.Services {
 
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/service/wps/{{serviceIdentifier}}/rates DELETE serviceIdentifier='{0}', Identifier='{1}'", request.ServiceIdentifier, request.Identifier));
+                context.LogInfo(this, string.Format("/service/wps/{{serviceIdentifier}}/rates/{{id}} DELETE serviceIdentifier='{0}', Id='{1}'", request.ServiceIdentifier, request.Id));
 
-                var service = WpsProcessOffering.FromIdentifier(context, request.ServiceIdentifier);
-                Rates rate = request.ToEntity(context, service);
-                rate.Store();
+                var service = Service.FromIdentifier(context, request.ServiceIdentifier);
+                Rates rate = Rates.FromId(context, request.Id);
+                context.LogInfo(this, string.Format("Deleting rates {0} of service {1}", rate.Identifier, service.Identifier));
+                rate.Delete();
 
                 context.Close();
             } catch (Exception e) {
@@ -56,12 +60,12 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool(true);
         }
 
-        public object Get(RatesForServiceSearchRequestTep request) {
+        public object Get(RatesForServiceRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
-            IOpenSearchResultCollection result;
+            List<WebRates> result = new List<WebRates>();
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/rates/search GET, identifier='{0}'", request.ServiceIdentifier));
+                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/rates GET, identifier='{0}'", request.ServiceIdentifier));
 
                 // Load the complete request
                 var httpRequest = HttpContext.Current.Request;
@@ -71,13 +75,11 @@ namespace Terradue.Tep.WebServer.Services {
                 EntityList<Rates> rates = new EntityList<Rates>(context);
                 rates.SetFilter("EntityId",service.Id.ToString());
                 rates.SetFilter("EntityTypeId",EntityType.GetEntityType(typeof(WpsProcessOffering)).Id.ToString());
+                rates.Load();
 
-                var ose = MasterCatalogue.OpenSearchEngine;
-
-                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                result = ose.Query(rates, httpRequest.QueryString, responseType);
-
-                OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(rates, result);
+                foreach(var rate in rates.GetItemsAsList()){
+                    result.Add(new WebRates(rate));
+                }
 
                 context.Close();
             } catch (Exception e) {
@@ -85,29 +87,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            return new HttpResult(result.SerializeToString(), result.ContentType);
+            return result;
         }
-
-        public object Get(RatesForServiceDescriptionRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            try {
-                context.Open();
-                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/rates/description GET, identifier='{0}'", request.ServiceIdentifier));
-
-                EntityList<Rates> rates = new EntityList<Rates>(context);
-                rates.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
-
-                var osd = rates.GetOpenSearchDescription();
-
-                context.Close();
-
-                return new HttpResult(osd, "application/opensearchdescription+xml");
-            } catch (Exception e) {
-                context.LogError(this, e.Message);
-                context.Close();
-                throw e;
-            }
-        }
-               
+ 
     }
 }

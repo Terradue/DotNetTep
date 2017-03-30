@@ -1,18 +1,12 @@
 ﻿using ServiceStack.ServiceHost;
-using ServiceStack.Common.Web;
 using Terradue.Portal;
 using Terradue.WebService.Model;
+using System.Collections.Generic;
 
 namespace Terradue.Tep.WebServer {
 
-    [Route("/service/wps/{serviceIdentifier}/rates/search", "GET", Summary = "GET service rates as opensearch", Notes = "")]
-    public class RatesForServiceSearchRequestTep : IReturn<HttpResult>{
-        [ApiMember(Name = "serviceIdentifier", Description = "service Identifier", ParameterType = "path", DataType = "string", IsRequired = true)]
-        public string ServiceIdentifier { get; set; }
-    }
-
-    [Route("/service/wps/{serviceIdentifier}/rates/description", "GET", Summary = "GET service rates as opensearch", Notes = "")]
-    public class RatesForServiceDescriptionRequestTep : IReturn<HttpResult>{
+    [Route("/service/wps/{serviceIdentifier}/rates", "GET", Summary = "GET service rates as opensearch", Notes = "")]
+    public class RatesForServiceRequestTep : IReturn<List<WebRates>>{
         [ApiMember(Name = "serviceIdentifier", Description = "service Identifier", ParameterType = "path", DataType = "string", IsRequired = true)]
         public string ServiceIdentifier { get; set; }
     }
@@ -23,13 +17,13 @@ namespace Terradue.Tep.WebServer {
         public string ServiceIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{serviceIdentifier}/rates/{identifier}", "DELETE", Summary = "DELETE a rate", Notes = "")]
-    public class DeleteRatesFromServiceRequestTep : WebRates {
+    [Route("/service/wps/{serviceIdentifier}/rates/{id}", "DELETE", Summary = "DELETE a rate", Notes = "")]
+    public class DeleteRatesFromServiceRequestTep {
         [ApiMember(Name = "serviceIdentifier", Description = "service Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string ServiceIdentifier { get; set; }
 
-        [ApiMember(Name = "identifier", Description = "rates Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
-        public string Identifier { get; set; }
+        [ApiMember(Name = "id", Description = "rates ID", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int Id { get; set; }
     }
 
     public class WebRates : WebEntity {
