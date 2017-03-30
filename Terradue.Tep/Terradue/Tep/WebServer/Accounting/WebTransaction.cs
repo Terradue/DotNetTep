@@ -30,6 +30,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name="Balance", Description = "Transaction balance", ParameterType = "path", DataType = "double", IsRequired = false)]
         public double Balance { get; set; }
 
+        [ApiMember(Name = "Kind", Description = "Transaction kind", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int Kind { get; set; }
+
         public WebTransaction() {}
 
         public WebTransaction(Transaction entity){
@@ -37,6 +40,7 @@ namespace Terradue.Tep.WebServer {
             this.HumanReadableReference = entity.GetHumanReadableReference();
             this.LogTime = entity.LogTime;
             this.Balance = entity.Balance;
+            this.Kind = (int)entity.Kind;
         }
 
     }

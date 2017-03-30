@@ -562,6 +562,7 @@ namespace Terradue.Tep {
             transaction.UserId = this.Id;
             transaction.LogTime = DateTime.UtcNow;
             transaction.Balance = balance;
+            transaction.Kind = balance < 0 ? TransactionKind.Debit : TransactionKind.Credit;
             transaction.Store();
         }
 

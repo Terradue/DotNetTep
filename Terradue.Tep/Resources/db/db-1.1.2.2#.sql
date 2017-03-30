@@ -24,10 +24,9 @@ CREATE TABLE transaction (
     log_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date/time of activity creation',
     id_provider int unsigned NULL COMMENT 'FK: User',
     balance int COMMENT 'transaction balance',
-   	deposit boolean NOT NULL DEFAULT false COMMENT 'If true, transaction is a deposit',
+   	kind tinyint NOT NULL DEFAULT 0 COMMENT 'transaction kind',
     CONSTRAINT pk_transaction PRIMARY KEY (id),
-    CONSTRAINT fk_transaction_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE,
-    UNIQUE INDEX (reference)
+    CONSTRAINT fk_transaction_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE
 ) Engine=InnoDB COMMENT 'Accounting transactions';
 INSERT INTO type (pos, class, caption_sg, caption_pl, keyword) VALUES (@'0', 'Terradue.Tep.Transaction, Terradue.Tep', 'Transaction', 'Transactions', 'transaction');
 -- RESULT

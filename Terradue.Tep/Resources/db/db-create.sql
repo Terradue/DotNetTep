@@ -257,15 +257,14 @@ CREATE TABLE rate (
 CREATE TABLE transaction (
     id int unsigned NOT NULL auto_increment,
     id_usr int unsigned NOT NULL COMMENT 'FK: User',
-    reference varchar(50) NULL COMMENT 'Unique identifier',
+    reference varchar(50) NULL COMMENT 'reference',
     id_entity int unsigned COMMENT 'Entity associated to the activity',
     id_type int unsigned COMMENT 'Entity type',    
     log_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date/time of activity creation',
     id_provider int unsigned NULL COMMENT 'FK: User',
     balance int unsigned COMMENT 'transaction balance',
-    deposit boolean NOT NULL DEFAULT false COMMENT 'If true, transaction is a deposit',
+    kind tinyint NOT NULL DEFAULT 0 COMMENT 'transaction kind',
     CONSTRAINT pk_transaction PRIMARY KEY (id),
-    CONSTRAINT fk_transaction_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE,
-    UNIQUE INDEX (identifier)
+    CONSTRAINT fk_transaction_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE
 ) Engine=InnoDB COMMENT 'Accounting transactions';
 -- RESULT

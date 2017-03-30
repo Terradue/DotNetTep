@@ -72,8 +72,8 @@ namespace Terradue.Tep {
         /// Gets or sets a value indicating whether this <see cref="T:Terradue.Tep.Transaction"/> is deposit.
         /// </summary>
         /// <value><c>true</c> if deposit; otherwise, <c>false</c>.</value>
-        [EntityDataField("deposit")]
-        public bool Deposit { get; set; }
+        [EntityDataField("kind")]
+        public TransactionKind Kind { get; set; }
 
         public Transaction(IfyContext context) : base(context) {
         }
@@ -83,7 +83,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The human readable reference.</returns>
         public string GetHumanReadableReference() {
-            if (Entity != null) {
+            if (Entity != null && EntityId != 0) {
                 if (Entity is WpsJob) {
                     var job = WpsJob.FromId(context, EntityId);
                     return string.Format("Wpsjob '{0}'", job.Name);
@@ -94,6 +94,31 @@ namespace Terradue.Tep {
             return Identifier;
         }
 
+        /// <summary>
+        /// Gets the transaction balance.
+        /// </summary>
+        /// <returns>The transaction balance.</returns>
+        public double GetTransactionBalance() {
+            switch (Kind) { 
+                case TransactionKind.Credit:
+                return Balance;
+                case TransactionKind.ActiveDeposit:
+                case TransactionKind.Debit:
+                return -Balance;
+                case TransactionKind.ResolvedDeposit:
+                default:
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Is a deposit.
+        /// </summary>
+        /// <returns><c>true</c>, if transaction is a deposit, <c>false</c> otherwise.</returns>
+        public bool IsDeposit() {
+            return Kind == TransactionKind.ActiveDeposit || Kind == TransactionKind.ResolvedDeposit;
+        }
+
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
             AtomItem result = new AtomItem();
             if (Identifier != null) {
@@ -102,13 +127,22 @@ namespace Terradue.Tep {
                 result.Id = id.ToString();
                 result.Title = new TextSyndicationContent(GetHumanReadableReference());
                 result.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            } else { 
+                result.Title = new TextSyndicationContent("n/a");
             }
             result.ElementExtensions.Add("balance", "http://purl.org/dc/elements/1.1/", this.Balance);
             result.PublishDate = new DateTimeOffset(this.LogTime);
-            result.Categories.Add(new SyndicationCategory("deposit", null, Deposit.ToString()));
+            result.Categories.Add(new SyndicationCategory("kind", null, (int)Kind + ""));
 
             return result;
         }
+    }
+
+    public enum TransactionKind { 
+        Debit = 0, //the transaction is a debit (decrease the balance)
+        Credit = 1, //the transaction is a credit (increase the balance)
+        ActiveDeposit = 2, //the transaction is a deposit and is not resolved (we take the deposit into account in the balance)
+        ResolvedDeposit = 3 //the transaction is a deposit ans is resolved (we dont take the deposit into account anymore)
     }
 
     [DataContract]

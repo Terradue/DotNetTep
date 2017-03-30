@@ -68,7 +68,7 @@ namespace Terradue.Tep {
         public Transaction GetDepositTransaction(string reference) { 
             EntityList<Transaction> transactions = new EntityList<Transaction>(context);
             transactions.SetFilter("Identifier", reference);
-            transactions.SetFilter("Deposit", "true");
+            transactions.SetFilter("Kind", (int)TransactionKind.ActiveDeposit + "," + (int)TransactionKind.ResolvedDeposit);
             transactions.Load();
             var items = transactions.GetItemsAsList();
             return items.Count > 0 ? items[0] : null;
@@ -88,7 +88,7 @@ namespace Terradue.Tep {
 
                 //get all transactions without reference
                 List<Transaction> transactions = GetUserTransactions(user.Id, false, true);
-                foreach (var transaction in transactions) balance += transaction.Balance;
+                foreach (var transaction in transactions) balance += transaction.GetTransactionBalance();
 
                 //get all references
                 var references = GetTransactionsReferences(user.Id);
@@ -99,10 +99,9 @@ namespace Terradue.Tep {
                     double refBalance = 0;
                     var reftransactions = GetTransactionsByReference(reference);
                     foreach (var reftransaction in reftransactions) {
-                        if (reftransaction.Deposit) continue;
-                        refBalance += reftransaction.Balance;
+                        if (!reftransaction.IsDeposit()) refBalance += reftransaction.Balance;
                     }
-                    balance += GetBalanceByPolicy(refBalance, deposit.Balance);
+                    balance += GetBalanceWithDeposit(refBalance, deposit);
                 }
             } catch (Exception e) {
                 context.LogError(this, e.Message + "-" + e.StackTrace);
@@ -112,12 +111,14 @@ namespace Terradue.Tep {
             return balance;
         }
 
-        private double GetBalanceByPolicy(double balance, double deposit) {
+        private double GetBalanceWithDeposit(double balance, Transaction deposit) {
             //TODO: get policy and do calculation according to policy
             //default is we pay what we used, and never more than the deposit
-            if (balance < deposit) return deposit;
 
-            return deposit;
+            //if transaction is resolved, we return the minimum between the sum of transactions and the deposit
+            if (deposit.Kind == TransactionKind.ResolvedDeposit) return -Math.Min(balance, deposit.Balance);
+            //otherwise we return the value of the deposit and the sum of transactions is not taken into account
+            else return deposit.GetTransactionBalance();
         }
 
         /// <summary>
@@ -189,8 +190,8 @@ namespace Terradue.Tep {
                     transaction.Identifier = identifier;
                     transaction.LogTime = accounting.timestamp;
                     transaction.ProviderId = entityservice.OwnerId;
-                    transaction.Balance = -balance;
-                    transaction.Deposit = false;
+                    transaction.Balance = balance;
+                    transaction.Kind = TransactionKind.Debit;
                     transaction.Store();
                 }
             }

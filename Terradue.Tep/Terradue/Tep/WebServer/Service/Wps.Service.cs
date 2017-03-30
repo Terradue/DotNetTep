@@ -336,7 +336,11 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
-                        if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
+                        if (!(executeResponse is ExecuteResponse) 
+                            || ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType)
+                            || string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) return HandleWrongExecuteResponse(context, executeResponse);
+
+                        UpdateJobFromExecuteResponse(context, ref wpsjob, executeResponse as ExecuteResponse);
 
                         //We store the accounting deposit
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
@@ -347,22 +351,23 @@ namespace Terradue.Tep.WebServer.Services {
                         transaction.LogTime = DateTime.UtcNow;
                         transaction.ProviderId = wps.OwnerId;
                         transaction.Balance = double.Parse(quotation);
-                        transaction.Deposit = true;
+                        transaction.Kind = TransactionKind.ActiveDeposit;
                         transaction.Store();
                     }
                 } else { 
                     //case is not quotable
                     wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
                     executeResponse = wps.Execute(executeInput);
+
+                    if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
+
+                    UpdateJobFromExecuteResponse(context, ref wpsjob, executeResponse as ExecuteResponse);
                 }
 
-                if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
-                 
-                context.LogDebug(this,string.Format("Execute response ok"));
+
+                 context.LogDebug(this, string.Format("Execute response ok"));
+
                 var execResponse = executeResponse as ExecuteResponse;
-
-                UpdateJobFromExecuteResponse(context, ref wpsjob, execResponse);
-
                 Uri uri = new Uri(execResponse.serviceInstance);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
@@ -376,7 +381,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
-        private object HandleWrongExecuteResponse(IfyContext context, object executeResponse) { 
+        private object HandleWrongExecuteResponse(IfyContext context, object executeResponse) {
             if (executeResponse is ExceptionReport) {
                 var stream = new System.IO.MemoryStream();
                 context.LogDebug(this, string.Format("Exception report ok"));
@@ -388,9 +393,19 @@ namespace Terradue.Tep.WebServer.Services {
                     context.LogError(this, string.Format(errormsg));
                     return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
                 }
-            } else {
-                return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
+            } else if (executeResponse is ExecuteResponse) {
+                if ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType) {
+                    var processFailed = (executeResponse as ExecuteResponse).Status.Item as ProcessFailedType;
+                    string error = "Unknown error during the Execute";
+                    try {
+                        error = processFailed.ExceptionReport.Exception[0].ExceptionText[0];
+                    } catch (Exception) { }
+                    return new HttpError(error, HttpStatusCode.BadRequest, "NoApplicableCode", "");
+                } else if (string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) { 
+                    return new HttpError("Missing status location in the Execute response", HttpStatusCode.BadRequest, "NoApplicableCode", "");
+                }
             }
+            return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
         }
 
         private string CalculateMD5Hash(string input){
@@ -416,6 +431,13 @@ namespace Terradue.Tep.WebServer.Services {
             return new List<T2Accounting>();
         }
 
+        /// <summary>
+        /// Creates the job from execute input.
+        /// </summary>
+        /// <returns>The job from execute input.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="wps">Wps.</param>
+        /// <param name="executeInput">Execute input.</param>
         private WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput){
             context.LogDebug(this, string.Format("Creating job from execute request"));
             string newId = Guid.NewGuid().ToString();
@@ -437,6 +459,12 @@ namespace Terradue.Tep.WebServer.Services {
             return wpsjob;
         }
 
+        /// <summary>
+        /// Updates the job from execute response.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <param name="wpsjob">Wpsjob.</param>
+        /// <param name="execResponse">Exec response.</param>
         private void UpdateJobFromExecuteResponse(IfyContext context, ref WpsJob wpsjob, ExecuteResponse execResponse) {
             context.LogDebug(this, string.Format("Creating job from execute response"));
             Uri uri = new Uri(execResponse.statusLocation);
@@ -471,6 +499,36 @@ namespace Terradue.Tep.WebServer.Services {
             wpsjob.Store();
         }
 
+        /// <summary>
+        /// Updates the deposit transaction from job status.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <param name="entity">Entity.</param>
+        /// <param name="response">Response.</param>
+        private void UpdateDepositTransactionFromStatus(IfyContext context, Entity entity, object response) {
+            var tFactory = new TransactionFactory(context);
+            var deposit = tFactory.GetDepositTransaction(entity.Identifier);
+            if (deposit != null) {//we dont check the kind to allow potentially some resolved deposit to be reactivated
+                if (response is ExecuteResponse) {
+                    var execResponse = response as ExecuteResponse;
+                    if (execResponse.Status.Item != null &&
+                        (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType)) {
+                        deposit.Kind = TransactionKind.ActiveDeposit;
+                        deposit.Store();
+                    }
+                }
+                //in all other cases, we set the deposit as resolved
+                deposit.Kind = TransactionKind.ResolvedDeposit;
+                deposit.Store();
+            }
+        }
+
+        /// <summary>
+        /// Builds the wps job parameters.
+        /// </summary>
+        /// <returns>The wps job parameters.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="executeInput">Execute input.</param>
         private List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput){
             context.LogDebug(this, string.Format("Building job parameters from execute request"));
             List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
