@@ -557,12 +557,12 @@ namespace Terradue.Tep {
         /// Adds the accounting transaction.
         /// </summary>
         /// <param name="balance">Balance.</param>
-        public void AddAccountingTransaction(double balance) {
+        public void AddAccountingTransaction(double balance, TransactionKind kind) {
             var transaction = new Transaction(context);
             transaction.UserId = this.Id;
             transaction.LogTime = DateTime.UtcNow;
-            transaction.Balance = balance;
-            transaction.Kind = balance < 0 ? TransactionKind.Debit : TransactionKind.Credit;
+            transaction.Balance = Math.Abs(balance);
+            transaction.Kind = kind;
             transaction.Store();
         }
 

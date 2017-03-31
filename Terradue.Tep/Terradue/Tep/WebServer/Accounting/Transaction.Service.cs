@@ -23,7 +23,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/transaction/user POST Identifier='{0}', Balance='{1}'", request.Identifier, request.Balance));
 
                 UserTep user = UserTep.FromIdentifier(context, request.Identifier);
-                user.AddAccountingTransaction(request.Balance);
+                user.AddAccountingTransaction(request.Balance, (TransactionKind)request.Kind);
 
                 result = new WebUserTep(context, user);
                 context.Close();
