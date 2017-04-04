@@ -128,9 +128,6 @@ namespace Terradue.Tep.WebServer {
         /// <param name="entity">Entity.</param>
         public WebDataPackageTep(DataPackage entity, IfyContext context = null) : base(entity)
         {
-            this.Id = entity.Id;
-            this.Name = entity.Name;
-            this.Identifier = entity.Identifier;
             this.AccessKey = entity.AccessKey;
             this.IsPublic = entity.IsPublic();
             this.Items = new List<WebDataPackageItem>();
@@ -156,6 +153,7 @@ namespace Terradue.Tep.WebServer {
             result.Name = this.Name;
             result.Identifier = this.Identifier;
             if (!string.IsNullOrEmpty (this.DomainId)) result.DomainId = Int32.Parse (this.DomainId);
+            result.Kind = this.Kind;
             result.Items = new EntityList<RemoteResource>(context);
             result.Items.Template.ResourceSet = result;
             if (this.Items != null) {
