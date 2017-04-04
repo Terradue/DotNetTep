@@ -56,6 +56,17 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
 
+            //get thematic apps without any domain
+            var apps = new EntityList<ThematicApplication>(context);
+            apps.SetFilter("DomainId", SpecialSearchValue.Null);
+            apps.Load();
+            foreach (var app in apps) {
+                app.LoadItems();
+                foreach (var item in app.Items) {
+                    osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose));
+                }
+            }
+
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
