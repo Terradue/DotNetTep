@@ -59,6 +59,7 @@ namespace Terradue.Tep.WebServer.Services {
             //get thematic apps without any domain
             var apps = new EntityList<ThematicApplication>(context);
             apps.SetFilter("DomainId", SpecialSearchValue.Null);
+            apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
             apps.Load();
             foreach (var app in apps) {
                 app.LoadItems();
