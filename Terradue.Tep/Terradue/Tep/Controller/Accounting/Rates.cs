@@ -12,7 +12,7 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepAccounting
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    [EntityTable("rate", EntityTableConfiguration.Custom, IdentifierField = "identifier")]
+    [EntityTable("rate", EntityTableConfiguration.Custom, IdentifierField = "identifier", AutoCheckIdentifiers = false)]
     public class Rates : Entity {
 
         /// <summary>
