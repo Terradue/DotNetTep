@@ -34,12 +34,13 @@ namespace Terradue.Tep.WebServer.Services{
                 if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
 
                 User user = string.IsNullOrEmpty(request.Username) ? User.FromId (context, context.UserId) : User.FromUsername(context, request.Username);
-                Role role = Role.FromIdentifier (context, string.IsNullOrEmpty (request.Role) ? RoleTep.MEMBER : request.Role);
-                context.LogInfo (this, string.Format ("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
                 //we use administrator access level to be able to load the community
                 context.AccessLevel = EntityAccessLevel.Administrator;
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
+
+                Role role = Role.FromIdentifier(context, string.IsNullOrEmpty(request.Role) ? domain.DefaultRoleName : request.Role);
+                context.LogInfo(this, string.Format("/community/user POST Identifier='{0}', Username='{1}', Role='{2}'", request.Identifier, user.Username, role.Identifier));
 
                 if (string.IsNullOrEmpty(request.Username)) {
                     //case user auto Join 

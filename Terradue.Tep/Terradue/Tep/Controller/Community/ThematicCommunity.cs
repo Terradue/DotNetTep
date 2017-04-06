@@ -174,7 +174,7 @@ namespace Terradue.Tep {
             if (this.Kind == DomainKind.Public) {
                 //public community -> user can always join
                 context.LogInfo(this, string.Format("Joining user {0} to PUBLIC community {1}", context.Username, this.Identifier));
-                Role role = Role.FromIdentifier(context, RoleTep.MEMBER);
+                Role role = Role.FromIdentifier(context, this.DefaultRoleName);
                 role.GrantToUser(context.UserId, this.Id);
             } else {
                 //other communities, it means the user has been invited and must be on pending table
