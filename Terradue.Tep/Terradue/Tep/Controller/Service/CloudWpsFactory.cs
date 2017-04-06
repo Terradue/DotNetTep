@@ -125,61 +125,8 @@ namespace Terradue.Tep {
                     foreach (VM vm in pool.VM) {
                         if(vm.USER_TEMPLATE == null) continue;
                         try{
-                            XmlNode[] user_template = (XmlNode[])vm.USER_TEMPLATE;
-                            bool isWPS = false, isSandbox = true;
-                            List<string> tags = new List<string>();
-                            foreach(XmlNode nodeUT in user_template){
-                                if (nodeUT.Name == "WPS") {
-                                    context.LogDebug(this, string.Format("WPS found : {0} - {1}", vm.ID, vm.GNAME));
-                                    isWPS = true;
-                                } else if (nodeUT.Name == "OPERATIONAL") {
-                                    context.LogDebug(this, string.Format("Operational VM found : {0} - {1}", vm.ID, vm.GNAME));
-                                    isSandbox = false;
-                                } else if (nodeUT.Name == "TAGS") {
-                                    tags = nodeUT.Value.Split(',').ToList(); 
-                                }
-                            }
-                            if (isWPS) {
-                                //check query parameters
-                                if (parameters != null){
-                                    //case sandbox
-                                    if(parameters["sandbox"] != null) {
-                                        switch (parameters["sandbox"]) { 
-                                            case "true":
-                                            if (!isSandbox) continue;
-                                            break;
-                                            case "false":
-                                            if (isSandbox) continue;
-                                            break;
-                                            default:
-                                            break;
-                                        }
-                                    }
-                                    //case hostname
-                                    if (parameters["hostname"] != null) {
-                                        string baseurl = null;
-                                        XmlNode[] template = (XmlNode[])vm.TEMPLATE;
-                                        foreach (XmlNode nodeT in template) {
-                                            if (nodeT.Name == "NIC") {
-                                                baseurl = nodeT["IP"].InnerText;
-                                                break;
-                                            }
-                                        }
-                                        var uriHost = new UriBuilder(baseurl);
-                                        var r = new System.Text.RegularExpressions.Regex(parameters["hostname"]);
-                                        var m = r.Match(uriHost.Host);
-                                        if (!m.Success) continue;
-                                    }
-                                    //case tags
-                                    if (parameters["tags"] != null) {
-                                        if (tags == null || !tags.Contains(parameters["tags"])) continue;
-                                    }
-                                }
-                                var wps = CreateWpsProviderForOne (context, vm);
-                                wps.IsSandbox = isSandbox;
-                                wps.Tags = tags;
-                                result.Add (wps);
-                            }
+                            var wps = CreateWpsProviderForOne (context, vm, parameters);
+                            if(wps != null) result.Add (wps);
                         }catch(Exception e){
 
                         }
@@ -207,24 +154,97 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The wps provider</returns>
         /// <param name="vm">Virtual machine object.</param>
-        public static WpsProvider CreateWpsProviderForOne(IfyContext context, VM vm){
+        public static WpsProvider CreateWpsProviderForOne(IfyContext context, VM vm, NameValueCollection parameters = null){
             context.LogDebug (context, "VM id = " + vm.ID);
             context.LogDebug (context, "VM name = " + vm.GNAME);
             WpsProvider wps = new WpsProvider(context);
             wps.Name = vm.NAME;
             wps.Identifier = "one-" + vm.ID;
+            wps.Description = vm.NAME + " by " + vm.UNAME + " from laboratory " + vm.GNAME;
             wps.Proxy = true;
-                
-            wps.Description = vm.NAME + " by " +vm.UNAME + " from laboratory " + vm.GNAME;
-            XmlNode[] template = (XmlNode[])vm.TEMPLATE;
-            foreach (XmlNode nodeT in template) {
-                context.LogDebug (context, "node name = " + nodeT.Name);
-                if (nodeT.Name == "NIC") {
-                    wps.BaseUrl = String.Format("http://{0}:8080/wps/WebProcessingService" , nodeT["IP"].InnerText);
-                    context.LogDebug (context, "wpsbaseurl = " + wps.BaseUrl);
+            wps.IsSandbox = true;
+            wps.Tags = new List<string>();
+
+            XmlNode[] user_template = (XmlNode[])vm.USER_TEMPLATE;
+            bool isWPS = false;
+            string wpsPort = "8080", wpsPath = "wps/WebProcessingService", nic = "";
+
+            context.LogDebug(wps, "Loading user template");
+            foreach (XmlNode nodeUT in user_template) {
+                switch (nodeUT.Name) { 
+                    case "WPS":
+                    context.LogDebug(wps, string.Format("WPS found : {0} - {1}", vm.ID, vm.GNAME));
+                    isWPS = true;
+                    break;
+                    case "OPERATIONAL":
+                    context.LogDebug(wps, string.Format("Operational VM found : {0} - {1}", vm.ID, vm.GNAME));
+                    wps.IsSandbox = false;
+                    break;
+                    case "TAGS":
+                    context.LogDebug(wps, string.Format("Tags found : {0} - {1} : {2}", vm.ID, vm.GNAME, nodeUT.InnerText));
+                    wps.Tags = nodeUT.InnerText.Split(',').ToList();
+                    break;
+                    case "LOGO":
+                    context.LogDebug(wps, string.Format("Logo found : {0} - {1} : {2}", vm.ID, vm.GNAME, nodeUT.InnerText));
+                    wps.IconUrl = nodeUT.InnerText;
+                    break;
+                    case "WPS_PORT":
+                    context.LogDebug(wps, string.Format("Wps Port found : {0} - {1} : {2}", vm.ID, vm.GNAME, nodeUT.InnerText));
+                    wpsPort = nodeUT.InnerText;
+                    break;
+                    case "WPS_PATH":
+                    context.LogDebug(wps, string.Format("Wps Path found : {0} - {1} : {2}", vm.ID, vm.GNAME, nodeUT.InnerText));
+                    wpsPath= nodeUT.InnerText;
+                    break;
+                    default:
                     break;
                 }
-                //TODO: get categories (see with cesare)
+            }
+
+            context.LogDebug(wps, "Loading template");
+            foreach (XmlNode nodeT in (XmlNode[])vm.TEMPLATE) {
+                context.LogDebug(context, "node name = " + nodeT.Name);
+                switch (nodeT.Name) { 
+                    case "NIC":
+                    nic = nodeT["IP"].InnerText;
+                    break;
+                    default:
+                    break;
+                }
+            }
+
+            wps.BaseUrl = String.Format("http://{0}:{1}/{2}", nic, wpsPort, wpsPath);
+            context.LogDebug(context, "wpsbaseurl = " + wps.BaseUrl);
+
+            if (isWPS) {
+                //check query parameters
+                if (parameters != null) {
+                    //case sandbox
+                    if (parameters["sandbox"] != null) {
+                        switch (parameters["sandbox"]) {
+                        case "true":
+                            if (!wps.IsSandbox) return null;
+                            break;
+                        case "false":
+                            if (wps.IsSandbox) return null;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                    //case hostname
+                    if (parameters["hostname"] != null) {
+                        var uriHost = new UriBuilder(nic);
+                        var r = new System.Text.RegularExpressions.Regex(parameters["hostname"]);
+                        var m = r.Match(uriHost.Host);
+                        if (!m.Success) return null;
+                    }
+                    //case tags
+                    if (parameters["tags"] != null) {
+                        if (wps.Tags == null || !wps.Tags.Contains(parameters["tags"])) return null;
+                    }
+                }
+            
             }
             return wps;
         }
