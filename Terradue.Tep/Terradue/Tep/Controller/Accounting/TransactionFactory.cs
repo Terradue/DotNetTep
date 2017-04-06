@@ -79,7 +79,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The user balance.</returns>
         /// <param name="user">User.</param>
-        public double GetUserBalance(User user) { 
+        public double GetUserBalance(User user) {
             double balance = 0;
             try {
 
@@ -202,7 +202,7 @@ namespace Terradue.Tep {
             return accoutings;//TODO: remove
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/{1}/{2}{3}",
                                                                                      context.GetConfigValue("t2-accounting-baseurl"),
-                                                                                     "",
+                                                                                     context.GetConfigValue("SiteName").Replace(" ",""),
                                                                                      username,
                                                                                      timestamp != DateTime.MinValue ? "?startDate=" + timestamp.ToString("s") : ""));
             request.Method = "GET";

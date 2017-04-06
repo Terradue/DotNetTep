@@ -550,6 +550,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The accounting balance.</returns>
         public double GetAccountingBalance() {
+            if (!context.GetConfigBooleanValue("enableAccounting")) return 0;
             return TransactionFactory.GetUserBalance(this);
         }
 
