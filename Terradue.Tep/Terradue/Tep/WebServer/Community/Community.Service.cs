@@ -104,7 +104,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
-                if (!domain.IsUserOwner(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
+                if (!domain.CanUserManage(context.UserId)) throw new UnauthorizedAccessException ("Action only allowed to manager of the domain");
 
                 domain = request.ToEntity(context, domain);
                 domain.Store ();
@@ -208,7 +208,7 @@ namespace Terradue.Tep.WebServer.Services{
                 context.Open();
                 context.LogInfo(this,string.Format("/community/{{Identifier}} DELETE Identifier='{0}'", request.Identifier));
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
-                if (domain.IsUserOwner(context.UserId)) domain.Delete();
+                if (domain.CanUserManage(context.UserId)) domain.Delete();
                 else throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
                 context.LogDebug(this,string.Format("Community {0} deleted by user {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
                 context.Close();

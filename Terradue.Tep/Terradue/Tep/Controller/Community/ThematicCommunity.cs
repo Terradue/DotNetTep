@@ -120,6 +120,15 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Can the user manage.
+        /// </summary>
+        /// <returns><c>true</c>, if user can manage, <c>false</c> otherwise.</returns>
+        /// <param name="userid">Userid.</param>
+        public bool CanUserManage(int userid) {
+            return IsUserOwner(userid) || (context.AccessLevel == EntityAccessLevel.Administrator);
+        }
+
+        /// <summary>
         /// Gets the owner (or manager) of the Community
         /// </summary>
         /// <returns>The owner.</returns>
@@ -154,7 +163,7 @@ namespace Terradue.Tep {
         /// <param name="role">Role.</param>
         public void SetUserRole(User user, Role role) {
             //only owner can do this
-            if (!IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
+            if (!CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
 
             context.LogInfo(this, string.Format("Set role {0} to user {1} for community {2}", role.Identifier, user.Username, this.Identifier));
 
@@ -215,7 +224,7 @@ namespace Terradue.Tep {
         /// <param name="roleId">Role identifier.</param>
         public void SetUserAsTemporaryMember(User user, int roleId) {
             //only owner can do this
-            if (!IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
+            if (!CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
 
             //to set as temporary user we give a temporary pending role
             Role role = Role.FromIdentifier(context, RoleTep.PENDING);
@@ -277,7 +286,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="user">User.</param>
         public void RemoveUser(User user) {
-            if (context.UserId != user.Id && !IsUserOwner(context.UserId)) throw new UnauthorizedAccessException("Only owner can remove users");
+            if (context.UserId != user.Id && !CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can remove users");
 
             //delete previous role(s)
             var uroles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
