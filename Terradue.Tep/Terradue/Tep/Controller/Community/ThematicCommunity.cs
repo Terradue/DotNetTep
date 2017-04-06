@@ -32,6 +32,26 @@ namespace Terradue.Tep {
         [EntityDataField("discuss")]
         public string DiscussCategory { get; set; }
 
+        [EntityDataField("id_role_default")]
+        public int DefaultRoleId { get; set; }
+
+        private Role defaultRole;
+        public string DefaultRoleName { 
+            get {
+                if (defaultRole == null && DefaultRoleId != 0) {
+                    defaultRole = Role.FromId(context, DefaultRoleId);
+                }
+                if (defaultRole != null) return defaultRole.Identifier;
+                return Role.FromIdentifier(context, RoleTep.MEMBER).Identifier;
+            }
+            set {
+                if (value != null) {
+                    defaultRole = Role.FromIdentifier(context, value);
+                    DefaultRoleId = defaultRole.Id;
+                }
+            }
+        }
+
         private List<UserTep> owners;
         public List<UserTep> Owners {
             get {
@@ -424,6 +444,7 @@ namespace Terradue.Tep {
             }
 
             result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : "private"));
+            result.Categories.Add(new SyndicationCategory("defaultRole", null, DefaultRoleName));
 
             //overview
             var roles = new EntityList<Role>(context);

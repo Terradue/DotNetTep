@@ -60,6 +60,9 @@ namespace Terradue.Tep
         [ApiMember(Name = "DiscussCategory", Description = "Discuss category", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string DiscussCategory { get; set; }
 
+        [ApiMember(Name = "DefaultRole", Description = "Default role", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string DefaultRole { get; set; }
+
         public WebCommunityTep() {}
 
         /// <summary>
@@ -70,6 +73,7 @@ namespace Terradue.Tep
             Apps = entity.AppsLink;
             DiscussCategory = entity.DiscussCategory;
             Name = entity.Name ?? entity.Identifier;
+            DefaultRole = entity.DefaultRoleName;
         }
 
         /// <summary>
@@ -86,6 +90,7 @@ namespace Terradue.Tep
             entity.IconUrl = IconeUrl;
             entity.Identifier = TepUtility.ValidateIdentifier(Identifier);
             entity.Name = Name;
+            entity.DefaultRoleName = DefaultRole;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
         }
