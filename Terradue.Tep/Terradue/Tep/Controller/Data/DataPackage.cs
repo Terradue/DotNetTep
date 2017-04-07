@@ -399,15 +399,15 @@ namespace Terradue.Tep {
         }
 
         public override IOpenSearchable[] GetOpenSearchableArray() {
-            //List<SmartGenericOpenSearchable> osResources = new List<SmartGenericOpenSearchable>(Resources.Count);
-            List<UrlBasedOpenSearchable> osResources = new List<UrlBasedOpenSearchable>(Resources.Count);
+            List<SmartGenericOpenSearchable> osResources = new List<SmartGenericOpenSearchable>(Resources.Count);
+            //List<UrlBasedOpenSearchable> osResources = new List<UrlBasedOpenSearchable>(Resources.Count);
 
 
 
             foreach (RemoteResource res in Resources) {
                 if (string.IsNullOrEmpty(res.Location)) continue;
-                //var entity = new SmartGenericOpenSearchable(new OpenSearchUrl(res.Location), ose);
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
+                var entity = new SmartGenericOpenSearchable(new OpenSearchUrl(res.Location), ose);
+                //var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
 
                 osResources.Add(entity);
             }
