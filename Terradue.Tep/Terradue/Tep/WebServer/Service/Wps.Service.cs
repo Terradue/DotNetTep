@@ -577,6 +577,7 @@ namespace Terradue.Tep.WebServer.Services {
                 ExecuteResponse execResponse = null;
 
                 var jobresponse = wpsjob.GetStatusLocationContent ();
+                UpdateDepositTransactionFromStatus(context, wpsjob, jobresponse);
                 if (jobresponse is HttpResult) return jobresponse;
                 else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                 else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
