@@ -38,9 +38,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Web.XmlTransform">
       <HintPath>..\packages\Microsoft.Web.Xdt.2.1.1\lib\net40\Microsoft.Web.XmlTransform.dll</HintPath>
     </Reference>
@@ -73,9 +70,6 @@
     </Reference>
     <Reference Include="Terradue.Util">
       <HintPath>..\packages\Terradue.Util.1.4.0\lib\net40\Terradue.Util.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.14.2\lib\net40\Terradue.OpenSearch.dll</HintPath>
     </Reference>
     <Reference Include="GeoAPI">
       <HintPath>..\packages\GeoAPI.1.7.4\lib\net45\GeoAPI.dll</HintPath>
@@ -117,17 +111,23 @@
       <HintPath>..\packages\Terradue.GeoJson.1.8.6250\lib\net45\Terradue.GeoJson.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.3\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.3\lib\net45\Terradue.Portal.Agent.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.3\lib\net45\Terradue.Portal.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.ServiceModel.Ogc.OwsContext">
       <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.1.2\lib\net45\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.7.12\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.7.12\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.7.12\lib\net45\Terradue.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch">
+      <HintPath>..\packages\Terradue.OpenSearch.1.14.6\lib\net40\Terradue.OpenSearch.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +140,9 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <None Include="core\db\db-create.sql" />
+    <None Include="core\db\db-2.7.9#.sql" />
+    <None Include="core\db\db-2.7.8#.sql" />
+    <None Include="core\db\db-2.7.4#.sql" />
     <None Include="core\db\db-2.7.3.2#.sql" />
     <None Include="core\db\db-2.7.3.1#.sql" />
     <None Include="core\db\db-2.7.3#.sql" />
