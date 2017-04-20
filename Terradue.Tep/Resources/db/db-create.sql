@@ -1,4 +1,4 @@
--- VERSION 1.1.2.4
+-- VERSION 1.1.2.5
 
 USE $MAIN$;
 
@@ -267,4 +267,8 @@ CREATE TABLE transaction (
     CONSTRAINT pk_transaction PRIMARY KEY (id),
     CONSTRAINT fk_transaction_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE
 ) Engine=InnoDB COMMENT 'Accounting transactions';
+-- RESULT
+
+-- Adding Agent action...\
+INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`) VALUES ('wpsSynchro', 'Synchronize WPS', 'This action synchronize the wps providers stored in db', 'Terradue.Tep.Actions, Terradue.Tep', 'UpdateWpsProviders');
 -- RESULT
