@@ -275,6 +275,7 @@
     <Compile Include="Terradue\Tep\WebServer\Accounting\WebRates.cs" />
     <Compile Include="Terradue\Tep\WebServer\Accounting\Rates.Service.cs" />
     <Compile Include="Terradue\Tep\WebServer\Agent\Actions.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\CatalogueFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
