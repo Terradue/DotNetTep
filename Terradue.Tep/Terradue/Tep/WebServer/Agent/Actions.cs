@@ -14,7 +14,7 @@ namespace Terradue.Tep {
 
             foreach(var provider in wpsProviders.GetItemsAsList()){
                 context.LogInfo(new Actions(), string.Format("AGENT -- WPS {0} - Auto synchro = {1}",provider.Name, provider.AutoSync ? "true" : "false"));
-                if (provider.AutoSync) provider.UpdateProcessOfferings();
+                if (provider.AutoSync) provider.UpdateProcessOfferings(true);
             }
         }
     }
