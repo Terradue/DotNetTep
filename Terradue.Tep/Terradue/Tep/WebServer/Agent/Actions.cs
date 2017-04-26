@@ -14,8 +14,14 @@ namespace Terradue.Tep {
                 wpsProviders.Load();
 
                 foreach (var provider in wpsProviders.GetItemsAsList()) {
-                    context.WriteInfo(string.Format("UpdateWpsProviders -- WPS {0} - Auto synchro = {1}", provider.Name, provider.AutoSync ? "true" : "false"));
-                    if (provider.AutoSync) provider.UpdateProcessOfferings(true);
+                    if (provider.AutoSync) {
+                        try {
+                            provider.UpdateProcessOfferings(true);
+                            context.WriteInfo(string.Format("UpdateWpsProviders -- Auto synchro done for WPS {0}", provider.Name));
+                        } catch (Exception e) {
+                            context.WriteError(string.Format("UpdateWpsProviders -- {0} - {1}", e.Message, e.StackTrace));
+                        }
+                    }   
                 }
             } catch (Exception e) {
                 context.WriteError(string.Format("UpdateWpsProviders -- {0} - {1}", e.Message, e.StackTrace));
