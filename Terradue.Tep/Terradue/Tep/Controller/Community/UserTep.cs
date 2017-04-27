@@ -560,7 +560,7 @@ namespace Terradue.Tep {
         /// <param name="balance">Balance.</param>
         public void AddAccountingTransaction(double balance, TransactionKind kind) {
             var transaction = new Transaction(context);
-            transaction.UserId = this.Id;
+            transaction.OwnerId = this.Id;
             transaction.LogTime = DateTime.UtcNow;
             transaction.Balance = Math.Abs(balance);
             transaction.Kind = kind;
