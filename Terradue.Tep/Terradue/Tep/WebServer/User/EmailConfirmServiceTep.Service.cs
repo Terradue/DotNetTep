@@ -65,12 +65,16 @@ namespace Terradue.Tep.WebServer.Services {
                     context.LogDebug(this,string.Format("User now logged -- Email confirmed"));
 
                     //send an email to Support to warn them
-                    string emailFrom = context.GetConfigValue("MailSenderAddress");
-                    string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
-                    string body = context.GetConfigValue ("EmailConfirmedNotification");
-                    body = body.Replace ("$(USERNAME)", umssoUser.Username);
-                    body = body.Replace ("$(EMAIL)", umssoUser.Email);
-                    context.SendMail(emailFrom, emailFrom, subject, body);
+                    try {
+                        string emailFrom = context.GetConfigValue("MailSenderAddress");
+                        string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
+                        string body = context.GetConfigValue("EmailConfirmedNotification");
+                        body = body.Replace("$(USERNAME)", umssoUser.Username);
+                        body = body.Replace("$(EMAIL)", umssoUser.Email);
+                        context.SendMail(emailFrom, emailFrom, subject, body);
+                    } catch (Exception e1) { 
+                        context.LogError(this, e1.Message);
+                    }
                 } else {
                     context.LogError(this, e.Message);
                     throw e;
