@@ -27,7 +27,7 @@ namespace Terradue.Tep.WebServer.Services{
         /// </summary>
         /// <param name="request">Request.</param>
         public object Post (CommunityAddUserRequestTep request) {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
 
             try {
                 context.Open ();
@@ -66,7 +66,7 @@ namespace Terradue.Tep.WebServer.Services{
         /// <param name="request">Request.</param>
         public object Put (CommunityUpdateUserRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
 
             try {
                 context.Open ();
@@ -94,7 +94,7 @@ namespace Terradue.Tep.WebServer.Services{
 
         public object Put (CommunityUpdateRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
 
             try {
                 context.Open ();
@@ -121,7 +121,7 @@ namespace Terradue.Tep.WebServer.Services{
 
         public object Delete (CommunityRemoveUserRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
 
             try {
                 context.Open ();
@@ -203,7 +203,7 @@ namespace Terradue.Tep.WebServer.Services{
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(CommunityDeleteRequest request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/community/{{Identifier}} DELETE Identifier='{0}'", request.Identifier));
