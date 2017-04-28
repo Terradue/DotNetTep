@@ -114,7 +114,7 @@ namespace Terradue.Tep {
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         public List<WpsProvider> GetWPSFromVMs(NameValueCollection parameters = null){
             if (context.UserId == 0) return new List<WpsProvider>();
-            if (parameters != null && !string.IsNullOrEmpty(parameters["cloud"]) && parameters["cloud"] == "true") return new List<WpsProvider>();
+            if (parameters != null && !string.IsNullOrEmpty(parameters["cloud"]) && parameters["cloud"] == "false") return new List<WpsProvider>();
 
             List<WpsProvider> result = new List<WpsProvider>();
             try{
