@@ -15,6 +15,7 @@ using Terradue.ServiceModel.Syndication;
 using Terradue.OpenSearch;
 using System.Collections.Specialized;
 using Terradue.Portal.OpenSearch;
+using System.Linq;
 
 namespace Terradue.Tep {
 
@@ -147,9 +148,9 @@ namespace Terradue.Tep {
             else return null;
         }
 
-        public static UserTep GetPublicUser(IfyContext context, int id) {
+        public static UserTep GetPublicUser(IfyContext context, string identifier) {
             context.AccessLevel = EntityAccessLevel.Administrator;
-            UserTep usr = new UserTep(context, User.FromId(context, id));
+            UserTep usr = UserTep.FromIdentifier(context, identifier);
             return usr;
         }
 
@@ -541,6 +542,32 @@ namespace Terradue.Tep {
             avatarusername = avatarusername.Replace(" ", "");
             if (avatarusername.Contains("@") || avatarusername.Contains("?") || avatarusername.Contains("&")) avatarusername = "na";
             return string.Format("{0}/user_avatar/discuss.terradue.com/{1}/50/45_1.png", context.GetConfigValue("discussBaseUrl"), avatarusername);
+        }
+
+        /// <summary>
+        /// Gets the user communities.
+        /// </summary>
+        /// <returns>The user communities.</returns>
+        public List<ThematicCommunity> GetUserCommunities() { 
+            if (context.UserId == 0) return new List<ThematicCommunity>();
+
+            //CommunityCollection domains = new CommunityCollection(context);
+            //domains.LoadRestricted(new DomainKind[] { DomainKind.Public, DomainKind.Private });
+            //return domains.GetItemsAsList();
+
+            EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity>(context);
+            domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+            domains.Load();
+            return domains.GetItemsAsList();
+        }
+
+        /// <summary>
+        /// Gets the user roles.
+        /// </summary>
+        /// <returns>The user roles.</returns>
+        /// <param name="domain">Domain.</param>
+        public List<Role> GetUserRoles(Domain domain) {
+            return Role.GetUserRolesForDomain(context, this.Id, domain.Id).ToList();
         }
 
         #region ACCOUNTING

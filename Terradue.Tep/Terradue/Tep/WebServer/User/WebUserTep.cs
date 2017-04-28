@@ -124,6 +124,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "balance", Description = "User accounting balance", ParameterType = "query", DataType = "double", IsRequired = false)]
         public double Balance { get; set; }
 
+        [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<List<string>>", IsRequired = false)]
+        public List<WebCommunityRoles> Roles { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
         /// </summary>
@@ -143,6 +146,8 @@ namespace Terradue.Tep.WebServer {
             //only current user can know the api key
             if(context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
             this.Balance = entity.GetAccountingBalance();
+
+            this.Roles = GetUserCommunityRoles(context, entity);
         }
 
         /// <summary>
@@ -156,7 +161,40 @@ namespace Terradue.Tep.WebServer {
 
             return user;
         }
+
+        public List<WebCommunityRoles> GetUserCommunityRoles(IfyContext context, UserTep entity) { 
+            var communityroles = new List<WebCommunityRoles>();
+            try {
+                var communities = entity.GetUserCommunities();
+                foreach (var community in communities) {
+                    try {
+                        var roles = entity.GetUserRoles(community);
+                        var webroles = new List<WebRole>();
+                        foreach (var role in roles) webroles.Add(new WebRole(role));
+                        if (webroles.Count > 0) {
+                            communityroles.Add(new WebCommunityRoles {
+                                Community = community.Name,
+                                Roles = webroles
+                            });
+                        }
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
+                }
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+            }
+            return communityroles;
+        }
             
+    }
+
+    public class WebCommunityRoles {
+        [ApiMember(Name = "community", Description = "community name", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Community { get; set; }
+
+        [ApiMember(Name = "roles", Description = "community roles", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
+        public List<WebRole> Roles { get; set; }
     }
 }
 

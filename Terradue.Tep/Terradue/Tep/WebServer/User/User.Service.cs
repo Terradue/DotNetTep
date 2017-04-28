@@ -156,9 +156,9 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/{{id}}/public GET Id='{0}'", request.id));
+                context.LogInfo(this,string.Format("/user/{{id}}/public GET Id='{0}'", request.identifier));
                 context.AccessLevel = EntityAccessLevel.Administrator;
-                UserTep user = UserTep.GetPublicUser(context, request.id);
+                UserTep user = UserTep.GetPublicUser(context, request.identifier);
                 result = new WebUserProfileTep(context, user);
                 context.Close();
             } catch (Exception e) {
