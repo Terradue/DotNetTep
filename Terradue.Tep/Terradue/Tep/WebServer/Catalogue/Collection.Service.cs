@@ -47,7 +47,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(SerieGetRequestTep request) {
             WebDataCollectionTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/data/collection/{{Id}} GET Id='{0}'", request.Id));

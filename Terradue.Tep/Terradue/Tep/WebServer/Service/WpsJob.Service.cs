@@ -24,7 +24,7 @@ namespace Terradue.Tep.WebServer.Services {
     public class WpsJobServiceTep : ServiceStack.ServiceInterface.Service {
 
         public object Get(WpsJobsGetRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<WebWpsJobTep> result = new List<WebWpsJobTep>();
             try {
                 context.Open();
@@ -49,7 +49,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(WpsJobGetOneRequestTep request){
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebWpsJobTep result = new WebWpsJobTep();
             try {
                 context.Open();
@@ -177,7 +177,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(WpsJobCreateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
@@ -219,7 +219,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(WpsJobUpdateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
             context.LogInfo(this,string.Format("/job/wps PUT Id='{0}'",request.Id));
 
@@ -257,7 +257,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(WpsJobDeleteRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             bool result = false;
             try {
                 context.Open();

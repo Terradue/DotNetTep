@@ -85,7 +85,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(PostDiscourseTopic request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             string result;
             try {
                 context.Open();

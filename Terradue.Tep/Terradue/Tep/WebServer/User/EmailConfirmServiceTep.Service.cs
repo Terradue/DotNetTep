@@ -92,7 +92,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(SendUserEmailConfirmationEmail request) {
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 
             try {
                 context.Open();

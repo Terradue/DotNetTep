@@ -61,7 +61,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateFeature request) {
             WebFeature result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
 
@@ -84,7 +84,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateFeature request) {
             WebFeature result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/feature PUT Id='{0}'", request.Id));
@@ -106,7 +106,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(SortFeature request) {
             WebFeature result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/feature/sort PUT"));
@@ -127,7 +127,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteFeature request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/feature DELETE Id='{0}'", request.Id));
@@ -144,7 +144,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(UploadFeatureImage request){
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             string img = "";
             string uid = Guid.NewGuid().ToString();
             string extension = ".png";

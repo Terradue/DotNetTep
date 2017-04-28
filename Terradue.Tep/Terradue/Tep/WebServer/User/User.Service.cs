@@ -29,7 +29,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetRequestTep request) {
             WebUserTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{Id}} GET Id='{0}'", request.Id));
@@ -153,7 +153,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetPublicProfileRequestTep request) {
             WebUserProfileTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{id}}/public GET Id='{0}'", request.id));
@@ -199,7 +199,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetPublicProfilesRequestTep request) {
             List<WebUserProfileTep> result = new List<WebUserProfileTep>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/public GET"));
@@ -221,7 +221,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the users</returns>
         public object Get(GetUsers request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<WebUser> result = new List<WebUser>();
             try {
                 context.Open();
@@ -313,7 +313,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(UserCreateRequestTep request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebUserTep result;
             try{
                 context.Open();
@@ -427,7 +427,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetUsageRequestTep request){
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{id}}/usage GET id='{0}'", request.Id));
@@ -467,7 +467,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get (UserSearchRequest request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
             context.Open ();
             context.LogInfo (this, string.Format ("/user/search GET"));
 

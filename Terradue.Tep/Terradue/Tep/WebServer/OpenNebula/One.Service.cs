@@ -19,7 +19,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetConfigRequestTep request) {
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/one/config GET"));

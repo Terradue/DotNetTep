@@ -157,7 +157,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateNews request) {
             WebNews result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
 
@@ -201,7 +201,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateNews request) {
             WebNews result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/news PUT Id='{0}'", request.Id));
@@ -242,7 +242,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteNews request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/news/{{Id}} DELETE Id='{0}'", request.Id));

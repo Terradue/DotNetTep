@@ -32,7 +32,7 @@ namespace Terradue.Tep.WebServer.Services
 		public object Get(GetOpensearchDescription request)
 		{
 			OpenSearchDescription OSDD;
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
 			try{
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/{{serieId}}/description GET serieId='{0}'", request.serieId));
@@ -89,7 +89,7 @@ namespace Terradue.Tep.WebServer.Services
 		/// <param name="request">Request.</param>
 		public object Get(GetOpensearchDescriptions request){
 			OpenSearchDescription OSDD;
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
 			try{
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/description GET"));

@@ -50,7 +50,7 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Delete(ShareDeleteRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
             context.LogInfo(this, string.Format("/share DELETE self='{0}'", request.self));
 
@@ -89,7 +89,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(ShareCreateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
             context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, request.to != null ? string.Join("", request.to) : ""));
                             

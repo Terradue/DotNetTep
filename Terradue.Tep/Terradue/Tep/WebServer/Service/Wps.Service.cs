@@ -30,7 +30,7 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public object Get(SearchWPSProviders request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.AccessLevel = EntityAccessLevel.Administrator;
             context.Open();
             context.LogInfo(this,string.Format("/cr/wps/search GET"));
@@ -120,7 +120,7 @@ namespace Terradue.Tep.WebServer.Services {
 
 
         public object Get(GetWPSServices request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<WebServiceTep> result = new List<WebServiceTep>();
             try {
                 context.Open();
@@ -172,7 +172,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetWebProcessingServices request) {
             IfyWebContext context;
             System.IO.Stream stream = new System.IO.MemoryStream();
-            context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.AccessLevel = EntityAccessLevel.Administrator;
 
             context.Open();
@@ -250,7 +250,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Post(WpsExecutePostRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             object response = null;
             try {
                 context.Open ();
@@ -667,7 +667,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(GetWPSProviders request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.AccessLevel = EntityAccessLevel.Administrator;
             List<WebWpsProvider> result = new List<WebWpsProvider>();
             try {
@@ -1091,7 +1091,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(WpsServiceGetRequestTep request) {
             WebServiceTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/service/wps/{{Id}} GET Id='{0}'", request.Id));
