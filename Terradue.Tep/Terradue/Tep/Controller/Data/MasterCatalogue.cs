@@ -305,6 +305,14 @@ namespace Terradue.Tep
 
         }
 
+        public static OpenSearchMemoryCache SearchCache
+        {
+            get
+            {
+                return searchCache;
+            }
+        }
+
     }
 
 }

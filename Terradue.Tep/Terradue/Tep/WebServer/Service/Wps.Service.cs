@@ -79,14 +79,18 @@ namespace Terradue.Tep.WebServer.Services {
             EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
             wpsProcesses.SetFilter("Available", "true");
             wpsProcesses.OpenSearchEngine = ose;
+            wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);
 
             CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
             wpsOneProcesses.OpenSearchEngine = ose;
-            wpsProcesses.Identifier = wpsOneProcesses.Identifier;
+            //wpsProcesses.Identifier = wpsOneProcesses.Identifier;
 
             wpsProcesses.Identifier = "service/wps";
             var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
+            if (!string.IsNullOrEmpty(httpRequest.QueryString["cache"]) && httpRequest.QueryString["cache"] == "false")
+                MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
+            
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, ose);
             IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
 

@@ -70,7 +70,7 @@ namespace Terradue.Tep {
 
         public string Identifier {
             get {
-                if(keyword == null) keyword = new WpsProcessOffering(context).EntityType.Keyword;
+                if(keyword == null) keyword = new WpsProcessOffering(context).EntityType.Keyword + context.Username;
                 return keyword;
             }
         }
