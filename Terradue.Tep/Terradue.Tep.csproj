@@ -180,7 +180,7 @@
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.WebService.Model">
-      <HintPath>..\packages\Terradue.WebService.Model.1.1.20\lib\net45\Terradue.WebService.Model.dll</HintPath>
+      <HintPath>..\packages\Terradue.WebService.Model.1.1.21\lib\net45\Terradue.WebService.Model.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
       <HintPath>..\packages\Terradue.Portal.2.7.17\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
