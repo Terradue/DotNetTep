@@ -72,7 +72,11 @@ namespace Terradue.Tep.WebServer.Services {
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
             context.Close ();
-            return new HttpResult (result.SerializeToString (), result.ContentType);
+
+            string sresult = result.SerializeToString();
+            sresult = sresult.Replace("${USERNAME}", context.Username);
+
+            return new HttpResult (sresult, result.ContentType);
         }
 
         public object Get (ThematicAppByCommunitySearchRequestTep request)
