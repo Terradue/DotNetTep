@@ -16,8 +16,16 @@ namespace Terradue.Tep {
                 foreach (var provider in wpsProviders.GetItemsAsList()) {
                     if (provider.AutoSync) {
                         try {
+                            string username = null;
+                            if (provider.DomainId != 0) {
+                                var role = Role.FromIdentifier(context, RoleTep.OWNER);
+                                var usrs = role.GetUsers(provider.DomainId);
+                                if (usrs != null && usrs.Length > 0) {
+                                    username = User.FromId(context, usrs[0]).Username;//we take only the first owner
+                                }
+                            }
                             provider.CanCache = false;
-                            provider.UpdateProcessOfferings(true);
+                            provider.UpdateProcessOfferings(true, username);
                             context.WriteInfo(string.Format("UpdateWpsProviders -- Auto synchro done for WPS {0}", provider.Name));
                         } catch (Exception e) {
                             context.WriteError(string.Format("UpdateWpsProviders -- {0} - {1}", e.Message, e.StackTrace));

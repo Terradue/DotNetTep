@@ -139,6 +139,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 //var nvc = wpsjobUrl.GetParameters ();
                 var res = ose.Query (wpsjobProductOs, nvc, type);
+                OpenSearchFactory.ReplaceSelfLinks(wpsjobProductOs, httpRequest.QueryString, res, EntrySelfLinkTemplate);
+                OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobProductOs, res);
                 result = new HttpResult (res.SerializeToString (), res.ContentType);
 
                 context.Close ();
@@ -149,6 +151,46 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return result;
         }
+
+        string EntrySelfLinkTemplate(IOpenSearchResultItem item, OpenSearchDescription osd, string mimeType) {
+            string identifier = item.Identifier;
+            return EntrySelfLinkTemplate(identifier, osd, mimeType);
+        }
+
+        string EntrySelfLinkTemplate(string identifier, OpenSearchDescription osd, string mimeType) {
+            if (identifier == null)
+                return null;
+            NameValueCollection nvc = OpenSearchFactory.GetOpenSearchParameters(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType));
+            nvc.Set("uid", string.Format("{0}", identifier));
+            nvc.AllKeys.FirstOrDefault(k => {
+                if (nvc[k] == "{geo:uid?}")
+                    nvc[k] = identifier;
+                var matchParamDef = System.Text.RegularExpressions.Regex.Match(nvc[k], @"^{([^?]+)\??}$");
+                if (matchParamDef.Success)
+                    nvc.Remove(k);
+                return false;
+            });
+            UriBuilder template = new UriBuilder(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType).Template);
+            string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
+            template.Query = string.Join("&", queryString);
+            return template.ToString();
+        }
+
+        //public static string EntrySelfLinkTemplate(IOpenSearchResultItem item, OpenSearchDescription osd, string mimeType) {
+        //    if (item == null)
+        //        return null;
+
+        //    string identifier = item.Identifier;
+
+        //    NameValueCollection nvc = new NameValueCollection();
+
+        //    nvc.Set("id", string.Format("{0}", item.Identifier));
+
+        //    UriBuilder template = new UriBuilder(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType).Template);
+        //    string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
+        //    template.Query = string.Join("&", queryString);
+        //    return template.ToString();
+        //}
 
         public object Get (WpsJobProductDescriptionRequestTep request)
         {
@@ -275,22 +317,6 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return new WebResponseBool(result);
-        }
-
-        public static string EntrySelfLinkTemplate(IOpenSearchResultItem item, OpenSearchDescription osd, string mimeType) {
-            if (item == null)
-                return null;
-
-            string identifier = item.Identifier;
-
-            NameValueCollection nvc = new NameValueCollection();
-
-            nvc.Set("id", string.Format("{0}", item.Identifier));
-
-            UriBuilder template = new UriBuilder(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType).Template);
-            string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
-            template.Query = string.Join("&", queryString);
-            return template.ToString();
         }
 
         /// <summary>

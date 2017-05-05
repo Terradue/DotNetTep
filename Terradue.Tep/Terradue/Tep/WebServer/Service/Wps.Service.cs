@@ -846,9 +846,18 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsProvider wps = (request.Id == 0 ? null : (WpsProvider)WpsProvider.FromId(context, request.Id));
 
-                if (!string.IsNullOrEmpty(request.Mode) && request.Mode.Equals("synchro"))
-                    wps.UpdateProcessOfferings();
-                else {
+                if (!string.IsNullOrEmpty(request.Mode) && request.Mode.Equals("synchro")){
+                    string username = null;
+                    if (wps.DomainId != 0) {
+                        var role = Role.FromIdentifier(context, RoleTep.OWNER);
+                        var usrs = role.GetUsers(wps.DomainId);
+                        if (usrs != null && usrs.Length > 0) {
+                            username = User.FromId(context, usrs[0]).Username;//we take only the first owner
+                        }
+                    }
+                    wps.CanCache = false;
+                    wps.UpdateProcessOfferings(false, username);
+                } else {
                     var namebefore = wps.Identifier;
                     wps = request.ToEntity(context, wps);
                     wps.Store();
