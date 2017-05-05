@@ -74,7 +74,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.Close ();
 
             string sresult = result.SerializeToString();
-            sresult.Replace("${USERNAME}", context.Username);
+            sresult = sresult.Replace("${USERNAME}", context.Username);
 
             return new HttpResult (sresult, result.ContentType);
         }
