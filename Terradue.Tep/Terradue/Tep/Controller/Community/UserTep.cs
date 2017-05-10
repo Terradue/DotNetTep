@@ -511,8 +511,8 @@ namespace Terradue.Tep {
             if (lastlogin != DateTime.MinValue) result.LastUpdatedTime = new DateTimeOffset(lastlogin);
 
             var basepath = new UriBuilder(context.BaseUrl);
-            basepath.Path = entityType.Keyword;
-            string usrUri = basepath.Uri.AbsoluteUri + "/" + Username;
+            basepath.Path = "#!/" + entityType.Keyword + "/details/" + Username;
+            string usrUri = basepath.Uri.AbsoluteUri;
             string usrName = (!String.IsNullOrEmpty(FirstName) && !String.IsNullOrEmpty(LastName) ? FirstName + " " + LastName : Username);
             SyndicationPerson author = new SyndicationPerson(Email, usrName, usrUri);
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Username));
