@@ -145,6 +145,51 @@ namespace Terradue.Tep {
         ResolvedDeposit = 3 //the transaction is a deposit ans is resolved (we dont take the deposit into account anymore)
     }
 
+    /*****************************************************************************/
+    /*****************************************************************************/
+    /*****************************************************************************/
+
+    public class AggregatedTransaction : Transaction, IComparable<AggregatedTransaction>  {
+
+        public double RealCost { get; set; }
+        public double Deposit { get; set; }
+
+        public AggregatedTransaction(IfyContext context) : base(context) { }
+
+        public AggregatedTransaction(IfyContext context, Transaction transaction) : base(context){
+            this.EntityId = transaction.EntityId;
+            this.ProviderId = transaction.ProviderId;
+            this.EntityTypeId = transaction.EntityTypeId;
+            this.Identifier = transaction.Identifier;
+            this.LogTime = transaction.LogTime;
+            this.Balance = transaction.Balance;
+            this.Kind = transaction.Kind;
+            if(Kind == TransactionKind.Debit) this.RealCost = transaction.Balance;
+        }
+
+        public void AggregateTransaction(Transaction transaction) { 
+            if (transaction.Kind == TransactionKind.Debit) {
+                Balance += transaction.Balance;
+            }
+        }
+
+        #region IComparable implementation
+
+        public int CompareTo(AggregatedTransaction other) {
+            if (other == null)
+                return 1;
+            else
+                return this.LogTime.CompareTo(other.LogTime);
+        }
+
+        #endregion
+    }
+
+    /*****************************************************************************/
+    /*****************************************************************************/
+    /*****************************************************************************/
+
+
     [DataContract]
     public class T2AccountingAccount {
         [DataMember]
@@ -201,4 +246,201 @@ namespace Terradue.Tep {
         public T2AccountingLocation location { get; set; }
     }
 
+    /*****************************************************************************/
+    /*****************************************************************************/
+    /*****************************************************************************/
+
+    [DataContract]
+    public class ETTimestamp {
+        [DataMember]
+        public string from { get; set; }
+        [DataMember]
+        public string to { get; set; }
+    }
+
+    [DataContract]
+    public class ETRange {
+        [DataMember(Name = "@timestamp")]
+        public ETTimestamp timestamp { get; set; }
+    }
+
+    [DataContract]
+    public class ETTerm {
+        [DataMember(Name = "account.userName")]
+        public string accountUserName { get; set; }
+    }
+
+    [DataContract]
+    public class ETMust {
+        [DataMember]
+        public ETRange range { get; set; }
+        [DataMember]
+        public ETTerm term { get; set; }
+    }
+
+    [DataContract]
+    public class ETTerms {
+        [DataMember]
+        public string field { get; set; }
+    }
+
+    //public class ETSum {
+    //    public string field { get; set; }
+    //}
+
+    [DataContract]
+    public class ETTotal {
+        [DataMember]
+        public ETTerms sum { get; set; }
+    }
+
+    [DataContract]
+    public class ETAggs4 {
+        [DataMember]
+        public ETTotal total { get; set; }
+    }
+
+    [DataContract]
+    public class ETQuantities {
+        [DataMember]
+        public ETTerms terms { get; set; }
+        [DataMember]
+        public ETAggs4 aggs { get; set; }
+    }
+
+    [DataContract]
+    public class ETAggs3 {
+        [DataMember]
+        public ETQuantities quantities { get; set; }
+    }
+
+    [DataContract]
+    public class ETAccountRef {
+        [DataMember]
+        public ETTerms terms { get; set; }
+        [DataMember]
+        public ETAggs3 aggs { get; set; }
+    }
+
+    [DataContract]
+    public class ETAggs2 {
+        [DataMember]
+        public ETAccountRef account_ref { get; set; }
+    }
+
+    [DataContract]
+    public class ETUser {
+        [DataMember]
+        public ETTerms terms { get; set; }
+        [DataMember]
+        public ETAggs2 aggs { get; set; }
+    }
+
+    [DataContract]
+    public class ETAggs {
+        [DataMember]
+        public ETUser user { get; set; }
+    }
+
+    [DataContract]
+    public class ElasticTransactionSearchRequest {
+        [DataMember]
+        public int size { get; set; }
+        [DataMember]
+        public ETQuery query { get; set; }
+        [DataMember]
+        public ETAggs aggs { get; set; }
+    }
+
+    [DataContract]
+    public class ETQuery {
+        [DataMember]
+        public ETConstantScore constant_score { get; set; }
+    }
+
+    [DataContract]
+    public class ETConstantScore {
+        [DataMember]
+        public ETFilter filter { get; set; }
+    }
+
+    [DataContract]
+    public class ETBool {
+        [DataMember]
+        public List<ETMust> must { get; set; }
+    }
+
+    [DataContract]
+    public class ETFilter {
+        [DataMember(Name = "bool")]
+        public ETBool etbool { get; set; }
+    }
+
+    /*****************************************************************************/
+    /*****************************************************************************/
+    /*****************************************************************************/
+
+    public class ETShards {
+        public int total { get; set; }
+        public int successful { get; set; }
+        public int failed { get; set; }
+    }
+
+    public class ETHits {
+        public int total { get; set; }
+        public int max_score { get; set; }
+        public List<object> hits { get; set; }
+    }
+
+    public class ETTotal2 {
+        public int value { get; set; }
+    }
+
+    public class ETBucket3 {
+        public string key { get; set; }
+        public int doc_count { get; set; }
+        public ETTotal2 total { get; set; }
+    }
+
+    public class ETQuantities2 {
+        public int doc_count_error_upper_bound { get; set; }
+        public int sum_other_doc_count { get; set; }
+        public List<ETBucket3> buckets { get; set; }
+    }
+
+    public class ETBucket2 {
+        public string key { get; set; }
+        public int doc_count { get; set; }
+        public ETQuantities2 quantities { get; set; }
+    }
+
+    public class ETAccountRef2 {
+        public int doc_count_error_upper_bound { get; set; }
+        public int sum_other_doc_count { get; set; }
+        public List<ETBucket2> buckets { get; set; }
+    }
+
+    public class ETBucket {
+        public string key { get; set; }
+        public int doc_count { get; set; }
+        public ETAccountRef2 account_ref { get; set; }
+    }
+
+    public class ETUser2 {
+        public int doc_count_error_upper_bound { get; set; }
+        public int sum_other_doc_count { get; set; }
+        public List<ETBucket> buckets { get; set; }
+    }
+
+    public class ETAggregations {
+        public ETUser2 user { get; set; }
+    }
+
+    public class ElasticTransactionSearchResponse {
+        public int took { get; set; }
+        public bool timed_out { get; set; }
+        public ETShards _shards { get; set; }
+        public ETHits hits { get; set; }
+        public ETAggregations aggregations { get; set; }
+    }
 }

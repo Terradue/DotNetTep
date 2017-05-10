@@ -104,13 +104,26 @@ namespace Terradue.Tep {
             double balance = 0;
             foreach (var quantity in quantities) {
                 try {
-                    Rates rates = Rates.FromServiceAndIdentifier(context, entity, quantity.id);
-                    if (rates != null && rates.Unit != 0 && rates.Cost != 0)
-                        balance += ((quantity.value / rates.Unit) * rates.Cost);
+                    balance += GetBalanceFromRate(context, entity, quantity.id, quantity.value);
                 } catch (Exception e) {
                     context.LogError(new Rates(context), e.Message);
                 }
             }
+            return balance;
+        }
+
+        /// <summary>
+        /// Gets the balance from rate.
+        /// </summary>
+        /// <returns>The balance from rate.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="entity">Entity.</param>
+        /// <param name="id">Identifier.</param>
+        /// <param name="value">Value.</param>
+        public static double GetBalanceFromRate(IfyContext context, Entity entity, string id, double value) {
+            double balance = 0;
+            Rates rates = Rates.FromServiceAndIdentifier(context, entity, id);
+            if (rates != null && rates.Unit != 0 && rates.Cost != 0) balance = ((value / rates.Unit) * rates.Cost);
             return balance;
         }
     }

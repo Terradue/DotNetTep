@@ -35,6 +35,28 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get(TransactionsGetRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var result = new List<WebTransaction>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/transaction GET, user='{0}'", request.User ?? context.Username));
+
+                var user = User.FromUsername(context, request.User ?? context.Username);
+                var TransactionFactory = new TransactionFactory(context);
+                var aggTransactions = TransactionFactory.GetUserAggregatedTransaction(user.Id);
+
+                foreach (var agg in aggTransactions) result.Add(new WebTransaction(agg));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
         public object Get(TransactionsSearchRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             IOpenSearchResultCollection result;
