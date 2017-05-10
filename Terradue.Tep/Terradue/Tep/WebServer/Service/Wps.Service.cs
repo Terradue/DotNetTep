@@ -515,14 +515,23 @@ namespace Terradue.Tep.WebServer.Services {
             if (deposit != null) {//we dont check the kind to allow potentially some resolved deposit to be reactivated
                 if (response is ExecuteResponse) {
                     var execResponse = response as ExecuteResponse;
-                    if (execResponse.Status.Item != null &&
-                        (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType)) {
-                        deposit.Kind = TransactionKind.ActiveDeposit;
-                        deposit.Store();
+                    if (execResponse.Status.Item != null){
+                        if (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType) {
+                            deposit.Kind = TransactionKind.ActiveDeposit;
+                            deposit.Store();
+                            return;
+                        }
+                        if (execResponse.Status.Item is ProcessSucceededType) {
+                            var transactions = tFactory.GetTransactionsByReference(entity.Identifier);
+                            if (transactions.Count > 1) deposit.Kind = TransactionKind.ResolvedDeposit;
+                            else deposit.Kind = TransactionKind.ResolvedDeposit;
+                            deposit.Store();
+                            return;
+                        }
                     }
                 }
-                //in all other cases, we set the deposit as resolved
-                deposit.Kind = TransactionKind.ResolvedDeposit;
+                //in all other cases, we set the deposit as closed
+                deposit.Kind = TransactionKind.ClosedDeposit;
                 deposit.Store();
             }
         }

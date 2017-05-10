@@ -116,7 +116,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if transaction is a deposit, <c>false</c> otherwise.</returns>
         public bool IsDeposit() {
-            return Kind == TransactionKind.ActiveDeposit || Kind == TransactionKind.ResolvedDeposit;
+            return Kind == TransactionKind.ActiveDeposit || Kind == TransactionKind.ResolvedDeposit || Kind == TransactionKind.ClosedDeposit;
         }
 
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
@@ -142,7 +142,8 @@ namespace Terradue.Tep {
         Debit = 0, //the transaction is a debit (decrease the balance)
         Credit = 1, //the transaction is a credit (increase the balance)
         ActiveDeposit = 2, //the transaction is a deposit and is not resolved (we take the deposit into account in the balance)
-        ResolvedDeposit = 3 //the transaction is a deposit ans is resolved (we dont take the deposit into account anymore)
+        ResolvedDeposit = 3, //the transaction is a deposit ans is resolved (we dont take the deposit into account anymore)
+        ClosedDeposit = 4 //the transaction is a deposit ans is resolved (we dont take the deposit into account anymore)            
     }
 
     /*****************************************************************************/

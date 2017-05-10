@@ -68,7 +68,7 @@ namespace Terradue.Tep {
         public Transaction GetDepositTransaction(string reference) {
             EntityList<Transaction> transactions = new EntityList<Transaction>(context);
             transactions.SetFilter("Identifier", reference);
-            transactions.SetFilter("Kind", (int)TransactionKind.ActiveDeposit + "," + (int)TransactionKind.ResolvedDeposit);
+            transactions.SetFilter("Kind", (int)TransactionKind.ActiveDeposit + "," + (int)TransactionKind.ResolvedDeposit + "," + (int)TransactionKind.ClosedDeposit);
             transactions.Load();
             var items = transactions.GetItemsAsList();
             return items.Count > 0 ? items[0] : null;
@@ -129,6 +129,11 @@ namespace Terradue.Tep {
                     var deposit = GetDepositTransaction(reference);
                     double refBalance = 0;
                     var reftransactions = GetTransactionsByReference(reference);
+                    //update deposit if needed
+                    if (deposit.Kind == TransactionKind.ResolvedDeposit && reftransactions.Count > 1) {
+                        deposit.Kind = TransactionKind.ClosedDeposit;
+                        deposit.Store();
+                    }
                     foreach (var reftransaction in reftransactions) {
                         if (!reftransaction.IsDeposit()) refBalance += reftransaction.Balance;
                     }
@@ -147,7 +152,7 @@ namespace Terradue.Tep {
             //default is we pay what we used, and never more than the deposit
 
             //if transaction is resolved, we return the minimum between the sum of transactions and the deposit
-            if (deposit.Kind == TransactionKind.ResolvedDeposit) return -Math.Min(balance, deposit.Balance);
+            if (deposit.Kind == TransactionKind.ClosedDeposit) return -Math.Min(balance, deposit.Balance);
             //otherwise we return the value of the deposit and the sum of transactions is not taken into account
             else return deposit.GetTransactionBalance();
         }
