@@ -191,6 +191,14 @@
     <Reference Include="Terradue.Portal">
       <HintPath>..\packages\Terradue.Portal.2.7.19\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="Ionic.Zip.Reduced">
+      <HintPath>..\packages\DotNetZip.Reduced.1.9.1.8\lib\net20\Ionic.Zip.Reduced.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpKml">
+      <HintPath>..\packages\SharpKml.Core.3.0.0\lib\portable45-net45+win8+wpa81\SharpKml.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -277,6 +285,7 @@
     <Compile Include="Terradue\Tep\WebServer\Agent\Actions.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\CatalogueFactory.cs" />
     <Compile Include="Terradue\Tep\WebServer\Config\WebDBConfig.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Features\Geometry.Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
