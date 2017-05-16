@@ -189,49 +189,7 @@ namespace Terradue.Tep {
             //get transactions from remote accounting server
             var transactions = GetRemoteTransactions(user.Username, lastTransaction != null ? lastTransaction.LogTime : DateTime.MinValue);
 
-            foreach (var transaction in transactions) {
-                //if (accounting.account.username != null && accounting.account.username.Equals(user.Username)) {
-                //    var r = new System.Text.RegularExpressions.Regex(@"^(?<platform>[a-zA-Z0-9_\-]+)-(?<type>[a-zA-Z0-9_\-]+)-(?<reference>[a-zA-Z0-9_\-]+)");
-                //    var m = r.Match(accounting.account.reference);
-                //    if (!m.Success) continue;
-
-                //    //get referenced entity
-                //    var type = m.Result("${type}");
-                //    var identifier = m.Result("${reference}");
-                //    Entity entityservice = null;
-                //    Entity entityself = null;
-                //    switch (type) {
-                //    case "wpsjob":
-                //        var job = WpsJob.FromIdentifier(context, identifier);
-                //        entityself = job;
-                //        entityservice = job.Process;
-                //        break;
-                //    case "datapackage":
-                //        var dp = DataPackage.FromIdentifier(context, identifier);
-                //        entityself = dp;
-                //        entityservice = dp;
-                //        break;
-                //    default:
-                //        break;
-                //    }
-
-                //    if (entityservice == null) continue;//TODO: remove when handling cases with no refs
-
-                //    //get balance
-                //    double balance = Rates.GetBalanceFromRates(context, entityservice, accounting.quantity);
-
-                //    var transaction = new Transaction(context);
-                //    transaction.Entity = entityself;
-                //    transaction.OwnerId = user.Id;
-                //    transaction.Identifier = identifier;
-                //    transaction.LogTime = accounting.timestamp;
-                //    transaction.ProviderId = entityservice.OwnerId;
-                //    transaction.Balance = balance;
-                //    transaction.Kind = TransactionKind.Debit;
-                //    transaction.Store();
-                //}
-                transaction.Store();
-            }
+            foreach (var transaction in transactions) transaction.Store();
         }
 
         private ElasticTransactionSearchRequest GetTransactionJsonToPost(string username, DateTime timestamp) {
@@ -244,12 +202,11 @@ namespace Terradue.Tep {
                                 must = new List<ETMust> {
                                     new ETMust{
                                         range = new ETRange{
-                                            //timestamp = new ETTimestamp{ from = timestamp.ToString("s"), to = "now" }
-                                            timestamp = new ETTimestamp { from = "now/1d-2M", to = "now/1d" }
+                                            timestamp = new ETTimestamp { gte = timestamp.ToString("s"), lte = "now"}
                                         }
                                     },
                                     new ETMust{
-                                        term = new ETTerm{ accountUserName = "tep_" +username }
+                                        term = new ETTerm{ accountUserName = username }
                                     }
                                 }
                             }
@@ -305,25 +262,29 @@ namespace Terradue.Tep {
                             foreach (var bucket in userBuckets) {
                                 var identifier = bucket.key;
 
-                                //get job and service
-                                var job = WpsJob.FromIdentifier(context, identifier);
-                                var entityservice = job.Process;
-                                double balance = 0;
-                                foreach (var qBucket in bucket.quantities.buckets) {
-                                    //calculate balance
-                                    if (!string.IsNullOrEmpty(qBucket.key) && qBucket.total != null) {
-                                        balance += Rates.GetBalanceFromRate(context, entityservice, qBucket.key, qBucket.total.value);
+                                try{
+                                    //get job and service
+                                    var job = WpsJob.FromIdentifier(context, identifier);
+                                    var entityservice = job.Process;
+                                    double balance = 0;
+                                    foreach (var qBucket in bucket.quantities.buckets) {
+                                        //calculate balance
+                                        if (!string.IsNullOrEmpty(qBucket.key) && qBucket.total != null) {
+                                            balance += Rates.GetBalanceFromRate(context, entityservice, qBucket.key, qBucket.total.value);
+                                        }
                                     }
+                                    var transaction = new Transaction(context);
+                                    transaction.Entity = job;
+                                    transaction.OwnerId = job.OwnerId;
+                                    transaction.Identifier = identifier;
+                                    transaction.LogTime = DateTime.UtcNow;
+                                    transaction.ProviderId = entityservice.OwnerId;
+                                    transaction.Balance = balance;
+                                    transaction.Kind = TransactionKind.Debit;
+                                    transactions.Add(transaction);
+                                } catch (Exception e) {
+                                    context.LogError(this, e.Message);
                                 }
-                                var transaction = new Transaction(context);
-                                transaction.Entity = job;
-                                transaction.OwnerId = job.OwnerId;
-                                transaction.Identifier = identifier;
-                                transaction.LogTime = DateTime.UtcNow;
-                                transaction.ProviderId = entityservice.OwnerId;
-                                transaction.Balance = balance;
-                                transaction.Kind = TransactionKind.Debit;
-                                transactions.Add(transaction);
                             }
                         }
                     }

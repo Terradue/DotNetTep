@@ -122,8 +122,12 @@ namespace Terradue.Tep {
         /// <param name="value">Value.</param>
         public static double GetBalanceFromRate(IfyContext context, Entity entity, string id, double value) {
             double balance = 0;
-            Rates rates = Rates.FromServiceAndIdentifier(context, entity, id);
-            if (rates != null && rates.Unit != 0 && rates.Cost != 0) balance = ((value / rates.Unit) * rates.Cost);
+            try {
+                Rates rates = Rates.FromServiceAndIdentifier(context, entity, id);
+                if (rates != null && rates.Unit != 0 && rates.Cost != 0) balance = ((value / rates.Unit) * rates.Cost);
+            } catch (Exception e) { 
+                context.LogError(context, e.Message);
+            }
             return balance;
         }
     }

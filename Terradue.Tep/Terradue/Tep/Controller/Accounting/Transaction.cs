@@ -11,7 +11,7 @@ using Terradue.Portal.OpenSearch;
 using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
-    [EntityTable("transaction", EntityTableConfiguration.Custom, IdentifierField = "reference", HasOwnerReference = true)]
+    [EntityTable("transaction", EntityTableConfiguration.Custom, IdentifierField = "reference", HasOwnerReference = true, AutoCorrectDuplicateIdentifiers = false, AutoCheckIdentifiers = false)]
     public class Transaction : EntitySearchable {
 
         /// <summary>
@@ -104,8 +104,9 @@ namespace Terradue.Tep {
                 return Balance;
                 case TransactionKind.ActiveDeposit:
                 case TransactionKind.Debit:
-                return -Balance;
                 case TransactionKind.ResolvedDeposit:
+                return -Balance;
+                    
                 default:
                 return 0;
             }
@@ -257,6 +258,10 @@ namespace Terradue.Tep {
         public string from { get; set; }
         [DataMember]
         public string to { get; set; }
+        [DataMember]
+        public string gte { get; set; }
+        [DataMember]
+        public string lte { get; set; }
     }
 
     [DataContract]
@@ -381,67 +386,109 @@ namespace Terradue.Tep {
     /*****************************************************************************/
     /*****************************************************************************/
 
+    [DataContract]
     public class ETShards {
+        [DataMember]
         public int total { get; set; }
+        [DataMember]
         public int successful { get; set; }
+        [DataMember]
         public int failed { get; set; }
     }
 
+    [DataContract]
     public class ETHits {
+        [DataMember]
         public int total { get; set; }
+        [DataMember]
         public int max_score { get; set; }
+        [DataMember]
         public List<object> hits { get; set; }
     }
 
+    [DataContract]
     public class ETTotal2 {
-        public int value { get; set; }
+        [DataMember]
+        public double value { get; set; }
     }
 
+    [DataContract]
     public class ETBucket3 {
+        [DataMember]
         public string key { get; set; }
+        [DataMember]
         public int doc_count { get; set; }
+        [DataMember]
         public ETTotal2 total { get; set; }
     }
 
+    [DataContract]
     public class ETQuantities2 {
+        [DataMember]
         public int doc_count_error_upper_bound { get; set; }
+        [DataMember]
         public int sum_other_doc_count { get; set; }
+        [DataMember]
         public List<ETBucket3> buckets { get; set; }
     }
 
+    [DataContract]
     public class ETBucket2 {
+        [DataMember]
         public string key { get; set; }
+        [DataMember]
         public int doc_count { get; set; }
+        [DataMember]
         public ETQuantities2 quantities { get; set; }
     }
 
+    [DataContract]
     public class ETAccountRef2 {
+        [DataMember]
         public int doc_count_error_upper_bound { get; set; }
+        [DataMember]
         public int sum_other_doc_count { get; set; }
+        [DataMember]
         public List<ETBucket2> buckets { get; set; }
     }
 
+    [DataContract]
     public class ETBucket {
+        [DataMember]
         public string key { get; set; }
+        [DataMember]
         public int doc_count { get; set; }
+        [DataMember]
         public ETAccountRef2 account_ref { get; set; }
     }
 
+    [DataContract]
     public class ETUser2 {
+        [DataMember]
         public int doc_count_error_upper_bound { get; set; }
+        [DataMember]
         public int sum_other_doc_count { get; set; }
+        [DataMember]
         public List<ETBucket> buckets { get; set; }
     }
 
+    [DataContract]
     public class ETAggregations {
+        [DataMember]
         public ETUser2 user { get; set; }
     }
 
+    [DataContract]
     public class ElasticTransactionSearchResponse {
+        [DataMember]
         public int took { get; set; }
+        [DataMember]
         public bool timed_out { get; set; }
+        [DataMember]
         public ETShards _shards { get; set; }
+        [DataMember]
         public ETHits hits { get; set; }
+        [DataMember]
         public ETAggregations aggregations { get; set; }
     }
 }
