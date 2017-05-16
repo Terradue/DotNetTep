@@ -587,7 +587,7 @@ namespace Terradue.Tep.Test {
                 //share as owner and member of community
                 community.ShareEntity(wpsjob);
 
-                EntityList<ThematicCommunity> communities = new EntityList<ThematicCommunity>(context);
+                var communities = new EntityList<ThematicCommunity>(context);
                 var parameters = new NameValueCollection();
                 parameters.Set("correlatedTo", string.Format("{0}/job/wps/search?uid={1}", context.BaseUrl, "private-job-usr1"));
                 IOpenSearchResultCollection osr = ose.Query(communities, parameters);

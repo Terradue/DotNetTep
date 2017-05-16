@@ -156,7 +156,7 @@ namespace Terradue.Tep.Test {
                 Role role = Role.FromIdentifier(context, RoleTep.MEMBER);
 
                 //check how many communities user can see
-                EntityList<ThematicCommunity> communities = new EntityList<ThematicCommunity>(context);
+                var communities = new CommunityCollection(context);
                 communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
                 IOpenSearchResultCollection osr = ose.Query(communities, parameters);
@@ -173,7 +173,7 @@ namespace Terradue.Tep.Test {
                 context.StartImpersonation(usr1.Id);
 
                 //check how many communities user can see
-                communities = new EntityList<ThematicCommunity>(context);
+                communities = new CommunityCollection(context);
                 communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
                 osr = ose.Query(communities, parameters);
@@ -181,29 +181,19 @@ namespace Terradue.Tep.Test {
 
                 //check visibility is private + pending
                 var items = osr.Items;
-                bool isprivate = false, isVisibilityPending = false, ispublic = false, isUserPending = false;
+                bool isprivate = false, isVisibilityPending = false, ispublic = false;
                 foreach (var item in items) {
                     if (item.Title.Text == "community-private-1") {
                         foreach (var cat in item.Categories) {
                             if (cat.Name == "visibility") {
                                 if (cat.Label == "private") isprivate = true;
                                 else if (cat.Label == "public") ispublic = true;
-                            } else if (cat.Name == "userStatus" && cat.Label == "pending") isVisibilityPending = true;
-                        }
-                        foreach (var author in item.Authors) {
-                            bool isUsr1 = false;
-                            var elements = author.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
-                            if (elements.Count == 1 && elements [0] == usr1.Username) isUsr1 = true;
-                            if (isUsr1) {
-                                elements = author.ElementExtensions.ReadElementExtensions<string>("status", "http://purl.org/dc/elements/1.1/");
-                                if (elements.Count == 1 && elements [0] == RoleTep.PENDING) isUserPending = true;
-                            }
+                            } else if (cat.Name == "status" && cat.Label == "pending") isVisibilityPending = true;
                         }
                     }
                 }
                 Assert.True(isprivate);
                 Assert.True(isVisibilityPending);
-                Assert.True(isUserPending);
                 Assert.False(ispublic);
 
                 //usr1 validates
@@ -211,7 +201,7 @@ namespace Terradue.Tep.Test {
                 Assert.False(community.IsUserPending(usr1.Id));
 
                 //check how many communities user can see
-                communities = new EntityList<ThematicCommunity>(context);
+                communities = new CommunityCollection(context);
                 communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
                 osr = ose.Query(communities, parameters);
@@ -222,36 +212,25 @@ namespace Terradue.Tep.Test {
                 isprivate = false;
                 isVisibilityPending = false;
                 ispublic = false;
-                isUserPending = false;
                 foreach (var item in items) {
                     if (item.Title.Text == "community-private-1") {
                         foreach (var cat in item.Categories) {
                             if (cat.Name == "visibility") {
                                 if (cat.Label == "private") isprivate = true;
                                 else if (cat.Label == "public") ispublic = true;
-                            } else if (cat.Name == "userStatus" && cat.Label == "pending") isVisibilityPending = true;
-                        }
-                        foreach (var author in item.Authors) {
-                            bool isUsr1 = false;
-                            var elements = author.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
-                            if (elements.Count == 1 && elements [0] == usr1.Username) isUsr1 = true;
-                            if (isUsr1) {
-                                elements = author.ElementExtensions.ReadElementExtensions<string>("status", "http://purl.org/dc/elements/1.1/");
-                                if (elements.Count == 1 && elements [0] == RoleTep.PENDING) isUserPending = true;
-                            }
+                            } else if (cat.Name == "status" && cat.Label == "pending") isVisibilityPending = true;
                         }
                     }
                 }
                 Assert.True(isprivate);
                 Assert.False(isVisibilityPending);
-                Assert.False(isUserPending);
                 Assert.False(ispublic);
 
                 //remove from community
                 community.RemoveUser(usr1);
 
                 //check how many communities user can see
-                communities = new EntityList<ThematicCommunity>(context);
+                communities = new CommunityCollection(context);
                 communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
                 osr = ose.Query(communities, parameters);

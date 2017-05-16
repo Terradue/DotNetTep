@@ -209,6 +209,12 @@ CREATE TABLE rolegrant_pending (
 
 INSERT INTO role (identifier, name, description) VALUES ('member', 'member', 'Community default member');
 INSERT INTO role (identifier, name, description) VALUES ('pending', 'pending', 'Community pending user');
+INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('MANAGER', 'Content Authority', 'Content Authority user');
+INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('enduser', 'End User', 'Default user role');
+INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('expert', 'Expert User', 'Default expert user role');
+INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('resadmin', 'Resource Administrator', 'Resource Administrator role');
+INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('dataprovider', 'Data Provider', 'Data Provider role');
+INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('ictprovider', 'ICT Provider', 'ICT Provider role');
 
 /*****************************************************************************/
 
@@ -271,4 +277,8 @@ CREATE TABLE transaction (
 
 -- Adding Agent action...\
 INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`) VALUES ('wpsSynchro', 'Synchronize WPS', 'This action synchronize the wps providers stored in db', 'Terradue.Tep.Actions, Terradue.Tep', 'UpdateWpsProviders');
+-- RESULT
+
+-- Add community default role ... \
+ALTER TABLE domain ADD COLUMN id_role_default INT(10) NOT NULL DEFAULT 0;
 -- RESULT
