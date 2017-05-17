@@ -51,6 +51,15 @@ namespace Terradue.Tep {
                 }
             }
         }
+        public string DefaultRoleDescription {
+            get {
+                if (defaultRole == null && DefaultRoleId != 0) {
+                    defaultRole = Role.FromId(context, DefaultRoleId);
+                }
+                if (defaultRole != null) return defaultRole.Description;
+                return Role.FromIdentifier(context, RoleTep.MEMBER).Description;
+            }
+        }
 
         private List<UserTep> owners;
         public List<UserTep> Owners {
@@ -454,6 +463,7 @@ namespace Terradue.Tep {
 
             result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : "private"));
             result.Categories.Add(new SyndicationCategory("defaultRole", null, DefaultRoleName));
+            result.Categories.Add(new SyndicationCategory("defaultRoleDescription", null, DefaultRoleDescription));
 
             //overview
             var roles = new EntityList<Role>(context);
@@ -509,6 +519,7 @@ namespace Terradue.Tep {
                                         Name = user.FirstName + " " + user.LastName,
                                         Email = user.Email,
                                         Role = role.Identifier,
+                                        RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? "pending" : "joined",
                                         Avatar = user.GetAvatar()
                                     });
@@ -582,6 +593,8 @@ namespace Terradue.Tep {
         public string Email { get; set; }
         [DataMember]
         public string Role { get; set; }
+        [DataMember]
+        public string RoleDescription { get; set; }
         [DataMember]
         public string Status { get; set; }
         [DataMember]
