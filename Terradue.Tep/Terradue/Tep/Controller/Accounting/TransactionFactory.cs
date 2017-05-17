@@ -66,12 +66,25 @@ namespace Terradue.Tep {
         /// <returns>The deposit transaction.</returns>
         /// <param name="reference">Reference.</param>
         public Transaction GetDepositTransaction(string reference) {
+            var items = GetDepositTransactions(reference);
+            return items.Count > 0 ? items[0] : null;
+        }
+
+        /// <summary>
+        /// Gets the deposit transactions.
+        /// </summary>
+        /// <returns>The deposit transactions.</returns>
+        /// <param name="reference">Reference.</param>
+        public List<Transaction> GetDepositTransactions() {
+            return GetDepositTransactions();
+        }
+
+        private List<Transaction> GetDepositTransactions(string reference) {
             EntityList<Transaction> transactions = new EntityList<Transaction>(context);
-            transactions.SetFilter("Identifier", reference);
+            if(!string.IsNullOrEmpty(reference)) transactions.SetFilter("Identifier", reference);
             transactions.SetFilter("Kind", (int)TransactionKind.ActiveDeposit + "," + (int)TransactionKind.ResolvedDeposit + "," + (int)TransactionKind.ClosedDeposit);
             transactions.Load();
-            var items = transactions.GetItemsAsList();
-            return items.Count > 0 ? items[0] : null;
+            return transactions.GetItemsAsList();
         }
 
         public List<AggregatedTransaction> GetUserAggregatedTransaction(int usrId) {

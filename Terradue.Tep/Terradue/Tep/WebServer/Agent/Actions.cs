@@ -36,5 +36,33 @@ namespace Terradue.Tep {
                 context.WriteError(string.Format("UpdateWpsProviders -- {0} - {1}", e.Message, e.StackTrace));
             }
         }
+
+        /// <summary>
+        /// Cleans the deposit without transaction for more than x days
+        /// </summary>
+        /// <param name="context">Context.</param>
+        public static void CleanDeposit(IfyContext context) {
+            var factory = new TransactionFactory(context);
+
+            //get all deposits
+            var deposits = factory.GetDepositTransactions();
+
+            var lifeTimeDays = context.GetConfigDoubleValue("accounting-deposit-maxDays");
+
+            foreach (var deposit in deposits) {
+                try {
+                    if (deposit.LogTime > DateTime.Now.AddDays(lifeTimeDays)) { //the deposit is created for more than lifeTimeDays days
+                        var transactions = factory.GetTransactionsByReference(deposit.Identifier);
+                        if (transactions.Count == 1) { //means there is only the deposit as transaction
+                            deposit.Kind = TransactionKind.ClosedDeposit;
+                            deposit.Store();
+                            context.WriteInfo(string.Format("CleanDeposit -- Deposit '{0}' closed", deposit.Identifier));
+                        }
+                    }
+                } catch (Exception e) {
+                    context.WriteError(string.Format("CleanDeposit -- {0} - {1}", e.Message, e.StackTrace));
+                }
+            }
+        }
     }
 }

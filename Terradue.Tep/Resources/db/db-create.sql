@@ -1,4 +1,4 @@
--- VERSION 1.1.2.5
+-- VERSION 1.1.2.6
 
 USE $MAIN$;
 
