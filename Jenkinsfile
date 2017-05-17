@@ -30,9 +30,6 @@ pipeline {
             sh 'nuget pack -OutputDirectory build'
             sh "echo ${params.NUGET_PUBLISH}"
             
-          },
-          "Test": {
-            sh 'nunit-console4 *.Test/bin/*.Test.dll -xml build/TestResult.xml'
           }
         )
       }
