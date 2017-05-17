@@ -454,7 +454,7 @@ namespace Terradue.Tep {
             foreach (var key in parameters.AllKeys) {
                 switch (parameters[key]) {
                 default:
-                    return false;
+                    break;
                 }
             }
             return false;

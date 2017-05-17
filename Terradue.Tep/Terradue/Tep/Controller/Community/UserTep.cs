@@ -434,7 +434,7 @@ namespace Terradue.Tep {
                 case "correlatedTo":
                     return true;
                 default:
-                    return false;
+                    break;
                 }
             }
             return false;

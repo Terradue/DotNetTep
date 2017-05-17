@@ -374,13 +374,13 @@ namespace Terradue.Tep {
         public override bool IsPostFiltered(NameValueCollection parameters) {
             foreach (var key in parameters.AllKeys) {
                 switch (parameters[key]) {
-                case "correlatedTo":
-                    return false;
-                default:
+                case "status":
                     return true;
+                default:
+                    break;
                 }
             }
-            return true;
+            return false;
         }
 
         public override int GetEntityListTotalResults(IfyContext context, NameValueCollection parameters) {
@@ -663,9 +663,11 @@ namespace Terradue.Tep {
 
             int[] domainIds = Domain.GetGrantScope(context, UserId, null, null);
 
-            string condition = String.Format("(t.id IN ({0}) OR t.kind IN ({1}))",
-                    domainIds.Length == 0 ? "0" : String.Join(",", domainIds),
-                    kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
+            //we want private communities in which User has a role OR public communities
+            string condition = String.Format("((t.id IN ({0}) AND t.kind IN ({1})) OR t.kind IN ({2}))",
+                                             domainIds.Length == 0 ? "0" : String.Join(",", domainIds),
+                                             (int)DomainKind.Private,
+                                             kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
             );
 
             Clear();
