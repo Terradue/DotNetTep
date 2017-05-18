@@ -28,8 +28,7 @@ pipeline {
             sh "nuget4mono -g origin/${env.BRANCH_NAME} -p Terradue.Tep/packages.config Terradue.Tep/bin/Terradue.Tep.dll Terradue.Tep/Resources/**/*,content/modules/tep"
             sh 'cat *.nuspec'
             sh 'nuget pack -OutputDirectory build'
-            sh "echo ${params.NUGET_PUBLISH}"
-            
+            sh "echo ${params.NUGET_PUBLISH}"           
           }
         )
       }
@@ -37,7 +36,7 @@ pipeline {
     stage('Publish') {
       when {
         expression {
-          return params.NUGET_PUBLISH
+          return ${params.NUGET_PUBLISH}
         }
       }
       steps {
