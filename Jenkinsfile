@@ -46,9 +46,4 @@ pipeline {
       }       
     }
   }
-  post { 
-    always { 
-       nunit(testResultsPattern: 'build/TestResult.xml')
-    }
-  }
 }
