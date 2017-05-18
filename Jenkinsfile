@@ -36,7 +36,7 @@ pipeline {
     stage('Publish') {
       when {
         expression {
-          return ${params.NUGET_PUBLISH}
+          return params.NUGET_PUBLISH
         }
       }
       steps {
