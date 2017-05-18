@@ -241,8 +241,8 @@ namespace Terradue.Tep {
                         if (!m.Success) return null;
                     }
                     //case tags
-                    if (parameters["tags"] != null) {
-                        if (wps.Tags == null || !wps.Tags.Contains(parameters["tags"])) return null;
+                    if (parameters["tag"] != null) {
+                        if (wps.Tags == null || !wps.Tags.Contains(parameters["tag"])) return null;
                     }
                 }
             

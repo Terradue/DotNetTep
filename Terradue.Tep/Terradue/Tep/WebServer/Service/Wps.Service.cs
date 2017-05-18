@@ -289,7 +289,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach (var p in parameters) {
                     if (p.Key == "quotation") {
                         isQuotable = true;
-                        if (p.Value == "true") quotationMode = true;
+                        if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
                     } else cachekey += p.Key + p.Value;
                 }
 
