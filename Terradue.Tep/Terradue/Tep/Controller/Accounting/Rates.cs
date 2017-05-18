@@ -12,7 +12,7 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepAccounting
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    [EntityTable("rate", EntityTableConfiguration.Custom, IdentifierField = "identifier", AutoCheckIdentifiers = false)]
+    [EntityTable("rate", EntityTableConfiguration.Custom, AutoCheckIdentifiers = false)]
     public class Rates : Entity {
 
         /// <summary>
@@ -35,6 +35,9 @@ namespace Terradue.Tep {
                 this.EntityTypeId = EntityType.GetEntityType(service.GetType()).Id;
             }
         }
+
+        [EntityDataField("identifier")]
+        public new string Identifier { get; set; }
 
         /// <summary>
         /// Gets or sets the entity identifier.
@@ -74,7 +77,7 @@ namespace Terradue.Tep {
         }
 
         public override string GetIdentifyingConditionSql() {
-            if (EntityTypeId != 0 && EntityId != 0 && Identifier != null) return String.Format("t.id_type={0} AND t.id_entity={1} AND t.identifier={2}", EntityTypeId, EntityId, Identifier);
+            if (EntityTypeId != 0 && EntityId != 0 && Identifier != null) return String.Format("t.id_type={0} AND t.id_entity={1} AND t.identifier='{2}'", EntityTypeId, EntityId, Identifier);
             return null;
         }
 
