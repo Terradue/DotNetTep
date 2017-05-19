@@ -78,6 +78,16 @@ namespace Terradue.Tep {
                     try {
                         provider = (WpsProvider)WpsProvider.FromIdentifier(context, WpsId);
                     } catch (Exception) {
+                        string[] identifierParams = WpsId.Split("-".ToCharArray());
+                        if (identifierParams.Length == 3) {
+                            switch (identifierParams[0]) {
+                            case "one":
+                                provider = new CloudWpsFactory(context).CreateWpsProviderForOne(identifierParams[1]);
+                                break;
+                            default:
+                                break;
+                            }
+                        }
                         provider = null;
                     }
                 }

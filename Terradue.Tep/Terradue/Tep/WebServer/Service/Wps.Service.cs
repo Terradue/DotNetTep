@@ -493,13 +493,14 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogDebug(this, string.Format("identifier = " + identifier));
             wpsjob.RemoteIdentifier = identifier;
 
-            //in case of username:password in the provider url, we take them from provider
-            var statusuri = new UriBuilder(wpsjob.Provider.BaseUrl);
             var statusuri2 = new UriBuilder(execResponse.statusLocation);
-            statusuri2.UserName = statusuri.UserName;
-            statusuri2.Password = statusuri.Password;
+            if (wpsjob.Provider != null) {
+                //in case of username:password in the provider url, we take them from provider
+                var statusuri = new UriBuilder(wpsjob.Provider.BaseUrl);
+                statusuri2.UserName = statusuri.UserName;
+                statusuri2.Password = statusuri.Password;
+            }
             wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
-
             wpsjob.Store();
         }
 
@@ -510,29 +511,33 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="entity">Entity.</param>
         /// <param name="response">Response.</param>
         private void UpdateDepositTransactionFromStatus(IfyContext context, Entity entity, object response) {
-            var tFactory = new TransactionFactory(context);
-            var deposit = tFactory.GetDepositTransaction(entity.Identifier);
-            if (deposit != null) {//we dont check the kind to allow potentially some resolved deposit to be reactivated
-                if (response is ExecuteResponse) {
-                    var execResponse = response as ExecuteResponse;
-                    if (execResponse.Status.Item != null){
-                        if (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType) {
-                            deposit.Kind = TransactionKind.ActiveDeposit;
-                            deposit.Store();
-                            return;
-                        }
-                        if (execResponse.Status.Item is ProcessSucceededType) {
-                            var transactions = tFactory.GetTransactionsByReference(entity.Identifier);
-                            if (transactions.Count > 1) deposit.Kind = TransactionKind.ResolvedDeposit;
-                            else deposit.Kind = TransactionKind.ResolvedDeposit;
-                            deposit.Store();
-                            return;
+            try {
+                var tFactory = new TransactionFactory(context);
+                var deposit = tFactory.GetDepositTransaction(entity.Identifier);
+                if (deposit != null) {//we dont check the kind to allow potentially some resolved deposit to be reactivated
+                    if (response is ExecuteResponse) {
+                        var execResponse = response as ExecuteResponse;
+                        if (execResponse.Status.Item != null) {
+                            if (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType) {
+                                deposit.Kind = TransactionKind.ActiveDeposit;
+                                deposit.Store();
+                                return;
+                            }
+                            if (execResponse.Status.Item is ProcessSucceededType) {
+                                var transactions = tFactory.GetTransactionsByReference(entity.Identifier);
+                                if (transactions.Count > 1) deposit.Kind = TransactionKind.ResolvedDeposit;
+                                else deposit.Kind = TransactionKind.ResolvedDeposit;
+                                deposit.Store();
+                                return;
+                            }
                         }
                     }
+                    //in all other cases, we set the deposit as closed
+                    deposit.Kind = TransactionKind.ClosedDeposit;
+                    deposit.Store();
                 }
-                //in all other cases, we set the deposit as closed
-                deposit.Kind = TransactionKind.ClosedDeposit;
-                deposit.Store();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
             }
         }
 
