@@ -41,7 +41,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
 
-                string sql = "SELECT name,value,type FROM config;";
+                string sql = "SELECT name,value,type FROM config WHERE internal=0;";
                 IDbConnection dbConnection = context.GetDbConnection();
                 IDataReader reader = context.GetQueryResult(sql, dbConnection);
 
