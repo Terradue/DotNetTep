@@ -90,6 +90,7 @@ namespace Terradue.Tep
             entity.IconUrl = IconeUrl;
             entity.Identifier = TepUtility.ValidateIdentifier(Identifier);
             entity.Name = Name;
+            entity.Description = Description;
             entity.DefaultRoleName = DefaultRole;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
