@@ -281,16 +281,19 @@ namespace Terradue.Tep.WebServer.Services {
 
             try{
                 var parameters = BuildWpsJobParameters(context, executeInput);
+                bool accountingEnabled = context.GetConfigBooleanValue("accountingEnabled");
                 bool quotationMode = false;
                 bool isQuotable = false;
                 string cachekey = wps.Identifier;
 
-                //check if the service is quotable (=has quotation parameter)
-                foreach (var p in parameters) {
-                    if (p.Key == "quotation") {
-                        isQuotable = true;
-                        if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
-                    } else cachekey += p.Key + p.Value;
+                if (accountingEnabled) {
+                    //check if the service is quotable (=has quotation parameter)
+                    foreach (var p in parameters) {
+                        if (p.Key == "quotation") {
+                            isQuotable = true;
+                            if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
+                        } else cachekey += p.Key + p.Value;
+                    }
                 }
 
                 //part is quotable
@@ -589,13 +592,15 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/wps/RetrieveResultServlet GET Id='{0}'", request.Id));
 
+                bool accountingEnabled = context.GetConfigBooleanValue("accountingEnabled");
+
                 //load job from request identifier
                 WpsJob wpsjob = WpsJob.FromIdentifier(context, request.Id);
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 ExecuteResponse execResponse = null;
 
                 var jobresponse = wpsjob.GetStatusLocationContent ();
-                UpdateDepositTransactionFromStatus(context, wpsjob, jobresponse);
+                if(accountingEnabled) UpdateDepositTransactionFromStatus(context, wpsjob, jobresponse);
                 if (jobresponse is HttpResult) return jobresponse;
                 else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                 else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);

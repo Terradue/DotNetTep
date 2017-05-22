@@ -1,4 +1,4 @@
--- VERSION 1.1.2.6
+-- VERSION 1.1.2.7
 
 USE $MAIN$;
 
@@ -240,6 +240,7 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('CommunityJoinEmailSubject', 'string', 'Email subject to notify user has been added in community', 'Email subject to notify user has been added in community', '[$(SITENAME)] - Join community $(COMMUNITY)', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('discussBaseUrl', 'string', 'Discuss base url', 'Discuss base url', 'http://discuss.terradue.com', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('discussApiKey', 'string', 'Discuss api key', 'Discuss api key', 'TO_BE_UPDATED', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('accounting-enabled', 'bool', 'accounting enabled or not', 'accounting enabled or not', 'true', '1');
 -- RESULT
 
 -- Activities ...\
@@ -282,3 +283,9 @@ INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`) VALU
 -- Add community default role ... \
 ALTER TABLE domain ADD COLUMN id_role_default INT(10) NOT NULL DEFAULT 0;
 -- RESULT
+
+-- Adding Agent action...\
+INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`, `time_interval`) VALUES ('CleanDeposit', 'Clean accouting Deposit', 'This action set as closed the deposit without any transaction for more than a certain number of days', 'Terradue.Tep.Actions, Terradue.Tep', 'CleanDeposit',1,'1D');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('accounting-deposit-maxDays', 'double', 'accounting deposit max days lifetime', 'accounting deposit max days lifetime', '30', '1');
+-- RESULT
+
