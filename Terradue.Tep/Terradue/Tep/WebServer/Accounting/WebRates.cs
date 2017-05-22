@@ -36,7 +36,8 @@ namespace Terradue.Tep.WebServer {
 
         public WebRates() {}
 
-        public WebRates(Rates entity) : base(entity){            
+        public WebRates(Rates entity) : base(entity){
+            this.Identifier = entity.Identifier;
             this.Unit = entity.Unit;
             this.Cost = entity.Cost;
         }
