@@ -9,9 +9,10 @@ namespace Terradue.Tep {
 
         public static bool PostAtomFeedToIndex(IfyContext context, AtomFeed feed, string index) {
             var baseurl = context.GetConfigValue("catalog-baseurl");
+            var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/";
             var username = context.GetConfigValue("catalog-admin-username");
             var apikey = context.GetConfigValue("catalog-admin-apikey");
-            var request = (HttpWebRequest)WebRequest.Create(baseurl + "/" + index + "/");
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
             request.ContentType = "application/atom+xml";
             request.Accept = "application/xml";
