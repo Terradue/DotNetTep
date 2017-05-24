@@ -281,7 +281,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             try{
                 var parameters = BuildWpsJobParameters(context, executeInput);
-                bool accountingEnabled = context.GetConfigBooleanValue("accountingEnabled");
+                bool accountingEnabled = context.GetConfigBooleanValue("accounting-enabled");
                 bool quotationMode = false;
                 bool isQuotable = false;
                 string cachekey = wps.Identifier;
@@ -592,7 +592,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/wps/RetrieveResultServlet GET Id='{0}'", request.Id));
 
-                bool accountingEnabled = context.GetConfigBooleanValue("accountingEnabled");
+                bool accountingEnabled = context.GetConfigBooleanValue("accounting-enabled");
 
                 //load job from request identifier
                 WpsJob wpsjob = WpsJob.FromIdentifier(context, request.Id);

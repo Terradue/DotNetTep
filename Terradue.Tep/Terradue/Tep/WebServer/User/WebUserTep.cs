@@ -145,7 +145,7 @@ namespace Terradue.Tep.WebServer {
             this.T2Username = entity.TerradueCloudUsername;
             //only current user can know the api key
             if(context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
-            if(context.GetConfigBooleanValue("enableAccounting")) this.Balance = entity.GetAccountingBalance();
+            if(context.GetConfigBooleanValue("accounting-enabled")) this.Balance = entity.GetAccountingBalance();
 
             this.Roles = GetUserCommunityRoles(context, entity);
         }

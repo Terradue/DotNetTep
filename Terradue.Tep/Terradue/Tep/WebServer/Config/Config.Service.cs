@@ -24,7 +24,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result.Add(new KeyValuePair<string, string>("geobrowserDateMin",context.GetConfigValue("geobrowser-date-min")));
                 result.Add(new KeyValuePair<string, string>("geobrowserDateMax",context.GetConfigValue("geobrowser-date-max")));
                 result.Add(new KeyValuePair<string, string>("Github-client-id",context.GetConfigValue("Github-client-id")));
-                result.Add(new KeyValuePair<string, string>("enableAccounting", context.GetConfigValue("enableAccounting")));
+                result.Add(new KeyValuePair<string, string>("enableAccounting", context.GetConfigValue("accounting-enabled")));
                     
                 context.Close();
             } catch (Exception e) {
