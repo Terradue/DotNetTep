@@ -166,6 +166,13 @@ namespace Terradue.Tep {
             wps.IsSandbox = true;
             wps.Tags = new List<string>();
 
+            try {
+                var user = UserTep.FromId(context, context.UserId);
+                wps.Domain = user.GetPrivateDomain();
+            } catch (Exception e) {
+                context.LogError(wps, e.Message);
+            }
+
             XmlNode[] user_template = (XmlNode[])vm.USER_TEMPLATE;
             bool isWPS = false;
             string wpsPort = "8080", wpsPath = "wps/WebProcessingService", nic = "";
@@ -256,7 +263,11 @@ namespace Terradue.Tep {
 
             foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                 context.LogDebug (this, "Get process -- " + process.RemoteIdentifier);
-                if (process.RemoteIdentifier.Equals(processId)) return process;
+                if (process.RemoteIdentifier.Equals(processId)) {
+                    if (process.Domain == null && wps.Domain != null) process.Domain = wps.Domain;
+                    process.Available = true;
+                    return process;
+                }
             }
 
             return null;

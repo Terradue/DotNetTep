@@ -305,6 +305,10 @@ namespace Terradue.Tep {
 
         }
 
+        public Domain GetPrivateDomain() {
+            return Domain.FromIdentifier(context, TepUtility.ValidateIdentifier(Username));
+        }
+
         /// <summary>
         /// Generates the API key.
         /// </summary>
