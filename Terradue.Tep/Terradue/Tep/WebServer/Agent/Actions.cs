@@ -42,16 +42,16 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="context">Context.</param>
         public static void CleanDeposit(IfyContext context) {
+            var lifeTimeDays = context.GetConfigDoubleValue("accounting-deposit-maxDays");
+
             var factory = new TransactionFactory(context);
 
             //get all deposits
             var deposits = factory.GetDepositTransactions();
 
-            var lifeTimeDays = context.GetConfigDoubleValue("accounting-deposit-maxDays");
-
             foreach (var deposit in deposits) {
                 try {
-                    if (deposit.LogTime > DateTime.Now.AddDays(lifeTimeDays)) { //the deposit is created for more than lifeTimeDays days
+                    if (deposit.Kind != TransactionKind.ClosedDeposit && deposit.LogTime.AddDays(lifeTimeDays) < DateTime.Now) { //the deposit is created for more than lifeTimeDays days and is not yet closed
                         var transactions = factory.GetTransactionsByReference(deposit.Identifier);
                         if (transactions.Count == 1) { //means there is only the deposit as transaction
                             deposit.Kind = TransactionKind.ClosedDeposit;
