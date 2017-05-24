@@ -76,7 +76,7 @@ namespace Terradue.Tep {
         /// <returns>The deposit transactions.</returns>
         /// <param name="reference">Reference.</param>
         public List<Transaction> GetDepositTransactions() {
-            return GetDepositTransactions();
+            return GetDepositTransactions(null);
         }
 
         private List<Transaction> GetDepositTransactions(string reference) {
