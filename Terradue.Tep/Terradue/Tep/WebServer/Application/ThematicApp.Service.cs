@@ -71,10 +71,18 @@ namespace Terradue.Tep.WebServer.Services {
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
-            context.Close ();
-
             string sresult = result.SerializeToString();
-            sresult = sresult.Replace("${USERNAME}", context.Username);
+
+            //replace usernames in apps
+            try{
+                var user = UserTep.FromId(context, context.UserId);
+                sresult = sresult.Replace("${USERNAME}", user.Username);
+                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+            }catch(Exception e){
+                context.LogError (this, e.Message);
+            }
+
+            context.Close ();
 
             return new HttpResult (sresult, result.ContentType);
         }
