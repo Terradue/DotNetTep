@@ -257,6 +257,7 @@ namespace Terradue.Tep {
             request.Method = "POST";
             request.ContentType = "application/json";
             request.Proxy = null;
+            request.Timeout = 3000;
 
             var estr = GetTransactionJsonToPost(username, timestamp);
             string json = JsonSerializer.SerializeToString<ElasticTransactionSearchRequest>(estr);
