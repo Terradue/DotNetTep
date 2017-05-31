@@ -339,7 +339,7 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         /// <param name="id">Identifier.</param>
         public bool IsSharedToUser(int id) {
-            var sharedUsersIds = this.GetUsersWithPermissions();
+            var sharedUsersIds = this.GetAuthorizedUserIds();
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 
