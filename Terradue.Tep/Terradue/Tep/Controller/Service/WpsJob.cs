@@ -45,15 +45,35 @@ namespace Terradue.Tep {
         [EntityDataField("params")]
         public string parameters { get; protected set; }
 
-        /// <summary>
-        /// Gets or sets the parameters associated to the job
-        /// </summary>
-        /// <remarks>
-        /// Paramaters are of type key/value
-        /// </remarks>
-        /// <value>The parameters.</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        public List<KeyValuePair<string, string>> Parameters {
+        [EntityDataField("access_key")]
+        public string accesskey { get; protected set; }
+        public string AccessKey { 
+            get {
+				if (accesskey == null) {
+                    var accesslevel = context.AccessLevel;
+                    context.AccessLevel = EntityAccessLevel.Administrator;
+					accesskey = Guid.NewGuid().ToString();
+                    var tmpjob = WpsJob.FromId(context, this.Id);
+                    tmpjob.AccessKey = accesskey;
+					tmpjob.Store();
+                    context.AccessLevel = accesslevel;
+				}
+                return accesskey;
+            } 
+            protected set {
+                accesskey = value;
+            }
+        }
+
+		/// <summary>
+		/// Gets or sets the parameters associated to the job
+		/// </summary>
+		/// <remarks>
+		/// Paramaters are of type key/value
+		/// </remarks>
+		/// <value>The parameters.</value>
+		/// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
+		public List<KeyValuePair<string, string>> Parameters {
             get {
                 List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
                 if (parameters != null)
@@ -198,6 +218,10 @@ namespace Terradue.Tep {
             return result;
         }
 
+		public override void Load() {
+			base.Load();
+		}
+
         /// <summary>
         /// Store this instance.
         /// </summary>
@@ -205,6 +229,7 @@ namespace Terradue.Tep {
             if (DomainId == 0) DomainId = Owner.Domain.Id;
             if (this.Id == 0) {
                 this.CreatedTime = DateTime.UtcNow;
+                this.AccessKey = Guid.NewGuid().ToString();
             }
             base.Store();
         }
@@ -479,7 +504,7 @@ namespace Terradue.Tep {
             string name = (this.Name != null ? this.Name : this.Identifier);
             string text = (this.TextContent != null ? this.TextContent : "");
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
-            Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+            Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier + "&key=" + this.AccessKey);
 
             WpsProvider provider = null;
             AtomItem result = new AtomItem();

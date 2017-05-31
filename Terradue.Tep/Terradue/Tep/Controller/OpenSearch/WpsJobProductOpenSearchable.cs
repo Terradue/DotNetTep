@@ -69,7 +69,6 @@ namespace Terradue.Tep.OpenSearch
 
             this.openSearchable = job.GetProductOpenSearchable();
 
-
         }
 
 
@@ -103,6 +102,7 @@ namespace Terradue.Tep.OpenSearch
             UriBuilder searchUrl = new UriBuilder(context.BaseUrl);
             searchUrl.Path += string.Format("/job/wps/{0}/products/search", Wpsjob.Identifier);
             NameValueCollection queryString = HttpUtility.ParseQueryString("");
+            parameters.Add("key",this.Wpsjob.AccessKey);
             parameters.AllKeys.FirstOrDefault(k =>
             {
                 queryString.Add(k, parameters[k]);

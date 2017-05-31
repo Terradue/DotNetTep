@@ -35,6 +35,9 @@ namespace Terradue.Tep.WebServer {
     public class WpsJobProductSearchRequestTep : IReturn<HttpResult> {
         [ApiMember (Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string JobId { get; set; }
+
+		[ApiMember(Name = "key", Description = "user api key", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Key { get; set; }
     }
 
     [Route ("/job/wps/{jobId}/products/description", "GET", Summary = "GET WPS job products as opensearch", Notes = "")]

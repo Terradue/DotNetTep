@@ -128,7 +128,18 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/job/wps/{0}/products/search GET", request.JobId));
 
-                WpsJob wpsjob = WpsJob.FromIdentifier (context, request.JobId);
+                WpsJob wpsjob = null;
+
+				try {
+					wpsjob = WpsJob.FromIdentifier(context, request.JobId);
+				} catch (Exception e) {
+					if (request.Key != null){//or if public
+						context.AccessLevel = EntityAccessLevel.Administrator;
+						wpsjob = WpsJob.FromIdentifier(context, request.JobId);
+						if (request.Key != null && !request.Key.Equals(wpsjob.AccessKey))
+							throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);
+					}
+				}
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 HttpRequest httpRequest = HttpContext.Current.Request;
