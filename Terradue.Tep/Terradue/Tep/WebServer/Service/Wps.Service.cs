@@ -505,6 +505,9 @@ namespace Terradue.Tep.WebServer.Services {
             }
             wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
             wpsjob.Store();
+
+			//save job status in activity
+			UpdateWpsJobActivity(context, wpsjob, execResponse);
         }
 
         /// <summary>
@@ -584,6 +587,32 @@ namespace Terradue.Tep.WebServer.Services {
             return output;
         }
 
+        private void UpdateWpsJobActivity(IfyContext context, WpsJob wpsjob, ExecuteResponse execResponse){
+			//save job status in activity
+			try
+			{
+				if (execResponse.Status != null && execResponse.Status.Item != null)
+				{
+					ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, wpsjob, EntityOperationType.Create);
+					var activityParams = activity.GetParams();
+					if (activityParams == null || activityParams["status"] == null)
+					{
+						if (execResponse.Status.Item is ProcessSucceededType)
+						{
+							activity.AddParam("status", "succeeded");
+							activity.Store();
+						}
+						else if (execResponse.Status.Item is ProcessFailedType)
+						{
+							activity.AddParam("status", "failed");
+							activity.Store();
+						}
+					}
+				}
+			}
+			catch (Exception) { }
+        }
+
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.AccessLevel = EntityAccessLevel.Administrator;
@@ -606,21 +635,7 @@ namespace Terradue.Tep.WebServer.Services {
                 else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
 
                 //save job status in activity
-                try {
-                    if (execResponse.Status != null && execResponse.Status.Item != null) {
-                        ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, wpsjob, EntityOperationType.Create);
-                        var activityParams = activity.GetParams();
-                        if (activityParams == null || activityParams["status"] == null) {
-                            if (execResponse.Status.Item is ProcessSucceededType) {
-                                activity.AddParam("status", "succeeded");
-                                activity.Store();
-                            } else if (execResponse.Status.Item is ProcessFailedType) {
-                                activity.AddParam("status", "failed");
-                                activity.Store();
-                            }
-                        }
-                    }
-                } catch (Exception) { }
+                UpdateWpsJobActivity(context, wpsjob, execResponse);
 
                 if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
 
