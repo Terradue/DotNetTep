@@ -21,8 +21,12 @@ namespace Terradue.Tep {
         public Entity Entity {
             get {
                 if (entity == null) {
-                    var etype = EntityType.GetEntityTypeFromId(EntityTypeId);
-                    entity = etype.GetEntityInstanceFromId(context, this.EntityId);
+                    try {
+                        var etype = EntityType.GetEntityTypeFromId(EntityTypeId);
+                        entity = etype.GetEntityInstanceFromId(context, this.EntityId);
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
                 }
                 return entity;
             }
@@ -83,14 +87,18 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The human readable reference.</returns>
         public string GetHumanReadableReference() {
-            if (Entity != null && EntityId != 0) {
-                if (Entity is WpsJob) {
-                    var job = WpsJob.FromId(context, EntityId);
-                    return string.Format("Wpsjob '{0}'", job.Name);
-                } else if (Entity is DataPackage) { 
-                    return string.Format("Datapackage '{0}'", Entity.Name);
+                if (Entity != null && EntityId != 0) {
+                    try {
+                        if (Entity is WpsJob) {
+                            var job = WpsJob.FromId(context, EntityId);
+                            return string.Format("Wpsjob '{0}'", job.Name);
+                        } else if (Entity is DataPackage) {
+                            return string.Format("Datapackage '{0}'", Entity.Name);
+                        }
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
                 }
-            } 
             return Identifier;
         }
 
