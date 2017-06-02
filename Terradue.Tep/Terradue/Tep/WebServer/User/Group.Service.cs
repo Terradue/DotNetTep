@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
 				grp = request.ToEntity(context, grp);
                 grp.Store();
                 result = new WebGroup(grp);
-                context.LogInfo(this,string.Format("/group POST Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/group POST Id='{0}'", grp.Id));
                 context.LogDebug(this,string.Format("Group {0} created by user {1}", grp.Name, User.FromId(context, context.UserId).Username));
                 context.Close ();
             }catch(Exception e) {
