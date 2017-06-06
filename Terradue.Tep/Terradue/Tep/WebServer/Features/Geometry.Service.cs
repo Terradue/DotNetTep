@@ -12,6 +12,8 @@ using SharpKml.Dom;
 using SharpKml.Engine;
 using Terradue.Portal;
 using Terradue.WebService.Model;
+using Newtonsoft.Json;
+using Terradue.GeoJson.Feature;
 
 namespace Terradue.Tep.WebServer.Services {
     
@@ -30,6 +32,11 @@ namespace Terradue.Tep.WebServer.Services {
         public System.IO.Stream RequestStream { get; set; }
     }
 
+	[Route("/geometry/geojson", "POST", Summary = "POST geometry to be converted as WKT")]
+	public class GeoJsonPostRequestTep : IRequiresRequestStream, IReturn<string> {
+		public System.IO.Stream RequestStream { get; set; }
+	}
+
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
              EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
@@ -42,7 +49,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
             context.LogInfo(this, string.Format("/geometry/shp GET"));
-            string wkt = "blablatest";
+            string wkt = "";
 
             if (this.RequestContext.Files != null && this.RequestContext.Files.Length > 0) { 
                 var extension = this.RequestContext.Files[0].FileName.Substring(this.RequestContext.Files[0].FileName.LastIndexOf("."));
@@ -59,6 +66,13 @@ namespace Terradue.Tep.WebServer.Services {
                             wkt = ExtractWKTFromKML(stream);
                         }   
                     break;
+                    case ".json":
+					case ".geojson":
+						using (var stream = new MemoryStream()) {
+							this.RequestContext.Files[0].InputStream.CopyTo(stream);
+							wkt = ExtractWKTFromGeoJson(stream);
+						}
+						break;
                     default:
                     throw new Exception("Invalid file type");
                     break;
@@ -109,6 +123,25 @@ namespace Terradue.Tep.WebServer.Services {
             if (!string.IsNullOrEmpty(wkt)) return new WebResponseString(wkt);
             else throw new Exception("Unable to get WKT");
         }
+
+		public object Post(GeoJsonPostRequestTep request) {
+			var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+			context.Open();
+			context.LogInfo(this, string.Format("/geometry/geojson GET"));
+
+			string wkt = null;
+			using (var stream = new MemoryStream()) {
+				if (this.RequestContext.Files.Length > 0)
+					this.RequestContext.Files[0].InputStream.CopyTo(stream);
+				else
+					request.RequestStream.CopyTo(stream);
+				wkt = ExtractWKTFromGeoJson(stream);
+			}
+
+			context.Close();
+			if (!string.IsNullOrEmpty(wkt)) return new WebResponseString(wkt);
+			else throw new Exception("Unable to get WKT");
+		}
 
         private string ExtractWKTFromShapefileZip(Stream stream) { 
             string uid = Guid.NewGuid().ToString();
@@ -210,6 +243,21 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new NetTopologySuite.Geometries.Polygon(new NetTopologySuite.Geometries.LinearRing(coordinates));
             }
             return result;
+        }
+
+        private string ExtractWKTFromGeoJson(Stream stream) {
+            stream.Seek(0, SeekOrigin.Begin);
+
+			Terradue.GeoJson.Feature.FeatureCollection fc;
+			var serializer = new JsonSerializer();
+
+			using (var sr = new StreamReader(stream))
+			using (var jsonTextReader = new JsonTextReader(sr)) {
+				fc = serializer.Deserialize<Terradue.GeoJson.Feature.FeatureCollection>(jsonTextReader);
+			}
+            if (fc.Features != null && fc.Features.Count > 0)
+                return Terradue.GeoJson.Geometry.WktExtensions.ToWkt(fc.Features[0]);
+            else throw new Exception("no feature found in the geojson");
         }
     }
 
