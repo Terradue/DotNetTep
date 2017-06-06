@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -13,10 +11,9 @@ using SharpKml.Engine;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 using Newtonsoft.Json;
-using Terradue.GeoJson.Feature;
 
 namespace Terradue.Tep.WebServer.Services {
-    
+
     [Route("/geometry", "POST", Summary = "POST geometry to be converted as WKT")]
     public class GeometryPostRequestTep : IRequiresRequestStream, IReturn<string> {
         public System.IO.Stream RequestStream { get; set; }
