@@ -296,10 +296,16 @@ namespace Terradue.Tep {
     public class ETTerms {
         [DataMember]
         public string field { get; set; }
-
-        [DataMember]
-        public int size { get; set; }
     }
+
+	[DataContract]
+	public class ETTermsSize {
+		[DataMember]
+		public string field { get; set; }
+
+		[DataMember]
+		public int size { get; set; }
+	}
 
     //public class ETSum {
     //    public string field { get; set; }
@@ -334,7 +340,7 @@ namespace Terradue.Tep {
     [DataContract]
     public class ETAccountRef {
         [DataMember]
-        public ETTerms terms { get; set; }
+        public ETTermsSize terms { get; set; }
         [DataMember]
         public ETAggs3 aggs { get; set; }
     }
