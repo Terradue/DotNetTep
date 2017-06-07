@@ -184,20 +184,20 @@
     <Reference Include="Terradue.Metadata.EarthObservation">
       <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.4.17\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.23\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.23\lib\net45\Terradue.Portal.Agent.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.23\lib\net45\Terradue.Portal.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Cloud">
       <HintPath>..\packages\Terradue.Cloud.1.3.1\lib\net45\Terradue.Cloud.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Github">
       <HintPath>..\packages\Terradue.Github.1.1.0\lib\net45\Terradue.Github.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.7.24\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.7.24\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.7.24\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -299,6 +299,15 @@
     <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
     <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
     <None Include="Resources\ne_110m_land\ne_110m_land.dbf" />
+    <None Include="modules\cloud\www\admin\vmtemplate.aspx" />
+    <None Include="modules\cloud\www\admin\virtualresource.aspx" />
+    <None Include="modules\cloud\www\admin\cloudprovider.aspx" />
+    <None Include="modules\cloud\db\db-create.sql" />
+    <None Include="modules\cloud\db\db-1.3#.sql" />
+    <None Include="modules\cloud\db\db-1.2#.sql" />
+    <None Include="modules\cloud\db\db-1.1#.sql" />
+    <None Include="modules\cloud\db\db-1.0#.sql" />
+    <None Include="modules\github\db\db-create.sql" />
     <None Include="core\db\db-create.sql" />
     <None Include="core\db\db-2.7.9#.sql" />
     <None Include="core\db\db-2.7.8#.sql" />
@@ -307,6 +316,7 @@
     <None Include="core\db\db-2.7.3.1#.sql" />
     <None Include="core\db\db-2.7.3#.sql" />
     <None Include="core\db\db-2.7.2#.sql" />
+    <None Include="core\db\db-2.7.10#.sql" />
     <None Include="core\db\db-2.7.1#.sql" />
     <None Include="core\db\db-2.7#.sql" />
     <None Include="core\db\db-2.6.66#.sql" />
@@ -326,15 +336,6 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
-    <None Include="modules\cloud\www\admin\vmtemplate.aspx" />
-    <None Include="modules\cloud\www\admin\virtualresource.aspx" />
-    <None Include="modules\cloud\www\admin\cloudprovider.aspx" />
-    <None Include="modules\cloud\db\db-create.sql" />
-    <None Include="modules\cloud\db\db-1.3#.sql" />
-    <None Include="modules\cloud\db\db-1.2#.sql" />
-    <None Include="modules\cloud\db\db-1.1#.sql" />
-    <None Include="modules\cloud\db\db-1.0#.sql" />
-    <None Include="modules\github\db\db-create.sql" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
