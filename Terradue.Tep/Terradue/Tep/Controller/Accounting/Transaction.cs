@@ -296,6 +296,9 @@ namespace Terradue.Tep {
     public class ETTerms {
         [DataMember]
         public string field { get; set; }
+
+        [DataMember]
+        public int size { get; set; }
     }
 
     //public class ETSum {

@@ -231,7 +231,7 @@ namespace Terradue.Tep {
                         terms = new ETTerms { field = "account.userName" },
                         aggs = new ETAggs2 {
                             account_ref = new ETAccountRef {
-                                terms = new ETTerms { field = "account.ref" },
+                                terms = new ETTerms { field = "account.ref", size = 1000 },
                                 aggs = new ETAggs3 {
                                     quantities = new ETQuantities {
                                         terms = new ETTerms { field = "quantity.id" },
