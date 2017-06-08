@@ -518,7 +518,7 @@ namespace Terradue.Tep {
             basepath.Path = "#!/" + entityType.Keyword + "/details/" + Username;
             string usrUri = basepath.Uri.AbsoluteUri;
             string usrName = (!String.IsNullOrEmpty(FirstName) && !String.IsNullOrEmpty(LastName) ? FirstName + " " + LastName : Username);
-            SyndicationPerson author = new SyndicationPerson(Email, usrName, usrUri);
+            SyndicationPerson author = new SyndicationPerson(context.UserLevel == UserLevel.Administrator ? Email : null, usrName, usrUri);
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Username));
 
             result.Authors.Add(author);

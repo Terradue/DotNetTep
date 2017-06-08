@@ -118,7 +118,7 @@ namespace Terradue.Tep {
             basepath.Path = "user";
             string usrUri = basepath.Uri.AbsoluteUri + "/" + owner.Username;
             string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(owner.LastName) ? owner.FirstName + " " + owner.LastName : owner.Username);
-            SyndicationPerson author = new SyndicationPerson(owner.Email, usrName, usrUri);
+            SyndicationPerson author = new SyndicationPerson(null, usrName, usrUri);
             var ownername = string.IsNullOrEmpty(owner.FirstName) || string.IsNullOrEmpty(owner.LastName) ? owner.Username : owner.FirstName + " " + owner.LastName;
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", ownername));
             author.ElementExtensions.Add(new SyndicationElementExtension("avatar", "http://purl.org/dc/elements/1.1/", owner.GetAvatar()));

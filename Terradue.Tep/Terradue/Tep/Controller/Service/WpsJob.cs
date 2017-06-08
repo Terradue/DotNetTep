@@ -542,7 +542,7 @@ namespace Terradue.Tep {
             basepath.Path = "user";
             string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username;
             string usrName = (!String.IsNullOrEmpty(Owner.FirstName) && !String.IsNullOrEmpty(Owner.LastName) ? Owner.FirstName + " " + Owner.LastName : Owner.Username);
-            SyndicationPerson author = new SyndicationPerson(Owner.Email, usrName, usrUri);
+            SyndicationPerson author = new SyndicationPerson(null, usrName, usrUri);
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
             result.Authors.Add(author);
             result.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
