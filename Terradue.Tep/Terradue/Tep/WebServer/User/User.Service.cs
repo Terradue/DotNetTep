@@ -34,8 +34,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{Id}} GET Id='{0}'", request.Id));
                 UserTep user = UserTep.FromId(context, request.Id);
-                result = 
-                    new WebUserTep(context, user);
+                result = new WebUserTep(context, user);
 
                 context.Close();
             } catch (Exception e) {

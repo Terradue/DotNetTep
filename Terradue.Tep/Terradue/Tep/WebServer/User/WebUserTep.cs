@@ -142,12 +142,23 @@ namespace Terradue.Tep.WebServer {
                 var umssoUser = umssoauthType.GetUserProfile (context, HttpContext.Current.Request, false);
                 if (umssoUser != null) this.UmssoEmail = umssoUser.Email;
             }
-            this.T2Username = entity.TerradueCloudUsername;
-            //only current user can know the api key
-            if(context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
-            if(context.GetConfigBooleanValue("accounting-enabled")) this.Balance = entity.GetAccountingBalance();
 
-            this.Roles = GetUserCommunityRoles(context, entity);
+            //only current user can know the api key
+			if (context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
+
+            if (context.UserId == entity.Id || context.UserLevel == UserLevel.Administrator){
+                this.T2Username = entity.TerradueCloudUsername;
+                if (context.GetConfigBooleanValue("accounting-enabled")) this.Balance = entity.GetAccountingBalance();
+                this.Roles = GetUserCommunityRoles(context, entity);
+            } else {
+                this.Email = null;
+                this.Affiliation = null;
+                this.Level = 0;
+                this.AccountStatus = 0;
+                this.DomainId = 0;
+            }
+
+
         }
 
         /// <summary>
