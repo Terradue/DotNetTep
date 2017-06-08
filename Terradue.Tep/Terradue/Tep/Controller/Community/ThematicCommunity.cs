@@ -441,7 +441,7 @@ namespace Terradue.Tep {
             if (Owners != null) {
                 foreach (var own in Owners) {
                     var ownerUri = own.GetUserPageLink();
-                    SyndicationPerson ownerPerson = new SyndicationPerson(own.Email, own.FirstName + " " + own.LastName, ownerUri);
+                    SyndicationPerson ownerPerson = new SyndicationPerson(null, own.FirstName + " " + own.LastName, ownerUri);
                     ownerPerson.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", own.Username));
                     result.Authors.Add(ownerPerson);
                 }
@@ -517,7 +517,6 @@ namespace Terradue.Tep {
                                     usersCommunity.Add(new UserRole {
                                         Username = user.Username,
                                         Name = user.FirstName + " " + user.LastName,
-                                        Email = user.Email,
                                         Role = role.Identifier,
                                         RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? "pending" : "joined",

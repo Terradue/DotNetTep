@@ -155,9 +155,8 @@ namespace Terradue.Tep.WebServer {
                 this.Affiliation = null;
                 this.Level = 0;
                 this.AccountStatus = 0;
-                this.DomainId = 0;
+                this.DomainId = null;
             }
-
 
         }
 
