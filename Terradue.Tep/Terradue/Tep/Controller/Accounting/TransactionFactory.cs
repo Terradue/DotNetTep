@@ -125,10 +125,13 @@ namespace Terradue.Tep {
         /// <param name="user">User.</param>
         public double GetUserBalance(User user) {
             double balance = 0;
+			try {
+				//first we sync transactions
+				SyncTransactions(user);
+            } catch (Exception e) {
+				context.LogError(this, e.Message + "-" + e.StackTrace);
+			}
             try {
-
-                //first we sync transactions
-                SyncTransactions(user);
 
                 //get all transactions without reference
                 List<Transaction> transactions = GetUserTransactions(user.Id, false, true);
