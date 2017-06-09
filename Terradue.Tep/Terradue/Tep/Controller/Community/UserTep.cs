@@ -40,8 +40,10 @@ namespace Terradue.Tep {
             get {
                 if (base.Domain == null) {
                     try {
-                        base.Domain = Domain.FromIdentifier(context, Username);
-                    } catch (Exception e) { }
+                        base.Domain = GetPrivateDomain();
+                    } catch (Exception e) {
+                        //bla
+                    }
                 }
                 return base.Domain;
             }
@@ -52,7 +54,7 @@ namespace Terradue.Tep {
 
         public override int DomainId {
             get {
-                return Domain.Id;
+                return Domain != null ? Domain.Id : 0;
             }
             set {
                 base.DomainId = value;
