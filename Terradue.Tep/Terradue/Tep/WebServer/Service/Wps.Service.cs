@@ -474,20 +474,24 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="execResponse">Exec response.</param>
         private void UpdateJobFromExecuteResponse(IfyContext context, ref WpsJob wpsjob, ExecuteResponse execResponse) {
             context.LogDebug(this, string.Format("Creating job from execute response"));
-            Uri uri = new Uri(execResponse.statusLocation);
+            Uri uri = new Uri(execResponse.statusLocation.ToLower());
 
             //create WpsJob
             context.LogDebug(this, string.Format("Get identifier from status location"));
             string identifier = null;
-            var pos = uri.Query != null ? uri.Query.ToLower().IndexOf("id=") : 0;
-            if (pos > 0) identifier = uri.Query.Substring(pos + 3);
-            else {
-                context.LogDebug(this, string.Format("identifier does not contain id="));
+            NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
+            if(!string.IsNullOrEmpty(nvc["id"])){
+                identifier = nvc["id"];
+            } else {
+                context.LogDebug(this, string.Format("identifier does not contain the key id in the query"));
+
                 //statusLocation url is different for gpod
                 if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
                     context.LogDebug(this, string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
                     identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-                } else if (uri.AbsoluteUri.Contains("pywps")) {
+                } 
+                //statuslocation url is different for pywps
+                else if (uri.AbsoluteUri.Contains("pywps")) {
                     identifier = uri.AbsoluteUri;
                     identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
                     identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
