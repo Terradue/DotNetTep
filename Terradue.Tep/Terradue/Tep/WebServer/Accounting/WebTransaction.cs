@@ -62,8 +62,8 @@ namespace Terradue.Tep.WebServer {
                 case TransactionKind.ActiveDeposit:
                 case TransactionKind.ResolvedDeposit:
                 case TransactionKind.ClosedDeposit:
-                Deposit = entity.Balance;
-                RealCost = entity.RealCost;
+                    Deposit = entity.Deposit;
+                    RealCost = entity.RealCost;
                 break;
                 default:
                 break;

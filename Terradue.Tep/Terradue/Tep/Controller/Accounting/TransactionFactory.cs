@@ -108,7 +108,7 @@ namespace Terradue.Tep {
                 agg.Identifier = reference;
                 agg.Deposit = deposit.Balance;
                 if(cost != deposit.Balance) agg.RealCost = cost;
-                agg.Balance = deposit.Balance;
+                agg.Balance = Math.Abs(GetBalanceWithDeposit(cost, deposit));
                 agg.Kind = deposit.Kind;
                 agg.LogTime = deposit.LogTime;
                 result.Add(agg);
@@ -137,6 +137,8 @@ namespace Terradue.Tep {
                 List<Transaction> transactions = GetUserTransactions(user.Id, false, true);
                 foreach (var transaction in transactions) balance += transaction.GetTransactionBalance();
 
+                context.LogDebug(this, "GetBalance - After no ref = " + balance);
+
                 //get all references
                 var references = GetTransactionsReferences(user.Id);
 
@@ -153,7 +155,9 @@ namespace Terradue.Tep {
                     foreach (var reftransaction in reftransactions) {
                         if (!reftransaction.IsDeposit()) refBalance += reftransaction.Balance;
                     }
-                    balance += GetBalanceWithDeposit(refBalance, deposit);
+                    var subbalance = GetBalanceWithDeposit(refBalance, deposit);
+                    balance += subbalance;
+                    context.LogDebug(this, "GetBalance - Adding subbalance " + reference + " = " + subbalance + " -- balance = " + balance);
                 }
             } catch (Exception e) {
                 context.LogError(this, e.Message + "-" + e.StackTrace);
