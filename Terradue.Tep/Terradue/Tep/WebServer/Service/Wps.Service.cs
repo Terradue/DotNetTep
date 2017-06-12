@@ -320,7 +320,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
                                 if (accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
                                 //calculate estimation with rates
-                                var estimation = Convert.ToInt32(Rates.GetBalanceFromRates(context, wps, accountings[0].quantity));
+                                var estimation = Convert.ToInt32(Rates.GetBalanceFromRates(context, wps.Provider, accountings[0].quantity));
                                 cache.Set(cachekey, estimation.ToString(), policy);
                                 var ldata = new LiteralDataType();
                                 ldata.Value = estimation.ToString();

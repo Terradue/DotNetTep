@@ -5,22 +5,22 @@ using System.Collections.Generic;
 
 namespace Terradue.Tep.WebServer {
 
-    [Route("/service/wps/{serviceIdentifier}/rates", "GET", Summary = "GET service rates as opensearch", Notes = "")]
-    public class RatesForServiceRequestTep : IReturn<List<WebRates>>{
-        [ApiMember(Name = "serviceIdentifier", Description = "service Identifier", ParameterType = "path", DataType = "string", IsRequired = true)]
-        public string ServiceIdentifier { get; set; }
+    [Route("/cr/wps/{providerIdentifier}/rates", "GET", Summary = "GET provider rates as opensearch", Notes = "")]
+    public class RatesForProviderRequestTep : IReturn<List<WebRates>>{
+        [ApiMember(Name = "providerIdentifier", Description = "provider Identifier", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string ProviderIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{serviceIdentifier}/rates", "POST", Summary = "POST a rate", Notes = "")]
-    public class AddRatesForServiceRequestTep : WebRates {
-        [ApiMember(Name = "serviceIdentifier", Description = "service Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
-        public string ServiceIdentifier { get; set; }
+    [Route("/cr/wps/{providerIdentifier}/rates", "POST", Summary = "POST a rate", Notes = "")]
+    public class AddRatesForProviderRequestTep : WebRates {
+        [ApiMember(Name = "providerIdentifier", Description = "provider Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string ProviderIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{serviceIdentifier}/rates/{id}", "DELETE", Summary = "DELETE a rate", Notes = "")]
-    public class DeleteRatesFromServiceRequestTep {
-        [ApiMember(Name = "serviceIdentifier", Description = "service Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
-        public string ServiceIdentifier { get; set; }
+    [Route("/cr/wps/{providerIdentifier}/rates/{id}", "DELETE", Summary = "DELETE a rate", Notes = "")]
+    public class DeleteRatesFromProviderRequestTep {
+        [ApiMember(Name = "providerIdentifier", Description = "provider Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string ProviderIdentifier { get; set; }
 
         [ApiMember(Name = "id", Description = "rates ID", ParameterType = "path", DataType = "int", IsRequired = false)]
         public int Id { get; set; }

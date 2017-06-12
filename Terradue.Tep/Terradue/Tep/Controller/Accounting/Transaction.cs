@@ -318,15 +318,35 @@ namespace Terradue.Tep {
     }
 
     [DataContract]
-    public class ETAggs4 {
+    public class ETAggs5 {
         [DataMember]
         public ETTotal total { get; set; }
     }
 
+	[DataContract]
+	public class ETAggs4 {
+		[DataMember]
+		public ETQuantity quantity { get; set; }
+	}
+
+	[DataContract]
+	public class ETNested {
+		[DataMember]
+		public string path { get; set; }
+	}
+
+	[DataContract]
+	public class ETQuantity {
+		[DataMember]
+		public ETTerms terms { get; set; }
+		[DataMember]
+		public ETAggs5 aggs { get; set; }
+	}
+
     [DataContract]
     public class ETQuantities {
         [DataMember]
-        public ETTerms terms { get; set; }
+        public ETNested nested { get; set; }
         [DataMember]
         public ETAggs4 aggs { get; set; }
     }

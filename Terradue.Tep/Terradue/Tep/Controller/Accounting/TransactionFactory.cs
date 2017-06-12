@@ -241,10 +241,14 @@ namespace Terradue.Tep {
                                 terms = new ETTermsSize { field = "account.ref", size = 1000 },
                                 aggs = new ETAggs3 {
                                     quantities = new ETQuantities {
-                                        terms = new ETTerms { field = "quantity.id" },
+                                        nested = new ETNested { path = "quantity" },
                                         aggs = new ETAggs4 {
-                                            total = new ETTotal {
-                                                sum = new ETTerms { field = "quantity.value" }
+                                            quantity = new ETQuantity {
+                                                aggs = new ETAggs5 {
+                                                    total = new ETTotal {
+                                                        sum = new ETTerms { field = "quantity.value" }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -286,7 +290,7 @@ namespace Terradue.Tep {
                                 try{
                                     //get job and service
                                     var job = WpsJob.FromIdentifier(context, identifier);
-                                    var entityservice = job.Process;
+                                    var entityservice = job.Process.Provider;
                                     double balance = 0;
                                     foreach (var qBucket in bucket.quantities.buckets) {
                                         //calculate balance

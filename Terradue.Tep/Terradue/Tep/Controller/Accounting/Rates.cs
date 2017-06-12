@@ -88,7 +88,7 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public static Rates FromServiceAndIdentifier(IfyContext context, Entity service, string identifier) {
+        public static Rates FromEntityAndIdentifier(IfyContext context, Entity service, string identifier) {
             Rates result = new Rates(context);
             result.Service = service;
             result.Identifier = identifier;
@@ -126,7 +126,7 @@ namespace Terradue.Tep {
         public static double GetBalanceFromRate(IfyContext context, Entity entity, string id, double value) {
             double balance = 0;
             try {
-                Rates rates = Rates.FromServiceAndIdentifier(context, entity, id);
+                Rates rates = Rates.FromEntityAndIdentifier(context, entity, id);
                 if (rates != null && rates.Unit != 0 && rates.Cost != 0) balance = ((value / rates.Unit) * rates.Cost);
             } catch (Exception e) { 
                 context.LogError(context, e.Message);
