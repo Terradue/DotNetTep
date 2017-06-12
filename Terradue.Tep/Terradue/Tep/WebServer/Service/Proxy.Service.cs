@@ -55,7 +55,7 @@ namespace Terradue.Tep.WebServer.Services
 
             var uri = new UriBuilder (request.url);
             var host = uri.Host;
-            if (!(host.EndsWith ("terradue.int") || host.EndsWith ("terradue.com")) || !host.Equals (HttpContext.Current.Request.Url.Host)) throw new Exception ("Non Terradue urls are not accepted");
+            if (!((host.EndsWith ("terradue.int") || host.EndsWith ("terradue.com")) || !host.Equals (HttpContext.Current.Request.Url.Host))) throw new Exception ("Non Terradue urls are not accepted");
 
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             HttpResult result = null;

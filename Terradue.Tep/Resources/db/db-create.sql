@@ -1,4 +1,4 @@
--- VERSION 1.1.2.10
+-- VERSION 1.1.2.11
 
 USE $MAIN$;
 
@@ -81,8 +81,10 @@ CREATE TABLE wpsjob (
     wps varchar(100) NOT NULL COMMENT 'FK: WPS Service identifier',
     process varchar(100) NOT NULL COMMENT 'Process name',
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
+    status int NOT NULL DEFAULT 'none' COMMENT 'Wps job status',
     status_url varchar(200) NOT NULL COMMENT 'Wps job status url',
     created_time datetime NOT NULL COMMENT 'Wps created date',
+    access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
     CONSTRAINT pk_wpsjob PRIMARY KEY (id),
     CONSTRAINT fk_wpsjob_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE,
     UNIQUE INDEX (identifier)
@@ -254,8 +256,8 @@ CREATE TABLE rate (
     identifier varchar(50) NOT NULL COMMENT 'Unique identifier',
     id_entity int unsigned COMMENT 'Entity associated to the activity',
     id_type int unsigned COMMENT 'Entity type',
-    unit int unsigned COMMENT 'rate unit',
-    cost int unsigned COMMENT 'rate cost',
+    unit BIGINT unsigned COMMENT 'rate unit',
+    cost DOUBLE unsigned COMMENT 'rate cost',
     CONSTRAINT pk_rate PRIMARY KEY (id)
 ) Engine=InnoDB COMMENT 'Accounting rates';
 -- RESULT

@@ -280,7 +280,7 @@ namespace Terradue.Tep.WebServer.Services {
             WpsJob wpsjob = null;
 
             try{
-                var parameters = BuildWpsJobParameters(context, executeInput);
+                var parameters = WpsJob.BuildWpsJobParameters(context, executeInput);
                 bool accountingEnabled = context.GetConfigBooleanValue("accounting-enabled");
                 bool quotationMode = false;
                 bool isQuotable = false;
@@ -340,14 +340,14 @@ namespace Terradue.Tep.WebServer.Services {
                         var user = UserTep.FromId(context, context.UserId);
                         var balance = user.GetAccountingBalance();
                         if (double.Parse(quotation) > balance) throw new Exception("User credit insufficiant for this request.");
-                        wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
+                        wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
                         if (!(executeResponse is ExecuteResponse) 
                             || ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType)
                             || string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) return HandleWrongExecuteResponse(context, executeResponse);
 
-                        UpdateJobFromExecuteResponse(context, ref wpsjob, executeResponse as ExecuteResponse);
+                        wpsjob.UpdateJobFromExecuteResponse(context, executeResponse as ExecuteResponse);
 
                         //We store the accounting deposit
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
@@ -363,16 +363,15 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 } else { 
                     //case is not quotable
-                    wpsjob = CreateJobFromExecuteInput(context, wps, executeInput);
+                    wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput);
                     executeResponse = wps.Execute(executeInput);
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
-                    UpdateJobFromExecuteResponse(context, ref wpsjob, executeResponse as ExecuteResponse);
+                    wpsjob.UpdateJobFromExecuteResponse(context, executeResponse as ExecuteResponse);
                 }
 
-
-                 context.LogDebug(this, string.Format("Execute response ok"));
+                context.LogDebug(this, string.Format("Execute response ok"));
 
                 var execResponse = executeResponse as ExecuteResponse;
                 Uri uri = new Uri(execResponse.serviceInstance);
@@ -438,81 +437,7 @@ namespace Terradue.Tep.WebServer.Services {
             return new List<T2Accounting>();
         }
 
-        /// <summary>
-        /// Creates the job from execute input.
-        /// </summary>
-        /// <returns>The job from execute input.</returns>
-        /// <param name="context">Context.</param>
-        /// <param name="wps">Wps.</param>
-        /// <param name="executeInput">Execute input.</param>
-        private WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput){
-            context.LogDebug(this, string.Format("Creating job from execute request"));
-            string newId = Guid.NewGuid().ToString();
 
-            //create WpsJob
-            context.LogDebug(this,string.Format("Provider is null ? -> " + (wps.Provider == null ? "true" : "false")));
-            WpsJob wpsjob = new WpsJob(context);
-            wpsjob.Name = wps.Name;
-            wpsjob.Identifier = newId;
-            wpsjob.OwnerId = context.UserId;
-            wpsjob.UserId = context.UserId;
-            wpsjob.WpsId = wps.Provider.Identifier;
-            wpsjob.ProcessId = wps.Identifier;
-            wpsjob.CreatedTime = DateTime.UtcNow;
-
-            wpsjob.Parameters = new List<KeyValuePair<string, string>>();
-            wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
-
-            return wpsjob;
-        }
-
-        /// <summary>
-        /// Updates the job from execute response.
-        /// </summary>
-        /// <param name="context">Context.</param>
-        /// <param name="wpsjob">Wpsjob.</param>
-        /// <param name="execResponse">Exec response.</param>
-        private void UpdateJobFromExecuteResponse(IfyContext context, ref WpsJob wpsjob, ExecuteResponse execResponse) {
-            context.LogDebug(this, string.Format("Creating job from execute response"));
-            Uri uri = new Uri(execResponse.statusLocation.ToLower());
-
-            //create WpsJob
-            context.LogDebug(this, string.Format("Get identifier from status location"));
-            string identifier = null;
-            NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
-            if(!string.IsNullOrEmpty(nvc["id"])){
-                identifier = nvc["id"];
-            } else {
-                context.LogDebug(this, string.Format("identifier does not contain the key id in the query"));
-
-                //statusLocation url is different for gpod
-                if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
-                    context.LogDebug(this, string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
-                    identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-                } 
-                //statuslocation url is different for pywps
-                else if (uri.AbsoluteUri.Contains("pywps")) {
-                    identifier = uri.AbsoluteUri;
-                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
-                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
-                }
-            }
-            context.LogDebug(this, string.Format("identifier = " + identifier));
-            wpsjob.RemoteIdentifier = identifier;
-
-            var statusuri2 = new UriBuilder(execResponse.statusLocation);
-            if (wpsjob.Provider != null) {
-                //in case of username:password in the provider url, we take them from provider
-                var statusuri = new UriBuilder(wpsjob.Provider.BaseUrl);
-                statusuri2.UserName = statusuri.UserName;
-                statusuri2.Password = statusuri.Password;
-            }
-            wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
-            wpsjob.Store();
-
-			//save job status in activity
-			UpdateWpsJobActivity(context, wpsjob, execResponse);
-        }
 
         /// <summary>
         /// Updates the deposit transaction from job status.
@@ -551,72 +476,6 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
-        /// <summary>
-        /// Builds the wps job parameters.
-        /// </summary>
-        /// <returns>The wps job parameters.</returns>
-        /// <param name="context">Context.</param>
-        /// <param name="executeInput">Execute input.</param>
-        private List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput){
-            context.LogDebug(this, string.Format("Building job parameters from execute request"));
-            List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
-            foreach (var d in executeInput.DataInputs) {
-                context.LogDebug(this,string.Format("Input: " + d.Identifier.Value));
-                if (d.Data != null && d.Data.Item != null) {
-                    if (d.Data.Item is LiteralDataType) {
-                        context.LogDebug(this,string.Format("Value is LiteralDataType"));
-                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));  
-                    } else if (d.Data.Item is ComplexDataType) {
-                        context.LogDebug(this, string.Format("Value is ComplexDataType"));
-                        throw new Exception("Data Input ComplexDataType not yet implemented");
-                    } else if (d.Data.Item is BoundingBoxType) {
-                        //for BoundingBoxType, webportal creates LowerCorner and UpperCorner
-                        //we just need to save both values as a concatained string
-                        context.LogDebug(this, string.Format("Value is BoundingBoxType"));
-                        var bbox = d.Data.Item as BoundingBoxType;
-                        var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
-                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));  
-                    } else {
-                        throw new Exception("unhandled type of Data");
-                    } 
-                } else if (d.Reference != null){
-                    context.LogDebug(this, string.Format("Value is InputReferenceType"));
-                    if (!string.IsNullOrEmpty(d.Reference.href)) {
-                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
-                    } else if (d.Reference.Item != null){
-                        throw new Exception("Data Input InputReferenceType item not yet implemented");
-                    }
-                }
-            }
-            return output;
-        }
-
-        private void UpdateWpsJobActivity(IfyContext context, WpsJob wpsjob, ExecuteResponse execResponse){
-			//save job status in activity
-			try
-			{
-				if (execResponse.Status != null && execResponse.Status.Item != null)
-				{
-					ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, wpsjob, EntityOperationType.Create);
-					var activityParams = activity.GetParams();
-					if (activityParams == null || activityParams["status"] == null)
-					{
-						if (execResponse.Status.Item is ProcessSucceededType)
-						{
-							activity.AddParam("status", "succeeded");
-							activity.Store();
-						}
-						else if (execResponse.Status.Item is ProcessFailedType)
-						{
-							activity.AddParam("status", "failed");
-							activity.Store();
-						}
-					}
-				}
-			}
-			catch (Exception) { }
-        }
-
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.AccessLevel = EntityAccessLevel.Administrator;
@@ -632,61 +491,69 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 ExecuteResponse execResponse = null;
 
-                var jobresponse = wpsjob.GetStatusLocationContent ();
-                if(accountingEnabled) UpdateDepositTransactionFromStatus(context, wpsjob, jobresponse);
-                if (jobresponse is HttpResult) return jobresponse;
-                else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
-                else throw new Exception ("Error while creating Execute Response of job " + wpsjob.Identifier);
+                if (wpsjob.Status == WpsJobStatus.STAGED) {
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                } else {
+                    var jobresponse = wpsjob.GetStatusLocationContent();
+                    if (accountingEnabled) UpdateDepositTransactionFromStatus(context, wpsjob, jobresponse);
+                    if (jobresponse is HttpResult) return jobresponse;
+                    else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                    else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 
-                //save job status in activity
-                UpdateWpsJobActivity(context, wpsjob, execResponse);
+                    wpsjob.Status = wpsjob.GetStatusFromExecuteResponse(execResponse);
+                    wpsjob.Store();
 
-                if(string.IsNullOrEmpty(execResponse.statusLocation)) execResponse.statusLocation = wpsjob.StatusLocation;
+                    //get job recast response
+                    execResponse = ProductionResultHelper.GetWpsjobRecastResponse(wpsjob, execResponse);
 
-                execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
+                    //save job status in activity
+                    wpsjob.UpdateWpsJobActivity(context, execResponse);
 
-                var jobResultUrl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
+                    execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
-                if (execResponse.ProcessOutputs != null) {
-                    foreach (OutputDataType output in execResponse.ProcessOutputs) {
-                        try{
-                            if (output.Identifier != null && output.Identifier.Value != null) { 
-                                context.LogDebug (this, string.Format ("Case {0}", output.Identifier.Value));
-                                if (output.Identifier.Value.Equals ("result_metadata") || output.Identifier.Value.Equals ("result_osd")) {
+                    var jobResultUrl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
 
-                                    if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                        var reference = item.Reference as OutputReferenceType;
-                                        reference.href = jobResultUrl;
-                                        reference.mimeType = "application/opensearchdescription+xml";
-                                        item.Reference = reference;
-                                        ((DataType)(output.Item)).Item = item;
-                                    } else if (output.Item is OutputReferenceType) {
-                                        context.LogDebug (this, string.Format ("Case result_osd"));
-                                        var reference = output.Item as OutputReferenceType;
-                                        reference.href = jobResultUrl;
-                                        reference.mimeType = "application/opensearchdescription+xml";
-                                        output.Item = reference;
-                                    }
+                    if (execResponse.ProcessOutputs != null) {
+                        foreach (OutputDataType output in execResponse.ProcessOutputs) {
+                            try {
+                                if (output.Identifier != null && output.Identifier.Value != null) {
+                                    context.LogDebug(this, string.Format("Case {0}", output.Identifier.Value));
+                                    if (output.Identifier.Value.Equals("result_metadata") || output.Identifier.Value.Equals("result_osd")) {
 
-                                    output.Identifier = new CodeType { Value = "result_osd" };
-                                } else {
-                                    if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                        var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                        if (item.Any != null) {
-                                            var reference = new OutputReferenceType ();
-                                            reference.mimeType = "application/opensearchdescription+xml";
+                                        if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                            var reference = item.Reference as OutputReferenceType;
                                             reference.href = jobResultUrl;
+                                            reference.mimeType = "application/opensearchdescription+xml";
                                             item.Reference = reference;
-                                            item.Any = null;
-                                            item.mimeType = "application/xml";
-                                            output.Identifier = new CodeType { Value = "result_osd" };
+                                            ((DataType)(output.Item)).Item = item;
+                                        } else if (output.Item is OutputReferenceType) {
+                                            context.LogDebug(this, string.Format("Case result_osd"));
+                                            var reference = output.Item as OutputReferenceType;
+                                            reference.href = jobResultUrl;
+                                            reference.mimeType = "application/opensearchdescription+xml";
+                                            output.Item = reference;
+                                        }
+
+                                        output.Identifier = new CodeType { Value = "result_osd" };
+                                    } else {
+                                        if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                                            if (item.Any != null) {
+                                                var reference = new OutputReferenceType();
+                                                reference.mimeType = "application/opensearchdescription+xml";
+                                                reference.href = jobResultUrl;
+                                                item.Reference = reference;
+                                                item.Any = null;
+                                                item.mimeType = "application/xml";
+                                                output.Identifier = new CodeType { Value = "result_osd" };
+                                            }
                                         }
                                     }
                                 }
+                            } catch (Exception e) {
+                                context.LogError(this, e.Message);
                             }
-                        }catch(Exception e){
-                            context.LogError (this, e.Message);
                         }
                     }
                 }

@@ -39,6 +39,9 @@ namespace Terradue.Tep {
         [EntityDataField("status_url")]
         public string StatusLocation { get; set; }
 
+		[EntityDataField("status")]
+		public WpsJobStatus Status { get; set; }
+
         [EntityDataField("created_time")]
         public DateTime CreatedTime { get; set; }
 
@@ -294,6 +297,164 @@ namespace Terradue.Tep {
 
         }
 
+		/// <summary>
+		/// Creates the job from execute input.
+		/// </summary>
+		/// <returns>The job from execute input.</returns>
+		/// <param name="context">Context.</param>
+		/// <param name="wps">Wps.</param>
+		/// <param name="executeInput">Execute input.</param>
+		public static WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput) {
+			WpsJob wpsjob = new WpsJob(context);
+            context.LogDebug(wpsjob, string.Format("Creating job from execute request"));
+			string newId = Guid.NewGuid().ToString();
+
+			//create WpsJob
+			context.LogDebug(wpsjob, string.Format("Provider is null ? -> " + (wps.Provider == null ? "true" : "false")));
+			
+			wpsjob.Name = wps.Name;
+			wpsjob.Identifier = newId;
+			wpsjob.OwnerId = context.UserId;
+			wpsjob.UserId = context.UserId;
+			wpsjob.WpsId = wps.Provider.Identifier;
+			wpsjob.ProcessId = wps.Identifier;
+			wpsjob.CreatedTime = DateTime.UtcNow;
+            wpsjob.Status = WpsJobStatus.NONE;
+			wpsjob.Parameters = new List<KeyValuePair<string, string>>();
+			wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
+
+			return wpsjob;
+		}
+
+		/// <summary>
+		/// Builds the wps job parameters.
+		/// </summary>
+		/// <returns>The wps job parameters.</returns>
+		/// <param name="context">Context.</param>
+		/// <param name="executeInput">Execute input.</param>
+		public static List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput) {
+			context.LogDebug(context, string.Format("Building job parameters from execute request"));
+			List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
+			foreach (var d in executeInput.DataInputs) {
+				context.LogDebug(context, string.Format("Input: " + d.Identifier.Value));
+				if (d.Data != null && d.Data.Item != null) {
+					if (d.Data.Item is LiteralDataType) {
+						context.LogDebug(context, string.Format("Value is LiteralDataType"));
+						output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));
+					} else if (d.Data.Item is ComplexDataType) {
+						context.LogDebug(context, string.Format("Value is ComplexDataType"));
+						throw new Exception("Data Input ComplexDataType not yet implemented");
+					} else if (d.Data.Item is BoundingBoxType) {
+						//for BoundingBoxType, webportal creates LowerCorner and UpperCorner
+						//we just need to save both values as a concatained string
+						context.LogDebug(context, string.Format("Value is BoundingBoxType"));
+						var bbox = d.Data.Item as BoundingBoxType;
+						var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
+						output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));
+					} else {
+						throw new Exception("unhandled type of Data");
+					}
+				} else if (d.Reference != null) {
+					context.LogDebug(context, string.Format("Value is InputReferenceType"));
+					if (!string.IsNullOrEmpty(d.Reference.href)) {
+						output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
+					} else if (d.Reference.Item != null) {
+						throw new Exception("Data Input InputReferenceType item not yet implemented");
+					}
+				}
+			}
+			return output;
+		}
+
+		/// <summary>
+		/// Updates the job from execute response.
+		/// </summary>
+		/// <param name="context">Context.</param>
+		/// <param name="wpsjob">Wpsjob.</param>
+		/// <param name="execResponse">Exec response.</param>
+		public void UpdateJobFromExecuteResponse(IfyContext context, ExecuteResponse execResponse) {
+			context.LogDebug(this, string.Format("Creating job from execute response"));
+			Uri uri = new Uri(execResponse.statusLocation.ToLower());
+
+			//create WpsJob
+			context.LogDebug(this, string.Format("Get identifier from status location"));
+			string identifier = null;
+			NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
+			if (!string.IsNullOrEmpty(nvc["id"])) {
+				identifier = nvc["id"];
+			} else {
+				context.LogDebug(this, string.Format("identifier does not contain the key id in the query"));
+
+				//statusLocation url is different for gpod
+				if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
+					context.LogDebug(this, string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
+					identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
+				}
+				//statuslocation url is different for pywps
+				else if (uri.AbsoluteUri.Contains("pywps")) {
+					identifier = uri.AbsoluteUri;
+					identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
+					identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
+				}
+			}
+			context.LogDebug(this, string.Format("identifier = " + identifier));
+			this.RemoteIdentifier = identifier;
+
+			var statusuri2 = new UriBuilder(execResponse.statusLocation);
+			if (this.Provider != null) {
+				//in case of username:password in the provider url, we take them from provider
+				var statusuri = new UriBuilder(this.Provider.BaseUrl);
+				statusuri2.UserName = statusuri.UserName;
+				statusuri2.Password = statusuri.Password;
+			}
+            this.StatusLocation = statusuri2.Uri.AbsoluteUri;
+
+            this.Status = GetStatusFromExecuteResponse(execResponse);
+			
+			this.Store();
+
+			//save job status in activity
+			this.UpdateWpsJobActivity(context, execResponse);
+		}
+
+        /// <summary>
+        /// Gets the status from execute response.
+        /// </summary>
+        /// <returns>The status from execute response.</returns>
+        /// <param name="response">Response.</param>
+        public WpsJobStatus GetStatusFromExecuteResponse(ExecuteResponse response){
+            if(response.Status == null) return WpsJobStatus.NONE;
+            if (response.Status.Item is ProcessAcceptedType) return WpsJobStatus.ACCEPTED;
+            else if (response.Status.Item is ProcessStartedType) return WpsJobStatus.STARTED;
+            else if (response.Status.Item is ProcessSucceededType) return WpsJobStatus.SUCCEEDED;
+            else if (response.Status.Item is ProcessFailedType) return WpsJobStatus.FAILED;
+            return WpsJobStatus.NONE;
+        }
+
+        /// <summary>
+        /// Updates the wps job activity.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <param name="execResponse">Exec response.</param>
+		public void UpdateWpsJobActivity(IfyContext context, ExecuteResponse execResponse) {
+			//save job status in activity
+			try {
+				if (execResponse.Status != null && execResponse.Status.Item != null) {
+					ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, this, EntityOperationType.Create);
+					var activityParams = activity.GetParams();
+					if (activityParams == null || activityParams["status"] == null) {
+						if (execResponse.Status.Item is ProcessSucceededType) {
+							activity.AddParam("status", "succeeded");
+							activity.Store();
+						} else if (execResponse.Status.Item is ProcessFailedType) {
+							activity.AddParam("status", "failed");
+							activity.Store();
+						}
+					}
+				}
+			} catch (Exception) { }
+		}
+
         /// <summary>
         /// Gets the execute response.
         /// </summary>
@@ -338,10 +499,9 @@ namespace Terradue.Tep {
                         using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream()) remotestream.CopyTo(remoteWpsResponseStream);
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
+                        return execResponse;
                     }
-
                     throw new WpsProxyException("Error proxying Status location " + StatusLocation, we);
-
                 }
 
                 // Deserialization
@@ -371,6 +531,67 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Gets the result osd URL.
+        /// </summary>
+        /// <returns>The result osd URL.</returns>
+        /// <param name="execResponse">Exec response.</param>
+        public string GetResultOsdUrl(ExecuteResponse execResponse){
+			// Search for an Opensearch Description Document ouput url
+			var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_osd"));
+            if (result_osd.Count() > 0) {
+                var po = result_osd.First();
+                //Get result Url
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
+                    var reference = item.Reference as OutputReferenceType;
+                    return reference.href;
+                } else if (po.Item is OutputReferenceType) {
+                    var reference = po.Item as OutputReferenceType;
+                    return reference.href;
+                }
+				throw new ImpossibleSearchException("Ouput result_osd found but no Url set");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the result metadatad URL.
+        /// </summary>
+        /// <returns>The result metadatad URL.</returns>
+        /// <param name="execResponse">Exec response.</param>
+		public string GetResultMetadatadUrl(ExecuteResponse execResponse) {
+			// Search for an Opensearch Description Document ouput url
+			var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_metadata"));
+			if (result_osd.Count() > 0) {
+				var po = result_osd.First();
+				string url = null;
+				//Get result Url
+				if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+					var item = ((DataType)(po.Item)).Item as ComplexDataType;
+					var reference = item.Reference as OutputReferenceType;
+					return reference.href;
+				} else if (po.Item is OutputReferenceType) {
+					var reference = po.Item as OutputReferenceType;
+					return reference.href;
+				}
+				throw new ImpossibleSearchException("Ouput result_metadata found but no Url set");
+			}
+			return null;
+		}
+
+        /// <summary>
+        /// Gets the result URL.
+        /// </summary>
+        /// <returns>The result URL.</returns>
+        /// <param name="execResponse">Exec response.</param>
+        public string GetResultUrl(ExecuteResponse execResponse){
+            var url = GetResultOsdUrl(execResponse);
+            if (string.IsNullOrEmpty(url)) url = GetResultMetadatadUrl(execResponse);
+            return url;
+        }
+
+
+        /// <summary>
         /// Gets the result URL from execute response.
         /// </summary>
         /// <returns>The result URL from execute response.</returns>
@@ -393,23 +614,8 @@ namespace Terradue.Tep {
                 return new AtomFeedOpenSearchable(new AtomFeed());
 
             // Search for an Opensearch Description Document ouput url
-            var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_osd"));
-            if (result_osd.Count() > 0) {
-                var po = result_osd.First();
-                string url = null;
-                //Get result Url
-                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
-                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
-                    var reference = item.Reference as OutputReferenceType;
-                    url = reference.href;
-                } else if (po.Item is OutputReferenceType) {
-                    var reference = po.Item as OutputReferenceType;
-                    url = reference.href;
-                }
-                if (string.IsNullOrEmpty(url))
-                    throw new ImpossibleSearchException("Ouput result_osd found but no Url set");
-
-
+            var url = GetResultOsdUrl(execResponse);
+            if(!string.IsNullOrEmpty(url)){
                 OpenSearchUrl osUrl = null;
                 try {
                     osUrl = new OpenSearchUrl(url);
@@ -420,22 +626,9 @@ namespace Terradue.Tep {
                 return SandboxOpenSearchable.CreateSandboxOpenSearchable(osUrl, MasterCatalogue.OpenSearchEngine);
             }
 
-            // Search for a static metadata file
-            result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_metadata"));
-            if (result_osd.Count() > 0) {
-                var po = result_osd.First();
-                string url = null;
-                //Get result Url
-                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
-                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
-                    var reference = item.Reference as OutputReferenceType;
-                    url = reference.href;
-                } else if (po.Item is OutputReferenceType) {
-                    var reference = po.Item as OutputReferenceType;
-                    url = reference.href;
-                }
-                if (string.IsNullOrEmpty(url))
-                    throw new ImpossibleSearchException("Ouput result_metadata found but no Url set");
+			// Search for a static metadata file
+			url = GetResultOsdUrl(execResponse);
+			if (!string.IsNullOrEmpty(url)) {
                 AtomFeed feed = null;
                 try {
                     HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(url);
@@ -743,6 +936,19 @@ namespace Terradue.Tep {
 
         #endregion
 
+    }
+
+    /// <summary>
+    /// Wps job status.
+    /// </summary>
+    public enum WpsJobStatus {
+        NONE = 0, //default status
+        ACCEPTED = 1, //wps job has been accepted
+        STARTED = 2, //wps job has been started
+        PAUSED = 3, //wps job has been paused
+        SUCCEEDED = 4, //wps job is succeeded
+        STAGED = 5, //wps job has been staged on store
+        FAILED = 6 //wps job has failed
     }
 }
 
