@@ -462,12 +462,20 @@ namespace Terradue.Tep {
     [DataContract]
     public class ETQuantities2 {
         [DataMember]
-        public int doc_count_error_upper_bound { get; set; }
+        public ETQuantity2 quantity { get; set; }
         [DataMember]
-        public int sum_other_doc_count { get; set; }
-        [DataMember]
-        public List<ETBucket3> buckets { get; set; }
+        public int doc_count { get; set; }
     }
+
+	[DataContract]
+	public class ETQuantity2 {
+		[DataMember]
+		public int doc_count_error_upper_bound { get; set; }
+		[DataMember]
+		public int sum_other_doc_count { get; set; }
+		[DataMember]
+		public List<ETBucket3> buckets { get; set; }
+	}
 
     [DataContract]
     public class ETBucket2 {

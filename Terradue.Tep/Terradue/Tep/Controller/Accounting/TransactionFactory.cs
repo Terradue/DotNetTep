@@ -244,6 +244,7 @@ namespace Terradue.Tep {
                                         nested = new ETNested { path = "quantity" },
                                         aggs = new ETAggs4 {
                                             quantity = new ETQuantity {
+                                                terms = new ETTerms { field = "quantity.id" }, 
                                                 aggs = new ETAggs5 {
                                                     total = new ETTotal {
                                                         sum = new ETTerms { field = "quantity.value" }
@@ -292,7 +293,7 @@ namespace Terradue.Tep {
                                     var job = WpsJob.FromIdentifier(context, identifier);
                                     var entityservice = job.Process.Provider;
                                     double balance = 0;
-                                    foreach (var qBucket in bucket.quantities.buckets) {
+                                    foreach (var qBucket in bucket.quantities.quantity.buckets) {
                                         //calculate balance
                                         if (!string.IsNullOrEmpty(qBucket.key) && qBucket.total != null) {
                                             balance += Rates.GetBalanceFromRate(context, entityservice, qBucket.key, qBucket.total.value);
