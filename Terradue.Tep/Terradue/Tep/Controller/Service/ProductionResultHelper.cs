@@ -97,12 +97,15 @@ namespace Terradue.Tep {
 
                     //error during recast
                     if (recaststatus.status == statusError){
-                        
+						var exceptionReport = new ExceptionReport {
+							Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { "Error while staging data to store" } } }
+						};
+						execResponse.Status = new StatusType { Item = new ProcessFailedType { ExceptionReport = exceptionReport }, ItemElementName = ItemChoiceType.ProcessFailed };
                     }
 
 					//recast is still in progress
 					else if (recaststatus.status == statusInProgress) { 
-                        execResponse.Status.Item = new ProcessStartedType { percentCompleted = "99" };
+                        execResponse.Status = new StatusType { Item = new ProcessStartedType { Value = "Process in progress", percentCompleted = "99" }, ItemElementName = ItemChoiceType.ProcessStarted };
                     }
 
                     //recast is completed
