@@ -230,11 +230,16 @@ namespace Terradue.Tep {
         /// </summary>
         public override void Store() {
             if (DomainId == 0) DomainId = Owner.Domain.Id;
+            bool newjob = false;
             if (this.Id == 0) {
+                newjob = true;
                 this.CreatedTime = DateTime.UtcNow;
                 this.AccessKey = Guid.NewGuid().ToString();
             }
             base.Store();
+            if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
+                context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
+            }
         }
 
         /// <summary>
