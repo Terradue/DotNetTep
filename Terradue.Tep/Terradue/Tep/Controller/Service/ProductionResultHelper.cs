@@ -8,19 +8,21 @@ using Terradue.Portal;
 namespace Terradue.Tep {
     public class ProductionResultHelper {
 
+		private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+			(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
         static string recastBaseUrl = AppSettings["RecastBaseUrl"];
         static string statusInProgress = "in progress";
         static string statusCompleted = "completed";
         static string statusError = "error";
 
-        public static RecastStatusResponse GetWpsjobRecastStatus(string hostname, string workflow, string runid){
-            
-            if (string.IsNullOrEmpty(hostname)) throw new Exception("Invalid hostname to get wpsjob result");
-            if (string.IsNullOrEmpty(workflow)) throw new Exception("Invalid workflow to get wpsjob result");
-            if (string.IsNullOrEmpty(runid)) throw new Exception("Invalid runid to get wpsjob result");
-
-            var statusUrl = string.Format("{0}/t2api/dc/status/{1}/workflows/{2}/runs/{3}", recastBaseUrl, hostname, workflow, runid);
+        /// <summary>
+        /// Gets the wpsjob recast status.
+        /// </summary>
+        /// <returns>The wpsjob recast status.</returns>
+        /// <param name="statusUrl">Status URL.</param>
+        public static RecastStatusResponse GetWpsjobRecastStatus(string statusUrl){
 
 			var request = (HttpWebRequest)WebRequest.Create(statusUrl);
 			request.Proxy = null;
@@ -37,6 +39,29 @@ namespace Terradue.Tep {
             return response;
 		}
 
+        /// <summary>
+        /// Gets the wps job recast status URL.
+        /// </summary>
+        /// <returns>The wps job recast status URL.</returns>
+        /// <param name="hostname">Hostname.</param>
+        /// <param name="workflow">Workflow.</param>
+        /// <param name="runid">Runid.</param>
+		public static string GetWpsJobRecastStatusUrl(string hostname, string workflow, string runid) {
+
+			if (string.IsNullOrEmpty(hostname)) throw new Exception("Invalid hostname to get wpsjob result");
+			if (string.IsNullOrEmpty(workflow)) throw new Exception("Invalid workflow to get wpsjob result");
+			if (string.IsNullOrEmpty(runid)) throw new Exception("Invalid runid to get wpsjob result");
+
+			return string.Format("{0}/t2api/dc/status/{1}/workflows/{2}/runs/{3}", recastBaseUrl, hostname, workflow, runid);
+		}
+
+        /// <summary>
+        /// Gets the wps job recast describe URL.
+        /// </summary>
+        /// <returns>The wps job recast describe URL.</returns>
+        /// <param name="hostname">Hostname.</param>
+        /// <param name="workflow">Workflow.</param>
+        /// <param name="runid">Runid.</param>
         public static string GetWpsJobRecastDescribeUrl(string hostname, string workflow, string runid) {
             
 			if (string.IsNullOrEmpty(hostname)) throw new Exception("Invalid hostname to get wpsjob result");
@@ -46,6 +71,12 @@ namespace Terradue.Tep {
             return string.Format("{0}/t2api/describe/{1}/workflows/{2}/runs/{3}", recastBaseUrl, hostname, workflow, runid);
         }
 
+        /// <summary>
+        /// Gets the wpsjob recast response.
+        /// </summary>
+        /// <returns>The wpsjob recast response.</returns>
+        /// <param name="wpsjob">Wpsjob.</param>
+        /// <param name="execResponse">Exec response.</param>
         public static ExecuteResponse GetWpsjobRecastResponse(WpsJob wpsjob, ExecuteResponse execResponse = null) {
             if (wpsjob.Status != WpsJobStatus.SUCCEEDED) return execResponse;
 
@@ -93,12 +124,13 @@ namespace Terradue.Tep {
 				}
 
                 try {
-                    var recaststatus = GetWpsjobRecastStatus(hostname, workflow, runId);
-
+                    var recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
+                    var recaststatus = GetWpsjobRecastStatus(recaststatusurl);
                     //error during recast
                     if (recaststatus.status == statusError){
+                        log.ErrorFormat("Recasting job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
 						var exceptionReport = new ExceptionReport {
-							Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { "Error while staging data to store" } } }
+							Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { "Error while staging data to store --- " + recaststatus.message } } }
 						};
 						execResponse.Status = new StatusType { Item = new ProcessFailedType { ExceptionReport = exceptionReport }, ItemElementName = ItemChoiceType.ProcessFailed };
                     }
@@ -110,6 +142,7 @@ namespace Terradue.Tep {
 
                     //recast is completed
                     else if (recaststatus.status == statusCompleted){
+                        log.DebugFormat("Recasting job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
                         var newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                         execResponse.statusLocation = newStatusLocation;
                         wpsjob.StatusLocation = newStatusLocation;
