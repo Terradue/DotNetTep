@@ -64,7 +64,8 @@ namespace Terradue.Tep.WebServer.Services {
             foreach (var app in apps) {
                 app.LoadItems();
                 foreach (var item in app.Items) {
-                    osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose));
+                    if (!string.IsNullOrEmpty(item.Location))
+						osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose));
                 }
             }
 
