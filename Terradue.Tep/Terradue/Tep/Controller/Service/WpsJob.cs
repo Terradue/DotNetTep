@@ -657,14 +657,23 @@ namespace Terradue.Tep {
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
-                if (entity is EntityList<ThematicCommunity>) {
-                    var entitylist = entity as EntityList<ThematicCommunity>;
-                    var items = entitylist.GetItemsAsList();
-                    if (items.Count > 0) {
-                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+	                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
+	                if (entity is EntityList<ThematicCommunity>) {
+	                    var entitylist = entity as EntityList<ThematicCommunity>;
+	                    var items = entitylist.GetItemsAsList();
+	                    if (items.Count > 0) {
+	                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+	                    }
+                    } else if (entity is EntityList<WpsProcessOffering>){
+                        var entitylist = entity as EntityList<WpsProcessOffering>;
+						var items = entitylist.GetItemsAsList();
+						if (items.Count > 0) {
+                            var processIds = "";
+                            foreach (var item in items) processIds += item.Identifier + ",";
+                            processIds = processIds.Trim(",".ToCharArray());
+                            return new KeyValuePair<string, string>("ProcessId", processIds);
+						}
                     }
-                }
                 return new KeyValuePair<string, string>();
             default:
                 return base.GetFilterForParameter(parameter, value);

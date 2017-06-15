@@ -60,20 +60,14 @@ namespace Terradue.Tep {
                             }
 
                             if (match.Groups[1].Value == "/service/wps") {
-//                                string wpsId = match.Groups[2].Value;
-//                                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, wpsId);
                                 EntityList<WpsProcessOffering> list = new EntityList<WpsProcessOffering>(context);
-                                list.Load();
-//                                list.Include(wps);
+								IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 
                             if (match.Groups[1].Value == "/cr/wps") {
-//                                string wpsId = match.Groups[2].Value;
-//                                WpsProvider wps = (WpsProvider)WpsProvider.FromIdentifier(context, wpsId);
                                 EntityList<WpsProvider> list = new EntityList<WpsProvider>(context);
-                                list.Load();
-//                                list.Include(wps);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 
