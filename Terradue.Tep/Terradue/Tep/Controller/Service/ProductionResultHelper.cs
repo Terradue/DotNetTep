@@ -90,38 +90,40 @@ namespace Terradue.Tep {
 				var resultUrl = wpsjob.GetResultUrl(execResponse);
 				var url = new Uri(resultUrl);
 
+				System.Text.RegularExpressions.Regex r;
+				System.Text.RegularExpressions.Match m;
+
 				string hostname = "", workflow = "", runId = "";
-				if (url.AbsolutePath.EndsWith("/search") || url.AbsolutePath.EndsWith("/description")) {
 
-					System.Text.RegularExpressions.Regex r;
-					System.Text.RegularExpressions.Match m;
+                r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
+				m = r.Match(url.AbsolutePath);
+                if (m.Success) {
+					workflow = m.Result("${workflow}");
+					runId = m.Result("${runid}");
+                } else {
+					r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
+					m = r.Match(url.AbsolutePath);
+                    if (m.Success) {
+						workflow = m.Result("${workflow}");
+						runId = m.Result("${runid}");
+                    } else {
+						r = new System.Text.RegularExpressions.Regex(@"^\/(?<community>[a-zA-Z0-9_\-]+)\/results\/workflows\/(?<workflow>[a-zA-Z0-9_\-]+)\/runs\/(?<runid>[a-zA-Z0-9_\-]+)");
+                        if (m.Success) {
+                            workflow = m.Result("${workflow}");
+                            runId = m.Result("${runid}");
+                            var community = m.Result("${community}");
+                        }else {
+                            //TODO: other cases
+                        }
+                    }
+                }
 
-					//GET Workflow / RunId for Terradue VMs
-					if (url.AbsolutePath.StartsWith("/sbws/wps")) {
-						r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
-						m = r.Match(url.AbsolutePath);
-						if (m.Success) {
-							workflow = m.Result("${workflow}");
-							runId = m.Result("${runid}");
-							hostname = url.Host;
-						}
-					} else if (url.AbsolutePath.StartsWith("/sbws/production/run")) {
-						r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
-						m = r.Match(url.AbsolutePath);
-						if (m.Success) {
-							hostname = m.Result("${hostname}");
-							workflow = m.Result("${workflow}");
-							runId = m.Result("${runid}");
-						}
-					}
-
-					//Get hostname of the run VM
-					r = new System.Text.RegularExpressions.Regex(@"^https?:\/\/(?<hostname>[a-zA-Z0-9_\-\.]+)\/");
-					m = r.Match(url.AbsoluteUri);
-					if (m.Success) {
-						hostname = m.Result("${hostname}");
-					}
-				}
+				//Get hostname of the run VM
+				//r = new System.Text.RegularExpressions.Regex(@"^https?:\/\/(?<hostname>[a-zA-Z0-9_\-\.]+)\/");
+				//m = r.Match(url.AbsoluteUri);
+				//if (m.Success) {
+				//	hostname = m.Result("${hostname}");
+				//}
 
                 try {
                     var recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);

@@ -584,6 +584,25 @@ namespace Terradue.Tep {
 			return null;
 		}
 
+		public string GetResultHtmlUrl(ExecuteResponse execResponse) {
+			// Search for an Opensearch Description Document ouput url
+            var result_html = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_html"));
+			if (result_html.Count() > 0) {
+				var po = result_html.First();
+				//Get result Url
+				if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+					var item = ((DataType)(po.Item)).Item as ComplexDataType;
+					var reference = item.Reference as OutputReferenceType;
+					return reference.href;
+				} else if (po.Item is OutputReferenceType) {
+					var reference = po.Item as OutputReferenceType;
+					return reference.href;
+				}
+				throw new ImpossibleSearchException("Ouput result_html found but no Url set");
+			}
+			return null;
+		}
+
         /// <summary>
         /// Gets the result URL.
         /// </summary>
@@ -592,6 +611,7 @@ namespace Terradue.Tep {
         public string GetResultUrl(ExecuteResponse execResponse){
             var url = GetResultOsdUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultMetadatadUrl(execResponse);
+            if (string.IsNullOrEmpty(url)) url = GetResultHtmlUrl(execResponse);
             return url;
         }
 
