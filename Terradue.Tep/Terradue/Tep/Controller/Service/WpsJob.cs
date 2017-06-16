@@ -406,12 +406,12 @@ namespace Terradue.Tep {
 			this.RemoteIdentifier = identifier;
 
 			var statusuri2 = new UriBuilder(execResponse.statusLocation);
-			if (this.Provider != null) {
-				//in case of username:password in the provider url, we take them from provider
-				var statusuri = new UriBuilder(this.Provider.BaseUrl);
-				statusuri2.UserName = statusuri.UserName;
-				statusuri2.Password = statusuri.Password;
-			}
+			//if (this.Provider != null) {
+			//	//in case of username:password in the provider url, we take them from provider
+			//	var statusuri = new UriBuilder(this.Provider.BaseUrl);
+			//	statusuri2.UserName = statusuri.UserName;
+			//	statusuri2.Password = statusuri.Password;
+			//}
             this.StatusLocation = statusuri2.Uri.AbsoluteUri;
 
             this.Status = GetStatusFromExecuteResponse(execResponse);
@@ -506,7 +506,7 @@ namespace Terradue.Tep {
                         execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
                         return execResponse;
                     }
-                    throw new WpsProxyException("Error proxying Status location " + StatusLocation, we);
+                    throw new WpsProxyException("Error proxying Status location", we);
                 }
 
                 // Deserialization
