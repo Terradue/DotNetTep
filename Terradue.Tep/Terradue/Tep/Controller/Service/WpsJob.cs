@@ -632,7 +632,7 @@ namespace Terradue.Tep {
             }
 
 			// Search for a static metadata file
-			url = GetResultOsdUrl(execResponse);
+			url = GetResultMetadatadUrl(execResponse);
 			if (!string.IsNullOrEmpty(url)) {
                 AtomFeed feed = null;
                 try {
@@ -657,7 +657,8 @@ namespace Terradue.Tep {
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
-	                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
+                    var urlBOS = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine);
+                    var entity = urlBOS.Entity;
 	                if (entity is EntityList<ThematicCommunity>) {
 	                    var entitylist = entity as EntityList<ThematicCommunity>;
 	                    var items = entitylist.GetItemsAsList();
@@ -673,6 +674,13 @@ namespace Terradue.Tep {
                             processIds = processIds.Trim(",".ToCharArray());
                             return new KeyValuePair<string, string>("ProcessId", processIds);
 						}
+                    } else if (entity is MultiGenericOpenSearchable){
+                        if (urlBOS.Items != null) {
+                            var processIds = "";
+                            foreach (var item in urlBOS.Items) processIds += item.Identifier + ",";
+                            processIds = processIds.Trim(",".ToCharArray());
+                            return new KeyValuePair<string, string>("ProcessId", processIds);
+                        }
                     }
                 return new KeyValuePair<string, string>();
             default:

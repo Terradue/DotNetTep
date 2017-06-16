@@ -437,45 +437,6 @@ namespace Terradue.Tep.WebServer.Services {
             return new List<T2Accounting>();
         }
 
-
-
-        /// <summary>
-        /// Updates the deposit transaction from job status.
-        /// </summary>
-        /// <param name="context">Context.</param>
-        /// <param name="entity">Entity.</param>
-        /// <param name="response">Response.</param>
-        private void UpdateDepositTransactionFromStatus(IfyContext context, Entity entity, object response) {
-            try {
-                var tFactory = new TransactionFactory(context);
-                var deposit = tFactory.GetDepositTransaction(entity.Identifier);
-                if (deposit != null) {//we dont check the kind to allow potentially some resolved deposit to be reactivated
-                    if (response is ExecuteResponse) {
-                        var execResponse = response as ExecuteResponse;
-                        if (execResponse.Status.Item != null) {
-                            if (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType) {
-                                deposit.Kind = TransactionKind.ActiveDeposit;
-                                deposit.Store();
-                                return;
-                            }
-                            if (execResponse.Status.Item is ProcessSucceededType) {
-                                var transactions = tFactory.GetTransactionsByReference(entity.Identifier);
-                                if (transactions.Count > 1) deposit.Kind = TransactionKind.ResolvedDeposit;
-                                else deposit.Kind = TransactionKind.ResolvedDeposit;
-                                deposit.Store();
-                                return;
-                            }
-                        }
-                    }
-                    //in all other cases, we set the deposit as closed
-                    deposit.Kind = TransactionKind.ClosedDeposit;
-                    deposit.Store();
-                }
-            } catch (Exception e) {
-                context.LogError(this, e.Message);
-            }
-        }
-
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.AccessLevel = EntityAccessLevel.Administrator;
@@ -495,7 +456,10 @@ namespace Terradue.Tep.WebServer.Services {
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
                 } else {
                     var jobresponse = wpsjob.GetStatusLocationContent();
-                    if (accountingEnabled) UpdateDepositTransactionFromStatus(context, wpsjob, jobresponse);
+                    if (accountingEnabled){
+                        var tFactory = new TransactionFactory(context);
+                        tFactory.UpdateDepositTransactionFromEntityStatus(context, wpsjob, jobresponse);
+                    }
                     if (jobresponse is HttpResult) return jobresponse;
                     else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                     else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);

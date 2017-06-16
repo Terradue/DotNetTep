@@ -138,7 +138,7 @@ namespace Terradue.Tep.WebServer.Services {
 						wpsjob = WpsJob.FromIdentifier(context, request.JobId);
 						if (request.Key != null && !request.Key.Equals(wpsjob.AccessKey))
 							throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);
-					}
+                    } else throw e;
 				}
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;

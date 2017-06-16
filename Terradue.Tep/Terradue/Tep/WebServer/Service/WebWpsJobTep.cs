@@ -100,6 +100,8 @@ namespace Terradue.Tep.WebServer {
         public String ProcessId { get; set; }
         [ApiMember(Name="ProcessName", Description = "Process name attached to the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String ProcessName { get; set; }
+		[ApiMember(Name = "Status", Description = "Status of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
+		public int Status { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String StatusLocation { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
@@ -131,6 +133,7 @@ namespace Terradue.Tep.WebServer {
             this.Parameters = entity.Parameters;
             this.CreatedTime = entity.CreatedTime;
             this.RemoteIdentifier = entity.RemoteIdentifier;
+            this.Status = (int)entity.Status;
                        
         }
 

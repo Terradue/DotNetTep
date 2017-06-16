@@ -14,6 +14,7 @@ using Terradue.Portal;
 using Terradue.OpenSearch.Request;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal.OpenSearch;
+using System.Collections.Generic;
 
 namespace Terradue.Tep {
 
@@ -23,6 +24,8 @@ namespace Terradue.Tep {
         OpenSearchEngine ose;
         OpenSearchUrl url;
         OpenSearchDescription osd;
+
+        public IEnumerable<IOpenSearchResultItem> Items;
 
         public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchEngine ose) {
 
@@ -60,9 +63,24 @@ namespace Terradue.Tep {
                             }
 
                             if (match.Groups[1].Value == "/service/wps") {
-                                EntityList<WpsProcessOffering> list = new EntityList<WpsProcessOffering>(context);
-								IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
-                                entity = list;
+								//EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+								//CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+								//var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+								//MultiGenericOpenSearchable list = new MultiGenericOpenSearchable(entities, ose);
+								//IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+								//entity = list;
+								EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+								wpsProcesses.SetFilter("Available", "true");
+								wpsProcesses.OpenSearchEngine = ose;
+                                CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+								wpsOneProcesses.OpenSearchEngine = ose;
+								wpsProcesses.Identifier = "service/wps";
+								var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+
+								MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, ose);
+                                IOpenSearchResultCollection osr = ose.Query(multiOSE, url.SearchAttributes);
+                                entity = multiOSE;
+                                Items = osr.Items;
                             }
 
                             if (match.Groups[1].Value == "/cr/wps") {

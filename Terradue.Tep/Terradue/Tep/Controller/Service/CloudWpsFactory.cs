@@ -75,6 +75,8 @@ namespace Terradue.Tep {
             }
         }
 
+        public List<WpsProcessOffering> Items { get; set; }
+
         public long TotalResults {
             get {
                 return 0;
@@ -109,6 +111,7 @@ namespace Terradue.Tep {
 
         public CloudWpsFactory(IfyContext context) {
             this.context = context;
+            this.Items = new List<WpsProcessOffering>();
         }
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
@@ -403,16 +406,17 @@ namespace Terradue.Tep {
 
             List<AtomItem> items = new List<AtomItem>();
 
-            var wpss = GetWPSFromVMs(parameters);
-            foreach (WpsProvider wps in wpss) {
-                try {
-                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
-                        AtomItem item = process.ToAtomItem(parameters);
-                        if (item != null) items.Add(item);
+            var processes = GetWPSprocessesFromVMs(parameters);
+            foreach (WpsProcessOffering process in processes) {
+                try{
+                    AtomItem item = process.ToAtomItem(parameters);
+                    if (item != null) {
+                        Items.Add(process);
+                        items.Add(item);
                     }
-                } catch (Exception e) {
-                    //we do nothing, we just dont add the process
-                }
+				} catch (Exception e) {
+					//we do nothing, we just dont add the process
+				}
             }
 
             // Load all avaialable Datasets according to the context
@@ -425,6 +429,26 @@ namespace Terradue.Tep {
 
             return feed;
 
+        }
+
+        /// <summary>
+        /// Gets the WPS processes from VM.
+        /// </summary>
+        /// <returns>The WPS processes from VM.</returns>
+        /// <param name="parameters">Parameters.</param>
+        public List<WpsProcessOffering> GetWPSprocessesFromVMs(NameValueCollection parameters = null){
+            List<WpsProcessOffering> processes = new List<WpsProcessOffering>();
+			var wpss = GetWPSFromVMs(parameters);
+			foreach (WpsProvider wps in wpss) {
+				try {
+                    foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
+                        processes.Add(process);
+                    }
+                }catch (Exception e) {
+					//we do nothing, we just dont add the process
+				}
+			}
+            return processes;
         }
     }
 }

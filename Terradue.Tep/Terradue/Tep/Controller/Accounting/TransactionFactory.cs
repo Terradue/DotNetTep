@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using OpenGis.Wps;
 using ServiceStack.Text;
 using Terradue.Portal;
 
@@ -320,6 +321,42 @@ namespace Terradue.Tep {
             }
             return transactions;
         }
+
+		/// <summary>
+        /// Updates the deposit transaction from entity status.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <param name="entity">Entity.</param>
+        /// <param name="response">Response.</param>
+		public void UpdateDepositTransactionFromEntityStatus(IfyContext context, Entity entity, object response) {
+			try {
+				var deposit = GetDepositTransaction(entity.Identifier);
+				if (deposit != null) {//we dont check the kind to allow potentially some resolved deposit to be reactivated
+					if (response is ExecuteResponse) {
+						var execResponse = response as ExecuteResponse;
+						if (execResponse.Status.Item != null) {
+							if (execResponse.Status.Item is ProcessAcceptedType || execResponse.Status.Item is ProcessStartedType) {
+								deposit.Kind = TransactionKind.ActiveDeposit;
+								deposit.Store();
+								return;
+							}
+                            if (execResponse.Status.Item is ProcessSucceededType || execResponse.Status.Item is ProcessFailedType) {
+								var transactions = GetTransactionsByReference(entity.Identifier);
+								if (transactions.Count > 1) deposit.Kind = TransactionKind.ResolvedDeposit;
+								else deposit.Kind = TransactionKind.ResolvedDeposit;
+								deposit.Store();
+								return;
+							}
+						}
+					}
+					//in all other cases, we set the deposit as closed
+					deposit.Kind = TransactionKind.ClosedDeposit;
+					deposit.Store();
+				}
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+			}
+		}
 
     }
 }
