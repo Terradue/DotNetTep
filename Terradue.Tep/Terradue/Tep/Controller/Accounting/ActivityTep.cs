@@ -55,13 +55,16 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Adds the parameter.
+        /// Sets the parameter.
         /// </summary>
         /// <param name="key">Key.</param>
         /// <param name="value">Value.</param>
-        public void AddParam(string key, string value) {
-            Params += string.Format("{0}{1}={2}", string.IsNullOrEmpty(Params) ? "" : "&", key, value);
-        }
+		public void SetParam(string key, string value) {
+            var parameters = GetParams();
+            parameters.Set(key,value);
+            Params = "";
+            foreach (var p in parameters.AllKeys) Params += (string.IsNullOrEmpty(Params) ? "" : "&") + p + "=" + parameters[p];
+		}
 
         /// <summary>
         /// Gets the parameters.

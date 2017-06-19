@@ -356,7 +356,7 @@ namespace Terradue.Tep.WebServer.Services
                         def.AddResourceItem(tmpres);
                     }
                     ActivityTep activity = new ActivityTep(context, tmp, EntityOperationType.View);
-                    activity.AddParam("items", tmp.Resources.Count + "");
+                    activity.SetParam("items", tmp.Resources.Count + "");
                     activity.Store();
                 }else{
                     def = (DataPackage)request.ToEntity(context, def);    

@@ -238,7 +238,7 @@ namespace Terradue.Tep.WebServer.Services
                 }
 
                 ActivityTep activity = new ActivityTep(context, datapackage, EntityOperationType.Search);
-                activity.AddParam("items", result.TotalResults + "");
+                activity.SetParam("items", result.TotalResults + "");
                 activity.Store();
 
                 context.Close();
