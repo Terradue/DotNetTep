@@ -107,7 +107,8 @@ namespace Terradue.Tep {
 						workflow = m.Result("${workflow}");
 						runId = m.Result("${runid}");
                     } else {
-						r = new System.Text.RegularExpressions.Regex(@"^\/(?<community>[a-zA-Z0-9_\-]+)\/results\/workflows\/(?<workflow>[a-zA-Z0-9_\-]+)\/runs\/(?<runid>[a-zA-Z0-9_\-]+)");
+						r = new System.Text.RegularExpressions.Regex(@"^\/production\/(?<community>[a-zA-Z0-9_\-]+)\/results\/workflows\/(?<workflow>[a-zA-Z0-9_\-]+)\/runs\/(?<runid>[a-zA-Z0-9_\-]+)");
+                        m = r.Match(url.AbsolutePath);
                         if (m.Success) {
                             workflow = m.Result("${workflow}");
                             runId = m.Result("${runid}");
@@ -117,6 +118,8 @@ namespace Terradue.Tep {
                         }
                     }
                 }
+
+                hostname = url.Host;
 
 				//Get hostname of the run VM
 				//r = new System.Text.RegularExpressions.Regex(@"^https?:\/\/(?<hostname>[a-zA-Z0-9_\-\.]+)\/");
