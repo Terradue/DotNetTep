@@ -71,14 +71,62 @@ namespace Terradue.Tep {
             return string.Format("{0}/t2api/describe/{1}/workflows/{2}/runs/{3}", recastBaseUrl, hostname, workflow, runid);
         }
 
+        private static ExecuteResponse UpdateProcessOutputs(IfyContext context, ExecuteResponse execResponse, WpsJob wpsjob){
+			if (execResponse.ProcessOutputs != null) {
+				var jobResultUrl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
+				foreach (OutputDataType output in execResponse.ProcessOutputs) {
+					try {
+						if (output.Identifier != null && output.Identifier.Value != null) {
+							context.LogDebug(wpsjob, string.Format("Case {0}", output.Identifier.Value));
+							if (output.Identifier.Value.Equals("result_metadata") || output.Identifier.Value.Equals("result_osd")) {
+
+								if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+									var item = ((DataType)(output.Item)).Item as ComplexDataType;
+									var reference = item.Reference as OutputReferenceType;
+									reference.href = jobResultUrl;
+									reference.mimeType = "application/opensearchdescription+xml";
+									item.Reference = reference;
+									((DataType)(output.Item)).Item = item;
+								} else if (output.Item is OutputReferenceType) {
+									context.LogDebug(wpsjob, string.Format("Case result_osd"));
+									var reference = output.Item as OutputReferenceType;
+									reference.href = jobResultUrl;
+									reference.mimeType = "application/opensearchdescription+xml";
+									output.Item = reference;
+								}
+
+								output.Identifier = new CodeType { Value = "result_osd" };
+							} else {
+								if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+									var item = ((DataType)(output.Item)).Item as ComplexDataType;
+									if (item.Any != null) {
+										var reference = new OutputReferenceType();
+										reference.mimeType = "application/opensearchdescription+xml";
+										reference.href = jobResultUrl;
+										item.Reference = reference;
+										item.Any = null;
+										item.mimeType = "application/xml";
+										output.Identifier = new CodeType { Value = "result_osd" };
+									}
+								}
+							}
+						}
+					} catch (Exception e) {
+						context.LogError(wpsjob, e.Message);
+					}
+				}
+			}
+	        return execResponse;
+        }
+
         /// <summary>
         /// Gets the wpsjob recast response.
         /// </summary>
         /// <returns>The wpsjob recast response.</returns>
         /// <param name="wpsjob">Wpsjob.</param>
         /// <param name="execResponse">Exec response.</param>
-        public static ExecuteResponse GetWpsjobRecastResponse(WpsJob wpsjob, ExecuteResponse execResponse = null) {
-            if (wpsjob.Status != WpsJobStatus.SUCCEEDED) return execResponse;
+        public static ExecuteResponse GetWpsjobRecastResponse(IfyContext context, WpsJob wpsjob, ExecuteResponse execResponse = null) {
+            if (wpsjob.Status != WpsJobStatus.SUCCEEDED) return UpdateProcessOutputs(context, execResponse, wpsjob);
 
             if (execResponse == null) {
 				var jobresponse = wpsjob.GetStatusLocationContent();
@@ -93,7 +141,8 @@ namespace Terradue.Tep {
 				System.Text.RegularExpressions.Regex r;
 				System.Text.RegularExpressions.Match m;
 
-				string hostname = "", workflow = "", runId = "";
+				string hostname = url.Host;
+                string workflow = "", runId = "";
 
                 r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
 				m = r.Match(url.AbsolutePath);
@@ -114,19 +163,17 @@ namespace Terradue.Tep {
                             runId = m.Result("${runid}");
                             var community = m.Result("${community}");
                         }else {
-                            //TODO: other cases
+                            if(url.Host == new Uri(recastBaseUrl).Host){
+                                log.DebugFormat("Recasting (DIRECT) job {0} - url = {1}", wpsjob.Identifier, resultUrl);
+								wpsjob.StatusLocation = resultUrl;
+								wpsjob.Status = WpsJobStatus.STAGED;
+								wpsjob.Store();
+                                return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                            } else 
+                                return UpdateProcessOutputs(context, execResponse, wpsjob);
                         }
                     }
                 }
-
-                hostname = url.Host;
-
-				//Get hostname of the run VM
-				//r = new System.Text.RegularExpressions.Regex(@"^https?:\/\/(?<hostname>[a-zA-Z0-9_\-\.]+)\/");
-				//m = r.Match(url.AbsoluteUri);
-				//if (m.Success) {
-				//	hostname = m.Result("${hostname}");
-				//}
 
                 try {
                     var recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
@@ -149,17 +196,17 @@ namespace Terradue.Tep {
                     else if (recaststatus.status == statusCompleted){
                         log.DebugFormat("Recasting job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
                         var newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
-                        execResponse.statusLocation = newStatusLocation;
-                        wpsjob.StatusLocation = newStatusLocation;
+						wpsjob.StatusLocation = newStatusLocation;
 						wpsjob.Status = WpsJobStatus.STAGED;
-                        wpsjob.Store();
+						wpsjob.Store();
+                        return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
                     }
 
                 }catch(Exception e){
                     
                 }
 			}
-			return execResponse;
+			return UpdateProcessOutputs(context, execResponse, wpsjob);
         }
 
         /// <summary>

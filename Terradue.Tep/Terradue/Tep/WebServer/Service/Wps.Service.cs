@@ -467,59 +467,13 @@ namespace Terradue.Tep.WebServer.Services {
                     wpsjob.Status = wpsjob.GetStatusFromExecuteResponse(execResponse);
                     wpsjob.Store();
 
+                    execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
+
                     //get job recast response
-                    execResponse = ProductionResultHelper.GetWpsjobRecastResponse(wpsjob, execResponse);
+                    execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
 
                     //save job status in activity
                     wpsjob.UpdateWpsJobActivity(context, execResponse);
-
-                    execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
-
-                    var jobResultUrl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
-
-                    if (execResponse.ProcessOutputs != null) {
-                        foreach (OutputDataType output in execResponse.ProcessOutputs) {
-                            try {
-                                if (output.Identifier != null && output.Identifier.Value != null) {
-                                    context.LogDebug(this, string.Format("Case {0}", output.Identifier.Value));
-                                    if (output.Identifier.Value.Equals("result_metadata") || output.Identifier.Value.Equals("result_osd")) {
-
-                                        if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                            var reference = item.Reference as OutputReferenceType;
-                                            reference.href = jobResultUrl;
-                                            reference.mimeType = "application/opensearchdescription+xml";
-                                            item.Reference = reference;
-                                            ((DataType)(output.Item)).Item = item;
-                                        } else if (output.Item is OutputReferenceType) {
-                                            context.LogDebug(this, string.Format("Case result_osd"));
-                                            var reference = output.Item as OutputReferenceType;
-                                            reference.href = jobResultUrl;
-                                            reference.mimeType = "application/opensearchdescription+xml";
-                                            output.Item = reference;
-                                        }
-
-                                        output.Identifier = new CodeType { Value = "result_osd" };
-                                    } else {
-                                        if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
-                                            var item = ((DataType)(output.Item)).Item as ComplexDataType;
-                                            if (item.Any != null) {
-                                                var reference = new OutputReferenceType();
-                                                reference.mimeType = "application/opensearchdescription+xml";
-                                                reference.href = jobResultUrl;
-                                                item.Reference = reference;
-                                                item.Any = null;
-                                                item.mimeType = "application/xml";
-                                                output.Identifier = new CodeType { Value = "result_osd" };
-                                            }
-                                        }
-                                    }
-                                }
-                            } catch (Exception e) {
-                                context.LogError(this, e.Message);
-                            }
-                        }
-                    }
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
