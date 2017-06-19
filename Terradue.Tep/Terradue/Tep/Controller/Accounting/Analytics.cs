@@ -47,6 +47,12 @@ namespace Terradue.Tep {
         public int WpsJobFailedCount { get; set; }
 
         /// <summary>
+        /// Gets or sets the wps job ongoing count.
+        /// </summary>
+        /// <value>The wps job ongoing count.</value>
+        public int WpsJobOngoingCount { get; set; }
+
+        /// <summary>
         /// Gets or sets the icon URL.
         /// </summary>
         /// <value>The icon URL.</value>
@@ -113,12 +119,13 @@ namespace Terradue.Tep {
 
             //wps jobs analytics
             var jobActivities = GetWpsJobsActivities(user);
-            WpsJobSubmittedCount += jobActivities.Count;
             foreach (var job in jobActivities) { 
                 var nvc = job.GetParams();
                 WpsJobSuccessCount += nvc["status"] != null ? nvc["status"] == "succeeded" ? 1 : 0 : 0;
                 WpsJobFailedCount += nvc["status"] != null ? nvc["status"] == "failed" ? 1 : 0 : 0;
+                WpsJobOngoingCount += nvc["status"] != null ? nvc["status"] == "ongoing" ? 1 : 0 : 0;
             }
+            WpsJobSubmittedCount = WpsJobSuccessCount + WpsJobFailedCount + WpsJobOngoingCount;
         }
 
         private int GetCollectionQueries(string username) {

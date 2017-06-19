@@ -447,15 +447,18 @@ namespace Terradue.Tep {
 				if (execResponse.Status != null && execResponse.Status.Item != null) {
 					ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, this, EntityOperationType.Create);
 					var activityParams = activity.GetParams();
-					if (activityParams == null || activityParams["status"] == null) {
-						if (execResponse.Status.Item is ProcessSucceededType) {
-							activity.AddParam("status", "succeeded");
-							activity.Store();
-						} else if (execResponse.Status.Item is ProcessFailedType) {
-							activity.AddParam("status", "failed");
-							activity.Store();
-						}
-					}
+                    if (activityParams == null || activityParams["status"] == null) {
+                        if (execResponse.Status.Item is ProcessSucceededType) {
+                            activity.AddParam("status", "succeeded");
+                            activity.Store();
+                        } else if (execResponse.Status.Item is ProcessFailedType) {
+                            activity.AddParam("status", "failed");
+                            activity.Store();
+                        } else if (execResponse.Status.Item is ProcessStartedType || execResponse.Status.Item is ProcessAcceptedType) {
+                            activity.AddParam("status", "ongoing");
+                            activity.Store();
+                        }
+                    }
 				}
 			} catch (Exception) { }
 		}
