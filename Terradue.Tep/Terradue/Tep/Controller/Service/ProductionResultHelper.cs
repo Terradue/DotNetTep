@@ -13,6 +13,7 @@ namespace Terradue.Tep {
 
         static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
         static string recastBaseUrl = AppSettings["RecastBaseUrl"];
+        static string catalogBaseUrl = AppSettings["CatalogBaseUrl"];
         static string statusInProgress = "in progress";
         static string statusCompleted = "completed";
         static string statusError = "error";
@@ -163,7 +164,7 @@ namespace Terradue.Tep {
                             runId = m.Result("${runid}");
                             var community = m.Result("${community}");
                         }else {
-                            if(url.Host == new Uri(recastBaseUrl).Host){
+                            if(url.Host == new Uri(recastBaseUrl).Host || url.Host == new Uri(catalogBaseUrl).Host){
                                 log.DebugFormat("Recasting (DIRECT) job {0} - url = {1}", wpsjob.Identifier, resultUrl);
 								wpsjob.StatusLocation = resultUrl;
 								wpsjob.Status = WpsJobStatus.STAGED;
