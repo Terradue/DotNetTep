@@ -442,10 +442,13 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         /// <param name="execResponse">Exec response.</param>
 		public void UpdateWpsJobActivity(IfyContext context, ExecuteResponse execResponse) {
-			//save job status in activity
+            //save job status in activity
 			try {
-				if (execResponse.Status != null && execResponse.Status.Item != null) {
-					ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, this, EntityOperationType.Create);
+                ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, this, EntityOperationType.Create);
+                if (execResponse == null){
+					activity.SetParam("status", "failed");
+					activity.Store();
+                } else if (execResponse.Status != null && execResponse.Status.Item != null) {
 					var activityParams = activity.GetParams();
                     if (execResponse.Status.Item is ProcessSucceededType) {
                         activity.SetParam("status", "succeeded");

@@ -455,7 +455,13 @@ namespace Terradue.Tep.WebServer.Services {
                 if (wpsjob.Status == WpsJobStatus.STAGED) {
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
                 } else {
-                    var jobresponse = wpsjob.GetStatusLocationContent();
+                    object jobresponse;
+                    try {
+                        jobresponse = wpsjob.GetStatusLocationContent();
+                    }catch(Exception esl){
+                        wpsjob.UpdateWpsJobActivity(context, null);
+                        throw esl;
+                    }
                     if (accountingEnabled){
                         var tFactory = new TransactionFactory(context);
                         tFactory.UpdateDepositTransactionFromEntityStatus(context, wpsjob, jobresponse);
