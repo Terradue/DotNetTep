@@ -152,7 +152,13 @@ namespace Terradue.Tep.WebServer.Services{
 
             CommunityCollection domains = new CommunityCollection(context);
 
-            if (context.UserId == 0) domains.SetFilter("Kind", (int)DomainKind.Public + "");
+            if (!string.IsNullOrEmpty(request.ApiKey)) {
+				UserTep user = UserTep.FromApiKey(context, request.ApiKey);
+				domains.UserId = user.Id;
+				context.AccessLevel = EntityAccessLevel.Privilege;
+			}
+
+            if (context.UserId == 0 && !string.IsNullOrEmpty(request.ApiKey)) domains.SetFilter("Kind", (int)DomainKind.Public + "");
             else {
                 domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
                 domains.AddSort("Kind", SortDirection.Ascending);

@@ -461,7 +461,6 @@ namespace Terradue.Tep.WebServer.Services {
                 newjob.Identifier = Guid.NewGuid().ToString();
                 newjob.StatusLocation = job.StatusLocation;
                 newjob.Status = job.Status;
-                newjob.AccessKey = Guid.NewGuid().ToString();
                 newjob.Parameters = job.Parameters;
                 newjob.CreatedTime = job.CreatedTime;
                 newjob.Name = job.Name;

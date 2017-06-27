@@ -48,7 +48,10 @@ namespace Terradue.Tep
     }
 
     [Route ("/community/search", "GET", Summary = "GET community as opensearch", Notes = "")]
-    public class CommunitySearchRequestTep : IReturn<HttpResult> { }
+    public class CommunitySearchRequestTep : IReturn<HttpResult> {
+		[ApiMember(Name = "apikey", Description = "Api key of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string ApiKey { get; set; }
+    }
 
     [Route("/community/description", "GET", Summary = "GET community as opensearch description", Notes = "")]
     public class CommunityDescriptionRequestTep : IReturn<HttpResult> { }
