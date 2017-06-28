@@ -449,7 +449,6 @@ namespace Terradue.Tep {
 					activity.SetParam("status", "failed");
 					activity.Store();
                 } else if (execResponse.Status != null && execResponse.Status.Item != null) {
-					var activityParams = activity.GetParams();
                     if (execResponse.Status.Item is ProcessSucceededType) {
                         activity.SetParam("status", "succeeded");
                         activity.Store();
