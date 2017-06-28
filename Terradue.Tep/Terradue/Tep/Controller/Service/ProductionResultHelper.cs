@@ -157,7 +157,7 @@ namespace Terradue.Tep {
 
 				string hostname = url.Host;
                 string workflow = "", runId = "";
-                string recaststatusurl;
+                string recaststatusurl = "";
 
                 //case old sandboxes
 				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
@@ -183,7 +183,7 @@ namespace Terradue.Tep {
                             runId = m.Result("${runid}");
                             var community = m.Result("${community}");
                             recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
-                        }else {
+                        } else {
                             //case direct recast or catalog response
                             if (url.Host == new Uri(recastBaseUrl).Host || url.Host == new Uri(catalogBaseUrl).Host) {
                                 log.DebugFormat("Recasting (DIRECT) job {0} - url = {1}", wpsjob.Identifier, resultUrl);
@@ -199,10 +199,11 @@ namespace Terradue.Tep {
                                         var path = url.AbsolutePath;
                                         path = path.Replace(sub.oldvalue, sub.substitute);
                                         recaststatusurl = GetWpsJobRecastStatusUrl(path);
+                                        continue;
                                     }
                                 }
                                 //none of the above cases
-                                return UpdateProcessOutputs(context, execResponse, wpsjob);
+                                if(string.IsNullOrEmpty(recaststatusurl)) return UpdateProcessOutputs(context, execResponse, wpsjob);
                             }
                         }
                     }
