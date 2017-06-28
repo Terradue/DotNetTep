@@ -59,7 +59,12 @@ namespace Terradue.Tep.WebServer.Services {
                 UserTep user = UserTep.FromId(context, context.UserId);
                 result = new WebUserTep(context, user, request.umsso);
                 context.Close();
-            } catch (Exception e) {
+			} catch (MySql.Data.MySqlClient.MySqlException e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				if (e.Message.Contains("Duplicate") && e.Message.Contains("email_UNIQUE")) throw new DuplicateEntityIdentifierException("Email is already used by another user.", e);
+				throw e;
+			} catch (Exception e) {
                 //context.LogError(this, e.Message);
                 context.Close();
                 throw e;
