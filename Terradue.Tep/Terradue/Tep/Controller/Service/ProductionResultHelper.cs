@@ -85,6 +85,18 @@ namespace Terradue.Tep {
             return string.Format("{0}/t2api/describe/{1}/workflows/{2}/runs/{3}", recastBaseUrl, hostname, workflow, runid);
         }
 
+        /// <summary>
+        /// Gets the wps job recast describe URL.
+        /// </summary>
+        /// <returns>The wps job recast describe URL.</returns>
+        /// <param name="path">Path.</param>
+		public static string GetWpsJobRecastDescribeUrl(string path) {
+
+			if (string.IsNullOrEmpty(path)) throw new Exception("Invalid path to get wpsjob result");
+
+			return string.Format("{0}/t2api/describe/{1}", recastBaseUrl, path);
+		}
+
         private static ExecuteResponse UpdateProcessOutputs(IfyContext context, ExecuteResponse execResponse, WpsJob wpsjob){
 			if (execResponse.ProcessOutputs != null) {
 				var jobResultUrl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
@@ -157,7 +169,7 @@ namespace Terradue.Tep {
 
 				string hostname = url.Host;
                 string workflow = "", runId = "";
-                string recaststatusurl = "";
+                string recaststatusurl = "", newStatusLocation = "";
 
                 //case old sandboxes
 				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
@@ -166,6 +178,7 @@ namespace Terradue.Tep {
 					workflow = m.Result("${workflow}");
 					runId = m.Result("${runid}");
                     recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
+                    newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                 } else {
                     //case new sandboxes
 					r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
@@ -174,6 +187,7 @@ namespace Terradue.Tep {
 						workflow = m.Result("${workflow}");
 						runId = m.Result("${runid}");
                         recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
+                        newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                     } else {
                         //case production clusters
 						r = new System.Text.RegularExpressions.Regex(@"^\/production\/(?<community>[a-zA-Z0-9_\-]+)\/results\/workflows\/(?<workflow>[a-zA-Z0-9_\-]+)\/runs\/(?<runid>[a-zA-Z0-9_\-]+)");
@@ -183,6 +197,7 @@ namespace Terradue.Tep {
                             runId = m.Result("${runid}");
                             var community = m.Result("${community}");
                             recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
+                            newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                         } else {
                             //case direct recast or catalog response
                             if (url.Host == new Uri(recastBaseUrl).Host || url.Host == new Uri(catalogBaseUrl).Host) {
@@ -198,7 +213,10 @@ namespace Terradue.Tep {
                                     if (url.Host.Equals(sub.host)) {
                                         var path = url.AbsolutePath;
                                         path = path.Replace(sub.oldvalue, sub.substitute);
-                                        recaststatusurl = GetWpsJobRecastStatusUrl(path);
+                                        //we assume that result url is pointing to a metadata file
+                                        path = path.Substring(0, path.LastIndexOf("/"));
+										recaststatusurl = GetWpsJobRecastStatusUrl(path);
+                                        newStatusLocation = GetWpsJobRecastDescribeUrl(path);
                                         continue;
                                     }
                                 }
@@ -228,7 +246,6 @@ namespace Terradue.Tep {
                     //recast is completed
                     else if (recaststatus.status == statusCompleted){
                         log.DebugFormat("Recasting job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
-                        var newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
 						wpsjob.StatusLocation = newStatusLocation;
 						wpsjob.Status = WpsJobStatus.STAGED;
 						wpsjob.Store();
