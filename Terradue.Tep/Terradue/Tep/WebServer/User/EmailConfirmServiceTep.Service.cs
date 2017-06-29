@@ -119,7 +119,9 @@ namespace Terradue.Tep.WebServer.Services {
                 string subject = context.GetConfigValue("RegistrationMailSubject");
                 subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
 
-                string activationToken = context.GetQueryStringValue(String.Format("SELECT token FROM usrreg WHERE id_usr={0};", umssoUser.Id));
+				string activationToken = umssoUser.GetActivationToken();
+				if (string.IsNullOrEmpty(activationToken)) umssoUser.CreateActivationToken();
+
                 string confirmUrl = context.GetConfigValue("EmailConfirmationUrl").Replace("$(BASEURL)", context.GetConfigValue("BaseUrl")).Replace("$(TOKEN)", activationToken);
                 string body = context.GetConfigValue("RegistrationMailBody");
                 body = body.Replace("$(USERNAME)", umssoUser.Username);
