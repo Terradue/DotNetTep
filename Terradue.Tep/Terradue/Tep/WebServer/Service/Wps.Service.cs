@@ -466,9 +466,21 @@ namespace Terradue.Tep.WebServer.Services {
                         var tFactory = new TransactionFactory(context);
                         tFactory.UpdateDepositTransactionFromEntityStatus(context, wpsjob, jobresponse);
                     }
+
                     if (jobresponse is HttpResult) return jobresponse;
                     else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
-                    else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
+                    else if (jobresponse is ExceptionReport) {
+                        stream = new System.IO.MemoryStream();
+                        context.LogDebug(this, string.Format("Exception report ok"));
+                        var exceptionReport = jobresponse as ExceptionReport;
+                        new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExceptionReport)).Serialize(stream, exceptionReport);
+                        stream.Seek(0, SeekOrigin.Begin);
+                        using (StreamReader reader = new StreamReader(stream)) {
+                            string errormsg = reader.ReadToEnd();
+                            context.LogError(this, string.Format(errormsg));
+                            return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
+                        }
+                    } else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 
                     wpsjob.Status = wpsjob.GetStatusFromExecuteResponse(execResponse);
                     wpsjob.Store();
