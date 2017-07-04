@@ -15,6 +15,10 @@ using System.Linq;
 using Terradue.Tep.OpenSearch;
 using Terradue.Portal.OpenSearch;
 using System.Web;
+using System.Runtime.Serialization;
+using Terradue.OpenSearch.Schema;
+using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch.Request;
 
 namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true, AllowsKeywordSearch = true)]
@@ -165,7 +169,7 @@ namespace Terradue.Tep {
         /// <value>The total results.</value>
         public long TotalResults {
             get {
-                throw new NotImplementedException();
+                return 0;
             }
         }
 
@@ -175,7 +179,7 @@ namespace Terradue.Tep {
         /// <value>The default type of the MIME.</value>
         public string DefaultMimeType {
             get {
-                throw new NotImplementedException();
+                return "application/atom+xml";
             }
         }
 
@@ -185,7 +189,7 @@ namespace Terradue.Tep {
         /// <value><c>true</c> if can cache; otherwise, <c>false</c>.</value>
         public bool CanCache {
             get {
-                throw new NotImplementedException();
+                return false;
             }
         }
 
@@ -405,35 +409,27 @@ namespace Terradue.Tep {
 			context.LogDebug(this, string.Format("identifier = " + identifier));
 			this.RemoteIdentifier = identifier;
 
-			var statusuri2 = new UriBuilder(execResponse.statusLocation);
-			//if (this.Provider != null) {
-			//	//in case of username:password in the provider url, we take them from provider
-			//	var statusuri = new UriBuilder(this.Provider.BaseUrl);
-			//	statusuri2.UserName = statusuri.UserName;
-			//	statusuri2.Password = statusuri.Password;
-			//}
-            this.StatusLocation = statusuri2.Uri.AbsoluteUri;
+            if (string.IsNullOrEmpty(this.StatusLocation)) this.StatusLocation = execResponse.statusLocation;
 
-            this.Status = GetStatusFromExecuteResponse(execResponse);
+            UpdateStatusFromExecuteResponse(execResponse);
 			
 			this.Store();
 
 			//save job status in activity
-			this.UpdateWpsJobActivity(context, execResponse);
+			this.UpdateWpsJobActivity(execResponse);
 		}
 
         /// <summary>
-        /// Gets the status from execute response.
+        /// Updates the status from execute response.
         /// </summary>
-        /// <returns>The status from execute response.</returns>
         /// <param name="response">Response.</param>
-        public WpsJobStatus GetStatusFromExecuteResponse(ExecuteResponse response){
-            if(response.Status == null) return WpsJobStatus.NONE;
-            if (response.Status.Item is ProcessAcceptedType) return WpsJobStatus.ACCEPTED;
-            else if (response.Status.Item is ProcessStartedType) return WpsJobStatus.STARTED;
-            else if (response.Status.Item is ProcessSucceededType) return WpsJobStatus.SUCCEEDED;
-            else if (response.Status.Item is ProcessFailedType) return WpsJobStatus.FAILED;
-            return WpsJobStatus.NONE;
+        public void UpdateStatusFromExecuteResponse(ExecuteResponse response){
+            if(response.Status == null) this.Status = WpsJobStatus.NONE;
+            else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
+            else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
+            else if (response.Status.Item is ProcessSucceededType) this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
+            else if (response.Status.Item is ProcessFailedType) this.Status = WpsJobStatus.FAILED;
+            else this.Status = WpsJobStatus.NONE;
         }
 
         /// <summary>
@@ -441,25 +437,27 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="context">Context.</param>
         /// <param name="execResponse">Exec response.</param>
-		public void UpdateWpsJobActivity(IfyContext context, ExecuteResponse execResponse) {
+		public void UpdateWpsJobActivity(ExecuteResponse execResponse) {
             //save job status in activity
 			try {
                 ActivityTep activity = ActivityTep.FromEntityAndPrivilege(context, this, EntityOperationType.Create);
-                if (execResponse == null){
-					activity.SetParam("status", "failed");
-					activity.Store();
-                } else if (execResponse.Status != null && execResponse.Status.Item != null) {
-                    if (execResponse.Status.Item is ProcessSucceededType) {
-                        activity.SetParam("status", "succeeded");
-                        activity.Store();
-                    } else if (execResponse.Status.Item is ProcessFailedType) {
+                if (activity.GetParams()["status"] == "ongoing") {
+                    if (execResponse == null) {
                         activity.SetParam("status", "failed");
                         activity.Store();
-                    } else if (execResponse.Status.Item is ProcessStartedType || execResponse.Status.Item is ProcessAcceptedType) {
-                        activity.SetParam("status", "ongoing");
-                        activity.Store();
+                    } else if (execResponse.Status != null && execResponse.Status.Item != null) {
+                        if (execResponse.Status.Item is ProcessSucceededType) {
+                            activity.SetParam("status", "succeeded");
+                            activity.Store();
+                        } else if (execResponse.Status.Item is ProcessFailedType) {
+                            activity.SetParam("status", "failed");
+                            activity.Store();
+                        } else if (execResponse.Status.Item is ProcessStartedType || execResponse.Status.Item is ProcessAcceptedType) {
+                            activity.SetParam("status", "ongoing");
+                            activity.Store();
+                        }
                     }
-				}
+                }
 			} catch (Exception) { }
 		}
 
@@ -983,17 +981,23 @@ namespace Terradue.Tep {
 
     }
 
-    /// <summary>
-    /// Wps job status.
-    /// </summary>
-    public enum WpsJobStatus {
+	/**********************************************************************************************************************/
+	/**********************************************************************************************************************/
+	/**********************************************************************************************************************/
+
+	/// <summary>
+	/// Wps job status.
+	/// </summary>
+	public enum WpsJobStatus {
         NONE = 0, //default status
         ACCEPTED = 1, //wps job has been accepted
         STARTED = 2, //wps job has been started
         PAUSED = 3, //wps job has been paused
         SUCCEEDED = 4, //wps job is succeeded
         STAGED = 5, //wps job has been staged on store
-        FAILED = 6 //wps job has failed
+        FAILED = 6, //wps job has failed
+        COORDINATOR = 7 //wps job is a coordinator
+    }
     }
 }
 
