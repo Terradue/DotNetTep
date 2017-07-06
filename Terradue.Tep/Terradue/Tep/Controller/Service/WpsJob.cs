@@ -998,7 +998,6 @@ namespace Terradue.Tep {
         FAILED = 6, //wps job has failed
         COORDINATOR = 7 //wps job is a coordinator
     }
-    }
 }
 
 

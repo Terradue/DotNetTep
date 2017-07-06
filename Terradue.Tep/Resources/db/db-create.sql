@@ -46,12 +46,20 @@ INSERT INTO priv (id_type, identifier, operation, pos, name, enable_log) VALUES
 ;
 -- RESULT
 
+-- Adding type for Data package ... \
+CALL add_type($ID$, 'Terradue.Tep.DataPackage, Terradue.Tep', NULL, 'DataPackage', 'DataPackage', 'data/package');
+-- RESULT
+SET @type_id = (SELECT LAST_INSERT_ID());
 
 -- Update privileges for data packages ... \
-SET @type_id = (SELECT id FROM type WHERE class='Terradue.Tep.DataPackage, Terradue.Tep');
 SET @priv_pos = (SELECT MAX(pos) FROM priv);
 INSERT INTO priv (id_type, identifier, operation, pos, name, enable_log) VALUES
-    (@type_id, 'datapackage-p', 'p', @priv_pos + 1, 'DataPackage: make public', 1)
+    (@type_id, 'datapackage-v', 'v', @priv_pos + 1, 'DataPackage: view', 1),
+    (@type_id, 'datapackage-c', 'c', @priv_pos + 2, 'DataPackage: create', 1),
+    (@type_id, 'datapackage-s', 's', @priv_pos + 3, 'DataPackage: search', 1),
+    (@type_id, 'datapackage-m', 'm', @priv_pos + 4, 'DataPackage: change', 1),
+    (@type_id, 'datapackage-d', 'd', @priv_pos + 5, 'DataPackage: delete', 1),
+    (@type_id, 'datapackage-p', 'p', @priv_pos + 6, 'DataPackage: make public', 1)
 ;
 -- RESULT
 
@@ -81,7 +89,7 @@ CREATE TABLE wpsjob (
     wps varchar(100) NOT NULL COMMENT 'FK: WPS Service identifier',
     process varchar(100) NOT NULL COMMENT 'Process name',
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
-    status int NOT NULL DEFAULT 'none' COMMENT 'Wps job status',
+    status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
     status_url varchar(200) NOT NULL COMMENT 'Wps job status url',
     created_time datetime NOT NULL COMMENT 'Wps created date',
     access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
@@ -224,14 +232,9 @@ INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('ictprovider', 
 SET @type_id = (SELECT id FROM type WHERE class='Terradue.Portal.Domain, Terradue.Portal');
 INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicCommunity, Terradue.Tep', 'Thematic community', 'Thematic community', 'community');
 SET @type_id = (SELECT id FROM type WHERE class='Terradue.Tep.DataPackage, Terradue.Tep');
-INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicCommunity, Terradue.Tep', 'Thematic community', 'Thematic community', 'community');
+INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicApplication, Terradue.Tep', 'Thematic application', 'Thematic application', 'application');
 -- RESULT
 
--- Adding type for Communities ... \
-SET @type_id = (SELECT id FROM type WHERE class='Terradue.Portal.Domain, Terradue.Portal');
-INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicCommunity, Terradue.Tep', 'Thematic community', 'Thematic community', 'community');
-SET @type_id = (SELECT id FROM type WHERE class='Terradue.Tep.DataPackage, Terradue.Tep');
-INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicCommunity, Terradue.Tep', 'Thematic community', 'Thematic community', 'community');
 -- RESULT
 
 -- Adding discuss url for domains
