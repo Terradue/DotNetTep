@@ -674,8 +674,22 @@ namespace Terradue.Tep {
             return new ExecuteResponseOutputOpenSearchable(execResponse, context);
         }
 
-        #region IEntitySearchable implementation
-        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+		/// <summary>
+		/// Check if the response is from a coordinator.
+		/// </summary>
+		/// <returns><c>true</c>, if response is from a coordinator, <c>false</c> otherwise.</returns>
+		/// <param name="response">Response.</param>
+		public static bool IsResponseFromCoordinator(ExecuteResponse response) {
+			try {
+				var coordinatorsIds = response.ProcessOutputs.Where(po => po.Identifier.Value.Equals("coordinatorIds"));
+				if (coordinatorsIds.Count() > 0) return true;
+			} catch (Exception) { }
+			return false;
+		}
+
+
+		#region IEntitySearchable implementation
+		public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
                     var urlBOS = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine);

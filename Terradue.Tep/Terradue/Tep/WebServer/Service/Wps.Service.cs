@@ -459,7 +459,7 @@ namespace Terradue.Tep.WebServer.Services {
                     try {
                         jobresponse = wpsjob.GetStatusLocationContent();
                     }catch(Exception esl){
-                        wpsjob.UpdateWpsJobActivity(context, null);
+                        wpsjob.UpdateWpsJobActivity(null);
                         throw esl;
                     }
                     if (accountingEnabled){
@@ -482,8 +482,8 @@ namespace Terradue.Tep.WebServer.Services {
                         }
                     } else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 
-                    wpsjob.Status = wpsjob.GetStatusFromExecuteResponse(execResponse);
-                    wpsjob.Store();
+					wpsjob.UpdateStatusFromExecuteResponse(execResponse);
+					wpsjob.Store();
 
                     execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
@@ -491,7 +491,7 @@ namespace Terradue.Tep.WebServer.Services {
                     execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
 
                     //save job status in activity
-                    wpsjob.UpdateWpsJobActivity(context, execResponse);
+                    wpsjob.UpdateWpsJobActivity(execResponse);
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
