@@ -56,6 +56,22 @@ namespace Terradue.Tep
     [Route("/community/description", "GET", Summary = "GET community as opensearch description", Notes = "")]
     public class CommunityDescriptionRequestTep : IReturn<HttpResult> { }
 
+    [Route("/community/{identifier}/collection/{collIdentifier}", "POST", Summary = "POST the collection into the community", Notes = "")]
+	public class CommunityAddCollectionRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Identifier { get; set; }
+		[ApiMember(Name = "collIdentifier", Description = "Identifier of the collection", ParameterType = "query", DataType = "string", IsRequired = false)]
+		public string CollIdentifier { get; set; }
+	}
+
+	[Route("/community/{identifier}/collection/{collIdentifier}", "DELETE", Summary = "DELETE the collection from the community", Notes = "")]
+	public class CommunityRemoveCollectionRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Identifier { get; set; }
+		[ApiMember(Name = "collIdentifier", Description = "Identifier of the collection", ParameterType = "query", DataType = "string", IsRequired = false)]
+		public string CollIdentifier { get; set; }
+	}
+
     public class WebCommunityTep : WebDomain {
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Apps { get; set; }

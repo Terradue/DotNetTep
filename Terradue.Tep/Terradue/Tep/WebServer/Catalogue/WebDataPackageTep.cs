@@ -106,6 +106,12 @@ namespace Terradue.Tep.WebServer {
         public int Id { get; set; }
     }
 
+    [Route("/data/package/{dpId}/available", "GET", Summary = "GET list of groups that can access a datapackage", Notes = "")]
+    public class DataPackageGetAvailableIdentifierRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "dpId", Description = "identifier of the datapackage", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string DpId { get; set; }
+	}
+
     public class WebDataPackageTep : Terradue.WebService.Model.WebDataPackage {
 
         [ApiMember(Name="AccessKey", Description = "Remote resource AccessKey", ParameterType = "path", DataType = "string", IsRequired = false)]

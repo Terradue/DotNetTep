@@ -133,7 +133,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 result = ose.Query(serie, httpRequest.QueryString, type);
 
-                var descriptionUrl = serie.GetOpenSearchDescriptionUrl("application/opensearchdescription+xml");
+                var descriptionUrl = serie.GetDescriptionBaseUrl("application/opensearchdescription+xml");
                 if (descriptionUrl != null) {
                     result.Links.Add (new SyndicationLink (new Uri(descriptionUrl.Template), descriptionUrl.Relation, "OpenSearch Description link", descriptionUrl.Type, 0));
                 }
@@ -166,12 +166,18 @@ namespace Terradue.Tep.WebServer.Services
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/search GET"));
 
-                MasterCatalogue cat = new MasterCatalogue(context);
-                OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                ose.DefaultTimeOut = 60000;
+				//MasterCatalogue cat = new MasterCatalogue(context);
+				//OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+				//ose.DefaultTimeOut = 60000;
 
-                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                result = ose.Query(cat, httpRequest.QueryString, type);		
+				//Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+				//result = ose.Query(cat, httpRequest.QueryString, type);		
+
+                EntityList<Collection> collections = new EntityList<Collection>(context);
+				OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+				Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+				result = ose.Query(collections, httpRequest.QueryString, responseType);
 
 				context.Close ();
 			}catch(Exception e) {

@@ -306,19 +306,21 @@ namespace Terradue.Tep.WebServer.Services
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(this,string.Format("/data/package/export PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/data/package/export PUT Id='{0}'", request.Id == 0 ? request.Identifier : request.Id.ToString()));
                 DataPackage tmp;
                 if(request.Id != 0) tmp = DataPackage.FromId(context, request.Id);
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
                 else throw new Exception("Undefined data package, set at least Id or Identifier");
 
-                Series serie = new Series(context);
+                var serie = new Collection(context);
                 serie.Identifier = tmp.Identifier;
                 serie.Name = tmp.Name;
                 var entityType = EntityType.GetEntityType(typeof(DataPackage));
                 var description = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + tmp.Identifier + "/description");
                 description.Query = "key=" + tmp.AccessKey;
                 serie.CatalogueDescriptionUrl = description.Uri.AbsoluteUri;
+                var user = UserTep.FromId(context, context.UserId);
+                serie.Domain = user.Domain;
                 serie.Store();
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
@@ -671,6 +673,31 @@ namespace Terradue.Tep.WebServer.Services
             return new WebResponseBool(true);
         }
 
+
+		public object Get(DataPackageGetAvailableIdentifierRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var available = true;
+			try {
+				context.Open();
+				context.LogInfo(this, string.Format("/data/package/{{DpId}}/available GET DpId='{0}'", request.DpId));
+                context.AccessLevel = EntityAccessLevel.Administrator;
+                try {
+                    DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
+                    available = false;
+                }catch(EntityNotFoundException){
+                    available = true;
+                }catch(Exception){
+                    available = false;
+                }
+
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(available);
+		}
 	}
 }
 

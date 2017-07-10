@@ -233,8 +233,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(CollectionDeleteGroupRequestTep request) {
-            List<WebGroup> result = new List<WebGroup>();
-
+            
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
@@ -254,6 +253,27 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return new WebResponseBool(true);
         }
+
+		public object Delete(SerieDeleteRequestTep request) {
+			List<WebGroup> result = new List<WebGroup>();
+
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+				context.LogInfo(this, string.Format("/data/collection/{{collId}} DELETE collId='{0}'", request.Identifier));
+
+				Series serie = Series.FromIdentifier(context, request.Identifier);
+                serie.Delete();
+
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
+		}
+
 
     }
 }

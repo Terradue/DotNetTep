@@ -23,7 +23,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(PrivilegesGetRequest request) {
             List<WebPrivilege> result = new List<WebPrivilege>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/priv GET"));

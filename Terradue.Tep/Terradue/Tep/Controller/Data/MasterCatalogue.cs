@@ -114,15 +114,44 @@ namespace Terradue.Tep
         }
 
         public OpenSearchDescription GetOpenSearchDescription() {
-            OpenSearchDescription OSDD = GetWebServerOpenSearchDescription();
+			OpenSearchDescription osd = new OpenSearchDescription();
+            osd.ShortName = Identifier  ;
+			osd.Contact = context.GetConfigValue("CompanyEmail");
+			osd.SyndicationRight = "open";
+			osd.AdultContent = "false";
+			osd.Language = "en-us";
+			osd.OutputEncoding = "UTF-8";
+			osd.InputEncoding = "UTF-8";
+			osd.Developer = "Terradue OpenSearch Development Team";
+			osd.Attribution = context.GetConfigValue("CompanyName");
 
-            OSDD.Url = new OpenSearchDescriptionUrl[1];
-            UriBuilder uri = new UriBuilder(context.BaseUrl);
-            uri.Path += "/data/collection/search";
-            OpenSearchDescriptionUrl osdu = new OpenSearchDescriptionUrl("application/atom+xml", uri.ToString(), "search");
-            OSDD.Url[0] = osdu;
+			List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
 
-            return OSDD;
+			UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
+
+			OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self");
+			urls.Add(url);
+
+			urlb = new UriBuilder(GetSearchBaseUrl("application/atom+xml"));
+			NameValueCollection query = GetOpenSearchParameters("application/atom+xml");
+
+			NameValueCollection nvc = HttpUtility.ParseQueryString(urlb.Query);
+			foreach (var key in nvc.AllKeys) {
+				query.Set(key, nvc[key]);
+			}
+
+			foreach (var osee in OpenSearchEngine.Extensions.Values) {
+				query.Set("format", osee.Identifier);
+
+				string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+				urlb.Query = string.Join("&", queryString);
+				url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search");
+				urls.Add(url);
+			}
+
+			osd.Url = urls.ToArray();
+
+			return osd;
         }
 
         #region IOpenSearchable implementation
@@ -143,6 +172,14 @@ namespace Terradue.Tep
                 return "application/atom+xml";
             }
         }
+
+		public virtual OpenSearchUrl GetSearchBaseUrl(string mimetype) {
+			return new OpenSearchUrl(string.Format("{0}/{1}/search", context.BaseUrl, Identifier));
+		}
+
+		public virtual OpenSearchUrl GetDescriptionBaseUrl() {
+			return new OpenSearchUrl(string.Format("{0}/{1}/description", context.BaseUrl, Identifier));
+		}
 
         /// <summary>
         /// Create the specified querySettings and parameters.

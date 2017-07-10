@@ -6,6 +6,7 @@ using Terradue.OpenSearch;
 using Terradue.OpenSearch.Schema;
 using Terradue.OpenSearch.Result;
 using System.Collections.Generic;
+using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
 
@@ -19,7 +20,7 @@ namespace Terradue.Tep {
     /// \ingroup TepData
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     [EntityTable(null, EntityTableConfiguration.Custom, HasPrivilegeManagement = true, Storage = EntityTableStorage.Above)]
-    public class Collection : Series, IProxiedOpenSearchable {
+    public class Collection : Series, IProxiedOpenSearchable, IAtomizable {
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.DataSeries"/> class.
@@ -95,12 +96,12 @@ namespace Terradue.Tep {
             MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
         }
 
-        public OpenSearchUrl GetOpensearchSearchrl ()
+        public OpenSearchUrl GetSearchBaseUrl ()
         {
             return new OpenSearchUrl (string.Format ("{0}/data/collection/{1}/search", context.BaseUrl, this.Identifier));
         }
 
-        public OpenSearchDescriptionUrl GetOpenSearchDescriptionUrl (string mimeType)
+        public OpenSearchDescriptionUrl GetDescriptionBaseUrl (string mimeType)
         {
             return new OpenSearchDescriptionUrl(mimeType, string.Format ("{0}/data/collection/{1}/description", context.BaseUrl, this.Identifier), "search");
         }
@@ -155,6 +156,44 @@ namespace Terradue.Tep {
             return OSDD;
         }
 
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+			string identifier = this.Identifier;
+			string name = (this.Name != null ? this.Name : this.Identifier);
+			string text = (this.TextContent != null ? this.TextContent : "");
+
+			AtomItem atomEntry = null;
+			var entityType = EntityType.GetEntityType(typeof(Collection));
+			Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+			try {
+				atomEntry = new AtomItem(identifier, name, null, id.ToString(), DateTime.UtcNow);
+			} catch (Exception e) {
+				atomEntry = new AtomItem();
+			}
+
+			atomEntry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+
+			atomEntry.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
+
+            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword +"/" + this.Identifier + "/description");
+			atomEntry.Links.Add(new SyndicationLink(search.Uri, "search", name, "application/atom+xml", 0));
+
+			search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + identifier + "/search");
+			
+			atomEntry.Links.Add(new SyndicationLink(search.Uri, "public", name, "application/atom+xml", 0));
+
+			Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
+			atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
+			atomEntry.ReferenceData = this;
+
+			var basepath = new UriBuilder(context.BaseUrl);
+			basepath.Path = "user";
+			
+			return atomEntry;
+        }
+
+        public NameValueCollection GetOpenSearchParameters() {
+            return OpenSearchFactory.GetBaseOpenSearchParameter();
+        }
     }
 }
 

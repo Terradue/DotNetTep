@@ -225,5 +225,59 @@ namespace Terradue.Tep.WebServer.Services{
             }
             return new WebResponseBool(true);
         }
+
+        /// <summary>
+        /// Delete the specified request.
+        /// </summary>
+        /// <returns>The delete.</returns>
+        /// <param name="request">Request.</param>
+        public object Delete(CommunityRemoveCollectionRequestTep request) {
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+                context.AccessLevel = EntityAccessLevel.Privilege;
+                context.LogInfo(this, string.Format("/community/{{Identifier}}/collection/{{CollIdentifier}} DELETE Identifier='{0}' , CollIdentifier='{1}'", request.Identifier, request.CollIdentifier));
+				var domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
+				if (!domain.CanUserManageCollection(context.UserId)) throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+                var collection = Collection.FromIdentifier(context, request.CollIdentifier);
+                var owner = User.FromId(context, collection.UserId);
+                collection.Domain = owner.Domain;
+                collection.Store();
+				context.LogDebug(this, string.Format("Collection removed from Community {0}, put in owner's domain {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
+		}
+
+        /// <summary>
+        /// Post the specified request.
+        /// </summary>
+        /// <returns>The post.</returns>
+        /// <param name="request">Request.</param>
+		public object Post(CommunityAddCollectionRequestTep request) {
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+                context.AccessLevel = EntityAccessLevel.Privilege;
+				context.LogInfo(this, string.Format("/community/{{Identifier}}/collection/{{CollIdentifier}} POST Identifier='{0}' , CollIdentifier='{1}'", request.Identifier, request.CollIdentifier));
+				var domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
+				if (!domain.CanUserManageCollection(context.UserId)) throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+				var collection = Collection.FromIdentifier(context, request.CollIdentifier);
+                collection.AccessLevel = EntityAccessLevel.Privilege;
+				collection.Domain = domain;
+				collection.Store();
+				context.LogDebug(this, string.Format("Collection added to Community {0}", domain.Identifier));
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
+		}
     }
 }

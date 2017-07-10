@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Data;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Web;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
@@ -135,6 +136,23 @@ namespace Terradue.Tep {
         /// <param name="userid">Userid.</param>
         public bool CanUserManage(int userid) {
             return IsUserOwner(userid) || (context.AccessLevel == EntityAccessLevel.Administrator);
+        }
+
+        /// <summary>
+        /// Can the user manage collection.
+        /// </summary>
+        /// <returns><c>true</c>, if user can manage collection, <c>false</c> otherwise.</returns>
+        /// <param name="userid">Userid.</param>
+        public bool CanUserManageCollection(int userid){
+            var user = UserTep.FromId(context, userid);
+            var roles = user.GetUserRoles(this);
+            foreach(var role in roles){
+                var perms = role.GetPrivileges();
+                foreach(var p in perms){
+                    if (p.Identifier == "series-m") return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -493,13 +511,30 @@ namespace Terradue.Tep {
                                 foreach (var off in offerings) {
                                     if (off.Operations != null) {
                                         foreach (var ops in off.Operations) {
-                                            if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue; 
-                                            var any = ops.Any[0].InnerText.Trim();
-                                            var anytrim = any.Replace(" ", "");
+                                            if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue;
                                             var appTitle = item.Title != null ? item.Title.Text : item.Identifier;
-                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
-                                            var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
-                                            if(any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
+                                            if (ops.Code == "ListSeries") {
+                                                EntityList<Collection> collections = new EntityList<Collection>(context);
+                                                Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                                                var uri = new Uri(ops.Href);
+                                                var nvc = HttpUtility.ParseQueryString(uri.Query);
+                                                var resultColl = ose.Query(collections, nvc);
+                                                foreach(var itemColl in resultColl.Items){
+                                                    var itemCollIdTrim = itemColl.Identifier.Trim().Replace(" ", "");
+                                                    var any = ops.Any[0].InnerText.Trim();
+                                                    var anytrim = any.Replace(" ", "").Replace("*", itemCollIdTrim);
+                                                    any = any.Replace("*", itemColl.Identifier);
+													var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
+													var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
+													if (any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
+                                                }
+                                            } else {
+                                                var any = ops.Any[0].InnerText.Trim();
+                                                var anytrim = any.Replace(" ", "");
+												var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
+												var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
+												if (any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
+                                            }
                                         }
                                     }
                                 }
