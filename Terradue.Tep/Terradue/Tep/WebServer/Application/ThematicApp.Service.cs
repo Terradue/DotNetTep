@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Web;
@@ -50,7 +50,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             //foreach community we get the apps link
             foreach (var community in communities.Items) {
-                if (community.Kind == DomainKind.Public || community.IsUserJoined(context.UserId) || community.IsUserPending(context.UserId)) {
+                if (community.IsUserJoined(context.UserId)) {
                     if (!string.IsNullOrEmpty(community.AppsLink)) 
                         osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(community.AppsLink), ose));
                 }
