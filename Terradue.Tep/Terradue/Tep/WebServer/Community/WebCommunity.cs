@@ -72,6 +72,22 @@ namespace Terradue.Tep
 		public string CollIdentifier { get; set; }
 	}
 
+	[Route("/community/{identifier}/service/wps/{wpsIdentifier}", "POST", Summary = "POST the wps service into the community", Notes = "")]
+	public class CommunityAddWpsServiceRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Identifier { get; set; }
+		[ApiMember(Name = "wpsIdentifier", Description = "Identifier of the wps service", ParameterType = "query", DataType = "string", IsRequired = false)]
+		public string WpsIdentifier { get; set; }
+	}
+
+	[Route("/community/{identifier}/service/wps/{wpsIdentifier}", "DELETE", Summary = "DELETE the wps service from the community", Notes = "")]
+	public class CommunityRemoveWpsServiceRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Identifier { get; set; }
+		[ApiMember(Name = "wpsIdentifier", Description = "Identifier of the wps service", ParameterType = "query", DataType = "string", IsRequired = false)]
+		public string WpsIdentifier { get; set; }
+	}
+
     public class WebCommunityTep : WebDomain {
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Apps { get; set; }

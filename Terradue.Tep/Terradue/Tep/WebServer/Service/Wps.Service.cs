@@ -959,6 +959,34 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return result;
         }
+
+        /// <summary>
+        /// Put the specified request.
+        /// </summary>
+        /// <returns>The put.</returns>
+        /// <param name="request">Request.</param>
+        public object Put(WpsServiceUpdateTagsRequestTep request){
+			WebServiceTep result;
+
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+                context.AccessLevel = EntityAccessLevel.Privilege;
+				context.LogInfo(this, string.Format("/service/wps/{{Id}} GET Id='{0}'", request.Id));
+				WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
+                wps.AccessLevel = EntityAccessLevel.Privilege;
+                wps.Tags = "";
+                foreach (var tag in request.Tags) wps.AddTag(tag);
+                wps.Store();
+				result = new WebServiceTep(context, wps);
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return result;
+        }
     }
 
 }

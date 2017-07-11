@@ -155,6 +155,23 @@ namespace Terradue.Tep {
             return false;
         }
 
+		/// <summary>
+		/// Can the user manage wps services.
+		/// </summary>
+		/// <returns><c>true</c>, if user can manage wps services, <c>false</c> otherwise.</returns>
+		/// <param name="userid">Userid.</param>
+		public bool CanUserManageService(int userid) {
+			var user = UserTep.FromId(context, userid);
+			var roles = user.GetUserRoles(this);
+			foreach (var role in roles) {
+				var perms = role.GetPrivileges();
+				foreach (var p in perms) {
+					if (p.Identifier == "service-m") return true;
+				}
+			}
+			return false;
+		}
+
         /// <summary>
         /// Gets the owner (or manager) of the Community
         /// </summary>

@@ -279,5 +279,59 @@ namespace Terradue.Tep.WebServer.Services{
 			}
 			return new WebResponseBool(true);
 		}
+
+		/// <summary>
+		/// Delete the specified request.
+		/// </summary>
+		/// <returns>The delete.</returns>
+		/// <param name="request">Request.</param>
+		public object Delete(CommunityRemoveWpsServiceRequestTep request) {
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+				context.AccessLevel = EntityAccessLevel.Privilege;
+				context.LogInfo(this, string.Format("/community/{{Identifier}}/service/wps/{{WpsIdentifier}} DELETE Identifier='{0}' , WpsIdentifier='{1}'", request.Identifier, request.WpsIdentifier));
+				var domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
+				if (!domain.CanUserManageService(context.UserId)) throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+                var wps = WpsProcessOffering.FromIdentifier(context, request.WpsIdentifier);
+                var owner = User.FromId(context, wps.OwnerId != 0 ? wps.OwnerId : wps.UserId);
+				wps.Domain = owner.Domain;
+				wps.Store();
+				context.LogDebug(this, string.Format("Wps service removed from Community {0}, put in owner's domain {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
+		}
+
+		/// <summary>
+		/// Post the specified request.
+		/// </summary>
+		/// <returns>The post.</returns>
+		/// <param name="request">Request.</param>
+		public object Post(CommunityAddWpsServiceRequestTep request) {
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+				context.AccessLevel = EntityAccessLevel.Privilege;
+				context.LogInfo(this, string.Format("/community/{{Identifier}}/service/wps/{{WpsIdentifier}} POST Identifier='{0}' , WpsIdentifier='{1}'", request.Identifier, request.WpsIdentifier));
+				var domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
+				if (!domain.CanUserManageService(context.UserId)) throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+				var wps = WpsProcessOffering.FromIdentifier(context, request.WpsIdentifier);
+				wps.AccessLevel = EntityAccessLevel.Privilege;
+				wps.Domain = domain;
+				wps.Store();
+				context.LogDebug(this, string.Format("Wps service added to Community {0}", domain.Identifier));
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
+		}
     }
 }
