@@ -187,6 +187,18 @@ namespace Terradue.Tep {
             return result;
         }
 
+		public static DataPackage FromNameAndOwner(IfyContext context, string name, int userid) {
+			DataPackage result = new DataPackage(context);
+			result.Name = name;
+            result.OwnerId = userid;
+			try {
+				result.Load();
+			} catch (Exception e) {
+				throw e;
+			}
+			return result;
+		}
+
         /// <summary>
         /// Froms the identifier.
         /// </summary>
@@ -228,7 +240,8 @@ namespace Terradue.Tep {
         }
 
         public override string GetIdentifyingConditionSql (){
-            if (OwnerId != 0 && Kind == KINDRESOURCESETUSER) return String.Format("t.id_usr={0} AND t.kind={1}",OwnerId,Kind); 
+            if (OwnerId != 0 && !string.IsNullOrEmpty(Name)) return String.Format("t.id_usr={0} AND t.name='{1}'", OwnerId, Name);
+            if (OwnerId != 0 && Kind == KINDRESOURCESETUSER) return String.Format("t.id_usr={0} AND t.kind={1}",OwnerId,Kind);
             return null;
         }
 
@@ -273,8 +286,8 @@ namespace Terradue.Tep {
                 if (isNew){
                     this.AccessKey = Guid.NewGuid().ToString();
                     this.CreationTime = DateTime.UtcNow;
+                    this.Identifier = GetUniqueIdentifier(this.Name);
                 }
-                this.Identifier = TepUtility.ValidateIdentifier(this.Identifier);
                 base.Store();
 
                 if (Kind == KINDRESOURCESETUSER)
@@ -287,7 +300,26 @@ namespace Terradue.Tep {
                 context.Rollback();
                 throw e;
             }
+        }
 
+        /// <summary>
+        /// Gets the unique identifier.
+        /// </summary>
+        /// <returns>The unique identifier.</returns>
+        /// <param name="name">Name.</param>
+        public string GetUniqueIdentifier(string name){
+            var identifier = TepUtility.ValidateIdentifier(name);
+            for (int i = 0; i < 1000; i++){
+				var uname = string.Format("{0}{1}", identifier, i == 0 ? "" : "-" + i);
+                try{
+                    DataPackage.FromIdentifier(context, uname);
+                } catch (EntityUnauthorizedException) {
+					//next
+                }catch(EntityNotFoundException e){
+                    return uname;
+                }
+			}
+			throw new Exception("Sorry, we were not able to find a valid data package name");
         }
 
         /// <summary>

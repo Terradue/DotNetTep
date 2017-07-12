@@ -99,25 +99,28 @@ namespace Terradue.Tep.WebServer.Services
                 context.StartTransaction();
 
                 if(string.IsNullOrEmpty(request.Identifier) && string.IsNullOrEmpty(request.Name)) throw new Exception("No identifier set");
-                var identifier = !string.IsNullOrEmpty(request.Identifier) ? TepUtility.ValidateIdentifier(request.Identifier) : TepUtility.ValidateIdentifier(request.Name);
+                //var identifier = !string.IsNullOrEmpty(request.Identifier) ? TepUtility.ValidateIdentifier(request.Identifier) : TepUtility.ValidateIdentifier(request.Name);
 
                 if(request.Overwrite && tmp.OwnerId == context.UserId){
-                    tmp = DataPackage.FromIdentifier(context, identifier);
+                    tmp = DataPackage.FromNameAndOwner(context, request.Name, context.UserId);
                     foreach(var res in tmp.Resources){
                         res.Delete();
                     }
                 } else {
                     tmp = (DataPackage)request.ToEntity(context, tmp);
-                    tmp.Identifier = identifier;
+                    //tmp.Identifier = identifier;
                     try{
                         tmp.Store();
                     }catch(DuplicateEntityIdentifierException e){
-                        tmp = DataPackage.FromIdentifier(context, identifier);
-                        if(tmp.OwnerId == context.UserId){
+                        //tmp = DataPackage.FromIdentifier(context, identifier);
+                        //if(tmp.OwnerId == context.UserId){
                             throw new DuplicateNameException(e.Message);
-                        } else {
-                            throw e;
-                        }
+                        //} else {
+                        //    throw e;
+                        //}
+                    }catch(Exception e){
+                        if(e.Message.StartsWith("Duplicate entry")) throw new DuplicateNameException(e.Message);
+                        throw e;
                     }
                 }
   
