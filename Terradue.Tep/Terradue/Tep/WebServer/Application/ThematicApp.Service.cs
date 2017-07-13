@@ -193,6 +193,17 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool(true);
         }
 
+		public object Get(ThematicAppEditorGetRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+			context.Open();
+            context.LogInfo(this, string.Format("/app/editor GET url='{0}'", request.Url));
+            			
+
+			context.Close();
+
+            return WebThematicAppEditor.FromAtomFeed(AtomFeed feed);
+		}
+
     }
 }
 
