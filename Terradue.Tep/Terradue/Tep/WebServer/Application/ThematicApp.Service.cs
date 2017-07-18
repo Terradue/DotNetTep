@@ -1,7 +1,9 @@
-﻿﻿using System;
+﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Net;
 using System.Web;
+using System.Xml;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.OpenSearch;
@@ -10,6 +12,7 @@ using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Portal.OpenSearch;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 using Terradue.ServiceModel.Syndication;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
@@ -195,13 +198,65 @@ namespace Terradue.Tep.WebServer.Services {
 
 		public object Get(ThematicAppEditorGetRequestTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebThematicAppEditor result = null;
 			context.Open();
-            context.LogInfo(this, string.Format("/app/editor GET url='{0}'", request.Url));
-            			
+            try{
+	            context.LogInfo(this, string.Format("/app/editor GET url='{0}'", request.Url));
 
-			context.Close();
+	            HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(request.Url);
 
-            return WebThematicAppEditor.FromAtomFeed(AtomFeed feed);
+	            using (var resp = httpRequest.GetResponse()){
+	                using(var stream = resp.GetResponseStream()){
+						var sr = XmlReader.Create(stream);
+						Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
+						atomFormatter.ReadFrom(sr);
+						sr.Close();
+						var feed = new OwsContextAtomFeed(atomFormatter.Feed, true);
+						foreach (OwsContextAtomEntry item in feed.Items) {
+							if (result == null) result = new WebThematicAppEditor(item);
+						}
+	                }
+	            }
+				
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+            return result;
+		}
+
+        public object Post(ThematicAppEditorPostRequestTep request) {
+			IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+			WebThematicAppEditor result = null;
+			context.Open();
+            try{
+	            context.LogInfo(this, string.Format("/app/editor POST Identifier='{0}', Index='{1}'", request.Identifier, request.Index));
+
+	            var owsentry = request.ToOwsContextAtomEntry(context);
+
+				var feed = new OwsContextAtomFeed();
+				var entries = new List<OwsContextAtomEntry>();
+				entries.Add(owsentry);
+				feed.Items = entries;
+
+	            var user = UserTep.FromId(context, context.UserId);
+
+				//post to catalogue
+				try {
+	                CatalogueFactory.PostAtomFeedToIndex(context, feed, request.Index, user.TerradueCloudUsername, request.ApiKey);
+				} catch (Exception e) {
+					throw new Exception("Unable to POST to " + request.Index + " - " + e.Message);
+				}
+
+			    context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
 		}
 
     }
