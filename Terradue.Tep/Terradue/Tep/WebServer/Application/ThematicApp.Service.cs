@@ -1,4 +1,4 @@
-﻿﻿﻿using System;
+﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
@@ -232,7 +232,7 @@ namespace Terradue.Tep.WebServer.Services {
 			WebThematicAppEditor result = null;
 			context.Open();
             try{
-	            context.LogInfo(this, string.Format("/app/editor POST Identifier='{0}', Index='{1}'", request.Identifier, request.Index));
+	            context.LogInfo(this, string.Format("/app/editor POST"));
 
 	            var owsentry = request.ToOwsContextAtomEntry(context);
 
@@ -242,12 +242,15 @@ namespace Terradue.Tep.WebServer.Services {
 				feed.Items = entries;
 
 	            var user = UserTep.FromId(context, context.UserId);
+                var index = request.Index ?? user.TerradueCloudUsername;
+
+                context.LogDebug(this, string.Format("/app/editor POST Identifier='{0}', Index='{1}'", request.Identifier, index));
 
 				//post to catalogue
 				try {
-	                CatalogueFactory.PostAtomFeedToIndex(context, feed, request.Index, user.TerradueCloudUsername, request.ApiKey);
+	                CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.TerradueCloudUsername, request.ApiKey);
 				} catch (Exception e) {
-					throw new Exception("Unable to POST to " + request.Index + " - " + e.Message);
+					throw new Exception("Unable to POST to " + index + " - " + e.Message);
 				}
 
 			    context.Close();

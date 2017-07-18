@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -202,7 +202,9 @@ namespace Terradue.Tep.WebServer {
             if(!string.IsNullOrEmpty(this.StartDate) && !string.IsNullOrEmpty(this.EndDate))
                 entry.Date = new DateTimeInterval { StartDate = DateTime.Parse(string.IsNullOrEmpty(this.StartDate) ? this.EndDate : this.StartDate), EndDate = DateTime.Parse(string.IsNullOrEmpty(this.EndDate) ? this.StartDate : this.EndDate) };
             entry.Content = new UrlSyndicationContent(new Uri("/geobrowser/thematicAppContent.html"), "text/html");
-            //TODO: content updatable ?
+            //TODO: content updatable ? get from list ?
+
+            entry.ElementExtensions.Add("type", "http://www.terradue.com", "app");
 
             //authors
             foreach(var author in this.Authors){
