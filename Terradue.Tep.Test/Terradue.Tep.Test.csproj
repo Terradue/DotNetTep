@@ -117,17 +117,20 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.14.9\lib\net45\Terradue.OpenSearch.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.26\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.27\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.26\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.27\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.26\lib\net45\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.27\lib\net45\Terradue.Portal.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch">
+      <HintPath>..\packages\Terradue.OpenSearch.1.14.9\lib\net45\Terradue.OpenSearch.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +143,8 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <None Include="core\db\db-create.sql" />
+    <None Include="core\db\db-2.7.11#.sql" />
+    <None Include="core\db\db-2.7.10#.sql" />
     <None Include="core\db\db-2.7.9#.sql" />
     <None Include="core\db\db-2.7.8#.sql" />
     <None Include="core\db\db-2.7.4#.sql" />
@@ -147,8 +152,6 @@
     <None Include="core\db\db-2.7.3.1#.sql" />
     <None Include="core\db\db-2.7.3#.sql" />
     <None Include="core\db\db-2.7.2#.sql" />
-    <None Include="core\db\db-2.7.11#.sql" />
-    <None Include="core\db\db-2.7.10#.sql" />
     <None Include="core\db\db-2.7.1#.sql" />
     <None Include="core\db\db-2.7#.sql" />
     <None Include="core\db\db-2.6.66#.sql" />
