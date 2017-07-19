@@ -75,8 +75,10 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "EndDate", Description = "EndDate", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string EndDate { get; set; }
 
+		[ApiMember(Name = "Spatial", Description = "Spatial", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Spatial { get; set; }
+
 		//TODO: content
-        //TODO: box
 
 		[ApiMember(Name = "Index", Description = "Index", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string Index { get; set; }
@@ -93,8 +95,10 @@ namespace Terradue.Tep.WebServer {
             if (entry.Summary != null) Summary = entry.Summary.Text;
             var identifiers = entry.ElementExtensions.ReadElementExtensions<string>("identifier", OwcNamespaces.Dc);
             if (identifiers.Count() > 0) this.Identifier = identifiers.First();
-            if (entry.Date != null && entry.Date.StartDate != null) this.StartDate = entry.Date.StartDate.ToString("d");
-			if (entry.Date != null && entry.Date.EndDate != null) this.EndDate = entry.Date.EndDate.ToString("d");
+            if (entry.Date != null) {
+                this.StartDate = entry.Date.StartDate.ToString("d");
+                this.EndDate = entry.Date.EndDate.ToString("d");
+            }
 
             //authors
             Authors = new List<WebThematicAppAuthor>();
@@ -190,6 +194,9 @@ namespace Terradue.Tep.WebServer {
                 }
             }
 
+			//WKT
+            var spatials = entry.ElementExtensions.ReadElementExtensions<string>("spatial", "http://purl.org/dc/terms/");
+            if (spatials.Count() > 0) this.Spatial = spatials.First();
         }
 
         public OwsContextAtomEntry ToOwsContextAtomEntry(IfyContext context){
@@ -350,7 +357,11 @@ namespace Terradue.Tep.WebServer {
 				});
 			}
             entry.Offerings = offerings;
-            return entry;
+
+            //spatial
+            if(!string.IsNullOrEmpty(this.Spatial)) entry.ElementExtensions.Add("spatial", "http://purl.org/dc/terms/", this.Spatial);
+
+			return entry;
         }
 
 	}

@@ -253,6 +253,8 @@ namespace Terradue.Tep.WebServer.Services {
 					throw new Exception("Unable to POST to " + index + " - " + e.Message);
 				}
 
+                if (!user.HasPrivateThematicApp()) user.CreatePrivateThematicApp();
+
 			    context.Close();
 			} catch (Exception e) {
 				context.LogError(this, e.Message);

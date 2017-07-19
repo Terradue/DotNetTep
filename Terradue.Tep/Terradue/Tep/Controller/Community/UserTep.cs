@@ -361,6 +361,50 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Creates the private thematic app.
+        /// </summary>
+        public void CreatePrivateThematicApp() {
+            var app = new ThematicApplication(context);
+            app.Identifier = Guid.NewGuid().ToString();
+            app.AccessKey = Guid.NewGuid().ToString();
+            app.Name = "private thematic app";
+            app.Domain = this.Domain;
+            app.Store();
+			var baseurl = context.GetConfigValue("catalog-baseurl");
+            var url = baseurl + "/" + this.TerradueCloudUsername + "/series/apps/search";
+            var res = new RemoteResource(context);
+            res.Location = url;
+            app.AddResourceItem(res);
+        }
+
+        /// <summary>
+        /// Check if user has a private thematic app.
+        /// </summary>
+        /// <returns><c>true</c>, if private thematic app was hased, <c>false</c> otherwise.</returns>
+        public bool HasPrivateThematicApp() {
+            var items = GetPrivateAppList();
+            return items.Count > 0;
+        }
+
+        /// <summary>
+        /// Gets the private thematic app.
+        /// </summary>
+        /// <returns>The private thematic app.</returns>
+		public ThematicApplication GetPrivateThematicApp() {
+            var items = GetPrivateAppList();
+			return items[0];
+		}
+
+        private List<ThematicApplication> GetPrivateAppList(){
+			var apps = new EntityList<ThematicApplication>(context);
+			apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
+			apps.SetFilter("DomainId", this.DomainId + "");
+			apps.Load();
+			var items = apps.GetItemsAsList();
+            return items;
+        }
+
+        /// <summary>
         /// Loads the SSH pub key.
         /// </summary>
         public void LoadSSHPubKey() {

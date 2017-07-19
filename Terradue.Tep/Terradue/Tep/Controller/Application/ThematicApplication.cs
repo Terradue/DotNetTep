@@ -56,8 +56,8 @@ namespace Terradue.Tep
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicApplicationSet"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
-        public ThematicApplication (IfyContext context) : base (context)
-        {
+        public ThematicApplication (IfyContext context) : base (context){
+            this.Kind = KINDRESOURCESETAPPS;
         }
 
         /// <summary>
