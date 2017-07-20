@@ -371,7 +371,7 @@ namespace Terradue.Tep {
             app.Domain = this.Domain;
             app.Store();
 			var baseurl = context.GetConfigValue("catalog-baseurl");
-            var url = baseurl + "/" + this.TerradueCloudUsername + "/series/apps/search";
+            var url = baseurl + "/" + this.TerradueCloudUsername + "/series/_apps/search";
             var res = new RemoteResource(context);
             res.Location = url;
             app.AddResourceItem(res);

@@ -67,9 +67,25 @@ namespace Terradue.Tep.WebServer.Services {
             foreach (var app in apps) {
                 app.LoadItems();
                 foreach (var item in app.Items) {
-                    if (!string.IsNullOrEmpty(item.Location))
-						osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose));
+                    if (!string.IsNullOrEmpty(item.Location)) osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose));
                 }
+            }
+
+            //get user private thematic app
+            if (context.UserId != 0) {
+                var user = UserTep.FromId(context, context.UserId);
+                var app = user.GetPrivateThematicApp();
+				app.LoadItems();
+				foreach (var item in app.Items) {
+                    if (!string.IsNullOrEmpty(item.Location)) {
+                        try{
+                            var sgOs = new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose);
+                            osentities.Add(sgOs);
+                        }catch(Exception e){
+                            //skip
+                        }
+                    }
+				}
             }
 
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
