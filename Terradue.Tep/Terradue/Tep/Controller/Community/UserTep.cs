@@ -16,6 +16,9 @@ using Terradue.OpenSearch;
 using System.Collections.Specialized;
 using Terradue.Portal.OpenSearch;
 using System.Linq;
+using ServiceStack.Text;
+using System.Security.Cryptography;
+using System.Runtime.Serialization;
 
 namespace Terradue.Tep {
 
@@ -161,6 +164,8 @@ namespace Terradue.Tep {
             this.LoadCloudUsername();
 
             if (Domain == null) CreatePrivateDomain();
+            if (TerradueCloudUsername == null || GetSessionApiKey() == null) LoadTerradueUserInfo();
+            GetPrivateDataCollection();
         }
 
         public override void Store() {
@@ -261,15 +266,18 @@ namespace Terradue.Tep {
             cusr.Store();
         }
 
-        /// <summary>
-        /// Finds the terradue cloud username.
-        /// </summary>
-        public void FindTerradueCloudUsername() {
-            var url = string.Format("{0}?token={1}&eosso={2}&email={3}",
-                                    context.GetConfigValue("t2portal-usr-endpoint"),
-                                    context.GetConfigValue("t2portal-sso-token"),
-                                    this.Username,
-                                    this.Email);
+        public void LoadTerradueUserInfo(){
+            var payload = string.Format("username={0}&email={1}&originator={2}{3}", 
+                this.Username, 
+                this.Email, 
+                context.GetConfigValue("SiteNameShort"), 
+                this.Level > 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-defaultPlan") : "");   
+            System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+            byte[] payloadBytes = encoding.GetBytes(payload);
+            var sso = System.Convert.ToBase64String(payloadBytes);
+            var sig = HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
+
+            var url = string.Format("{0}?payload={1}&sig={2}", context.GetConfigValue("t2portal-usr-endpoint"), sso, sig);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Proxy = null;
             request.Method = "GET";
@@ -277,12 +285,56 @@ namespace Terradue.Tep {
             request.Accept = "application/json";
             using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    this.TerradueCloudUsername = streamReader.ReadToEnd();
+                    var result = streamReader.ReadToEnd();
+                    var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
+                    this.TerradueCloudUsername = info.Username;
                     this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
                     context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                    SetSessionApikey(info.ApiKey);
+                    this.Store();
                 }
             }
         }
+
+        private static void SetSessionApikey(string value){
+            HttpContext.Current.Session.Add("t2apikey", value);
+        }
+
+        public static string GetSessionApiKey(){
+            return (string)HttpContext.Current.Session["t2apikey"];
+        }
+
+		private static string HashHMAC(string key, string msg) {
+			var encoding = new System.Text.ASCIIEncoding();
+			var bkey = encoding.GetBytes(key);
+			var bmsg = encoding.GetBytes(msg);
+			var hash = new HMACSHA256(bkey);
+			var hashmac = hash.ComputeHash(bmsg);
+			return BitConverter.ToString(hashmac).Replace("-", "").ToLower();
+		}
+
+        /// <summary>
+        /// Finds the terradue cloud username.
+        /// </summary>
+        //public void FindTerradueCloudUsername() {
+        //    var url = string.Format("{0}?token={1}&eosso={2}&email={3}",
+        //                            context.GetConfigValue("t2portal-usr-endpoint"),
+        //                            context.GetConfigValue("t2portal-sso-token"),
+        //                            this.Username,
+        //                            this.Email);
+        //    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+        //    request.Proxy = null;
+        //    request.Method = "GET";
+        //    request.ContentType = "application/json";
+        //    request.Accept = "application/json";
+        //    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+        //        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+        //            this.TerradueCloudUsername = streamReader.ReadToEnd();
+        //            this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+        //            context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Creates the private domain.
@@ -314,9 +366,9 @@ namespace Terradue.Tep {
         /// <summary>
         /// Generates the API key.
         /// </summary>
-        public void GenerateApiKey() {
-            this.ApiKey = Guid.NewGuid().ToString();
-        }
+        //public void GenerateApiKey() {
+        //    this.ApiKey = Guid.NewGuid().ToString();
+        //}
 
         /// <summary>
         /// Creates the SSO account.
@@ -392,7 +444,11 @@ namespace Terradue.Tep {
         /// <returns>The private thematic app.</returns>
 		public ThematicApplication GetPrivateThematicApp() {
             var items = GetPrivateAppList();
-			return items[0];
+			var app =  items[0];
+            app.LoadItems();
+            //add apikey to location
+            foreach (var item in app.Items) item.Location += "?apikey=" + GetSessionApiKey();
+            return app;
 		}
 
         private List<ThematicApplication> GetPrivateAppList(){
@@ -402,6 +458,42 @@ namespace Terradue.Tep {
 			apps.Load();
 			var items = apps.GetItemsAsList();
             return items;
+        }
+
+        /// <summary>
+        /// Creates the private data collection.
+        /// </summary>
+        /// <returns>The private data collection.</returns>
+        public Collection CreatePrivateDataCollection() {
+            var baseurl = context.GetConfigValue("catalog-baseurl");
+            var url = baseurl + "/" + this.TerradueCloudUsername + "/series/_products/search";
+
+            var collection = new Collection(context);
+            collection.Domain = this.Domain;
+            collection.Identifier = "_" + this.TerradueCloudUsername;
+            collection.Name = this.TerradueCloudUsername + " private index";
+            collection.CatalogueDescriptionUrl = url;
+            collection.Store();
+
+            collection.GrantPermissionsToUsers(new int[]{this.Id});
+            return collection;
+        }
+
+        /// <summary>
+        /// Gets the private data collection.
+        /// </summary>
+        /// <returns>The private data collection.</returns>
+        public Collection GetPrivateDataCollection(){
+            Collection collection = null;
+            try {
+                collection = Terradue.Tep.Collection.FromIdentifier(context, "_" + this.TerradueCloudUsername);
+            }catch(Exception e){
+                collection = CreatePrivateDataCollection();
+            }
+            //add apikey to url
+            collection.CatalogueDescriptionUrl += "?apikey=" + GetSessionApiKey();
+
+            return collection;
         }
 
         /// <summary>
@@ -645,6 +737,14 @@ namespace Terradue.Tep {
         }
 
         #endregion
+    }
+
+    [DataContract]
+    public class WebT2ssoUserInfo{
+        [DataMember]
+        public string Username { get; set; }
+        [DataMember]
+        public string ApiKey { get; set; }
     }
 }
 

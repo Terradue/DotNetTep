@@ -83,7 +83,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/current/sso GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
-                user.FindTerradueCloudUsername();
+                //user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -101,7 +101,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/sso/{{Id}} GET Id='{0}'", request.Id));
                 UserTep user = UserTep.FromId(context, request.Id);
-                user.FindTerradueCloudUsername();
+                //user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -356,8 +356,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo (this, string.Format ("/user/key POST Id='{0}'", context.UserId));
 
                 UserTep user = UserTep.FromId (context, context.UserId);
-                user.GenerateApiKey ();
-                user.Store ();
+                //user.GenerateApiKey ();
+                //user.Store ();
                 
                 result = new WebUserTep (context, user);
                 context.Close ();

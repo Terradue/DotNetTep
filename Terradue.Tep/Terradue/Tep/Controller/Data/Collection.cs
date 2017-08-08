@@ -19,7 +19,7 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepData
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    [EntityTable(null, EntityTableConfiguration.Custom, HasPrivilegeManagement = true, Storage = EntityTableStorage.Above)]
+    [EntityTable(null, EntityTableConfiguration.Custom, HasPermissionManagement = true, Storage = EntityTableStorage.Above)]
     public class Collection : Series, IProxiedOpenSearchable, IAtomizable {
 
         /// <summary>
@@ -174,7 +174,13 @@ namespace Terradue.Tep {
 
 			atomEntry.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
 
-            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword +"/" + this.Identifier + "/description");
+            //UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword +"/" + this.Identifier + "/description");
+            UriBuilder search = new UriBuilder(this.CatalogueDescriptionUrl);
+            if (this.CatalogueDescriptionUrl.StartsWith(context.GetConfigValue("catalog-baseurl"))) {
+                var apikey = UserTep.GetSessionApiKey();
+                if (!string.IsNullOrEmpty(apikey))
+                    search.Query += string.IsNullOrEmpty(search.Query) ? "apikey=" + apikey : "&apikey=" + apikey;
+            }
 			atomEntry.Links.Add(new SyndicationLink(search.Uri, "search", name, "application/atom+xml", 0));
 
 			search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + identifier + "/search");

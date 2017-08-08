@@ -75,7 +75,6 @@ namespace Terradue.Tep.WebServer.Services {
             if (context.UserId != 0) {
                 var user = UserTep.FromId(context, context.UserId);
                 var app = user.GetPrivateThematicApp();
-				app.LoadItems();
 				foreach (var item in app.Items) {
                     if (!string.IsNullOrEmpty(item.Location)) {
                         try{
