@@ -286,7 +286,7 @@ namespace Terradue.Tep {
                 if (isNew){
                     this.AccessKey = Guid.NewGuid().ToString();
                     this.CreationTime = DateTime.UtcNow;
-                    this.Identifier = GetUniqueIdentifier(this.Name);
+                    if(string.IsNullOrEmpty(this.Identifier)) this.Identifier = GetUniqueIdentifier(this.Name);
                 }
                 base.Store();
 
@@ -432,16 +432,25 @@ namespace Terradue.Tep {
 
         public override IOpenSearchable[] GetOpenSearchableArray() {
             List<SmartGenericOpenSearchable> osResources = new List<SmartGenericOpenSearchable>(Resources.Count);
-            //List<UrlBasedOpenSearchable> osResources = new List<UrlBasedOpenSearchable>(Resources.Count);
 
-
+            string apikey = null;
+            if(context.UserId != 0) apikey = UserTep.FromId(context, context.UserId).GetSessionApiKey();
 
             foreach (RemoteResource res in Resources) {
                 if (string.IsNullOrEmpty(res.Location)) continue;
-                var entity = new SmartGenericOpenSearchable(new OpenSearchUrl(res.Location), ose);
-                //var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
 
-                osResources.Add(entity);
+                if (res.Location.StartsWith(context.GetConfigValue("catalog-baseurl")) && !string.IsNullOrEmpty(apikey)) {
+                    var uri = new UriBuilder(res.Location);
+                    uri.Query += string.IsNullOrEmpty(uri.Query) ? "apikey=" + apikey : "&apikey=" + apikey;
+                    res.Location = uri.Uri.AbsoluteUri;
+				}
+
+                try {
+                    var entity = new SmartGenericOpenSearchable(new OpenSearchUrl(res.Location), ose);
+                    osResources.Add(entity);
+                }catch(Exception e){
+                    context.LogError(this, e.Message);
+                }
             }
 
             return osResources.ToArray();

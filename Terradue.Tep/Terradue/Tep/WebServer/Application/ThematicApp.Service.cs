@@ -95,8 +95,8 @@ namespace Terradue.Tep.WebServer.Services {
             //replace usernames in apps
             try{
                 var user = UserTep.FromId(context, context.UserId);
-                sresult = sresult.Replace("${USERNAME}", user.Username);
-                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+	                sresult = sresult.Replace("${USERNAME}", user.Username);
+	                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
             }catch(Exception e){
                 context.LogError (this, e.Message);
             }
@@ -267,8 +267,6 @@ namespace Terradue.Tep.WebServer.Services {
 				} catch (Exception e) {
 					throw new Exception("Unable to POST to " + index + " - " + e.Message);
 				}
-
-                if (!user.HasPrivateThematicApp()) user.CreatePrivateThematicApp();
 
 			    context.Close();
 			} catch (Exception e) {

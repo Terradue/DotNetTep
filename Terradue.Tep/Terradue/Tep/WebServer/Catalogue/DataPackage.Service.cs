@@ -82,8 +82,6 @@ namespace Terradue.Tep.WebServer.Services
 			return result;
 		}
 
-
-
         public object Post(DataPackageSaveDefaultRequestTep request)
         {
             //Get all requests from database

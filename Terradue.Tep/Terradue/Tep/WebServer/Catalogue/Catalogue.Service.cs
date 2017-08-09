@@ -220,11 +220,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request,ose);
 
-                if(!String.IsNullOrEmpty(Request.QueryString["grouped"]) && Request.QueryString["grouped"] == "true"){
-                    result = ose.Query(datapackage, Request.QueryString, responseType);
-                }else{
-                    result = ose.Query(datapackage, Request.QueryString, responseType);
-                }
+                result = ose.Query(datapackage, Request.QueryString, responseType);
 
                 var openSearchDescription = datapackage.GetLocalOpenSearchDescription();
                 var uri_s = datapackage.GetSearchBaseUrl();

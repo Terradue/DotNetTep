@@ -57,6 +57,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/current GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
+                user.PrivateSanityCheck();//we do it here, because we do not want to do on each Load(), and we are sure users always pass by here
                 result = new WebUserTep(context, user, request.umsso);
                 context.Close();
 			} catch (MySql.Data.MySqlClient.MySqlException e) {

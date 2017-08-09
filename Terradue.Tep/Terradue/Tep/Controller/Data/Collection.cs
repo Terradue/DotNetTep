@@ -176,8 +176,9 @@ namespace Terradue.Tep {
 
             //UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword +"/" + this.Identifier + "/description");
             UriBuilder search = new UriBuilder(this.CatalogueDescriptionUrl);
-            if (this.CatalogueDescriptionUrl.StartsWith(context.GetConfigValue("catalog-baseurl"))) {
-                var apikey = UserTep.GetSessionApiKey();
+            if (this.CatalogueDescriptionUrl.StartsWith(context.GetConfigValue("catalog-baseurl")) && context.UserId != 0) {
+                var user = UserTep.FromId(context, context.UserId);
+                var apikey = user.GetSessionApiKey();
                 if (!string.IsNullOrEmpty(apikey))
                     search.Query += string.IsNullOrEmpty(search.Query) ? "apikey=" + apikey : "&apikey=" + apikey;
             }

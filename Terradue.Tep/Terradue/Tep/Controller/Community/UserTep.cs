@@ -163,9 +163,8 @@ namespace Terradue.Tep {
             base.Load();
             this.LoadCloudUsername();
 
+            if (IsNeededTerradueUserInfo()) LoadTerradueUserInfo();
             if (Domain == null) CreatePrivateDomain();
-            if (TerradueCloudUsername == null || GetSessionApiKey() == null) LoadTerradueUserInfo();
-            GetPrivateDataCollection();
         }
 
         public override void Store() {
@@ -175,6 +174,11 @@ namespace Terradue.Tep {
                 //create github profile
                 GithubProfile github = new GithubProfile(context, this.Id);
                 github.Store();
+
+                CreatePrivateDomain();
+                CreatePrivateThematicApp();
+                CreatePrivateDataPackageCatalogueIndex();
+                CreatePrivateDataPackageCatalogueProducts();
             }
         }
 
@@ -266,6 +270,21 @@ namespace Terradue.Tep {
             cusr.Store();
         }
 
+        /// <summary>
+        /// Ises the needed terradue user info.
+        /// </summary>
+        /// <returns><c>true</c>, if needed terradue user info was ised, <c>false</c> otherwise.</returns>
+        public bool IsNeededTerradueUserInfo(){
+            if (context.UserId == 0) return false;
+            if (AccountStatus != AccountStatusType.Enabled) return false;
+            var apikey = GetSessionApiKey();
+            if (TerradueCloudUsername == null || apikey == null) return true;
+            else return false;
+		}
+
+        /// <summary>
+        /// Loads the terradue user info.
+        /// </summary>
         public void LoadTerradueUserInfo(){
             var payload = string.Format("username={0}&email={1}&originator={2}{3}", 
                 this.Username, 
@@ -296,12 +315,23 @@ namespace Terradue.Tep {
             }
         }
 
-        private static void SetSessionApikey(string value){
-            HttpContext.Current.Session.Add("t2apikey", value);
+        /// <summary>
+        /// Sets the session apikey.
+        /// </summary>
+        /// <param name="value">Value.</param>
+        private void SetSessionApikey(string value){
+            context.LogDebug(this, "SESSION - SET t2apikey="+value);
+            HttpContext.Current.Session["t2apikey"] = value;
         }
 
-        public static string GetSessionApiKey(){
-            return (string)HttpContext.Current.Session["t2apikey"];
+        /// <summary>
+        /// Gets the session API key.
+        /// </summary>
+        /// <returns>The session API key.</returns>
+        public string GetSessionApiKey(){
+            var apikey = HttpContext.Current.Session["t2apikey"] as string;
+            context.LogDebug(this, "SESSION - GET t2apikey=" + apikey);
+            return apikey;
         }
 
 		private static string HashHMAC(string key, string msg) {
@@ -359,6 +389,10 @@ namespace Terradue.Tep {
 
         }
 
+        /// <summary>
+        /// Gets the private domain.
+        /// </summary>
+        /// <returns>The private domain.</returns>
         public Domain GetPrivateDomain() {
             return Domain.FromIdentifier(context, TepUtility.ValidateIdentifier(Username));
         }
@@ -366,9 +400,9 @@ namespace Terradue.Tep {
         /// <summary>
         /// Generates the API key.
         /// </summary>
-        //public void GenerateApiKey() {
-        //    this.ApiKey = Guid.NewGuid().ToString();
-        //}
+        public void GenerateApiKey() {
+            this.ApiKey = Guid.NewGuid().ToString();
+        }
 
         /// <summary>
         /// Creates the SSO account.
@@ -415,7 +449,8 @@ namespace Terradue.Tep {
         /// <summary>
         /// Creates the private thematic app.
         /// </summary>
-        public void CreatePrivateThematicApp() {
+        private ThematicApplication CreatePrivateThematicApp() {
+            context.LogDebug(this, "Create private Thematic app for user " + this.Username);
             var app = new ThematicApplication(context);
             app.Identifier = Guid.NewGuid().ToString();
             app.AccessKey = Guid.NewGuid().ToString();
@@ -427,15 +462,14 @@ namespace Terradue.Tep {
             var res = new RemoteResource(context);
             res.Location = url;
             app.AddResourceItem(res);
+            return app;
         }
 
-        /// <summary>
-        /// Check if user has a private thematic app.
-        /// </summary>
-        /// <returns><c>true</c>, if private thematic app was hased, <c>false</c> otherwise.</returns>
-        public bool HasPrivateThematicApp() {
-            var items = GetPrivateAppList();
-            return items.Count > 0;
+        public void PrivateSanityCheck(){
+            GetPrivateThematicApp();
+            GetPrivateDataPackageCatalogueIndex();
+            GetPrivateDataPackageCatalogueProducts();
+            GetPrivateDataPackageCatalogueSeries();
         }
 
         /// <summary>
@@ -444,7 +478,12 @@ namespace Terradue.Tep {
         /// <returns>The private thematic app.</returns>
 		public ThematicApplication GetPrivateThematicApp() {
             var items = GetPrivateAppList();
-			var app =  items[0];
+
+            ThematicApplication app = null;
+            if (items.Count == 0) {
+                app = CreatePrivateThematicApp();
+            } else app = items[0];
+
             app.LoadItems();
             //add apikey to location
             foreach (var item in app.Items) item.Location += "?apikey=" + GetSessionApiKey();
@@ -457,44 +496,132 @@ namespace Terradue.Tep {
 			apps.SetFilter("DomainId", this.DomainId + "");
 			apps.Load();
 			var items = apps.GetItemsAsList();
+            context.LogDebug(this, "GetPrivateAppList : found " + items.Count + " items (domain = " + this.DomainId + ")");
             return items;
         }
 
         /// <summary>
-        /// Creates the private data collection.
+        /// Gets the private catalogue index URL.
         /// </summary>
-        /// <returns>The private data collection.</returns>
-        public Collection CreatePrivateDataCollection() {
-            var baseurl = context.GetConfigValue("catalog-baseurl");
-            var url = baseurl + "/" + this.TerradueCloudUsername + "/series/_products/search";
-
-            var collection = new Collection(context);
-            collection.Domain = this.Domain;
-            collection.Identifier = "_" + this.TerradueCloudUsername;
-            collection.Name = this.TerradueCloudUsername + " private index";
-            collection.CatalogueDescriptionUrl = url;
-            collection.Store();
-
-            collection.GrantPermissionsToUsers(new int[]{this.Id});
-            return collection;
+        /// <returns>The private catalogue index URL.</returns>
+        /// <param name="withapikey">If set to <c>true</c> withapikey.</param>
+        public string GetPrivateCatalogueIndexUrl(bool withapikey = true){
+			var url = context.GetConfigValue("catalog-baseurl") + "/" + this.TerradueCloudUsername + "/description";
+            if(withapikey) url += "?apikey=" + GetSessionApiKey();
+            return url;
         }
 
         /// <summary>
-        /// Gets the private data collection.
+        /// Gets the private catalogue results URL.
         /// </summary>
-        /// <returns>The private data collection.</returns>
-        public Collection GetPrivateDataCollection(){
-            Collection collection = null;
-            try {
-                collection = Terradue.Tep.Collection.FromIdentifier(context, "_" + this.TerradueCloudUsername);
-            }catch(Exception e){
-                collection = CreatePrivateDataCollection();
-            }
-            //add apikey to url
-            collection.CatalogueDescriptionUrl += "?apikey=" + GetSessionApiKey();
+        /// <returns>The private catalogue results URL.</returns>
+        /// <param name="withapikey">If set to <c>true</c> withapikey.</param>
+		public string GetPrivateCatalogueProductsUrl(bool withapikey = true) {
+			var url = context.GetConfigValue("catalog-baseurl") + "/" + this.TerradueCloudUsername + "/series/_products/description";
+			if (withapikey) url += "?apikey=" + GetSessionApiKey();
+			return url;
+		}
 
-            return collection;
+		/// <summary>
+		/// Gets the private catalogue series URL.
+		/// </summary>
+		/// <returns>The private catalogue series URL.</returns>
+		/// <param name="withapikey">If set to <c>true</c> withapikey.</param>
+		public string GetPrivateCatalogueSeriesUrl(bool withapikey = true) {
+			var url = context.GetConfigValue("catalog-baseurl") + "/" + this.TerradueCloudUsername + "/series/description";
+			if (withapikey) url += "?apikey=" + GetSessionApiKey();
+			return url;
+		}
+
+        /// <summary>
+        /// Creates the private data package catalogue index.
+        /// </summary>
+        /// <returns>The private data package catalogue index.</returns>
+        public DataPackage CreatePrivateDataPackageCatalogueIndex(){
+            var dp = new DataPackage(context);
+            dp.Identifier = "_index_" + this.Username;
+            dp.Name = "My Index";
+            dp.Domain = this.Domain;
+            dp.Store();
+            var item = new RemoteResource(context);
+            item.Location = GetPrivateCatalogueIndexUrl(false);
+            dp.AddResourceItem(item);
+            return dp;
         }
+
+        /// <summary>
+        /// Creates the private data package catalogue results.
+        /// </summary>
+        /// <returns>The private data package catalogue results.</returns>
+        public DataPackage CreatePrivateDataPackageCatalogueProducts() {
+			var dp = new DataPackage(context);
+			dp.Identifier = "_products_" + this.Username;
+			dp.Name = "My Products";
+			dp.Domain = this.Domain;
+			dp.Store();
+			var item = new RemoteResource(context);
+            item.Location = GetPrivateCatalogueProductsUrl(false);
+			dp.AddResourceItem(item);
+			return dp;
+		}
+
+		/// <summary>
+		/// Creates the private data package catalogue series.
+		/// </summary>
+		/// <returns>The private data package catalogue series.</returns>
+		public DataPackage CreatePrivateDataPackageCatalogueSeries() {
+			var dp = new DataPackage(context);
+			dp.Identifier = "_series_" + this.Username;
+			dp.Name = "My Results";
+			dp.Domain = this.Domain;
+			dp.Store();
+			var item = new RemoteResource(context);
+			item.Location = GetPrivateCatalogueSeriesUrl(false);
+			dp.AddResourceItem(item);
+			return dp;
+		}
+
+        /// <summary>
+        /// Gets the private data package catalogue index.
+        /// </summary>
+        /// <returns>The private data package catalogue index.</returns>
+        public DataPackage GetPrivateDataPackageCatalogueIndex(){
+            DataPackage dp = null;
+            try{
+                dp = DataPackage.FromIdentifier(context, "_index_" + this.Username);
+            }catch(Exception){
+                dp = CreatePrivateDataPackageCatalogueIndex();
+            }
+            return dp;
+        }
+
+        /// <summary>
+        /// Gets the private data package catalogue results.
+        /// </summary>
+        /// <returns>The private data package catalogue results.</returns>
+        public DataPackage GetPrivateDataPackageCatalogueProducts() {
+			DataPackage dp = null;
+			try {
+				dp = DataPackage.FromIdentifier(context, "_products_" + this.Username);
+			} catch (Exception) {
+				dp = CreatePrivateDataPackageCatalogueProducts();
+			}
+			return dp;
+		}
+
+		/// <summary>
+		/// Gets the private data package catalogue series.
+		/// </summary>
+		/// <returns>The private data package catalogue series.</returns>
+		public DataPackage GetPrivateDataPackageCatalogueSeries() {
+			DataPackage dp = null;
+			try {
+				dp = DataPackage.FromIdentifier(context, "_series_" + this.Username);
+			} catch (Exception) {
+				dp = CreatePrivateDataPackageCatalogueSeries();
+			}
+			return dp;
+		}
 
         /// <summary>
         /// Loads the SSH pub key.

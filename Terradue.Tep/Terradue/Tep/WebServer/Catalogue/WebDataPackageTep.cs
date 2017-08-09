@@ -20,6 +20,14 @@ namespace Terradue.Tep.WebServer {
     {
     }
 
+	//[Route("/data/package/_index/search", "GET", Summary = "GET my index datapackage search", Notes = "datapackage item is contained in the body")]
+	//public class DataPackageSearchMyIndexRequestTep : IReturn<HttpResult> {
+	//}
+
+	//[Route("/data/package/_products/search", "GET", Summary = "GET my products datapackage search", Notes = "datapackage item is contained in the body")]
+	//public class DataPackageSearchMyProductsRequestTep : IReturn<HttpResult> {
+	//}
+
     [Route("/data/package/default/description", "GET", Summary = "GET default datapackage description", Notes = "datapackage item is contained in the body")]
     public class DataPackageDescriptionDefaultRequestTep : IReturn<HttpResult>
     {
