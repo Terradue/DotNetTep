@@ -118,6 +118,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string T2Username { get; set; }
 
+        [ApiMember(Name = "t2profileError", Description = "Error message to get T2 profile", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string T2ProfileError { get; set; }
+
         [ApiMember (Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string ApiKey { get; set; }
 
@@ -144,7 +147,10 @@ namespace Terradue.Tep.WebServer {
             }
 
             //only current user can know the api key
-			if (context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
+            if (context.UserId == entity.Id) {
+                this.ApiKey = entity.ApiKey;
+                this.T2ProfileError = HttpContext.Current.Session["t2profileError"] as string;
+            }
 
             if (context.UserId == entity.Id || context.UserLevel == UserLevel.Administrator){
                 this.T2Username = entity.TerradueCloudUsername;

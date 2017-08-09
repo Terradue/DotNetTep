@@ -162,7 +162,7 @@ namespace Terradue.Tep {
         public override void Load() {
             base.Load();
             this.LoadCloudUsername();
-
+            if (string.IsNullOrEmpty(this.ApiKey)) GenerateApiKey();
             if (IsNeededTerradueUserInfo()) LoadTerradueUserInfo();
             if (Domain == null) CreatePrivateDomain();
         }
@@ -286,32 +286,37 @@ namespace Terradue.Tep {
         /// Loads the terradue user info.
         /// </summary>
         public void LoadTerradueUserInfo(){
-            var payload = string.Format("username={0}&email={1}&originator={2}{3}", 
-                this.Username, 
-                this.Email, 
-                context.GetConfigValue("SiteNameShort"), 
-                this.Level > 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-defaultPlan") : "");   
-            System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
-            byte[] payloadBytes = encoding.GetBytes(payload);
-            var sso = System.Convert.ToBase64String(payloadBytes);
-            var sig = HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
+            try {
+                var payload = string.Format("username={0}&email={1}&originator={2}{3}",
+                    this.Username,
+                    this.Email,
+                    context.GetConfigValue("SiteNameShort"),
+                    this.Level > 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-defaultPlan") : "");
+                System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+                byte[] payloadBytes = encoding.GetBytes(payload);
+                var sso = System.Convert.ToBase64String(payloadBytes);
+                var sig = HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
 
-            var url = string.Format("{0}?payload={1}&sig={2}", context.GetConfigValue("t2portal-usr-endpoint"), sso, sig);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Proxy = null;
-            request.Method = "GET";
-            request.ContentType = "application/json";
-            request.Accept = "application/json";
-            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    var result = streamReader.ReadToEnd();
-                    var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
-                    this.TerradueCloudUsername = info.Username;
-                    this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
-                    context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
-                    SetSessionApikey(info.ApiKey);
-                    this.Store();
+                var url = string.Format("{0}?payload={1}&sig={2}", context.GetConfigValue("t2portal-usr-endpoint"), sso, sig);
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Proxy = null;
+                request.Method = "GET";
+                request.ContentType = "application/json";
+                request.Accept = "application/json";
+                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        var result = streamReader.ReadToEnd();
+                        var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
+                        this.TerradueCloudUsername = info.Username;
+                        this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+                        context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                        SetSessionApikey(info.ApiKey);
+                        this.Store();
+                    }
                 }
+            }catch(Exception e){
+                HttpContext.Current.Session["t2profileError"] = e.Message;
+                context.LogError(this, e.Message);
             }
         }
 
