@@ -275,6 +275,9 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if needed terradue user info was ised, <c>false</c> otherwise.</returns>
         public bool IsNeededTerradueUserInfo(){
+            //return false;//TODO: TEMPORARY, waiting for t2 Corporate Portal to be updated
+            var isloading = HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true";
+            if (isloading) return false;
             if (context.UserId == 0) return false;
             if (AccountStatus != AccountStatusType.Enabled) return false;
             var apikey = GetSessionApiKey();
@@ -286,6 +289,8 @@ namespace Terradue.Tep {
         /// Loads the terradue user info.
         /// </summary>
         public void LoadTerradueUserInfo(){
+            context.LogDebug(this, "Loading Terradue info - " + this.Username);
+            HttpContext.Current.Session["t2loading"] = "true";
             try {
                 var payload = string.Format("username={0}&email={1}&originator={2}{3}",
                     this.Username,
@@ -315,9 +320,9 @@ namespace Terradue.Tep {
                     }
                 }
             }catch(Exception e){
-                HttpContext.Current.Session["t2profileError"] = e.Message;
-                context.LogError(this, e.Message);
+				HttpContext.Current.Session["t2profileError"] = e.Message;
             }
+            HttpContext.Current.Session["t2loading"] = null;
         }
 
         /// <summary>
@@ -351,25 +356,25 @@ namespace Terradue.Tep {
         /// <summary>
         /// Finds the terradue cloud username.
         /// </summary>
-        //public void FindTerradueCloudUsername() {
-        //    var url = string.Format("{0}?token={1}&eosso={2}&email={3}",
-        //                            context.GetConfigValue("t2portal-usr-endpoint"),
-        //                            context.GetConfigValue("t2portal-sso-token"),
-        //                            this.Username,
-        //                            this.Email);
-        //    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-        //    request.Proxy = null;
-        //    request.Method = "GET";
-        //    request.ContentType = "application/json";
-        //    request.Accept = "application/json";
-        //    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-        //        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-        //            this.TerradueCloudUsername = streamReader.ReadToEnd();
-        //            this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
-        //            context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
-        //        }
-        //    }
-        //}
+        public void FindTerradueCloudUsername() {
+            var url = string.Format("{0}?token={1}&eosso={2}&email={3}",
+                                    context.GetConfigValue("t2portal-usr-endpoint"),
+                                    context.GetConfigValue("t2portal-sso-token"),
+                                    this.Username,
+                                    this.Email);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Proxy = null;
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    this.TerradueCloudUsername = streamReader.ReadToEnd();
+                    this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+                    context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                }
+            }
+        }
 
         /// <summary>
         /// Creates the private domain.
