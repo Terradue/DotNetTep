@@ -294,3 +294,12 @@ INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `ena
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('accounting-deposit-maxDays', 'double', 'accounting deposit max days lifetime', 'accounting deposit max days lifetime', '30', '1');
 -- RESULT
 
+
+
+-- Adding unique index...\
+ALTER TABLE resourceset 
+CHANGE COLUMN `name` `name` VARCHAR(200) NULL DEFAULT NULL ;
+ALTER TABLE resourceset 
+ADD UNIQUE INDEX `uq_name_usr` (`id_usr` ASC, `name` ASC);
+-- RESULT
+
