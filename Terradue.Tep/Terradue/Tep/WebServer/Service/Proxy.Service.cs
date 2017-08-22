@@ -63,13 +63,14 @@ namespace Terradue.Tep.WebServer.Services
             context.LogInfo (this, string.Format ("/proxy GET url='{0}'", request.url));
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+			var settings = new OpenSearchableFactorySettings(ose);
 
             if (uri.Path.EndsWith ("/description") || uri.Path.EndsWith ("/OSDD")) {
-                GenericOpenSearchable urlToShare = new GenericOpenSearchable (new OpenSearchUrl (request.url), ose);
+                GenericOpenSearchable urlToShare = new GenericOpenSearchable (new OpenSearchUrl (request.url), settings);
                 Terradue.OpenSearch.Schema.OpenSearchDescription osd = urlToShare.GetOpenSearchDescription ();
                 result = new HttpResult (osd, "application/opensearchdescription+xml");
             } else {
-                var e = OpenSearchFactory.FindOpenSearchable (ose, new Uri (request.url), "application/atom+xml");
+                var e = OpenSearchFactory.FindOpenSearchable (settings, new Uri (request.url), "application/atom+xml");
                 if (e.DefaultMimeType != "application/atom+xml" && !e.DefaultMimeType.Contains ("xml")) {
                     throw new InvalidOperationException ("No Url in the OpenSearch Description Document that query fully qualified model");
                 }

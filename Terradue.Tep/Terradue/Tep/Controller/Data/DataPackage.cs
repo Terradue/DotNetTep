@@ -532,7 +532,8 @@ namespace Terradue.Tep {
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
             case "correlatedTo":
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine).Entity;
+                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings).Entity;
                 if (entity is EntityList<ThematicCommunity>) {
                     var entitylist = entity as EntityList<ThematicCommunity>;
                     var items = entitylist.GetItemsAsList();

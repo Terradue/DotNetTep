@@ -24,21 +24,22 @@ namespace Terradue.Tep {
         OpenSearchEngine ose;
         OpenSearchUrl url;
         OpenSearchDescription osd;
+        OpenSearchableFactorySettings settings;
 
         public IEnumerable<IOpenSearchResultItem> Items;
 
-        public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchEngine ose) {
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchableFactorySettings settings) {
 
             this.context = context;
             this.url = url;
-            this.ose = ose;
+            this.settings = settings;
 
         }
 
-        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchEngine ose) {
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchableFactorySettings settings) {
             this.context = context;
             this.osd = osd;
-            this.ose = ose;
+            this.settings = settings;
         }
 
         public IOpenSearchable Entity {
@@ -77,7 +78,8 @@ namespace Terradue.Tep {
 								wpsProcesses.Identifier = "service/wps";
 								var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
-								MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, ose);
+                                var settings = new OpenSearchableFactorySettings(ose);
+                                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
                                 IOpenSearchResultCollection osr = ose.Query(multiOSE, url.SearchAttributes);
                                 entity = multiOSE;
                                 Items = osr.Items;
@@ -216,20 +218,20 @@ namespace Terradue.Tep {
     public class UrlBasedOpenSearchableFactory : IOpenSearchableFactory {
         IfyContext context;
 
-        OpenSearchEngine ose;
-
-        public UrlBasedOpenSearchableFactory(IfyContext context, OpenSearchEngine ose){
-            this.ose = ose;
+        public UrlBasedOpenSearchableFactory(IfyContext context, OpenSearchableFactorySettings settings){
             this.context = context;
+            Settings = (OpenSearchableFactorySettings)settings.Clone();
         }
+
+        public OpenSearchableFactorySettings Settings { get; private set; }
 
         #region IOpenSearchableFactory implementation
         public IOpenSearchable Create(OpenSearchUrl url) {
-            return new UrlBasedOpenSearchable(context, url, ose);
+            return new UrlBasedOpenSearchable(context, url, Settings);
         }
 
         public IOpenSearchable Create(OpenSearchDescription osd) {
-            return new UrlBasedOpenSearchable(context, osd, ose);
+            return new UrlBasedOpenSearchable(context, osd, Settings);
         }
         #endregion
     }

@@ -86,8 +86,8 @@ namespace Terradue.Tep.WebServer.Services {
                     }
 				}
             }
-
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+            var settings = new OpenSearchableFactorySettings(ose);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
             string sresult = result.SerializeToString();
@@ -142,7 +142,8 @@ namespace Terradue.Tep.WebServer.Services {
                 osentities.AddRange(app.GetOpenSearchableArray());
             }
 
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, ose);
+            var settings = new OpenSearchableFactorySettings(ose);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, settings);
             var result = ose.Query (multiOSE, nvc, responseType);
 
             return result;

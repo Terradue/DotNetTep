@@ -649,7 +649,8 @@ namespace Terradue.Tep {
                     throw new ImpossibleSearchException("Ouput result_osd found invalid url : " + url);
                 }
 
-                return SandboxOpenSearchable.CreateSandboxOpenSearchable(osUrl, MasterCatalogue.OpenSearchEngine);
+                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                return SandboxOpenSearchable.CreateSandboxOpenSearchable(osUrl, settings);
             }
 
 			// Search for a static metadata file
@@ -692,7 +693,8 @@ namespace Terradue.Tep {
 		public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
-                    var urlBOS = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), MasterCatalogue.OpenSearchEngine);
+                    var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                    var urlBOS = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings);
                     var entity = urlBOS.Entity;
 	                if (entity is EntityList<ThematicCommunity>) {
 	                    var entitylist = entity as EntityList<ThematicCommunity>;

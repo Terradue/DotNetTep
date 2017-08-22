@@ -178,9 +178,6 @@
     <Reference Include="SharpKml">
       <HintPath>..\packages\SharpKml.Core.3.0.0\lib\portable45-net45+win8+wpa81\SharpKml.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.14.9\lib\net45\Terradue.OpenSearch.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Metadata.EarthObservation">
       <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.4.17\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
@@ -198,6 +195,9 @@
     </Reference>
     <Reference Include="Terradue.Portal">
       <HintPath>..\packages\Terradue.Portal.2.7.28\lib\net45\Terradue.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch">
+      <HintPath>..\..\..\..\platforms\tep-urban\packages\Terradue.OpenSearch.1.15.5\lib\net45\Terradue.OpenSearch.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

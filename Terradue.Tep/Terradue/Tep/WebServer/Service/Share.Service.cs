@@ -54,9 +54,8 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this, string.Format("/share DELETE self='{0}'", request.self));
 
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-
-            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose).Entity;
+            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), settings).Entity;
 
             if (entitySelf is EntityList<WpsJob>) {
                 var entitylist = entitySelf as EntityList<WpsJob>;
@@ -93,9 +92,8 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, request.to != null ? string.Join("", request.to) : ""));
                             
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-
-            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), ose).Entity;
+            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), settings).Entity;
 
             //case WpsJob
             if (entitySelf is EntityList<WpsJob>) {
@@ -125,7 +123,7 @@ namespace Terradue.Tep.WebServer.Services {
                         }
 
                         foreach (var to in request.to) {
-                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), settings).Entity;
 
                             //case community
                             if (entityTo is EntityList<ThematicCommunity>) {
@@ -188,7 +186,7 @@ namespace Terradue.Tep.WebServer.Services {
                         }
 
                         foreach (var to in request.to) {
-                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), ose).Entity;
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), settings).Entity;
 
                             //case community
                             if (entityTo is EntityList<ThematicCommunity>) {
@@ -255,7 +253,8 @@ namespace Terradue.Tep.WebServer.Services {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         try {
-                            var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), MasterCatalogue.OpenSearchEngine);
+                            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                            var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), settings);
                             redirectUrl += "resultType=" + "data";
                         } catch (Exception e) { 
                             redirectUrl += "resultType=" + "na";
