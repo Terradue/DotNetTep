@@ -152,7 +152,11 @@ namespace Terradue.Tep {
         /// <param name="wpsjob">Wpsjob.</param>
         /// <param name="execResponse">Exec response.</param>
         public static ExecuteResponse GetWpsjobRecastResponse(IfyContext context, WpsJob wpsjob, ExecuteResponse execResponse = null) {
-            if (wpsjob.Status != WpsJobStatus.SUCCEEDED) return UpdateProcessOutputs(context, execResponse, wpsjob);
+            log.DebugFormat("GetWpsjobRecastResponse");
+            if (wpsjob.Status != WpsJobStatus.SUCCEEDED) {
+                log.DebugFormat("GetWpsjobRecastResponse -- Status is not Succeeded");
+                return UpdateProcessOutputs(context, execResponse, wpsjob);
+            }
 
             if (execResponse == null) {
 				var jobresponse = wpsjob.GetStatusLocationContent();
@@ -221,7 +225,10 @@ namespace Terradue.Tep {
                                     }
                                 }
                                 //none of the above cases
-                                if(string.IsNullOrEmpty(recaststatusurl)) return UpdateProcessOutputs(context, execResponse, wpsjob);
+                                if (string.IsNullOrEmpty(recaststatusurl)) {
+                                    log.DebugFormat("Recasting job {0} - url = {1} ; the url did not match any case", wpsjob.Identifier, url.AbsolutePath);
+                                    return UpdateProcessOutputs(context, execResponse, wpsjob);
+                                }
                             }
                         }
                     }
@@ -240,6 +247,7 @@ namespace Terradue.Tep {
 
 					//recast is still in progress
 					else if (recaststatus.status == statusInProgress) { 
+                        log.DebugFormat("Recasting STILL IN PROGRESS job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
                         execResponse.Status = new StatusType { Item = new ProcessStartedType { Value = "Process in progress", percentCompleted = "99" }, ItemElementName = ItemChoiceType.ProcessStarted };
                     }
 
