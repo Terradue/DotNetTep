@@ -51,24 +51,18 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the current user</returns>
         public object Get(UserGetCurrentRequestTep request) {
-            WebUserTep result;
+            WebUserTep result = null;
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/current GET"));
+                context.LogInfo(this, string.Format("/user/current GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
                 user.PrivateSanityCheck();//we do it here, because we do not want to do on each Load(), and we are sure users always pass by here
                 result = new WebUserTep(context, user, request.umsso);
                 context.Close();
-			} catch (MySql.Data.MySqlClient.MySqlException e) {
+            } catch (Exception e) {
 				context.LogError(this, e.Message);
 				context.Close();
-				if (e.Message.Contains("Duplicate") && e.Message.Contains("email_UNIQUE")) throw new DuplicateEntityIdentifierException("Email is already used by another user.", e);
-				throw e;
-			} catch (Exception e) {
-                //context.LogError(this, e.Message);
-                context.Close();
-                throw e;
             }
             return result;
         }
