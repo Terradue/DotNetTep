@@ -51,7 +51,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the current user</returns>
         public object Get(UserGetCurrentRequestTep request) {
-            WebUserTep result = null;
+            WebUserTep result;
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
@@ -63,6 +63,7 @@ namespace Terradue.Tep.WebServer.Services {
             } catch (Exception e) {
 				context.LogError(this, e.Message);
 				context.Close();
+                throw e;
             }
             return result;
         }
