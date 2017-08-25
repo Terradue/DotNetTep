@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.Threading;
 using System.Web;
 using System.Web.Services;
 using System.Web.SessionState;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface.ServiceModel;
 using Terradue.Portal;
@@ -41,13 +43,17 @@ namespace Terradue.Tep.WebServer.Services
                 wsContext.LogInfo(this,string.Format("/logout GET"));
                 wsContext.EndSession();
                 wsContext.Close();
-            }
-            catch (Exception e){
+            } catch (ThreadAbortException e) {
+			} catch (Exception e){
                 wsContext.LogError(this, e.Message);
                 wsContext.Close();
                 throw e;
             }
-            return new WebResponseBool(true);
+            var redirect = HttpContext.Current.Request.Url.Scheme + HttpContext.Current.Request.Url.Host + "/Shibboleth.sso/Logout";
+			var redirectResponse = new HttpResult();
+			redirectResponse.Headers[HttpHeaders.Location] = redirect;
+			redirectResponse.StatusCode = System.Net.HttpStatusCode.Redirect;
+			return redirectResponse;
         }
 
         public object Delete(LogoutAuthRequestTep request) 
