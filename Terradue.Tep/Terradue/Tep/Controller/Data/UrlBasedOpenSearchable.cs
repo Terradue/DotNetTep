@@ -112,7 +112,7 @@ namespace Terradue.Tep {
                         }
 
                     }
-                    if (entity == null) entity = new SmartGenericOpenSearchable(url, ose);
+                    if (entity == null) entity = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(url));
                 }
                 return entity;
             }

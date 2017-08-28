@@ -431,29 +431,37 @@ namespace Terradue.Tep {
         }
 
         public override IOpenSearchable[] GetOpenSearchableArray() {
-            List<SmartGenericOpenSearchable> osResources = new List<SmartGenericOpenSearchable>(Resources.Count);
 
-            string apikey = null;
-            if(context.UserId != 0) apikey = UserTep.FromId(context, context.UserId).GetSessionApiKey();
+			List<IOpenSearchable> osResources = new List<IOpenSearchable>(Resources.Count);
 
-            foreach (RemoteResource res in Resources) {
-                if (string.IsNullOrEmpty(res.Location)) continue;
-
-                if (res.Location.StartsWith(context.GetConfigValue("catalog-baseurl")) && !string.IsNullOrEmpty(apikey)) {
-                    var uri = new UriBuilder(res.Location);
-                    uri.Query += string.IsNullOrEmpty(uri.Query) ? "apikey=" + apikey : "&apikey=" + apikey;
-                    res.Location = uri.Uri.AbsoluteUri;
-				}
-
-                try {
-                    var entity = new SmartGenericOpenSearchable(new OpenSearchUrl(res.Location), ose);
-                    osResources.Add(entity);
-                }catch(Exception e){
-                    context.LogError(this, e.Message);
-                }
+			var settings = new OpenSearchableFactorySettings(ose);
+			string apikey = null;
+            string t2userid = null;
+            if (context.UserId != 0) {
+                apikey = UserTep.FromId(context, context.UserId).GetSessionApiKey();
+                t2userid = UserTep.FromId(context, context.UserId).TerradueCloudUsername;
             }
 
-            return osResources.ToArray();
+			foreach (RemoteResource res in Resources)
+			{
+                OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
+                // For Terradue resources, use the API key
+				if (res.Location.StartsWith(context.GetConfigValue("catalog-baseurl")) && !string.IsNullOrEmpty(apikey))
+				{
+                    specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+				}
+				var entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
+                try {
+				    osResources.Add(entity);
+				}
+				catch (Exception e)
+				{
+					context.LogError(this, e.Message);
+				}
+			}
+
+			return osResources.ToArray();
+
         }
 
         #region IOpenSearchable implementation
