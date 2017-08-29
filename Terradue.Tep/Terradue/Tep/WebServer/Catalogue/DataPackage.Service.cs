@@ -444,7 +444,8 @@ namespace Terradue.Tep.WebServer.Services
                 List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
                 osentities.AddRange(datapackage.GetOpenSearchableArray());
 
-                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+                var settings = new OpenSearchableFactorySettings(ose);
+                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
                 result = ose.Query(multiOSE, Request.QueryString, responseType);
 
                 context.Close();

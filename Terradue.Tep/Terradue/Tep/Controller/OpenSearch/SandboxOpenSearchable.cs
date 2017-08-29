@@ -10,18 +10,18 @@ namespace Terradue.Tep.OpenSearch
         OpenSearchEngine openSearchEngine;
         public SandboxOpenSearchInformation SandboxOpenSearchInformation { get; private set; }
 
-        private SandboxOpenSearchable(SandboxOpenSearchInformation sosi, OpenSearchEngine openSearchEngine) : base(sosi.Url, openSearchEngine)
+        private SandboxOpenSearchable(SandboxOpenSearchInformation sosi, OpenSearchableFactorySettings settings) : base(sosi.Url, settings)
         {
             this.SandboxOpenSearchInformation = sosi;
             this.openSearchEngine = openSearchEngine;
         }
 
-        public static SandboxOpenSearchable CreateSandboxOpenSearchable(OpenSearchUrl osUrl, OpenSearchEngine openSearchEngine){
+        public static SandboxOpenSearchable CreateSandboxOpenSearchable(OpenSearchUrl osUrl, OpenSearchableFactorySettings settings){
 
 
             var sosi = GetSandboxOpenSearchInformation(osUrl);
 
-            return new SandboxOpenSearchable(sosi, openSearchEngine);
+            return new SandboxOpenSearchable(sosi, settings);
         }
 
         private static SandboxOpenSearchInformation GetSandboxOpenSearchInformation(OpenSearchUrl url){

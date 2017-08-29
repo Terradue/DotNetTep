@@ -21,24 +21,24 @@ namespace Terradue.Tep {
     public class UrlBasedOpenSearchable : IOpenSearchable {
         IfyContext context;
         IOpenSearchable entity;
-        OpenSearchEngine ose;
         OpenSearchUrl url;
         OpenSearchDescription osd;
+        OpenSearchableFactorySettings settings;
 
         public IEnumerable<IOpenSearchResultItem> Items;
 
-        public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchEngine ose) {
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchableFactorySettings settings) {
 
             this.context = context;
             this.url = url;
-            this.ose = ose;
+            this.settings = settings;
 
         }
 
-        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchEngine ose) {
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchableFactorySettings settings) {
             this.context = context;
             this.osd = osd;
-            this.ose = ose;
+            this.settings = settings;
         }
 
         public IOpenSearchable Entity {
@@ -49,6 +49,8 @@ namespace Terradue.Tep {
                         Match match = Regex.Match(url.LocalPath.Replace(new Uri(context.BaseUrl).LocalPath, ""), @"(/.*)(/?.*)/search");
 
                         if (match.Success) {
+
+                            var ose = settings.OpenSearchEngine;
 
                             if (match.Groups[1].Value == "/data/collection") {
                                 string seriesId = match.Groups[2].Value;
@@ -77,7 +79,7 @@ namespace Terradue.Tep {
 								wpsProcesses.Identifier = "service/wps";
 								var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
-								MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, ose);
+                                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
                                 IOpenSearchResultCollection osr = ose.Query(multiOSE, url.SearchAttributes);
                                 entity = multiOSE;
                                 Items = osr.Items;
@@ -110,7 +112,7 @@ namespace Terradue.Tep {
                         }
 
                     }
-                    if (entity == null) entity = new SmartGenericOpenSearchable(url, ose);
+                    if (entity == null) entity = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(url));
                 }
                 return entity;
             }
@@ -191,6 +193,7 @@ namespace Terradue.Tep {
                 if (IsProduct) return 1;
                 NameValueCollection nvc = new NameValueCollection();
                 nvc.Set("count", "0");
+                var ose = settings.OpenSearchEngine;
                 IOpenSearchResultCollection osr = ose.Query(Entity, nvc, typeof(AtomFeed));
                 AtomFeed feed = (AtomFeed)osr;
                 try {
@@ -216,20 +219,20 @@ namespace Terradue.Tep {
     public class UrlBasedOpenSearchableFactory : IOpenSearchableFactory {
         IfyContext context;
 
-        OpenSearchEngine ose;
-
-        public UrlBasedOpenSearchableFactory(IfyContext context, OpenSearchEngine ose){
-            this.ose = ose;
+        public UrlBasedOpenSearchableFactory(IfyContext context, OpenSearchableFactorySettings settings){
             this.context = context;
+            Settings = (OpenSearchableFactorySettings)settings.Clone();
         }
+
+        public OpenSearchableFactorySettings Settings { get; private set; }
 
         #region IOpenSearchableFactory implementation
         public IOpenSearchable Create(OpenSearchUrl url) {
-            return new UrlBasedOpenSearchable(context, url, ose);
+            return new UrlBasedOpenSearchable(context, url, Settings);
         }
 
         public IOpenSearchable Create(OpenSearchDescription osd) {
-            return new UrlBasedOpenSearchable(context, osd, ose);
+            return new UrlBasedOpenSearchable(context, osd, Settings);
         }
         #endregion
     }

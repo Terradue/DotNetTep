@@ -55,7 +55,8 @@ namespace Terradue.Tep.WebServer.Services {
                     foreach(RssNews rss in rsss) osentities.Add(rss);
                 }catch(Exception){}
 
-                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+				var settings = new OpenSearchableFactorySettings(ose);
+				MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
 
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 

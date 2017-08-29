@@ -752,7 +752,8 @@ namespace Terradue.Tep {
 
             if (!string.IsNullOrEmpty(parameters["correlatedTo"])) {
                 var self = parameters["correlatedTo"];
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), MasterCatalogue.OpenSearchEngine).Entity;
+                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), settings).Entity;
 
                 if (entity is EntityList<WpsJob>) {
                     var entitylist = entity as EntityList<WpsJob>;

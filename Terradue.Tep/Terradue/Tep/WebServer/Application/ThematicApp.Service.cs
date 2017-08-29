@@ -51,11 +51,19 @@ namespace Terradue.Tep.WebServer.Services {
             }
             communities.Load();
 
+            var settings = new OpenSearchableFactorySettings(ose);
+
+			if (context.UserId != 0)
+			{
+				var user = UserTep.FromId(context, context.UserId);
+                settings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+			}
+
             //foreach community we get the apps link
             foreach (var community in communities.Items) {
                 if (community.IsUserJoined(context.UserId)) {
-                    if (!string.IsNullOrEmpty(community.AppsLink)) 
-                        osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(community.AppsLink), ose));
+                    if (!string.IsNullOrEmpty(community.AppsLink))
+                        osentities.Add(OpenSearchFactory.FindOpenSearchable(settings, new Uri(community.AppsLink)));
                 }
             }
 
@@ -67,7 +75,7 @@ namespace Terradue.Tep.WebServer.Services {
             foreach (var app in apps) {
                 app.LoadItems();
                 foreach (var item in app.Items) {
-                    if (!string.IsNullOrEmpty(item.Location)) osentities.Add(new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose));
+                    if (!string.IsNullOrEmpty(item.Location)) osentities.Add(OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location)));
                 }
             }
 
@@ -78,7 +86,7 @@ namespace Terradue.Tep.WebServer.Services {
 				foreach (var item in app.Items) {
                     if (!string.IsNullOrEmpty(item.Location)) {
                         try{
-                            var sgOs = new SmartGenericOpenSearchable(new OpenSearchUrl(item.Location), ose);
+                            var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
                             osentities.Add(sgOs);
                         }catch(Exception e){
                             //skip
@@ -86,8 +94,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
 				}
             }
-
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
             string sresult = result.SerializeToString();
@@ -142,7 +149,8 @@ namespace Terradue.Tep.WebServer.Services {
                 osentities.AddRange(app.GetOpenSearchableArray());
             }
 
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, ose);
+            var settings = new OpenSearchableFactorySettings(ose);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, settings);
             var result = ose.Query (multiOSE, nvc, responseType);
 
             return result;
