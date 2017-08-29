@@ -21,7 +21,6 @@ namespace Terradue.Tep {
     public class UrlBasedOpenSearchable : IOpenSearchable {
         IfyContext context;
         IOpenSearchable entity;
-        OpenSearchEngine ose;
         OpenSearchUrl url;
         OpenSearchDescription osd;
         OpenSearchableFactorySettings settings;
@@ -51,6 +50,8 @@ namespace Terradue.Tep {
 
                         if (match.Success) {
 
+                            var ose = settings.OpenSearchEngine;
+
                             if (match.Groups[1].Value == "/data/collection") {
                                 string seriesId = match.Groups[2].Value;
                                 Series ds = Series.FromIdentifier(context, seriesId);
@@ -78,7 +79,6 @@ namespace Terradue.Tep {
 								wpsProcesses.Identifier = "service/wps";
 								var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
-                                var settings = new OpenSearchableFactorySettings(ose);
                                 MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
                                 IOpenSearchResultCollection osr = ose.Query(multiOSE, url.SearchAttributes);
                                 entity = multiOSE;
@@ -193,6 +193,7 @@ namespace Terradue.Tep {
                 if (IsProduct) return 1;
                 NameValueCollection nvc = new NameValueCollection();
                 nvc.Set("count", "0");
+                var ose = settings.OpenSearchEngine;
                 IOpenSearchResultCollection osr = ose.Query(Entity, nvc, typeof(AtomFeed));
                 AtomFeed feed = (AtomFeed)osr;
                 try {

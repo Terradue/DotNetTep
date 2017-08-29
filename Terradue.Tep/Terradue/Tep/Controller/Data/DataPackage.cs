@@ -438,8 +438,9 @@ namespace Terradue.Tep {
 			string apikey = null;
             string t2userid = null;
             if (context.UserId != 0) {
-                apikey = UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                t2userid = UserTep.FromId(context, context.UserId).TerradueCloudUsername;
+                var user = UserTep.FromId(context, context.UserId);
+                apikey = user.GetSessionApiKey();
+                t2userid = user.TerradueCloudUsername;
             }
 
 			foreach (RemoteResource res in Resources)
@@ -450,8 +451,8 @@ namespace Terradue.Tep {
 				{
                     specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
 				}
-				var entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
                 try {
+				    var entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
 				    osResources.Add(entity);
 				}
 				catch (Exception e)
