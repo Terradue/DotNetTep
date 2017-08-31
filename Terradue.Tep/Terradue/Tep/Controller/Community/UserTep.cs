@@ -271,15 +271,15 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Ises the needed terradue user info.
+        /// Is the terradue user info needed.
         /// </summary>
         /// <returns><c>true</c>, if needed terradue user info was ised, <c>false</c> otherwise.</returns>
         public bool IsNeededTerradueUserInfo(){
-            //return false;//TODO: TEMPORARY, waiting for t2 Corporate Portal to be updated
             var isloading = HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true";
             if (isloading) return false;
             if (context.UserId == 0) return false;
             if (AccountStatus != AccountStatusType.Enabled) return false;
+            if (Level < 2) return false; //User must be at least starter
             var apikey = GetSessionApiKey();
             if (TerradueCloudUsername == null || apikey == null) return true;
             else return false;
