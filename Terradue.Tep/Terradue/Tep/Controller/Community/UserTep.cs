@@ -296,7 +296,7 @@ namespace Terradue.Tep {
                     this.Username,
                     this.Email,
                     context.GetConfigValue("SiteNameShort"),
-                    this.Level > 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-defaultPlan") : "");
+                    this.Level == 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-starterPlan") : this.Level == 3 ? "&plan=" + context.GetConfigValue("t2portal-usr-explorerPlan") : "");
                 System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
                 byte[] payloadBytes = encoding.GetBytes(payload);
                 var sso = System.Convert.ToBase64String(payloadBytes);

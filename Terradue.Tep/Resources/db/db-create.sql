@@ -1,4 +1,4 @@
--- VERSION 1.1.2.12
+-- VERSION 1.1.2.1
 
 USE $MAIN$;
 
@@ -246,6 +246,8 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('discussBaseUrl', 'string', 'Discuss base url', 'Discuss base url', 'http://discuss.terradue.com', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('discussApiKey', 'string', 'Discuss api key', 'Discuss api key', 'TO_BE_UPDATED', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('accounting-enabled', 'bool', 'accounting enabled or not', 'accounting enabled or not', 'true', '1');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('t2portal-usr-starterPlan', 'string', 't2portal user starter Plan', 't2portal user starter Plan', 'FreeTrial', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('t2portal-usr-explorerPlan', 'string', 't2portal user starter Plan', 't2portal user explorer Plan', 'Explorer', '0');
 -- RESULT
 
 -- Activities ...\
