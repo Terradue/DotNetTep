@@ -62,8 +62,14 @@ namespace Terradue.Tep.WebServer.Services {
             //foreach community we get the apps link
             foreach (var community in communities.Items) {
                 if (community.IsUserJoined(context.UserId)) {
-                    if (!string.IsNullOrEmpty(community.AppsLink))
-                        osentities.Add(OpenSearchFactory.FindOpenSearchable(settings, new Uri(community.AppsLink)));
+                    if (!string.IsNullOrEmpty(community.AppsLink)) {
+                        try{
+                            var ios = OpenSearchFactory.FindOpenSearchable(settings, new Uri(community.AppsLink));
+                            osentities.Add(ios);    
+                        }catch(Exception e){
+                            context.LogError(this, e.Message);
+                        }
+                    }
                 }
             }
 
@@ -75,7 +81,14 @@ namespace Terradue.Tep.WebServer.Services {
             foreach (var app in apps) {
                 app.LoadItems();
                 foreach (var item in app.Items) {
-                    if (!string.IsNullOrEmpty(item.Location)) osentities.Add(OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location)));
+                    if (!string.IsNullOrEmpty(item.Location)) {
+						try {
+							var ios = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+							osentities.Add(ios);
+						} catch (Exception e) {
+							context.LogError(this, e.Message);
+						}
+                    }
                 }
             }
 
@@ -89,7 +102,7 @@ namespace Terradue.Tep.WebServer.Services {
                             var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
                             osentities.Add(sgOs);
                         }catch(Exception e){
-                            //skip
+                            context.LogError(this, e.Message);
                         }
                     }
 				}
