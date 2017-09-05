@@ -66,7 +66,6 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(SearchWPSServices request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            object result;
             context.Open();
             context.LogInfo(this,string.Format("/service/wps/search GET"));
 
@@ -281,11 +280,13 @@ namespace Terradue.Tep.WebServer.Services {
             WpsJob wpsjob = null;
 
             try{
+                var user = UserTep.FromId(context, context.UserId);
                 var parameters = WpsJob.BuildWpsJobParameters(context, executeInput);
                 bool accountingEnabled = context.GetConfigBooleanValue("accounting-enabled");
                 bool quotationMode = false;
                 bool isQuotable = false;
                 string cachekey = wps.Identifier;
+                bool updateInput = false;
 
                 if (accountingEnabled) {
                     //check if the service is quotable (=has quotation parameter)
@@ -293,7 +294,23 @@ namespace Terradue.Tep.WebServer.Services {
                         if (p.Key == "quotation") {
                             isQuotable = true;
                             if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
-                        } else cachekey += p.Key + p.Value;
+                        } else if(p.Key == "_T2Username"){
+                            updateInput = true;
+                        }
+                        else cachekey += p.Key + p.Value;
+                    }
+                }
+
+                //update Execute input
+                if(updateInput){
+                    foreach(var input in executeInput.DataInputs){
+                        if(input.Identifier != null && input.Identifier.Value == "_T2Username"){
+                            input.Data = new DataType {
+                                Item = new LiteralDataType {
+                                    Value = user.TerradueCloudUsername
+                                }
+                            };
+                        }
                     }
                 }
 
@@ -338,7 +355,6 @@ namespace Terradue.Tep.WebServer.Services {
 						var quotation = cache[cachekey] as string;
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
 
-                        var user = UserTep.FromId(context, context.UserId);
                         var balance = user.GetAccountingBalance();
                         if (double.Parse(quotation) > balance) throw new Exception("User credit insufficiant for this request.");
                         wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput);
