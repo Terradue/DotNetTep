@@ -9,6 +9,7 @@ using Terradue.Tep.OpenSearch;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
 using ServiceStack.Text;
+using System.IO;
 
 namespace Terradue.Tep
 {
@@ -20,6 +21,8 @@ namespace Terradue.Tep
         static MemoryCache downloadUriCache = new MemoryCache("downloadUriCache");
         static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
         static string dataGatewayBaseUrl = AppSettings ["DataGatewayBaseUrl"];
+        static string dataGatewayShareUrl = AppSettings["DataGatewayShareUrl"];
+        static string dataGatewaySecretKey = AppSettings["DataGatewaySecretKey"];
 
         public static SyndicationLink SubstituteEnclosure(SyndicationLink link, IOpenSearchable os, IOpenSearchResultItem item)
         {
@@ -161,6 +164,11 @@ namespace Terradue.Tep
             return path;
         }
 
+        /// <summary>
+        /// Rewrites the external path.
+        /// </summary>
+        /// <returns>The external path.</returns>
+        /// <param name="uri">URI.</param>
         public static string RewriteExternalPath (Uri uri) {
             var path = uri.AbsolutePath;
 
@@ -171,6 +179,59 @@ namespace Terradue.Tep
                 }
             }
             return path;
+        }
+
+        /// <summary>
+        /// Shares on store.
+        /// </summary>
+        /// <param name="identifier">Identifier.</param>
+        /// <param name="type">Type.</param>
+        /// <param name="users">Users.</param>
+        /// <param name="communities">Communities.</param>
+        public static void ShareOnStore(string identifier, string type, string visibility, List<string> users = null, List<ThematicCommunity> communities = null){
+            var shareInput = new StoreShareRequest { 
+                type = type,
+                identifier = identifier,
+                visibility = visibility
+            };
+
+            if(users != null){
+                shareInput.users = new List<StoreShareUser>();
+                foreach(var usr in users){
+                    shareInput.users.Add(new StoreShareUser{ username = usr });
+                }
+            }
+			if (communities != null) {
+                shareInput.communities = new List<StoreShareCommunity>();
+				foreach (var c in communities) {
+                    var cUsers = c.GetAuthorizedUsers();
+                    var scUsers = new List<StoreShareUser>();
+                    foreach(var usr in cUsers){
+                        if(!c.IsUserPending(usr.Id)){
+                            scUsers.Add(new StoreShareUser{ username = usr.Username });
+                        }
+                    }
+                    shareInput.communities.Add(new StoreShareCommunity { identifier = c.Identifier, users = scUsers });
+				}
+			}
+            var payload = JsonSerializer.SerializeToString<StoreShareRequest>(shareInput);
+			System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+			byte[] payloadBytes = encoding.GetBytes(payload);
+			var sso = System.Convert.ToBase64String(payloadBytes);
+			var sig = TepUtility.HashHMAC(dataGatewaySecretKey, sso);
+
+            var url = string.Format("{0}?payload={1}&sig={2}", dataGatewayShareUrl, sso, sig);
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+			request.Proxy = null;
+			request.Method = "GET";
+			request.ContentType = "application/json";
+			request.Accept = "application/json";
+			using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+				using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+					var result = streamReader.ReadToEnd();
+				}
+			}
+
         }
 
     }
@@ -185,5 +246,33 @@ namespace Terradue.Tep
         [DataMember]
         public string substitute { get; set; }
     }
+
+    [DataContract]
+	public class StoreShareUser {
+		[DataMember]
+        public string username { get; set; }
+	}
+
+    [DataContract]
+	public class StoreShareCommunity {
+        [DataMember]
+		public string identifier { get; set; }
+        [DataMember]
+		public List<StoreShareUser> users { get; set; }
+	}
+
+    [DataContract]
+	public class StoreShareRequest {
+        [DataMember]
+		public string type { get; set; }
+        [DataMember]
+		public string identifier { get; set; }
+		[DataMember]
+		public string visibility { get; set; }
+        [DataMember]
+		public List<StoreShareCommunity> communities { get; set; }
+        [DataMember]
+		public List<StoreShareUser> users { get; set; }
+	}
 
 }

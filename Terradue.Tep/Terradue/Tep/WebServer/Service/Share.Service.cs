@@ -67,6 +67,9 @@ namespace Terradue.Tep.WebServer.Services {
                             item.DomainId = item.Owner.DomainId;
                             item.Store();
                         }
+
+						//share on store
+						DataGatewayFactory.ShareOnStore(item.RemoteIdentifier, "results", "private");
                     }
                 }
             } else if (entitySelf is EntityList<DataPackage>) {
@@ -106,6 +109,9 @@ namespace Terradue.Tep.WebServer.Services {
                     foreach (var job in wpsjobs) { //the entitySelf can return several entities
                         job.GrantPermissionsToAll();
 
+						//share on store
+						DataGatewayFactory.ShareOnStore(job.RemoteIdentifier, "results", "public");
+
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
                         activity.Store();
                     }
@@ -122,6 +128,9 @@ namespace Terradue.Tep.WebServer.Services {
                             job.Store();
                         }
 
+                        var sharedUsers = new List<string>();
+                        var sharedCommunities = new List<ThematicCommunity>();
+
                         foreach (var to in request.to) {
                             var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), settings).Entity;
 
@@ -131,10 +140,14 @@ namespace Terradue.Tep.WebServer.Services {
                                 var communities = entityTolist.GetItemsAsList();
                                 if (communities.Count == 0) return new WebResponseBool(false);
 
+                                var community = communities[0];
+
                                 //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
-                                communities[0].ShareEntity(job);
-                                job.DomainId = communities[0].Id;
+                                community.ShareEntity(job);
+                                job.DomainId = community.Id;
                                 job.Store();
+
+                                sharedCommunities.Add(community);
 
                                 ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
                                 activity.AppId = request.id;
@@ -149,14 +162,18 @@ namespace Terradue.Tep.WebServer.Services {
                                 if (users.Count == 0) return new WebResponseBool(false);
                                 job.GrantPermissionsToUsers(users);
 
+                                foreach (var usr in users) sharedUsers.Add(usr.TerradueCloudUsername);
+
                                 ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
                                 activity.AppId = request.id;
                                 activity.Store();
                             }
                         }
+
+						//share on store
+                        DataGatewayFactory.ShareOnStore(job.RemoteIdentifier, "results", "restricted", sharedUsers, sharedCommunities);
                     }
                 }
-
             }
 
             //case DataPackage

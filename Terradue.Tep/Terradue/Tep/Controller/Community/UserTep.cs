@@ -300,7 +300,7 @@ namespace Terradue.Tep {
                 System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
                 byte[] payloadBytes = encoding.GetBytes(payload);
                 var sso = System.Convert.ToBase64String(payloadBytes);
-                var sig = HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
+                var sig = TepUtility.HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
 
                 var url = string.Format("{0}?payload={1}&sig={2}", context.GetConfigValue("t2portal-usr-endpoint"), sso, sig);
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -343,15 +343,6 @@ namespace Terradue.Tep {
             context.LogDebug(this, "SESSION - GET t2apikey=" + apikey);
             return apikey;
         }
-
-		private static string HashHMAC(string key, string msg) {
-			var encoding = new System.Text.ASCIIEncoding();
-			var bkey = encoding.GetBytes(key);
-			var bmsg = encoding.GetBytes(msg);
-			var hash = new HMACSHA256(bkey);
-			var hashmac = hash.ComputeHash(bmsg);
-			return BitConverter.ToString(hashmac).Replace("-", "").ToLower();
-		}
 
         /// <summary>
         /// Finds the terradue cloud username.
