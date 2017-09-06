@@ -341,6 +341,31 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Gets the users.
+        /// </summary>
+        /// <returns>The users.</returns>
+        public List<UserTep> GetUsers(){
+            List<UserTep> users = new List<UserTep>();
+
+			var roles = new EntityList<Role>(context);
+			roles.Load();
+
+			foreach (var role in roles) {
+				if (role.Identifier != RoleTep.PENDING) {
+					var usersIds = role.GetUsers(this.Id).ToList();
+					if (usersIds.Count > 0) {
+						foreach (var usrId in usersIds) {
+							var user = UserTep.FromId(context, usrId);
+							users.Add(user);
+						}
+					}
+				}
+			}
+
+            return users;
+        }
+
+        /// <summary>
         /// Gets the thematic application.
         /// </summary>
         /// <returns>The thematic application.</returns>

@@ -204,11 +204,11 @@ namespace Terradue.Tep
 			if (communities != null) {
                 shareInput.communities = new List<StoreShareCommunity>();
 				foreach (var c in communities) {
-                    var cUsers = c.GetAuthorizedUsers();
+                    var cUsers = c.GetUsers();
                     var scUsers = new List<StoreShareUser>();
                     foreach(var usr in cUsers){
                         if(!c.IsUserPending(usr.Id)){
-                            scUsers.Add(new StoreShareUser{ username = usr.Username });
+                            scUsers.Add(new StoreShareUser{ username = usr.TerradueCloudUsername });
                         }
                     }
                     shareInput.communities.Add(new StoreShareCommunity { identifier = c.Identifier, users = scUsers });
