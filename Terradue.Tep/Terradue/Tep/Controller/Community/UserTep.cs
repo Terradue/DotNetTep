@@ -277,7 +277,7 @@ namespace Terradue.Tep {
         public bool IsNeededTerradueUserInfo(){
             var isloading = HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true";
             if (isloading) return false;
-            if (context.UserId == 0) return false;
+            if (context.UserId != this.Id || context.UserId == 0) return false;
             if (AccountStatus != AccountStatusType.Enabled) return false;
             if (Level < 2) return false; //User must be at least starter
             var apikey = GetSessionApiKey();
