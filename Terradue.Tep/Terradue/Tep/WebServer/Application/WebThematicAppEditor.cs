@@ -66,6 +66,15 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "WpsServiceOfferingTags", Description = "WpsServiceOfferingTags", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string WpsServiceOfferingTags { get; set; }
 
+		[ApiMember(Name = "ChronogramOfferingPresent", Description = "ChronogramOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
+		public bool ChronogramOfferingPresent { get; set; }
+
+		[ApiMember(Name = "StoreUploadOfferingPresent", Description = "StoreUploadOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
+		public bool StoreUploadOfferingPresent { get; set; }
+
+		[ApiMember(Name = "StoreUploadOfferingContext", Description = "StoreUploadOfferingContext", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string StoreUploadOfferingContext { get; set; }
+
 		[ApiMember(Name = "BaseMaps", Description = "BaseMaps", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
 		public List<WebThematicAppBaseMap> BaseMaps { get; set; }
 
@@ -191,6 +200,17 @@ namespace Terradue.Tep.WebServer {
                             if (!string.IsNullOrEmpty(nvc["tag"])) this.WpsServiceOfferingTags = nvc["tag"];
                         }
                         break;
+					case "http://www.terradue.com/spec/owc/1.0/req/atom/chronogram":
+						this.ChronogramOfferingPresent = true;
+						break;
+					case "http://www.terradue.com/spec/owc/1.0/req/atom/storeupload":
+						this.StoreUploadOfferingPresent = true;
+						foreach (var operation in offering.Operations) {
+							if (operation.Any != null && operation.Any.Length > 0) {
+                                this.StoreUploadOfferingContext = operation.Any[0].InnerText;
+							}
+						}
+						break;
                 }
             }
 
@@ -290,6 +310,23 @@ namespace Terradue.Tep.WebServer {
 							Code = "ListProcess",
 							Type = "application/json",
                             Href = "file:///t2api/service/wps/search" + query
+						}
+					}
+				});
+			}
+			if (ChronogramOfferingPresent) {
+				offerings.Add(new OwcOffering {
+					Code = "http://www.terradue.com/spec/owc/1.0/req/atom/chronogram"
+				});
+			}
+			if (StoreUploadOfferingPresent) {
+                var datacontext = doc.CreateElement("datacontext");
+                datacontext.InnerText = StoreUploadOfferingContext;
+				offerings.Add(new OwcOffering {
+					Code = "http://www.terradue.com/spec/owc/1.0/req/atom/storeupload",
+					Operations = new OwcOperation[]{
+						new OwcOperation{
+							Any = new System.Xml.XmlElement[]{ datacontext }
 						}
 					}
 				});
