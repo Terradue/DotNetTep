@@ -121,8 +121,11 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "t2profileError", Description = "Error message to get T2 profile", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string T2ProfileError { get; set; }
 
-        [ApiMember (Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
-        public string ApiKey { get; set; }
+        [ApiMember (Name = "t2apikey", Description = "T2 User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string T2ApiKey { get; set; }
+
+		[ApiMember(Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
+		public string ApiKey { get; set; }
 
         [ApiMember(Name = "balance", Description = "User accounting balance", ParameterType = "query", DataType = "double", IsRequired = false)]
         public double Balance { get; set; }
@@ -150,6 +153,7 @@ namespace Terradue.Tep.WebServer {
             if (context.UserId == entity.Id) {
                 this.ApiKey = entity.ApiKey;
                 this.T2ProfileError = HttpContext.Current.Session["t2profileError"] as string;
+                this.T2ApiKey = entity.GetSessionApiKey();
             }
 
             if (context.UserId == entity.Id || context.UserLevel == UserLevel.Administrator){
