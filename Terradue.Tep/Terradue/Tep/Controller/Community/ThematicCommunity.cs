@@ -595,7 +595,7 @@ namespace Terradue.Tep {
                                     usersCommunity.Add(new UserRole {
                                         Username = user.Username,
                                         Name = user.FirstName + " " + user.LastName,
-                                        Role = role.Identifier,
+                                        Role = role.Name ?? role.Identifier,
                                         RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? "pending" : "joined",
                                         Avatar = user.GetAvatar()
