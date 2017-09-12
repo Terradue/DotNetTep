@@ -326,6 +326,9 @@ namespace Terradue.Tep.WebServer {
 					Code = "http://www.terradue.com/spec/owc/1.0/req/atom/storeupload",
 					Operations = new OwcOperation[]{
 						new OwcOperation{
+                            Code = "Search",
+                            Type = "application/json",
+                            Href = "https://www.terradue.com",
 							Any = new System.Xml.XmlElement[]{ datacontext }
 						}
 					}
