@@ -294,25 +294,25 @@ namespace Terradue.Tep.WebServer.Services {
                         if (p.Key == "quotation") {
                             isQuotable = true;
                             if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
-                        } else if(p.Key == "_T2Username"){
-                            updateInput = true;
+                        } else {
+                            //if (p.Key == "_T2Username") updateInput = true;
+                            cachekey += p.Key + p.Value;
                         }
-                        else cachekey += p.Key + p.Value;
                     }
                 }
 
                 //update Execute input
-                if(updateInput){
-                    foreach(var input in executeInput.DataInputs){
-                        if(input.Identifier != null && input.Identifier.Value == "_T2Username"){
-                            input.Data = new DataType {
-                                Item = new LiteralDataType {
-                                    Value = user.TerradueCloudUsername
-                                }
-                            };
-                        }
-                    }
-                }
+                //if(updateInput){
+                //    foreach(var input in executeInput.DataInputs){
+                //        if(input.Identifier != null && input.Identifier.Value == "_T2Username"){
+                //            input.Data = new DataType {
+                //                Item = new LiteralDataType {
+                //                    Value = user.TerradueCloudUsername
+                //                }
+                //            };
+                //        }
+                //    }
+                //}
 
                 //part is quotable
                 if (isQuotable) {
