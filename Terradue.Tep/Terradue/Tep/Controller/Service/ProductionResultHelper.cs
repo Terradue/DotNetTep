@@ -175,59 +175,69 @@ namespace Terradue.Tep {
                 string workflow = "", runId = "";
                 string recaststatusurl = "", newStatusLocation = "";
 
-                //case old sandboxes
-				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
-				m = r.Match(url.AbsolutePath);
-                if (m.Success) {
-					workflow = m.Result("${workflow}");
-					runId = m.Result("${runid}");
-                    recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
-                    newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
+                //case url is recast describe url
+                if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
+					wpsjob.StatusLocation = resultUrl;
+					wpsjob.Status = WpsJobStatus.STAGED;
+					wpsjob.Store();
+					return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
                 } else {
-                    //case new sandboxes
-					r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
-					m = r.Match(url.AbsolutePath);
+                    //case old sandboxes
+    				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
+    				m = r.Match(url.AbsolutePath);
                     if (m.Success) {
-						workflow = m.Result("${workflow}");
-						runId = m.Result("${runid}");
+                        workflow = m.Result("${workflow}");
+                        runId = m.Result("${runid}");
                         recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
                         newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                     } else {
-                        //case production clusters
-						r = new System.Text.RegularExpressions.Regex(@"^\/production\/(?<community>[a-zA-Z0-9_\-]+)\/results\/workflows\/(?<workflow>[a-zA-Z0-9_\-]+)\/runs\/(?<runid>[a-zA-Z0-9_\-]+)");
+                        //case new sandboxes
+                        r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
                         m = r.Match(url.AbsolutePath);
                         if (m.Success) {
                             workflow = m.Result("${workflow}");
                             runId = m.Result("${runid}");
-                            var community = m.Result("${community}");
                             recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
                             newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                         } else {
-                            //case direct recast or catalog response
-                            if (url.Host == new Uri(recastBaseUrl).Host || url.Host == new Uri(catalogBaseUrl).Host) {
-                                log.DebugFormat("Recasting (DIRECT) job {0} - url = {1}", wpsjob.Identifier, resultUrl);
-                                wpsjob.StatusLocation = resultUrl;
-                                wpsjob.Status = WpsJobStatus.STAGED;
-                                wpsjob.Store();
-                                return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                            //case production clusters
+                            r = new System.Text.RegularExpressions.Regex(@"^\/production\/(?<community>[a-zA-Z0-9_\-]+)\/results\/workflows\/(?<workflow>[a-zA-Z0-9_\-]+)\/runs\/(?<runid>[a-zA-Z0-9_\-]+)");
+                            m = r.Match(url.AbsolutePath);
+                            if (m.Success) {
+                                workflow = m.Result("${workflow}");
+                                runId = m.Result("${runid}");
+                                var community = m.Result("${community}");
+                                recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
+                                newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                             } else {
-                                //cases external providers
-                                var dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>>(AppSettings["DataGatewaySubstitutions"]);
-                                foreach (var sub in dataGatewaySubstitutions) {
-                                    if (url.Host.Equals(sub.host)) {
-                                        var path = url.AbsolutePath;
-                                        path = path.Replace(sub.oldvalue, sub.substitute);
-                                        //we assume that result url is pointing to a metadata file
-                                        path = path.Substring(0, path.LastIndexOf("/"));
-										recaststatusurl = GetWpsJobRecastStatusUrl(path);
-                                        newStatusLocation = GetWpsJobRecastDescribeUrl(path);
-                                        continue;
+                                //case direct recast or catalog response
+                                if (url.Host == new Uri(recastBaseUrl).Host || url.Host == new Uri(catalogBaseUrl).Host) {
+                                    log.DebugFormat("Recasting (DIRECT) job {0} - url = {1}", wpsjob.Identifier, resultUrl);
+                                    wpsjob.StatusLocation = resultUrl;
+                                    wpsjob.Status = WpsJobStatus.STAGED;
+                                    wpsjob.Store();
+                                    return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                                } else {
+                                    //cases external providers
+                                    var dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>>(AppSettings["DataGatewaySubstitutions"]);
+                                    if (dataGatewaySubstitutions != null) {
+                                        foreach (var sub in dataGatewaySubstitutions) {
+                                            if (url.Host.Equals(sub.host)) {
+                                                var path = url.AbsolutePath;
+                                                path = path.Replace(sub.oldvalue, sub.substitute);
+                                                //we assume that result url is pointing to a metadata file
+                                                path = path.Substring(0, path.LastIndexOf("/"));
+                                                recaststatusurl = GetWpsJobRecastStatusUrl(path);
+                                                newStatusLocation = GetWpsJobRecastDescribeUrl(path);
+                                                continue;
+                                            }
+                                        }
                                     }
-                                }
-                                //none of the above cases
-                                if (string.IsNullOrEmpty(recaststatusurl)) {
-                                    log.DebugFormat("Recasting job {0} - url = {1} ; the url did not match any case", wpsjob.Identifier, url.AbsolutePath);
-                                    return UpdateProcessOutputs(context, execResponse, wpsjob);
+                                    //none of the above cases
+                                    if (string.IsNullOrEmpty(recaststatusurl)) {
+                                        log.DebugFormat("Recasting job {0} - url = {1} ; the url did not match any case", wpsjob.Identifier, url.AbsolutePath);
+                                        return UpdateProcessOutputs(context, execResponse, wpsjob);
+                                    }
                                 }
                             }
                         }
