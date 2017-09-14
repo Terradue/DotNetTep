@@ -337,12 +337,12 @@ namespace Terradue.Tep.WebServer {
             if (this.DataContexts != null && this.DataContexts.Count > 0){
                 var dcStylesets = new List<OwcStyleSet>();
                 var osOperations = new List<OwcOperation>();
-                var datacontext = doc.CreateElement("datacontext");
                 foreach(var dc in this.DataContexts){
                     dcStylesets.Add(new OwcStyleSet{
                         Name = dc.DataContextName,
                         Title = dc.DataContextName
                     });
+                    var datacontext = doc.CreateElement("datacontext");
                     datacontext.InnerText = dc.DataContextName;
 					osOperations.Add(new OwcOperation {
                         Code = "DescribeDataset",
@@ -362,8 +362,8 @@ namespace Terradue.Tep.WebServer {
             }
             if (this.BaseMaps != null && this.BaseMaps.Count > 0) {
                 var bmStylesets = new List<OwcStyleSet>();
-                var type = doc.CreateElement("type");
                 foreach (var bm in this.BaseMaps) {
+                    var type = doc.CreateElement("type");
                     type.InnerText = bm.BaseMapType;
 					bmStylesets.Add(new OwcStyleSet {
                         Default = bm.BaseMapDefault,
@@ -380,11 +380,12 @@ namespace Terradue.Tep.WebServer {
             }
             if (this.MapFeatures != null && this.MapFeatures.Count > 0) {
 				var mfStylesets = new List<OwcStyleSet>();
-                var type = doc.CreateElement("type");
                 foreach (var mf in this.MapFeatures){
+                    var type = doc.CreateElement("type");
                     type.InnerText = mf.MapFeatureType;
 					mfStylesets.Add(new OwcStyleSet {
 						Default = mf.MapFeatureDefault,
+                        Title = mf.MapFeatureTitle,
                         Name = mf.MapFeatureName,
                         Abstract = mf.MapFeatureName,
 						Any = new System.Xml.XmlElement[] { type },

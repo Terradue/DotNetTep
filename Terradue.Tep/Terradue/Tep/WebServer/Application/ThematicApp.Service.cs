@@ -278,10 +278,10 @@ namespace Terradue.Tep.WebServer.Services {
 				feed.Items = entries;
 
 	            var user = UserTep.FromId(context, context.UserId);
-                var index = request.Index ?? user.TerradueCloudUsername;
+                var index = string.IsNullOrEmpty(request.Index) ? user.TerradueCloudUsername : request.Index;
 
                 context.LogDebug(this, string.Format("/app/editor POST Identifier='{0}', Index='{1}'", request.Identifier, index));
-
+                if(string.IsNullOrEmpty(index)) throw new Exception("Unable to POST to empty index");
 				//post to catalogue
 				try {
 	                CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.TerradueCloudUsername, request.ApiKey);
