@@ -739,7 +739,7 @@ namespace Terradue.Tep {
 
         public override bool IsPostFiltered(NameValueCollection parameters) {
             foreach (var key in parameters.AllKeys) {
-                switch (parameters[key]) {
+                switch (key) {
                 default:
                     break;
                 }
