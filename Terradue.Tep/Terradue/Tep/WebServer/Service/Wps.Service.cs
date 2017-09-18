@@ -213,7 +213,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         if (describeResponse is ProcessDescriptions) {
                             var descResponse = describeResponse as ProcessDescriptions;
-                            descResponse = WpsFactory.DescribeProcessCleanup(descResponse);
+                            descResponse = WpsFactory.DescribeProcessCleanup(descResponse, request.Identifier);
                             System.Xml.Serialization.XmlSerializerNamespaces ns = new System.Xml.Serialization.XmlSerializerNamespaces();
                             ns.Add("wps", "http://www.opengis.net/wps/1.0.0");
                             new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);    
@@ -286,7 +286,26 @@ namespace Terradue.Tep.WebServer.Services {
                 bool quotationMode = false;
                 bool isQuotable = false;
                 string cachekey = wps.Identifier;
-                bool updateInput = false;
+
+                //Check if it need to add back hidden field
+                var cachekeyClean = "DescribeProcessCleanup" + "-" + executeInput.Identifier.Value;
+                var cacheValueClean = cache[cachekeyClean] as string;
+                if(!string.IsNullOrEmpty(cacheValueClean)){
+                    switch(cacheValueClean){
+                        case "_T2Username":
+                            var input = new InputType();
+                            input.Identifier = new CodeType { Value = "_T2Username" };
+							input.Data = new DataType {
+								Item = new LiteralDataType {
+									Value = user.TerradueCloudUsername
+								}
+							};
+                            executeInput.DataInputs.Add(input);
+							break;
+                        default:
+                            break;
+                    }
+                }
 
                 if (accountingEnabled) {
                     //check if the service is quotable (=has quotation parameter)
@@ -295,7 +314,6 @@ namespace Terradue.Tep.WebServer.Services {
                             isQuotable = true;
                             if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
                         } else {
-                            //if (p.Key == "_T2Username") updateInput = true;
                             cachekey += p.Key + p.Value;
                         }
                     }

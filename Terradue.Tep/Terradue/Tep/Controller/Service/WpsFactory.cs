@@ -6,6 +6,7 @@ using System.Net;
 using System.IO;
 using ServiceStack.Common.Web;
 using System.Xml.Serialization;
+using System.Runtime.Caching;
 
 
 /*!
@@ -177,13 +178,26 @@ namespace Terradue.Tep {
         // DescribeProcess
         //****************************************************************************************
 
-        public static ProcessDescriptions DescribeProcessCleanup(ProcessDescriptions input){
-            foreach (var desc in input.ProcessDescription) {
+        public static ProcessDescriptions DescribeProcessCleanup(ProcessDescriptions input, string identifier){
+			var policy = new CacheItemPolicy();
+			policy.SlidingExpiration = new TimeSpan(0, 1, 0, 0);//we keep it 1h in memory
+            ObjectCache cache = MemoryCache.Default;
+
+			foreach (var desc in input.ProcessDescription) {
+                var newinputs = new List<InputDescriptionType>();
                 foreach (var data in desc.DataInputs) {
                     if (data.LiteralData != null) {
-                        if (data.LiteralData.AllowedValues != null && data.LiteralData.AllowedValues.Count == 0)
+                        if (data.LiteralData.AllowedValues != null && data.LiteralData.AllowedValues.Count == 0) {
                             data.LiteralData.AllowedValues = null;
+                        }
                     }
+                    //case _T2Username, we hide the field
+                    if(data.Identifier != null && data.Identifier.Value == "_T2Username"){
+                        cache.Set("DescribeProcessCleanup" + "-" + identifier, "_T2Username" , policy);
+                    } else {
+                        newinputs.Add(data);
+                    }
+                    desc.DataInputs = newinputs;
                 }
             }
             return input;
