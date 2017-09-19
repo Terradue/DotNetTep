@@ -213,7 +213,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         if (describeResponse is ProcessDescriptions) {
                             var descResponse = describeResponse as ProcessDescriptions;
-                            descResponse = WpsFactory.DescribeProcessCleanup(descResponse, request.Identifier);
+                            descResponse = WpsFactory.DescribeProcessCleanup(descResponse);
                             System.Xml.Serialization.XmlSerializerNamespaces ns = new System.Xml.Serialization.XmlSerializerNamespaces();
                             ns.Add("wps", "http://www.opengis.net/wps/1.0.0");
                             new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);    
@@ -288,24 +288,23 @@ namespace Terradue.Tep.WebServer.Services {
                 string cachekey = wps.Identifier;
 
                 //Check if it need to add back hidden field
-                var cachekeyClean = "DescribeProcessCleanup" + "-" + executeInput.Identifier.Value;
-                var cacheValueClean = cache[cachekeyClean] as string;
-                if(!string.IsNullOrEmpty(cacheValueClean)){
-                    switch(cacheValueClean){
-                        case "_T2Username":
-                            var input = new InputType();
-                            input.Identifier = new CodeType { Value = "_T2Username" };
-							input.Data = new DataType {
-								Item = new LiteralDataType {
-									Value = user.TerradueCloudUsername
-								}
-							};
-                            executeInput.DataInputs.Add(input);
-							break;
-                        default:
-                            break;
-                    }
-                }
+                var describeResponse = wps.DescribeProcess();
+				if (describeResponse is ProcessDescriptions) {
+                    var descResponse = describeResponse as ProcessDescriptions;
+					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2Username")) {
+						var input = new InputType();
+						input.Identifier = new CodeType { Value = "_T2Username" };
+						input.Data = new DataType {
+							Item = new LiteralDataType {
+								Value = user.TerradueCloudUsername
+							}
+						};
+						executeInput.DataInputs.Add(input);
+					}
+				} else {
+					return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
+				}
+
 
                 if (accountingEnabled) {
                     //check if the service is quotable (=has quotation parameter)
@@ -318,19 +317,6 @@ namespace Terradue.Tep.WebServer.Services {
                         }
                     }
                 }
-
-                //update Execute input
-                //if(updateInput){
-                //    foreach(var input in executeInput.DataInputs){
-                //        if(input.Identifier != null && input.Identifier.Value == "_T2Username"){
-                //            input.Data = new DataType {
-                //                Item = new LiteralDataType {
-                //                    Value = user.TerradueCloudUsername
-                //                }
-                //            };
-                //        }
-                //    }
-                //}
 
                 //part is quotable
                 if (isQuotable) {

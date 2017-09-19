@@ -178,11 +178,7 @@ namespace Terradue.Tep {
         // DescribeProcess
         //****************************************************************************************
 
-        public static ProcessDescriptions DescribeProcessCleanup(ProcessDescriptions input, string identifier){
-			var policy = new CacheItemPolicy();
-			policy.SlidingExpiration = new TimeSpan(0, 1, 0, 0);//we keep it 1h in memory
-            ObjectCache cache = MemoryCache.Default;
-
+        public static ProcessDescriptions DescribeProcessCleanup(ProcessDescriptions input){
 			foreach (var desc in input.ProcessDescription) {
                 var newinputs = new List<InputDescriptionType>();
                 foreach (var data in desc.DataInputs) {
@@ -192,16 +188,30 @@ namespace Terradue.Tep {
                         }
                     }
                     //case _T2Username, we hide the field
-                    if(data.Identifier != null && data.Identifier.Value == "_T2Username"){
-                        cache.Set("DescribeProcessCleanup" + "-" + identifier, "_T2Username" , policy);
-                    } else {
-                        newinputs.Add(data);
+                    if (data.Identifier != null) {
+                        switch (data.Identifier.Value) {
+                            case "_T2Username":
+                                break;
+                            default:
+                                newinputs.Add(data);
+                                break;
+                        }
                     }
-                    desc.DataInputs = newinputs;
                 }
+                desc.DataInputs = newinputs;
             }
             return input;
         }
+
+		public static bool DescribeProcessHasField(ProcessDescriptions input, string field) {
+			foreach (var desc in input.ProcessDescription) {
+				foreach (var data in desc.DataInputs) {
+                    if (data.Identifier != null && data.Identifier.Value == field) 
+                        return true;
+				}
+			}
+            return false;
+		}
 
         //****************************************************************************************
         // Execute
