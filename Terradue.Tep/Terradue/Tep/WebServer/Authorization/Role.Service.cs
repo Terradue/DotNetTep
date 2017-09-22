@@ -46,7 +46,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(RolesGetRequest request) {
             List<WebRole> result = new List<WebRole>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/role GET"));
