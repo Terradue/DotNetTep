@@ -313,7 +313,7 @@ namespace Terradue.Tep {
 		/// <param name="context">Context.</param>
 		/// <param name="wps">Wps.</param>
 		/// <param name="executeInput">Execute input.</param>
-		public static WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput) {
+        public static WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput, List<KeyValuePair<string,string>> parameters) {
 			WpsJob wpsjob = new WpsJob(context);
             context.LogDebug(wpsjob, string.Format("Creating job from execute request"));
 			string newId = Guid.NewGuid().ToString();
@@ -330,7 +330,7 @@ namespace Terradue.Tep {
 			wpsjob.CreatedTime = DateTime.UtcNow;
             wpsjob.Status = WpsJobStatus.NONE;
 			wpsjob.Parameters = new List<KeyValuePair<string, string>>();
-			wpsjob.Parameters = BuildWpsJobParameters(context, executeInput);
+			wpsjob.Parameters = parameters;
 
 			return wpsjob;
 		}

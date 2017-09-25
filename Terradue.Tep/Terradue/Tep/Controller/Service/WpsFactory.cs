@@ -178,7 +178,7 @@ namespace Terradue.Tep {
         // DescribeProcess
         //****************************************************************************************
 
-        public static ProcessDescriptions DescribeProcessCleanup(ProcessDescriptions input){
+        public static ProcessDescriptions DescribeProcessCleanup(IfyContext context, ProcessDescriptions input){
 			foreach (var desc in input.ProcessDescription) {
                 var newinputs = new List<InputDescriptionType>();
                 foreach (var data in desc.DataInputs) {
@@ -191,6 +191,16 @@ namespace Terradue.Tep {
                     if (data.Identifier != null) {
                         switch (data.Identifier.Value) {
                             case "_T2Username":
+                            case "_T2ApiKey":
+                                break;
+                            case "index":
+                            case "repoKey":
+                                if (data.LiteralData != null && data.LiteralData.DefaultValue != null && context.UserId != 0){
+                                    var user = UserTep.FromId(context, context.UserId);
+									data.LiteralData.DefaultValue = data.LiteralData.DefaultValue.Replace("${USERNAME}", user.Username);
+									data.LiteralData.DefaultValue = data.LiteralData.DefaultValue.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                                }
+                                newinputs.Add(data);
                                 break;
                             default:
                                 newinputs.Add(data);

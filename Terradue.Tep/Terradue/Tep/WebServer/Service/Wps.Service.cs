@@ -213,10 +213,10 @@ namespace Terradue.Tep.WebServer.Services {
 
                         if (describeResponse is ProcessDescriptions) {
                             var descResponse = describeResponse as ProcessDescriptions;
-                            descResponse = WpsFactory.DescribeProcessCleanup(descResponse);
+                            descResponse = WpsFactory.DescribeProcessCleanup(context, descResponse);
                             System.Xml.Serialization.XmlSerializerNamespaces ns = new System.Xml.Serialization.XmlSerializerNamespaces();
                             ns.Add("wps", "http://www.opengis.net/wps/1.0.0");
-                            new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);    
+                            new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);
                             return new HttpResult(stream, "application/xml");
                         } else {
                             return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
@@ -301,6 +301,16 @@ namespace Terradue.Tep.WebServer.Services {
 						};
 						executeInput.DataInputs.Add(input);
 					}
+					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ApiKey")) {
+						var input = new InputType();
+						input.Identifier = new CodeType { Value = "_T2ApiKey" };
+						input.Data = new DataType {
+							Item = new LiteralDataType {
+                                Value = user.GetSessionApiKey()
+							}
+						};
+						executeInput.DataInputs.Add(input);
+					}
 				} else {
 					return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
 				}
@@ -361,7 +371,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         var balance = user.GetAccountingBalance();
                         if (double.Parse(quotation) > balance) throw new Exception("User credit insufficiant for this request.");
-                        wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput);
+                        wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
                         if (!(executeResponse is ExecuteResponse) 
@@ -384,7 +394,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 } else { 
                     //case is not quotable
-                    wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput);
+                    wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                     executeResponse = wps.Execute(executeInput);
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
