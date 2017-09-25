@@ -68,8 +68,12 @@ namespace Terradue.Tep.WebServer.Services {
                             item.Store();
                         }
 
-						//share on store
-						DataGatewayFactory.ShareOnStore(item.RemoteIdentifier, "results", "private");
+                        //share on store
+                        try {
+                            DataGatewayFactory.ShareOnStore(item.RemoteIdentifier, "results", "private");
+                        }catch(Exception e){
+                            context.LogError(this, "Unable to share on STORE : " + e.Message);
+                        }
                     }
                 }
             } else if (entitySelf is EntityList<DataPackage>) {
@@ -110,7 +114,11 @@ namespace Terradue.Tep.WebServer.Services {
                         job.GrantPermissionsToAll();
 
 						//share on store
-						DataGatewayFactory.ShareOnStore(job.RemoteIdentifier, "results", "public");
+						try {
+							DataGatewayFactory.ShareOnStore(job.RemoteIdentifier, "results", "public");
+						} catch (Exception e) {
+							context.LogError(this, "Unable to share on STORE : " + e.Message);
+						}
 
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
                         activity.Store();
@@ -171,7 +179,11 @@ namespace Terradue.Tep.WebServer.Services {
                         }
 
 						//share on store
-                        DataGatewayFactory.ShareOnStore(job.RemoteIdentifier, "results", "restricted", sharedUsers, sharedCommunities);
+						try {
+							DataGatewayFactory.ShareOnStore(job.RemoteIdentifier, "results", "restricted", sharedUsers, sharedCommunities);
+						} catch (Exception e) {
+							context.LogError(this, "Unable to share on STORE : " + e.Message);
+						}
                     }
                 }
             }
