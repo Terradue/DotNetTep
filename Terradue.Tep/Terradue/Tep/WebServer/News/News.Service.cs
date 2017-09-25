@@ -52,7 +52,9 @@ namespace Terradue.Tep.WebServer.Services {
                 try{
                     EntityList<RssNews> rsss = new EntityList<RssNews>(context);
                     rsss.Load();
-                    foreach(RssNews rss in rsss) osentities.Add(rss);
+                    if (rsss != null) {
+                        foreach (RssNews rss in rsss) osentities.Add(rss);
+                    }
                 }catch(Exception){}
 
 				var settings = new OpenSearchableFactorySettings(ose);
