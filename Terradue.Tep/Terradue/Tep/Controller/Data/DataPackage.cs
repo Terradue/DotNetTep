@@ -452,7 +452,14 @@ namespace Terradue.Tep {
                     specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
 				}
                 try {
-				    var entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
+                    IOpenSearchable entity;
+                    try {
+                        entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location), "application/atom+xml");
+                    }catch(Exception e){
+                        entity = null;
+                    }
+                    if(entity == null) entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
+
 				    osResources.Add(entity);
 				}
 				catch (Exception e)
