@@ -491,11 +491,15 @@ namespace Terradue.Tep {
 
                 // HTTP request
                 try {
-                    using (var remoteWpsResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
-                        using (var remotestream = remoteWpsResponse.GetResponseStream()) {
-                            remotestream.CopyTo(remoteWpsResponseStream);
-                        }
-                    }
+					using (HttpWebResponse httpWebResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
+						using (Stream responseStream = httpWebResponse.GetResponseStream()) {
+							responseStream.CopyTo(remoteWpsResponseStream);
+						}
+						remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+						string str = new StreamReader(remoteWpsResponseStream).ReadToEnd();
+                        context.LogDebug(this, "Status response : " + str);
+						
+					}
 
                 } catch (WebException we) {
                     context.LogError(this, string.Format(we.Message));
@@ -613,6 +617,7 @@ namespace Terradue.Tep {
             var url = GetResultOsdUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultMetadatadUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultHtmlUrl(execResponse);
+            if (string.IsNullOrEmpty(url)) throw new Exception("Unable to get wpsjob result url");
             return url;
         }
 
