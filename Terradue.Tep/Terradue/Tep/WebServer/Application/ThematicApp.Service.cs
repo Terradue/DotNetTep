@@ -115,8 +115,9 @@ namespace Terradue.Tep.WebServer.Services {
             //replace usernames in apps
             try{
                 var user = UserTep.FromId(context, context.UserId);
-	                sresult = sresult.Replace("${USERNAME}", user.Username);
-	                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                sresult = sresult.Replace("${USERNAME}", user.Username);
+                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
             }catch(Exception e){
                 context.LogError (this, e.Message);
             }
