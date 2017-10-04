@@ -188,8 +188,9 @@ namespace Terradue.Tep
         /// <param name="type">Type.</param>
         /// <param name="users">Users.</param>
         /// <param name="communities">Communities.</param>
-        public static void ShareOnStore(string identifier, string type, string visibility, List<string> users = null, List<ThematicCommunity> communities = null){
+        public static void ShareOnStore(string origin, string identifier, string type, string visibility, List<string> users = null, List<ThematicCommunity> communities = null){
             var shareInput = new StoreShareRequest { 
+                origin = origin,
                 type = type,
                 identifier = identifier,
                 visibility = visibility
@@ -263,6 +264,8 @@ namespace Terradue.Tep
 
     [DataContract]
 	public class StoreShareRequest {
+		[DataMember]
+		public string origin { get; set; }
         [DataMember]
 		public string type { get; set; }
         [DataMember]
