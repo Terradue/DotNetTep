@@ -360,7 +360,7 @@ namespace Terradue.Tep.WebServer.Services {
         private void GenerateCsvDataPackagePart(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
             //  Data Packages created + shared
             string sql = String.Format("SELECT resourceset.id, usr.username, resourceset.name, resourceset.creation_time from resourceset INNER JOIN usr on usr.id=resourceset.id_usr " +
-                                       "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.is_default=0;",
+                                       "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.kind=0;",
                                        startdate, enddate, skipedIds);
             System.Data.IDbConnection dbConnection = context.GetDbConnection();
             System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
@@ -385,7 +385,7 @@ namespace Terradue.Tep.WebServer.Services {
                 csv.Append(Environment.NewLine);
                 csv.Append(string.Format("Number of Data package created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 sql = String.Format("SELECT usr.username, COUNT(resourceset.id) FROM usr INNER JOIN resourceset ON usr.id=resourceset.id_usr " +
-                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.is_default=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY resourceset.id_usr " +
+                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.kind=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY resourceset.id_usr " +
                 "ORDER BY COUNT(resourceset.id) DESC;",
                                     startdate, enddate, skipedIds);
                 dbConnection = context.GetDbConnection();
@@ -399,7 +399,7 @@ namespace Terradue.Tep.WebServer.Services {
                 csv.Append(Environment.NewLine);
                 csv.Append(string.Format("Number of Data package created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 sql = String.Format("SELECT grp.name, COUNT(resourceset.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN resourceset ON resourceset.id_usr=usr_grp.id_usr " +
-                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.is_default=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY grp.id " +
+                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.kind=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY grp.id " +
                 "ORDER BY COUNT(resourceset.id) DESC;",
                                     startdate, enddate, skipedIds);
                 dbConnection = context.GetDbConnection();
