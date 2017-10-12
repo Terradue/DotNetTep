@@ -209,7 +209,8 @@ namespace Terradue.Tep
                     var scUsers = new List<StoreShareUser>();
                     foreach(var usr in cUsers){
                         if(!c.IsUserPending(usr.Id)){
-                            scUsers.Add(new StoreShareUser{ username = usr.TerradueCloudUsername });
+                            if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) usr.LoadCloudUsername();
+                            if (!string.IsNullOrEmpty(usr.TerradueCloudUsername)) scUsers.Add(new StoreShareUser { username = usr.TerradueCloudUsername });
                         }
                     }
                     shareInput.communities.Add(new StoreShareCommunity { identifier = c.Identifier, users = scUsers });
@@ -221,15 +222,26 @@ namespace Terradue.Tep
 			var sso = System.Convert.ToBase64String(payloadBytes);
 			var sig = TepUtility.HashHMAC(dataGatewaySecretKey, sso);
 
-            var url = string.Format("{0}?payload={1}&sig={2}", dataGatewayShareUrl, sso, sig);
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(dataGatewayShareUrl);
 			request.Proxy = null;
-			request.Method = "GET";
+			request.Method = "POST";
 			request.ContentType = "application/json";
 			request.Accept = "application/json";
-			using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-				using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-					var result = streamReader.ReadToEnd();
+
+			string json = "{" +
+				"\"payload\":\"" + sso + "\"," +
+				"\"sig\":\"" + sig + "\"" + 
+				"}";
+
+			using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
+				streamWriter.Write(json);
+				streamWriter.Flush();
+				streamWriter.Close();
+
+				using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+					using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
+						var result = streamReader.ReadToEnd();
+					}
 				}
 			}
 

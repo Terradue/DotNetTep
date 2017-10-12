@@ -170,7 +170,10 @@ namespace Terradue.Tep.WebServer.Services {
                                 if (users.Count == 0) return new WebResponseBool(false);
                                 job.GrantPermissionsToUsers(users);
 
-                                foreach (var usr in users) sharedUsers.Add(usr.TerradueCloudUsername);
+                                foreach (var usr in users) {
+                                    if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) usr.LoadCloudUsername();
+                                    if (!string.IsNullOrEmpty(usr.TerradueCloudUsername)) sharedUsers.Add(usr.TerradueCloudUsername);
+                                }
 
                                 ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
                                 activity.AppId = request.id;
