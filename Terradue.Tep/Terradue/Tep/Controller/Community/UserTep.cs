@@ -177,8 +177,6 @@ namespace Terradue.Tep {
 
                 CreatePrivateDomain();
                 CreatePrivateThematicApp();
-                CreatePrivateDataPackageCatalogueIndex();
-                CreatePrivateDataPackageCatalogueProducts();
             }
         }
 
@@ -268,6 +266,11 @@ namespace Terradue.Tep {
             }
             cusr.CloudUsername = this.TerradueCloudUsername;
             cusr.Store();
+
+            //update data packages (Terradue Cloud username may have change)
+            GetPrivateDataPackageCatalogueIndex();
+            GetPrivateDataPackageCatalogueProducts();
+            GetPrivateDataPackageCatalogueSeries();
         }
 
         /// <summary>
@@ -312,8 +315,10 @@ namespace Terradue.Tep {
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                         var result = streamReader.ReadToEnd();
                         var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
-                        this.TerradueCloudUsername = info.Username;
-                        this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+                        if (this.TerradueCloudUsername != info.Username) {//we update only if it changed
+                            this.TerradueCloudUsername = info.Username;
+                            this.StoreCloudUsername();
+                        }
                         context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
                         SetSessionApikey(info.ApiKey);
                         this.Store();
@@ -361,7 +366,7 @@ namespace Terradue.Tep {
             using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                     this.TerradueCloudUsername = streamReader.ReadToEnd();
-                    this.StoreCloudUsername(context.GetConfigIntegerValue("One-default-provider"));
+                    this.StoreCloudUsername();
                     context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
                 }
             }
@@ -466,13 +471,6 @@ namespace Terradue.Tep {
             return app;
         }
 
-        public void PrivateSanityCheck(){
-            GetPrivateThematicApp();
-            GetPrivateDataPackageCatalogueIndex();
-            GetPrivateDataPackageCatalogueProducts();
-            GetPrivateDataPackageCatalogueSeries();
-        }
-
         /// <summary>
         /// Gets the private thematic app.
         /// </summary>
@@ -535,65 +533,70 @@ namespace Terradue.Tep {
 		}
 
         /// <summary>
-        /// Creates the private data package catalogue index.
+        /// Creates the private data package.
         /// </summary>
-        /// <returns>The private data package catalogue index.</returns>
-        public DataPackage CreatePrivateDataPackageCatalogueIndex(){
+        /// <returns>The private data package.</returns>
+        /// <param name="identifier">Identifier.</param>
+        /// <param name="name">Name.</param>
+        /// <param name="location">Location.</param>
+        private DataPackage CreatePrivateDataPackage(string identifier, string name, string location){
+            //create data package
             var dp = new DataPackage(context);
-            dp.Identifier = "_index_" + this.Username;
-            dp.Name = "My Index";
+            dp.Identifier = identifier;
+            dp.Name = name;
             dp.Domain = this.Domain;
             dp.Store();
+
+            //save data package location
             var item = new RemoteResource(context);
-            item.Location = GetPrivateCatalogueIndexUrl(false);
+            item.Location = location;
             dp.AddResourceItem(item);
             return dp;
         }
 
         /// <summary>
-        /// Creates the private data package catalogue results.
+        /// Gets the private data package.
         /// </summary>
-        /// <returns>The private data package catalogue results.</returns>
-        public DataPackage CreatePrivateDataPackageCatalogueProducts() {
-			var dp = new DataPackage(context);
-			dp.Identifier = "_products_" + this.Username;
-			dp.Name = "My Products";
-			dp.Domain = this.Domain;
-			dp.Store();
-			var item = new RemoteResource(context);
-            item.Location = GetPrivateCatalogueProductsUrl(false);
-			dp.AddResourceItem(item);
-			return dp;
-		}
+        /// <returns>The private data package.</returns>
+        /// <param name="identifier">Identifier.</param>
+        /// <param name="name">Name.</param>
+        /// <param name="location">Location.</param>
+        public DataPackage GetPrivateDataPackage(string identifier, string name, string location) {
+            DataPackage dp = null;
 
-		/// <summary>
-		/// Creates the private data package catalogue series.
-		/// </summary>
-		/// <returns>The private data package catalogue series.</returns>
-		public DataPackage CreatePrivateDataPackageCatalogueSeries() {
-			var dp = new DataPackage(context);
-			dp.Identifier = "_series_" + this.Username;
-			dp.Name = "My Results";
-			dp.Domain = this.Domain;
-			dp.Store();
-			var item = new RemoteResource(context);
-			item.Location = GetPrivateCatalogueSeriesUrl(false);
-			dp.AddResourceItem(item);
-			return dp;
-		}
+            //if dp does not exists, we create it
+            try {
+                dp = DataPackage.FromIdentifier(context, identifier);
+            } catch (Exception) {
+                return CreatePrivateDataPackage(identifier, name, location);
+            }
+
+            //if dp exists, we update the location
+            try {
+                dp.LoadItems();
+                var dpi = dp.Items.GetItemsAsList()[0];
+                if (!location.Equals(dpi.Location)) {
+                    dpi.Location = location;
+                    dpi.Store();
+                }
+            } catch (Exception) {
+                //if location does not exists, we create it
+                var item = new RemoteResource(context);
+                item.Location = location;
+                dp.AddResourceItem(item);
+            }
+            return dp;
+        }
 
         /// <summary>
         /// Gets the private data package catalogue index.
         /// </summary>
         /// <returns>The private data package catalogue index.</returns>
         public DataPackage GetPrivateDataPackageCatalogueIndex(){
-            DataPackage dp = null;
-            try{
-                dp = DataPackage.FromIdentifier(context, "_index_" + this.Username);
-            }catch(Exception){
-                dp = CreatePrivateDataPackageCatalogueIndex();
-            }
-            return dp;
+            var identifier = "_index_" + this.Username;
+            var name = "My Index";
+            var location = GetPrivateCatalogueIndexUrl(false);
+            return GetPrivateDataPackage(identifier, name, location);
         }
 
         /// <summary>
@@ -601,13 +604,10 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The private data package catalogue results.</returns>
         public DataPackage GetPrivateDataPackageCatalogueProducts() {
-			DataPackage dp = null;
-			try {
-				dp = DataPackage.FromIdentifier(context, "_products_" + this.Username);
-			} catch (Exception) {
-				dp = CreatePrivateDataPackageCatalogueProducts();
-			}
-			return dp;
+            var identifier = "_products_" + this.Username;
+            var name = "My Products";
+            var location = GetPrivateCatalogueProductsUrl(false);
+            return GetPrivateDataPackage(identifier, name, location);
 		}
 
 		/// <summary>
@@ -615,13 +615,10 @@ namespace Terradue.Tep {
 		/// </summary>
 		/// <returns>The private data package catalogue series.</returns>
 		public DataPackage GetPrivateDataPackageCatalogueSeries() {
-			DataPackage dp = null;
-			try {
-				dp = DataPackage.FromIdentifier(context, "_series_" + this.Username);
-			} catch (Exception) {
-				dp = CreatePrivateDataPackageCatalogueSeries();
-			}
-			return dp;
+            var identifier = "_series_" + this.Username;
+            var name = "My Results";
+            var location = GetPrivateCatalogueSeriesUrl(false);
+            return GetPrivateDataPackage(identifier, name, location);
 		}
 
         /// <summary>
