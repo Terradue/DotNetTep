@@ -233,6 +233,8 @@ namespace Terradue.Tep
 				"\"sig\":\"" + sig + "\"" + 
 				"}";
 
+            log.WarnFormat("Sharing to store : {0}", payload);
+
 			using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
 				streamWriter.Write(json);
 				streamWriter.Flush();
