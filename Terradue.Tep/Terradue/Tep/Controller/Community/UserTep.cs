@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Terradue.Portal;
 using Terradue.OpenNebula;
 using Terradue.Github;
@@ -176,7 +176,6 @@ namespace Terradue.Tep {
                 github.Store();
 
                 CreatePrivateDomain();
-                CreatePrivateThematicApp();
             }
         }
 
@@ -271,6 +270,7 @@ namespace Terradue.Tep {
             GetPrivateDataPackageCatalogueIndex();
             GetPrivateDataPackageCatalogueProducts();
             GetPrivateDataPackageCatalogueSeries();
+            CreatePrivateThematicApp();
         }
 
         /// <summary>
@@ -469,6 +469,17 @@ namespace Terradue.Tep {
             res.Location = url;
             app.AddResourceItem(res);
             return app;
+        }
+
+        public void PrivateSanityCheck(){
+            if (string.IsNullOrEmpty(TerradueCloudUsername)) LoadCloudUsername();
+
+            if (!string.IsNullOrEmpty(TerradueCloudUsername)) {
+                GetPrivateThematicApp();
+                GetPrivateDataPackageCatalogueIndex();
+                GetPrivateDataPackageCatalogueProducts();
+                GetPrivateDataPackageCatalogueSeries();
+            }
         }
 
         /// <summary>
