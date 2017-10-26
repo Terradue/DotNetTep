@@ -361,8 +361,8 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         public bool IsSharedToUser() {
-            var sharedUsersIds = this.GetUsersWithPermissions();
-            return sharedUsersIds != null && (sharedUsersIds.Count > 1 || !sharedUsersIds.Contains(this.Id));
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Id));
         }
 
         /// <summary>

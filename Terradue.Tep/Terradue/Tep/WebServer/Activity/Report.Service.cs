@@ -147,7 +147,7 @@ namespace Terradue.Tep.WebServer.Services {
                     csv.Append(reader.GetString(0) + Environment.NewLine);
                 }
             }
-            reader.Close();
+            context.CloseQueryResult(reader, dbConnection);
             csv.Append(Environment.NewLine);
         }
 
@@ -203,7 +203,7 @@ namespace Terradue.Tep.WebServer.Services {
                             csv.Append(Environment.NewLine);
                         }
                     }
-                    reader.Close();
+                    context.CloseQueryResult(reader, dbConnection);
                 }
             }
             csv.Append(Environment.NewLine);
@@ -223,7 +223,7 @@ namespace Terradue.Tep.WebServer.Services {
                     s += String.Format("{0},{1}{2}",reader.GetString(0), reader.GetInt32(1), Environment.NewLine);
                 }
             }
-            reader.Close();
+            context.CloseQueryResult(reader, dbConnection);
             csv.Append(String.Format("Active users (logged more than once) between {0} and {1},{2}{3}", startdate, enddate, nbActU, Environment.NewLine));
             if (nbActU > 0) {
                 csv.Append("Username,Nb of logins" + Environment.NewLine);
@@ -242,7 +242,7 @@ namespace Terradue.Tep.WebServer.Services {
             while (reader.Read()) {
                 ids.Add(reader.GetInt32(1));
             }
-            reader.Close();
+            context.CloseQueryResult(reader, dbConnection);
 
             List<WpsJob> jobs = new List<WpsJob>();
             foreach (int id in ids) {
@@ -298,7 +298,7 @@ namespace Terradue.Tep.WebServer.Services {
                         csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
                     }
                 }
-                reader.Close();
+                context.CloseQueryResult(reader, dbConnection);
                 csv.Append(Environment.NewLine);
 
                 //Nb of wpsjobs per group
@@ -314,7 +314,7 @@ namespace Terradue.Tep.WebServer.Services {
                         csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
                     }
                 }
-                reader.Close();
+                context.CloseQueryResult(reader, dbConnection);
                 csv.Append(Environment.NewLine);
 
                 //Nb of wpsjobs per service
@@ -331,7 +331,7 @@ namespace Terradue.Tep.WebServer.Services {
                         services.Add(new KeyValuePair<string, int>(reader.GetString(0), reader.GetInt32(1)));
                     }
                 }
-                reader.Close();
+                context.CloseQueryResult(reader, dbConnection);
                 foreach (KeyValuePair<string,int> kv in services) {
                     string wpsname = "";
                     try {
@@ -372,7 +372,7 @@ namespace Terradue.Tep.WebServer.Services {
                     lines.Add(string.Format("{0},{1},{2}",reader.GetString(1), reader.GetString(2).Replace(",","\\,"), reader.GetDateTime(3)));
                 }
             }
-            reader.Close();
+            context.CloseQueryResult(reader, dbConnection);
             csv.Append(String.Format("Data packages created between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
             if (ids.Count > 0) {
                 csv.Append("Username,Data package name,Data package creation date, Shared" + Environment.NewLine);
@@ -395,7 +395,7 @@ namespace Terradue.Tep.WebServer.Services {
                         csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
                     }
                 }
-                reader.Close();
+                context.CloseQueryResult(reader, dbConnection);
                 csv.Append(Environment.NewLine);
                 csv.Append(string.Format("Number of Data package created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 sql = String.Format("SELECT grp.name, COUNT(resourceset.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN resourceset ON resourceset.id_usr=usr_grp.id_usr " +
@@ -409,7 +409,7 @@ namespace Terradue.Tep.WebServer.Services {
                         csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
                     }
                 }
-                reader.Close();
+                context.CloseQueryResult(reader, dbConnection);
             }
 
             //shared data packages
@@ -425,7 +425,7 @@ namespace Terradue.Tep.WebServer.Services {
                     ids.Add(reader.GetInt32(0));
                 }
             }
-            reader.Close();
+            context.CloseQueryResult(reader, dbConnection);
             if (ids.Count > 0) {
                 csv.Append(String.Format("Data packages shared between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
                 csv.Append("Username,Data package name,Data package creation date, Data package shared date" + Environment.NewLine);

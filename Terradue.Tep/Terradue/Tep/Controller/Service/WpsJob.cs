@@ -275,8 +275,8 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         public bool IsSharedToUser() {
-            var sharedUsersIds = this.GetUsersWithPermissions();
-            return sharedUsersIds != null && (sharedUsersIds.Count > 1 || !sharedUsersIds.Contains(this.Owner.Id));
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Owner.Id));
         }
 
         /// <summary>
@@ -285,7 +285,7 @@ namespace Terradue.Tep {
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         /// <param name="id">Identifier.</param>
         public bool IsSharedToUser(int id) { 
-            var sharedUsersIds = this.GetUsersWithPermissions();
+            var sharedUsersIds = this.GetAuthorizedUserIds();
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 
