@@ -777,7 +777,7 @@ namespace Terradue.Tep {
                 statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
             }
 
-            if (string.IsNullOrEmpty(parameters ["basicrequest"]) || parameters ["basicrequest"] != "true") {
+            if (string.IsNullOrEmpty(parameters ["basic"]) || parameters ["basic"] != "true") {
                 result = GetFullWpsJobAtomItem();
                 if (result == null) {
                     result = new AtomItem();
