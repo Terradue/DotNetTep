@@ -75,7 +75,6 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogInfo(this,string.Format("/job/wps/search GET"));
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            wpsjobs.AccessLevel = EntityAccessLevel.Privilege;//for admin not to get all items when visibility is set
             wpsjobs.AddSort("Id", SortDirection.Descending);
 
             // Load the complete request
