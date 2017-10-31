@@ -29,6 +29,8 @@ namespace Terradue.Tep.WebServer.Services {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        private static readonly object _Lock = new object();
+
         public object Get(SearchWPSProviders request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.AccessLevel = EntityAccessLevel.Administrator;
@@ -337,7 +339,8 @@ namespace Terradue.Tep.WebServer.Services {
                         //calculation is done from the rates associated to the wps service
 
                         var policy = new CacheItemPolicy();
-                        policy.SlidingExpiration = new TimeSpan(0, 0, 10, 0);//we keep it 10min in memory, then user must do a new one
+                        policy.Priority = CacheItemPriority.NotRemovable;
+                        policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1);
 
                         executeResponse = wps.Execute(executeInput);
 
@@ -353,7 +356,20 @@ namespace Terradue.Tep.WebServer.Services {
                                 if (accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
                                 //calculate estimation with rates
                                 var estimation = Convert.ToInt32(Rates.GetBalanceFromRates(context, wps.Provider, accountings[0].quantity));
-                                cache.Set(cachekey, estimation.ToString(), policy);
+                                //cache.Set(cachekey, estimation.ToString(), policy);
+
+                                var cachedItem = cache[cachekey] as string;
+                                if (String.IsNullOrEmpty(cachedItem)) { // if no cache yet, or is expired
+                                    lock (_Lock) { // we lock only in this case
+                                                   // you have to make one more check, another thread might have put item in cache already
+                                        cachedItem = cache[cachekey] as string;
+                                        if (String.IsNullOrEmpty(cachedItem)) {
+                                            //get the data. take 100ms
+                                            cache.Set(cachekey, estimation.ToString(), policy);
+                                        }
+                                    }
+                                }
+
                                 var ldata = new LiteralDataType();
                                 ldata.Value = estimation.ToString();
                                 data.Item = ldata;
