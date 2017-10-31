@@ -234,7 +234,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
 		public object Get(ThematicAppEditorGetRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebThematicAppEditor result = null;
 			context.Open();
             try{
@@ -265,7 +265,7 @@ namespace Terradue.Tep.WebServer.Services {
 		}
 
         public object Post(ThematicAppEditorPostRequestTep request) {
-			IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			WebThematicAppEditor result = null;
 			context.Open();
             try{
@@ -280,12 +280,13 @@ namespace Terradue.Tep.WebServer.Services {
 
 	            var user = UserTep.FromId(context, context.UserId);
                 var index = string.IsNullOrEmpty(request.Index) ? user.TerradueCloudUsername : request.Index;
+                var apikey = string.IsNullOrEmpty(request.ApiKey) ? user.GetSessionApiKey() : request.ApiKey;
 
                 context.LogDebug(this, string.Format("/app/editor POST Identifier='{0}', Index='{1}'", request.Identifier, index));
                 if(string.IsNullOrEmpty(index)) throw new Exception("Unable to POST to empty index");
 				//post to catalogue
 				try {
-	                CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.TerradueCloudUsername, request.ApiKey);
+	                CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.TerradueCloudUsername, apikey);
 				} catch (Exception e) {
 					throw new Exception("Unable to POST to " + index + " - " + e.Message);
 				}

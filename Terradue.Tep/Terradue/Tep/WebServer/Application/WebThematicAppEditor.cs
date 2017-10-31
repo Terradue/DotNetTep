@@ -135,7 +135,7 @@ namespace Terradue.Tep.WebServer {
                         this.Categories.Add(new WebThematicAppCategory{ Label = cat.Label, Term = cat.Name});
                         break;
                     default:
-                        this.Categories.Add(new WebThematicAppCategory { Label = cat.Label, Term = "keyword" });
+                        this.Categories.Add(new WebThematicAppCategory { Label = cat.Label, Term = cat.Name });
                         break;
                 }
             }
@@ -258,10 +258,19 @@ namespace Terradue.Tep.WebServer {
             });
 
             //categories
+            bool hasAppCat = false;
             foreach(var cat in this.Categories){
                 entry.Categories.Add(new ServiceModel.Syndication.SyndicationCategory{
                     Label = cat.Label,
                     Name = cat.Term
+                });
+                if (cat.Label == "App") hasAppCat = true;
+            }
+            //Add default category "App"
+            if (!hasAppCat) {
+                entry.Categories.Add(new ServiceModel.Syndication.SyndicationCategory {
+                    Label = "App",
+                    Name = "App"
                 });
             }
 
