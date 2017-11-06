@@ -45,6 +45,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
             EntityList<ActivityTep> activities = new EntityList<ActivityTep>(context);
+            activities.AddSort("CreationTime", SortDirection.Descending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
