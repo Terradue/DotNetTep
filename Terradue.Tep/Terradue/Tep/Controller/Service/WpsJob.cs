@@ -823,6 +823,9 @@ namespace Terradue.Tep {
 
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
+            result.Categories.Add(new SyndicationCategory("provider", null, this.Provider != null ? this.Provider.Identifier : ""));
+            result.Categories.Add(new SyndicationCategory("process", null, this.Process != null ? this.Process.Identifier : ""));
+            result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
 
             return result;
         }
