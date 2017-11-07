@@ -241,9 +241,9 @@ namespace Terradue.Tep {
                 this.AccessKey = Guid.NewGuid().ToString();
             }
             base.Store();
-            if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
-                context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
-            }
+            //if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
+            //    context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
+            //}
         }
 
         /// <summary>

@@ -66,6 +66,7 @@ namespace Terradue.Tep.WebServer.Services {
                         try{
                             var ios = OpenSearchFactory.FindOpenSearchable(settings, new Uri(community.AppsLink));
                             osentities.Add(ios);    
+                            context.LogDebug(this, string.Format("Apps search -- Add '{0}'",community.AppsLink));
                         }catch(Exception e){
                             context.LogError(this, e.Message);
                         }
@@ -85,6 +86,7 @@ namespace Terradue.Tep.WebServer.Services {
 						try {
 							var ios = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
 							osentities.Add(ios);
+                            context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
 						} catch (Exception e) {
 							context.LogError(this, e.Message);
 						}
@@ -101,6 +103,7 @@ namespace Terradue.Tep.WebServer.Services {
                         try{
                             var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
                             osentities.Add(sgOs);
+                            context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
                         }catch(Exception e){
                             context.LogError(this, e.Message);
                         }
