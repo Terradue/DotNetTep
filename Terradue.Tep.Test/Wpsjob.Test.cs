@@ -38,17 +38,14 @@ namespace Terradue.Tep.Test {
             UserTep usr1 = new UserTep(context);
             usr1.Username = "testusr1";
             usr1.Store();
-            usr1.CreatePrivateDomain();
 
             UserTep usr2 = new UserTep(context);
             usr2.Username = "testusr2";
             usr2.Store();
-            usr2.CreatePrivateDomain();
 
             UserTep usr3 = new UserTep(context);
             usr3.Username = "testusr3";
             usr3.Store();
-            usr3.CreatePrivateDomain();
 
             //create domains
             Domain domain = new Domain(context);

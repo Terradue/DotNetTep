@@ -38,17 +38,14 @@ namespace Terradue.Tep.Test {
             UserTep usr1 = new UserTep(context);
             usr1.Username = "testusr1";
             usr1.Store();
-            usr1.CreatePrivateDomain();
 
             UserTep usr2 = new UserTep(context);
             usr2.Username = "testusr2";
             usr2.Store();
-            usr2.CreatePrivateDomain();
 
             UserTep usr3 = new UserTep(context);
             usr3.Username = "testusr3";
             usr3.Store();
-            usr3.CreatePrivateDomain();
 
             //create communities
             ThematicCommunity community1 = new ThematicCommunity(context);
@@ -233,6 +230,41 @@ namespace Terradue.Tep.Test {
                 communities = new CommunityCollection(context);
                 communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
+
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void SearchAllCommunities() {
+            var ose = MasterCatalogue.OpenSearchEngine;
+            var parameters = new NameValueCollection();
+
+            context.AccessLevel = EntityAccessLevel.Privilege;
+            var usr1 = User.FromUsername(context, "testusr1");
+            context.StartImpersonation(usr1.Id);
+
+            try {
+                var communities = new CommunityCollection(context);
+                communities.Identifier = "community";
+                communities.OpenSearchEngine = ose;
+                var osr = ose.Query(communities, parameters);
+                Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
+
+                parameters.Set("q", "public");
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
+
+                parameters.Set("q", "public*");
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
+
+                parameters.Set("q","*");
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
 
