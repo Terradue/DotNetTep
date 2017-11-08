@@ -241,9 +241,11 @@ namespace Terradue.Tep {
                 this.AccessKey = Guid.NewGuid().ToString();
             }
             base.Store();
-            //if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
-            //    context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
-            //}
+            if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
+                var count = context.GetQueryIntegerValue(String.Format("SELECT count(*) FROM {3} WHERE id_{2}={0} AND id_usr={1};", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
+                if(count == 0)
+                    context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
+            }
         }
 
         /// <summary>
