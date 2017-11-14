@@ -68,9 +68,6 @@
       <HintPath>..\packages\Terradue.OpenNebula.WebService.1.0.1\lib\net40\Terradue.OpenNebula.WebService.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
-    <Reference Include="Terradue.OpenSearch.Twitter">
-      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.0.11\lib\net40\Terradue.OpenSearch.Twitter.dll</HintPath>
-    </Reference>
     <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -80,26 +77,17 @@
     <Reference Include="Terradue.Metadata">
       <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>
     </Reference>
-	<Reference Include="Terradue.News">
-      <HintPath>..\packages\Terradue.News.1.0.14\lib\net40\Terradue.News.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.OpenNebula">
       <HintPath>..\packages\Terradue.OpenNebula.1.0.2\lib\net40\Terradue.OpenNebula.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
       <HintPath>..\packages\Terradue.GeoJson.1.8.6250\lib\net45\Terradue.GeoJson.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.ServiceModel.Ogc">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.1.1.6\lib\net40\Terradue.ServiceModel.Ogc.dll</HintPath>
-    </Reference>
 	<Reference Include="NuGet4Mono">
       <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.exe</HintPath>
     </Reference>
     <Reference Include="NuGet4Mono.Extensions">
       <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.OpenSearch.GeoJson">
-      <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.17\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Syndication">
       <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
@@ -138,9 +126,6 @@
     <Reference Include="NuGet.Core">
       <HintPath>..\packages\NuGet.Core.2.14.0\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Authentication.Umsso">
-      <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.8\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
-    </Reference>
     <Reference Include="MathNet.Numerics">
       <HintPath>..\packages\MathNet.Numerics.3.17.0\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
@@ -149,9 +134,6 @@
     </Reference>
     <Reference Include="Terradue.OpenSearch.RdfEO">
       <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.3.9\lib\net45\Terradue.OpenSearch.RdfEO.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data">
       <HintPath>..\packages\MySql.Data.6.9.6\lib\net45\MySql.Data.dll</HintPath>
@@ -198,6 +180,33 @@
     </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.15.5\lib\net45\Terradue.OpenSearch.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Authentication.Umsso">
+      <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.10\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.ServiceModel.Ogc">
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.2.0.6521\lib\net45\Terradue.ServiceModel.Ogc.dll</HintPath>
+    </Reference>
+    <Reference Include="Hammock.ClientProfile">
+      <HintPath>..\packages\TweetSharp.2.3.1\lib\4.0\Hammock.ClientProfile.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\TweetSharp.2.3.1\lib\4.0\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="TweetSharp">
+      <HintPath>..\packages\TweetSharp.2.3.1\lib\4.0\TweetSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch.Twitter">
+      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.1.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.News">
+      <HintPath>..\packages\Terradue.News.1.1.0\lib\net45\Terradue.News.dll</HintPath>
+    </Reference>
+    <Reference Include="HtmlAgilityPack">
+      <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch.GeoJson">
+      <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.19\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -339,6 +348,13 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
+    <None Include="modules\umsso\www\register.aspx" />
+    <None Include="modules\umsso\etc\shibboleth\attribute-policy.xml" />
+    <None Include="modules\umsso\etc\shibboleth\attribute-map.xml" />
+    <None Include="modules\umsso\db\db-create.sql" />
+    <None Include="modules\umsso\db\db-1.4#.sql" />
+    <None Include="modules\umsso\db\db-1.3#.sql" />
+    <None Include="modules\news\db\db-create.sql" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />

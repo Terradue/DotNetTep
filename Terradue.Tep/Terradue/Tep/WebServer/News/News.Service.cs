@@ -45,8 +45,8 @@ namespace Terradue.Tep.WebServer.Services {
                 }catch(Exception){}
 
                 try{
-                    List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
-                    foreach(TwitterFeed twitter in twitters) osentities.Add(twitter);
+                    var twitters = TwitterNews.LoadTwitterCollection(context);
+                    osentities.Add(twitters);
                 }catch(Exception){}
 
                 try{
