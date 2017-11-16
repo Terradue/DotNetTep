@@ -196,11 +196,7 @@ namespace Terradue.Tep
                 .ToArray();
             url.Query = string.Join("&", array);
 
-            MemoryOpenSearchRequest request = new MemoryOpenSearchRequest(new OpenSearchUrl(url.ToString()), querySettings.PreferredContentType);
-
-            Stream input = request.MemoryInputStream;
-
-            GenerateCatalogueAtomFeed(input, parameters);
+            AtomOpenSearchRequest request = new AtomOpenSearchRequest(new OpenSearchUrl(url.ToString()), GenerateCatalogueAtomFeed);
 
             return request;
         }
@@ -272,7 +268,7 @@ namespace Terradue.Tep
         /// </summary>
         /// <param name="stream">Stream.</param>
         /// <param name="parameters">Parameters.</param>
-        public void GenerateCatalogueAtomFeed(Stream stream, NameValueCollection parameters) {
+        public AtomFeed GenerateCatalogueAtomFeed(NameValueCollection parameters) {
             UriBuilder myUrl = new UriBuilder(context.BaseUrl + "/" + Name);
             string[] queryString = Array.ConvertAll(parameters.AllKeys, key => String.Format("{0}={1}", key, parameters[key]));
             myUrl.Query = string.Join("&", queryString);
@@ -324,13 +320,7 @@ namespace Terradue.Tep
 
             feed.Items = items;
 
-            //Atomizable.SerializeToStream ( res, stream.OutputStream );
-            var sw = XmlWriter.Create(stream);
-            Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter(feed.Feed);
-            atomFormatter.WriteTo(sw);
-            sw.Flush();
-            sw.Close();
-
+            return feed;
         }
 
         public static void ProxyOpenSearchResult(IOpenSearchable entity, OpenSearchRequest request, IOpenSearchResultCollection osr) {
