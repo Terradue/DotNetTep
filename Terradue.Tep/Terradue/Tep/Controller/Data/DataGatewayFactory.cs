@@ -123,7 +123,7 @@ namespace Terradue.Tep
             }
 
             urib = new UriBuilder(dataGatewayBaseUrl);
-            urib.Path += string.Format("/api/");
+            urib.Path += string.Format("/api/{0}/", baseUri.Host);
 
             downloadUriCache.Set(new CacheItem(baseUri.ToString(), urib.Uri), new CacheItemPolicy() { AbsoluteExpiration = DateTimeOffset.Now.AddHours(1) });
 
