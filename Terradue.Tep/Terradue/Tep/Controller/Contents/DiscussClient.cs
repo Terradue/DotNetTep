@@ -29,9 +29,29 @@ namespace Terradue.Tep {
         /// <param name="name">Name.</param>
         public Category GetCategory(string name) {
             CategoryList categories = GetCategories();
-            foreach (var category in categories.categories) {
-                if (category.name == name) return category;
+
+            if(name.Contains("/")){
+                //we get the sub domain name
+                var subnames = name.Split("/".ToCharArray());
+                if (subnames.Length != 2) throw new Exception("Sorry, we do not manage this discourse category : " + name);
+                foreach (var category in categories.categories) {
+                    if (category.slug == subnames[0]){
+                        var subids = category.subcategory_ids;
+                        var siteInfoCategories = GetCategoriesFromSiteInfo();
+                        foreach (var siteInfoCategory in siteInfoCategories){
+                            if(siteInfoCategory.slug == subnames[1] && subids.Contains(siteInfoCategory.id)){
+                                return siteInfoCategory;
+                            }
+                        }
+                    }
+                }
+            } else {
+                foreach (var category in categories.categories) {
+                    if (category.slug == name) return category;
+                }    
             }
+
+
             return null;
         }
 
@@ -58,6 +78,40 @@ namespace Terradue.Tep {
                 throw e;
             }
             return categories.category_list;
+        }
+
+        /// <summary>
+        /// Gets the categories from site info.
+        /// </summary>
+        /// <returns>The categories from site info.</returns>
+        public List<Category> GetCategoriesFromSiteInfo() {
+            var siteInfo = GetSiteInfo();
+            return siteInfo.categories;
+        }
+
+        /// <summary>
+        /// Gets the site info.
+        /// </summary>
+        /// <returns>The site info.</returns>
+        public DiscourseSiteInfo GetSiteInfo() {
+            DiscourseSiteInfo siteInfo = new DiscourseSiteInfo();
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/site.json", this.Host));
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Proxy = null;
+
+            try {
+                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        string result = streamReader.ReadToEnd();
+                        siteInfo = JsonSerializer.DeserializeFromString<DiscourseSiteInfo>(result);
+                    }
+                }
+            } catch (Exception e) {
+                throw e;
+            }
+            return siteInfo;
         }
 
         /// <summary>
@@ -97,6 +151,14 @@ namespace Terradue.Tep {
             }
             return response;
         }
+    }
+
+    [DataContract]
+    public class DiscourseSiteInfo { 
+        [DataMember]
+        public List<Category> categories { get; set; }
+
+        //TODO: To be Completed
     }
 
     [DataContract]
