@@ -20,7 +20,7 @@ namespace Terradue.Tep
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         static MemoryCache downloadUriCache = new MemoryCache("downloadUriCache");
         static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
-        static string dataGatewayBaseUrl = AppSettings ["DataGatewayBaseUrl"];
+        static string dataGatewayBaseUrl = AppSettings["DataGatewayBaseUrl"];
         static string dataGatewayShareUrl = AppSettings["DataGatewayShareUrl"];
         static string dataGatewaySecretKey = AppSettings["DataGatewaySecretKey"];
 
@@ -171,6 +171,8 @@ namespace Terradue.Tep
         /// <param name="uri">URI.</param>
         public static string RewriteExternalPath (Uri uri) {
             var path = uri.AbsolutePath;
+
+            if (AppSettings["DataGatewaySubstitutions"] == null) return path;
 
             List<DataGatewaySubstitution> dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>> (AppSettings ["DataGatewaySubstitutions"]);
             foreach (var sub in dataGatewaySubstitutions) {
