@@ -38,11 +38,11 @@ namespace Terradue.Tep.WebServer.Services {
 
                 List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
-                try{
-                    EntityList<Article> articles = new EntityList<Article>(context);
-                    articles.Load();
-                    osentities.Add(articles);
-                }catch(Exception){}
+                //try{
+                //    EntityList<Article> articles = new EntityList<Article>(context);
+                //    articles.Load();
+                //    osentities.Add(articles);
+                //}catch(Exception){}
 
                 try{
                     var twitters = TwitterNews.LoadTwitterCollection(context);
