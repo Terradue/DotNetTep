@@ -330,9 +330,13 @@ namespace Terradue.Tep.WebServer.Services
                     content.Type = "image/png";
                     offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/png";
                     break;
+                case "tgz":
+                    content.Type = "application/tar+gzip";
+                    offering.Code = "http://www.opengis.net/spec/owc-atom/1.0/req/tgz";
+                    break;
                 default:
                     content.Type = "application/octet-stream";
-                    offering.Code = null;
+                    offering.Code = "";
                     break;
                 }
 
