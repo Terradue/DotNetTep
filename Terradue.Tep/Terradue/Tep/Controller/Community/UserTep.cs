@@ -19,6 +19,7 @@ using System.Linq;
 using ServiceStack.Text;
 using System.Security.Cryptography;
 using System.Runtime.Serialization;
+using System.Runtime.Caching;
 
 namespace Terradue.Tep {
 
@@ -34,6 +35,8 @@ namespace Terradue.Tep {
     /// \ingroup TepCommunity
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class UserTep : User {
+
+        private static readonly object _Lock = new object();
 
         /// <summary>
         /// Gets or sets the private domain of the user.
@@ -749,19 +752,34 @@ namespace Terradue.Tep {
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 
             if (!string.IsNullOrEmpty(parameters["correlatedTo"])) {
+                ObjectCache cache = MemoryCache.Default;
                 var self = parameters["correlatedTo"];
-                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), settings).Entity;
 
-                if (entity is EntityList<WpsJob>) {
-                    var entitylist = entity as EntityList<WpsJob>;
+                var cachedItem = cache[self];
+                if (cachedItem == null) { // if no cache yet, or is expired
+                    lock (_Lock) { // we lock only in this case
+                                   // you have to make one more check, another thread might have put item in cache already
+                        cachedItem = cache[self];
+                        if (cachedItem == null) {
+                            var policy = new CacheItemPolicy();
+                            policy.Priority = CacheItemPriority.NotRemovable;
+                            policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1);
+                            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                            cachedItem = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), settings).Entity;
+                            cache.Set(self, cachedItem, policy);
+                        }
+                    }
+                }
+
+                if (cachedItem is EntityList<WpsJob>) {
+                    var entitylist = cachedItem as EntityList<WpsJob>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var job = items[0];
                         if (job.Owner.Id == this.Id || !job.IsSharedToUser(this.Id)) return null;
                     }
-                } else if (entity is EntityList<DataPackage>) {
-                    var entitylist = entity as EntityList<DataPackage>;
+                } else if (cachedItem is EntityList<DataPackage>) {
+                    var entitylist = cachedItem as EntityList<DataPackage>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var dp = items[0];
