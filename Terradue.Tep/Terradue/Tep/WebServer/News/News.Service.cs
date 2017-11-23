@@ -82,22 +82,22 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/news/feeds GET"));
 
                 //get internal news
-                try{
-                    EntityList<Article> news = new EntityList<Article>(context);
-                    news.Load();
-                    foreach(Terradue.Portal.Article f in news){
-                        if(f.GetType() == typeof(Article))
-                            result.Add(new WebNews(f));
-                    }
-                }catch(Exception){}
+                //try{
+                //    EntityList<Article> news = new EntityList<Article>(context);
+                //    news.Load();
+                //    foreach(Terradue.Portal.Article f in news){
+                //        if(f.GetType() == typeof(Article))
+                //            result.Add(new WebNews(f));
+                //    }
+                //}catch(Exception){}
 
                 //get twitter news
-                try{
-                    List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
+                try {
+                    var twitterCollection = TwitterNews.LoadTwitterCollection(context);
+                    var twitters = twitterCollection.GetFeeds(new System.Collections.Specialized.NameValueCollection());
                     List<TwitterNews> tweetsfeeds = new List<TwitterNews>();
-                    foreach(TwitterFeed tweet in twitters) tweetsfeeds.AddRange(TwitterNews.FromFeeds(context, tweet.GetFeeds()));
-                    foreach(TwitterNews tweetfeed in tweetsfeeds) result.Add(new WebNews(tweetfeed));
-                }catch(Exception){}
+                    tweetsfeeds.AddRange(TwitterNews.FromFeeds(context, twitters));
+                } catch (Exception) { }
 
                 //get rss news
                 try{
