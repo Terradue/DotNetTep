@@ -159,13 +159,13 @@ namespace Terradue.Tep {
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
 			string identifier = this.Identifier;
 			string name = (this.Name != null ? this.Name : this.Identifier);
-			string text = (this.TextContent != null ? this.TextContent : "");
+			string text = (this.TextContent != null ? this.TextContent : name);
 
 			AtomItem atomEntry = null;
 			var entityType = EntityType.GetEntityType(typeof(Collection));
 			Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 			try {
-				atomEntry = new AtomItem(identifier, name, null, id.ToString(), DateTime.UtcNow);
+				atomEntry = new AtomItem(name, text, null, id.ToString(), DateTime.UtcNow);
 			} catch (Exception e) {
 				atomEntry = new AtomItem();
 			}
