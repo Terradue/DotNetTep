@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.Caching;
+using System.Threading;
 using System.Web;
 using System.Xml;
 using OpenGis.Wps;
@@ -29,7 +30,7 @@ namespace Terradue.Tep.WebServer.Services {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private static readonly object _Lock = new object();
+        static readonly ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
 
         public object Get(SearchWPSProviders request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
@@ -274,11 +275,82 @@ namespace Terradue.Tep.WebServer.Services {
             return response;
         }
 
+        /// <summary>
+        /// Reads the cache.
+        /// </summary>
+        /// <returns>The cache.</returns>
+        /// <param name="key">Key.</param>
+        private string ReadCache(string key, IfyContext context = null) {
+            if (context != null) context.LogDebug(this, string.Format("Read Cache - {0}", key));
+            //First we do a read lock to see if it already exists, this allows multiple readers at the same time.
+            cacheLock.EnterReadLock();
+            try {
+                //Returns null if the string does not exist, prevents a race condition where the cache invalidates between the contains check and the retreival.
+                var cachedString = MemoryCache.Default.Get(key, null) as string;
+
+                if (cachedString != null) {
+                    if (context != null) context.LogDebug(this, string.Format("Cache found : {0}", cachedString));
+                    return cachedString;
+                }
+                if (context != null) context.LogDebug(this, string.Format("Cache not found"));
+            } finally {
+                cacheLock.ExitReadLock();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Writes the cache.
+        /// </summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value.</param>
+        private void WriteCache(string key, string value, IfyContext context = null){
+            if (context != null) context.LogDebug(this, string.Format("Write Cache - {0} - {1}",key,value));
+
+            //First we do a read lock to see if it already exists, this allows multiple readers at the same time.
+            cacheLock.EnterReadLock();
+            try {
+                //Returns null if the string does not exist, prevents a race condition where the cache invalidates between the contains check and the retreival.
+                var cachedString = MemoryCache.Default.Get(key, null) as string;
+                if (cachedString != null) {
+                    if (context != null) context.LogDebug(this, string.Format("Cache already exists, we do not create it"));
+                    return;
+                }
+            } finally {
+                cacheLock.ExitReadLock();
+            }
+
+            //Only one UpgradeableReadLock can exist at one time, but it can co-exist with many ReadLocks
+            cacheLock.EnterUpgradeableReadLock();
+            try {
+                //We need to check again to see if the string was created while we where waiting to enter the EnterUpgradeableReadLock
+                var cachedString = MemoryCache.Default.Get(key, null) as string;
+                if (cachedString != null) {
+                    if (context != null) context.LogDebug(this, string.Format("Cache already exists (2), we do not create it"));
+                    return;
+                }
+
+                //The entry still does not exist so we need to create it and enter the write lock
+                cacheLock.EnterWriteLock(); //This will block till all the Readers flush.
+                try {
+                    CacheItemPolicy cip = new CacheItemPolicy() {
+                        AbsoluteExpiration = new DateTimeOffset(DateTime.Now.AddMinutes(1))
+                    };
+                    MemoryCache.Default.Set(key, value, cip);
+                    if (context != null) context.LogDebug(this, string.Format("Cache added"));
+                    return;
+                } finally {
+                    cacheLock.ExitWriteLock();
+                }
+            } finally {
+                cacheLock.ExitUpgradeableReadLock();
+            }
+        }
+
         private object Execute(IfyContext context, Execute executeInput){
             WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, executeInput.Identifier.Value);
             object executeResponse = null;
             var stream = new System.IO.MemoryStream();
-            ObjectCache cache = MemoryCache.Default;
             WpsJob wpsjob = null;
 
             try{
@@ -338,10 +410,6 @@ namespace Terradue.Tep.WebServer.Services {
                         //we do a quotation request to the WPS service and then put the calculated estimation in the response
                         //calculation is done from the rates associated to the wps service
 
-                        var policy = new CacheItemPolicy();
-                        policy.Priority = CacheItemPriority.NotRemovable;
-                        policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1);
-
                         executeResponse = wps.Execute(executeInput);
 
                         if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
@@ -356,19 +424,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 if (accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
                                 //calculate estimation with rates
                                 var estimation = Convert.ToInt32(Rates.GetBalanceFromRates(context, wps.Provider, accountings[0].quantity));
-                                //cache.Set(cachekey, estimation.ToString(), policy);
-
-                                var cachedItem = cache[cachekey] as string;
-                                if (String.IsNullOrEmpty(cachedItem)) { // if no cache yet, or is expired
-                                    lock (_Lock) { // we lock only in this case
-                                                   // you have to make one more check, another thread might have put item in cache already
-                                        cachedItem = cache[cachekey] as string;
-                                        if (String.IsNullOrEmpty(cachedItem)) {
-                                            //get the data. take 100ms
-                                            cache.Set(cachekey, estimation.ToString(), policy);
-                                        }
-                                    }
-                                }
+                                WriteCache(cachekey,estimation.ToString(), context);
 
                                 var ldata = new LiteralDataType();
                                 ldata.Value = estimation.ToString();
@@ -382,7 +438,7 @@ namespace Terradue.Tep.WebServer.Services {
                     } else {
                         //we do a normal Execute request to a wps service which is quotable
                         //it means that the quotation must have been done (found in cache) and that user has enough credit
-						var quotation = cache[cachekey] as string;
+                        var quotation = ReadCache(cachekey, context);
                         if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
 
                         var balance = user.GetAccountingBalance();
