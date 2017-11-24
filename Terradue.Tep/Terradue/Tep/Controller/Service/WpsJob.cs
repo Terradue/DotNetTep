@@ -808,6 +808,7 @@ namespace Terradue.Tep {
             Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
+            result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             if (Owner.Id == context.UserId) {
                 //for owner only, we give the link to know with who the wpsjob is shared
                 //if shared with users
@@ -826,6 +827,7 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
+            result.Categories.Add(new SyndicationCategory("provider", null, this.WpsId));
             result.Categories.Add(new SyndicationCategory("provider", null, this.WpsId));
             string processname = "";
             try{
