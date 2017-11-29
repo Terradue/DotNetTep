@@ -259,13 +259,16 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(ShareGetRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
-                context.LogInfo(this,string.Format("/share GET url='{0}'", request.url));
+            context.LogInfo(this,string.Format("/share GET url='{0}'", request.url));
+
+            var AppSettings = System.Configuration.ConfigurationManager.AppSettings;
 
             var redirect = new UriBuilder(context.BaseUrl);
             redirect.Path = "geobrowser";
             string redirectUrl = redirect.Uri.AbsoluteUri + (!string.IsNullOrEmpty (request.id) ? "/?id=" + request.id : "/") + "#!";
 
-            Match match = Regex.Match(new Uri(request.url).LocalPath.Replace(new Uri(context.BaseUrl).LocalPath, ""), @"(/.*)(/?.*)/search");
+            var pathUrl = new Uri(request.url).LocalPath.Replace(new Uri(context.BaseUrl).LocalPath, "");
+            Match match = Regex.Match(pathUrl, @"(\/?.*)search(\/?.*)");
             if (match.Success) {
                 var resultType = match.Groups[1].Value.Trim('/');
                 if (resultType.Equals(EntityType.GetEntityType(typeof(Series)).Keyword)) {
@@ -281,7 +284,7 @@ namespace Terradue.Tep.WebServer.Services {
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword;
                 } else {
-                    if (request.url.StartsWith(context.GetConfigValue("catalog-baseurl"))) {
+                    if (request.url.StartsWith(AppSettings["CatalogBaseUrl"]) || request.url.StartsWith(AppSettings["RecastBaseUrl"])) {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         try {
