@@ -452,7 +452,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/job/wps/copy PUT Id='{0}'", request.Id));
 
-                WpsJob job = WpsJob.FromId (context, request.Id);
+                WpsJob job = WpsJob.FromIdentifier (context, request.Identifier);
 
                 WpsJob newjob = new WpsJob (context);
                 newjob.OwnerId = context.UserId;

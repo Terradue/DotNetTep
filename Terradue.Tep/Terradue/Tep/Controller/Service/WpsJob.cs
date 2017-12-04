@@ -824,6 +824,12 @@ namespace Terradue.Tep {
                 }
             }
 
+            try {
+                result.ElementExtensions.Add("Parameters", "http://standards.terradue.com", WpsJobParameter.GetList(this.Parameters));
+            } catch (Exception) { 
+                result.ElementExtensions.Add("Parameters", "http://standards.terradue.com", new List<WpsJobParameter>());
+            }
+
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
@@ -1030,6 +1036,28 @@ namespace Terradue.Tep {
         STAGED = 5, //wps job has been staged on store
         FAILED = 6, //wps job has failed
         COORDINATOR = 7 //wps job is a coordinator
+    }
+
+    [DataContract]
+    public class WpsJobParameter {
+
+        public WpsJobParameter() { }
+
+        public static List<WpsJobParameter> GetList(List<KeyValuePair<string,string>> parameters){
+            var result = new List<WpsJobParameter>();
+            if(parameters != null){
+                foreach(var p in parameters){
+                    result.Add(new WpsJobParameter{ Name = p.Key, Value = p.Value });
+                }
+            }
+            return result;
+        }
+
+        [DataMember]
+        string Name { get; set; }
+
+        [DataMember]
+        string Value { get; set; }
     }
 }
 
