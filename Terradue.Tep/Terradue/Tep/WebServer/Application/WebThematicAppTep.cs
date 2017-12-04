@@ -23,26 +23,26 @@ namespace Terradue.Tep.WebServer {
         public string Domain { get; set; }
     }
 
-    [Route("/apps", "POST", Summary = "create thematic App", Notes = "")]
-    public class ThematicAppCreateRequestTep : IReturn<WebThematicAppTep> {
-        [ApiMember(Name = "identifier", Description = "thematic app identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Identifier { get; set; }
+    //[Route("/apps", "POST", Summary = "create thematic App", Notes = "")]
+    //public class ThematicAppCreateRequestTep : IReturn<WebThematicAppTep> {
+    //    [ApiMember(Name = "identifier", Description = "thematic app identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+    //    public string Identifier { get; set; }
 
-        [ApiMember(Name = "title", Description = "thematic app title", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Title { get; set; }
+    //    [ApiMember(Name = "title", Description = "thematic app title", ParameterType = "query", DataType = "string", IsRequired = true)]
+    //    public string Title { get; set; }
 
-        [ApiMember(Name = "description", Description = "thematic app description", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Description { get; set; }
+    //    [ApiMember(Name = "description", Description = "thematic app description", ParameterType = "query", DataType = "string", IsRequired = true)]
+    //    public string Description { get; set; }
 
-        [ApiMember(Name = "icon", Description = "thematic app icon url", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Icon { get; set; }
+    //    [ApiMember(Name = "icon", Description = "thematic app icon url", ParameterType = "query", DataType = "string", IsRequired = true)]
+    //    public string Icon { get; set; }
 
-        [ApiMember(Name = "index", Description = "catalog index", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Index { get; set; }
+    //    [ApiMember(Name = "index", Description = "catalog index", ParameterType = "query", DataType = "string", IsRequired = true)]
+    //    public string Index { get; set; }
 
-        [ApiMember(Name = "url", Description = "external url of the thematic app", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Url { get; set; }
-    }
+    //    [ApiMember(Name = "url", Description = "external url of the thematic app", ParameterType = "query", DataType = "string", IsRequired = true)]
+    //    public string Url { get; set; }
+    //}
 
     public class WebThematicAppTep : WebDataPackageTep {
         

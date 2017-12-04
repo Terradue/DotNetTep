@@ -69,6 +69,9 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "ChronogramOfferingPresent", Description = "ChronogramOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
 		public bool ChronogramOfferingPresent { get; set; }
 
+        [ApiMember(Name = "TimeseriesOfferingPresent", Description = "TimeseriesOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool TimeseriesOfferingPresent { get; set; }
+
 		[ApiMember(Name = "StoreUploadOfferingPresent", Description = "StoreUploadOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
 		public bool StoreUploadOfferingPresent { get; set; }
 
@@ -200,9 +203,12 @@ namespace Terradue.Tep.WebServer {
                             if (!string.IsNullOrEmpty(nvc["tag"])) this.WpsServiceOfferingTags = nvc["tag"];
                         }
                         break;
-					case "http://www.terradue.com/spec/owc/1.0/req/atom/chronogram":
-						this.ChronogramOfferingPresent = true;
+                    case "http://www.terradue.com/spec/owc/1.0/req/atom/timeseries":
+                        this.TimeseriesOfferingPresent = true;
 						break;
+                    case "http://www.terradue.com/spec/owc/1.0/req/atom/chronogram":
+                        this.ChronogramOfferingPresent = true;
+                        break;
 					case "http://www.terradue.com/spec/owc/1.0/req/atom/storeupload":
 						this.StoreUploadOfferingPresent = true;
 						foreach (var operation in offering.Operations) {
@@ -328,6 +334,11 @@ namespace Terradue.Tep.WebServer {
 					Code = "http://www.terradue.com/spec/owc/1.0/req/atom/chronogram"
 				});
 			}
+            if (TimeseriesOfferingPresent) {
+                offerings.Add(new OwcOffering {
+                    Code = "http://www.terradue.com/spec/owc/1.0/req/atom/timeseries"
+                });
+            }
 			if (StoreUploadOfferingPresent) {
                 var datacontext = doc.CreateElement("datacontext");
                 datacontext.InnerText = StoreUploadOfferingContext;
