@@ -57,7 +57,11 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this, string.Format("/user/current GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
-                //user.PrivateSanityCheck();//we do it here, because we do not want to do on each Load(), and we are sure users always pass by here
+                try {
+                    user.PrivateSanityCheck();//we do it here, because we do not want to do on each Load(), and we are sure users always pass by here
+                }catch(Exception e){
+                    context.LogError(this, e.Message);
+                }
                 result = new WebUserTep(context, user, request.umsso);
                 context.Close();
             } catch (Exception e) {

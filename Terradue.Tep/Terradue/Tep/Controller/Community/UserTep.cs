@@ -273,7 +273,7 @@ namespace Terradue.Tep {
             GetPrivateDataPackageCatalogueIndex();
             GetPrivateDataPackageCatalogueProducts();
             GetPrivateDataPackageCatalogueSeries();
-            CreatePrivateThematicApp();
+            GetPrivateThematicApp();
         }
 
         /// <summary>
@@ -474,22 +474,11 @@ namespace Terradue.Tep {
             return app;
         }
 
-        public void PrivateSanityCheck(){
-            if (string.IsNullOrEmpty(TerradueCloudUsername)) LoadCloudUsername();
-
-            if (!string.IsNullOrEmpty(TerradueCloudUsername)) {
-                GetPrivateThematicApp();
-                GetPrivateDataPackageCatalogueIndex();
-                GetPrivateDataPackageCatalogueProducts();
-                GetPrivateDataPackageCatalogueSeries();
-            }
-        }
-
         /// <summary>
         /// Gets the private thematic app.
         /// </summary>
         /// <returns>The private thematic app.</returns>
-		public ThematicApplication GetPrivateThematicApp() {
+        public ThematicApplication GetPrivateThematicApp(bool loadItems = true) {
             var items = GetPrivateAppList();
 
             ThematicApplication app = null;
@@ -497,20 +486,36 @@ namespace Terradue.Tep {
                 app = CreatePrivateThematicApp();
             } else app = items[0];
 
-            app.LoadItems();
-            //add apikey to location
-            foreach (var item in app.Items) item.Location += "?apikey=" + GetSessionApiKey();
+            if (loadItems) {
+                app.LoadItems();
+                //add apikey to location
+                foreach (var item in app.Items) item.Location += "?apikey=" + GetSessionApiKey();
+            }
             return app;
-		}
+        }
 
-        private List<ThematicApplication> GetPrivateAppList(){
-			var apps = new EntityList<ThematicApplication>(context);
-			apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
-			apps.SetFilter("DomainId", this.DomainId + "");
-			apps.Load();
-			var items = apps.GetItemsAsList();
+        private List<ThematicApplication> GetPrivateAppList() {
+            var apps = new EntityList<ThematicApplication>(context);
+            apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
+            apps.SetFilter("DomainId", this.DomainId + "");
+            apps.Load();
+            var items = apps.GetItemsAsList();
             context.LogDebug(this, "GetPrivateAppList : found " + items.Count + " items (domain = " + this.DomainId + ")");
             return items;
+        }
+
+        /// <summary>
+        /// Do private sanity check.
+        /// </summary>
+        public void PrivateSanityCheck(){
+            if (string.IsNullOrEmpty(TerradueCloudUsername)) LoadCloudUsername();
+
+            if (!string.IsNullOrEmpty(TerradueCloudUsername)) {
+                GetPrivateThematicApp(false);
+                GetPrivateDataPackageCatalogueIndex(false);
+                GetPrivateDataPackageCatalogueProducts(false);
+                GetPrivateDataPackageCatalogueSeries(false);
+            }
         }
 
         /// <summary>
@@ -575,7 +580,7 @@ namespace Terradue.Tep {
         /// <param name="identifier">Identifier.</param>
         /// <param name="name">Name.</param>
         /// <param name="location">Location.</param>
-        public DataPackage GetPrivateDataPackage(string identifier, string name, string location) {
+        public DataPackage GetPrivateDataPackage(string identifier, string name, string location, bool loadItems=true) {
             DataPackage dp = null;
 
             //if dp does not exists, we create it
@@ -585,19 +590,21 @@ namespace Terradue.Tep {
                 return CreatePrivateDataPackage(identifier, name, location);
             }
 
-            //if dp exists, we update the location
-            try {
-                dp.LoadItems();
-                var dpi = dp.Items.GetItemsAsList()[0];
-                if (!location.Equals(dpi.Location)) {
-                    dpi.Location = location;
-                    dpi.Store();
+            if (loadItems) {
+                //if dp exists, we update the location
+                try {
+                    dp.LoadItems();
+                    var dpi = dp.Items.GetItemsAsList()[0];
+                    if (!location.Equals(dpi.Location)) {
+                        dpi.Location = location;
+                        dpi.Store();
+                    }
+                } catch (Exception) {
+                    //if location does not exists, we create it
+                    var item = new RemoteResource(context);
+                    item.Location = location;
+                    dp.AddResourceItem(item);
                 }
-            } catch (Exception) {
-                //if location does not exists, we create it
-                var item = new RemoteResource(context);
-                item.Location = location;
-                dp.AddResourceItem(item);
             }
             return dp;
         }
@@ -606,33 +613,33 @@ namespace Terradue.Tep {
         /// Gets the private data package catalogue index.
         /// </summary>
         /// <returns>The private data package catalogue index.</returns>
-        public DataPackage GetPrivateDataPackageCatalogueIndex(){
+        public DataPackage GetPrivateDataPackageCatalogueIndex(bool loadItems=true){
             var identifier = "_index_" + this.Username;
             var name = "My Index";
             var location = GetPrivateCatalogueIndexUrl(false);
-            return GetPrivateDataPackage(identifier, name, location);
+            return GetPrivateDataPackage(identifier, name, location, loadItems);
         }
 
         /// <summary>
         /// Gets the private data package catalogue results.
         /// </summary>
         /// <returns>The private data package catalogue results.</returns>
-        public DataPackage GetPrivateDataPackageCatalogueProducts() {
+        public DataPackage GetPrivateDataPackageCatalogueProducts(bool loadItems = true) {
             var identifier = "_products_" + this.Username;
             var name = "My Products";
             var location = GetPrivateCatalogueProductsUrl(false);
-            return GetPrivateDataPackage(identifier, name, location);
+            return GetPrivateDataPackage(identifier, name, location, loadItems);
 		}
 
 		/// <summary>
 		/// Gets the private data package catalogue series.
 		/// </summary>
 		/// <returns>The private data package catalogue series.</returns>
-		public DataPackage GetPrivateDataPackageCatalogueSeries() {
+        public DataPackage GetPrivateDataPackageCatalogueSeries(bool loadItems = true) {
             var identifier = "_series_" + this.Username;
             var name = "My Results";
             var location = GetPrivateCatalogueSeriesUrl(false);
-            return GetPrivateDataPackage(identifier, name, location);
+            return GetPrivateDataPackage(identifier, name, location, loadItems);
 		}
 
         /// <summary>
