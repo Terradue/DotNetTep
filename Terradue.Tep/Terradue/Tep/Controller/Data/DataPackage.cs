@@ -515,28 +515,30 @@ namespace Terradue.Tep {
 
             atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
 
-            var basepath = new UriBuilder(context.BaseUrl);
-            basepath.Path = "user";
-            string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username ;
-            string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(Owner.LastName) ? Owner.FirstName + " " + Owner.LastName : Owner.Username);
-            SyndicationPerson author = new SyndicationPerson(null, usrName, usrUri);
-            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
-            atomEntry.Authors.Add(author);
-            atomEntry.Categories.Add(new SyndicationCategory("visibility", null, IsPublic() ? "public" : (IsRestricted() ? "restricted" : "private")));
-            if (Kind == KINDRESOURCESETUSER) {
-                atomEntry.Categories.Add(new SyndicationCategory("default", null, "true"));
-            }
-
-            if (Owner.Id == context.UserId) {
-                //for owner only, we give the link to know with who the data package is shared
-                Uri sharedUrl = null;
-                //if shared with users
-                if (IsSharedToUser()) {
-                    sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
-                } else if (IsSharedToCommunity()) {
-                    sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+            if (Owner != null) {
+                var basepath = new UriBuilder(context.BaseUrl);
+                basepath.Path = "user";
+                string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username;
+                string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(Owner.LastName) ? Owner.FirstName + " " + Owner.LastName : Owner.Username);
+                SyndicationPerson author = new SyndicationPerson(null, usrName, usrUri);
+                author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
+                atomEntry.Authors.Add(author);
+                atomEntry.Categories.Add(new SyndicationCategory("visibility", null, IsPublic() ? "public" : (IsRestricted() ? "restricted" : "private")));
+                if (Kind == KINDRESOURCESETUSER) {
+                    atomEntry.Categories.Add(new SyndicationCategory("default", null, "true"));
                 }
-                if (sharedUrl != null) atomEntry.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
+
+                if (Owner.Id == context.UserId) {
+                    //for owner only, we give the link to know with who the data package is shared
+                    Uri sharedUrl = null;
+                    //if shared with users
+                    if (IsSharedToUser()) {
+                        sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    } else if (IsSharedToCommunity()) {
+                        sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    }
+                    if (sharedUrl != null) atomEntry.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
+                }
             }
 
             return atomEntry;
