@@ -118,13 +118,9 @@ namespace Terradue.Tep {
             }
 
             //wps jobs analytics
-            var jobActivities = GetWpsJobsActivities(user);
-            foreach (var job in jobActivities) { 
-                var nvc = job.GetParams();
-                WpsJobSuccessCount += nvc["status"] != null ? nvc["status"] == "succeeded" ? 1 : 0 : 0;
-                WpsJobFailedCount += nvc["status"] != null ? nvc["status"] == "failed" ? 1 : 0 : 0;
-                WpsJobOngoingCount += nvc["status"] != null ? nvc["status"] == "ongoing" ? 1 : 0 : 0;
-            }
+            WpsJobSuccessCount = GetTotalWpsJobsSucceeded(user.Id);
+            WpsJobFailedCount = GetTotalWpsJobsFailed(user.Id);
+            WpsJobOngoingCount = GetTotalWpsJobsOngoing(user.Id);
             WpsJobSubmittedCount = WpsJobSuccessCount + WpsJobFailedCount + WpsJobOngoingCount;
         }
 
@@ -143,16 +139,36 @@ namespace Terradue.Tep {
             return activities.GetItemsAsList();
         }
 
-        private List<ActivityTep> GetWpsJobsActivities(User user) {
-            var etype = EntityType.GetEntityType(typeof(WpsJob));
-            var priv = Privilege.Get(EntityType.GetEntityTypeFromId(etype.Id), Privilege.GetOperationType(((char)EntityOperationType.Create).ToString()));
-            EntityList<ActivityTep> activities = new EntityList<ActivityTep>(Context);
-            activities.SetFilter("UserId", user.Id + "");
-            activities.SetFilter("EntityTypeId", etype.Id + "");
-            activities.SetFilter("PrivilegeId", priv.Id + "");
-            activities.Load();
-            return activities.GetItemsAsList();
+        private int GetTotalWpsJobs(User user) {
+            string sql = string.Format("SELECT COUNT(*) FROM wpsjob WHERE id_usr={0} AND status NOT IN ({1});", user.Id, (int)WpsJobStatus.NONE);
+            return Context.GetQueryIntegerValue(sql);
         }
+
+        private int GetTotalWpsJobsSucceeded(int usrId) {
+            string sql = string.Format("SELECT COUNT(*) FROM wpsjob WHERE id_usr={0} AND status IN ({1});", usrId, (int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED + "," + (int)WpsJobStatus.COORDINATOR) ;
+            return Context.GetQueryIntegerValue(sql);
+        }
+
+        private int GetTotalWpsJobsFailed(int usrId) {
+            string sql = string.Format("SELECT COUNT(*) FROM wpsjob WHERE id_usr={0} AND status IN ({1});", usrId, (int)WpsJobStatus.FAILED);
+            return Context.GetQueryIntegerValue(sql);
+        }
+
+        private int GetTotalWpsJobsOngoing(int usrId) {
+            string sql = string.Format("SELECT COUNT(*) FROM wpsjob WHERE id_usr={0} AND status IN ({1});", usrId, (int)WpsJobStatus.ACCEPTED + "," + (int)WpsJobStatus.PAUSED + "," + (int)WpsJobStatus.STARTED);
+            return Context.GetQueryIntegerValue(sql);
+        }
+
+        //private List<ActivityTep> GetWpsJobsActivities(User user) {
+        //    var etype = EntityType.GetEntityType(typeof(WpsJob));
+        //    var priv = Privilege.Get(EntityType.GetEntityTypeFromId(etype.Id), Privilege.GetOperationType(((char)EntityOperationType.Create).ToString()));
+        //    EntityList<ActivityTep> activities = new EntityList<ActivityTep>(Context);
+        //    activities.SetFilter("UserId", user.Id + "");
+        //    activities.SetFilter("EntityTypeId", etype.Id + "");
+        //    activities.SetFilter("PrivilegeId", priv.Id + "");
+        //    activities.Load();
+        //    return activities.GetItemsAsList();
+        //}
 
 
 

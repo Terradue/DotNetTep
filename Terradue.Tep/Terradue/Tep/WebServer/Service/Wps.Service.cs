@@ -562,7 +562,6 @@ namespace Terradue.Tep.WebServer.Services {
                     try {
                         jobresponse = wpsjob.GetStatusLocationContent();
                     }catch(Exception esl){
-                        wpsjob.UpdateWpsJobActivity(null);
                         throw esl;
                     }
                     if (accountingEnabled){
@@ -592,9 +591,6 @@ namespace Terradue.Tep.WebServer.Services {
 
                     //get job recast response
                     execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
-
-                    //save job status in activity
-                    wpsjob.UpdateWpsJobActivity(execResponse);
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
