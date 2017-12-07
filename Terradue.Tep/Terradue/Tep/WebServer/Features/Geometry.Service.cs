@@ -14,24 +14,33 @@ using Newtonsoft.Json;
 
 namespace Terradue.Tep.WebServer.Services {
 
-    [Route("/geometry", "POST", Summary = "POST geometry to be converted as WKT")]
+    [Route("/geometry/{points}", "POST", Summary = "POST geometry to be converted as WKT")]
     public class GeometryPostRequestTep : IRequiresRequestStream, IReturn<string> {
         public System.IO.Stream RequestStream { get; set; }
+
+        [ApiMember(Name = "points", Description = "Points", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int points { get; set; }
     }
 
-    [Route("/geometry/shp", "POST", Summary = "POST geometry to be converted as WKT")]
+    [Route("/geometry/shp/{Points}", "POST", Summary = "POST geometry to be converted as WKT")]
     public class ShapeFilePostRequestTep : IRequiresRequestStream, IReturn<string> {
         public System.IO.Stream RequestStream { get; set; }
+
+        [ApiMember(Name = "points", Description = "Points", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int points { get; set; }
     }
 
-    [Route("/geometry/kml", "POST", Summary = "POST geometry to be converted as WKT")]
+    [Route("/geometry/kml/{Points}", "POST", Summary = "POST geometry to be converted as WKT")]
     public class KMLPostRequestTep : IRequiresRequestStream, IReturn<string> {
         public System.IO.Stream RequestStream { get; set; }
+
+        [ApiMember(Name = "points", Description = "Points", ParameterType = "path", DataType = "int", IsRequired = true)]
+        public int points { get; set; }
     }
 
 	[Route("/geometry/geojson", "POST", Summary = "POST geometry to be converted as WKT")]
 	public class GeoJsonPostRequestTep : IRequiresRequestStream, IReturn<string> {
-		public System.IO.Stream RequestStream { get; set; }
+        public System.IO.Stream RequestStream { get; set; }
 	}
 
     [Api("Tep Terradue webserver")]
@@ -45,8 +54,16 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(GeometryPostRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
-            context.LogInfo(this, string.Format("/geometry/shp GET"));
+            context.LogInfo(this, string.Format("/geometry/{0} GET", request.points));
             string wkt = "";
+
+            if (request.points == 0) {
+                var segments = base.Request.PathInfo.Split(new[] { '/' },
+                                                           StringSplitOptions.RemoveEmptyEntries);
+                request.points = System.Int32.Parse(segments[segments.Count() - 1]);
+            }
+
+            var points = request.points > 0 ? request.points : 3000;
 
             if (this.RequestContext.Files != null && this.RequestContext.Files.Length > 0) { 
                 var extension = this.RequestContext.Files[0].FileName.Substring(this.RequestContext.Files[0].FileName.LastIndexOf("."));
@@ -54,20 +71,20 @@ namespace Terradue.Tep.WebServer.Services {
                     case ".zip":
                         using (var stream = new MemoryStream()) {
                             this.RequestContext.Files[0].InputStream.CopyTo(stream);
-                            wkt = ExtractWKTFromShapefileZip(stream);
+                            wkt = ExtractWKTFromShapefileZip(stream, points);
                         }
                     break;
                     case ".kml":
                         using (var stream = new MemoryStream()) {
                             this.RequestContext.Files[0].InputStream.CopyTo(stream);
-                            wkt = ExtractWKTFromKML(stream);
+                            wkt = ExtractWKTFromKML(stream, points);
                         }   
                     break;
                     case ".json":
 					case ".geojson":
 						using (var stream = new MemoryStream()) {
 							this.RequestContext.Files[0].InputStream.CopyTo(stream);
-							wkt = ExtractWKTFromGeoJson(stream);
+                            wkt = ExtractWKTFromGeoJson(stream);
 						}
 						break;
                     default:
@@ -88,13 +105,21 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this, string.Format("/geometry/shp GET"));
 
+            if (request.points == 0) {
+                var segments = base.Request.PathInfo.Split(new[] { '/' },
+                                                           StringSplitOptions.RemoveEmptyEntries);
+                request.points = System.Int32.Parse(segments[segments.Count() - 1]);
+            }
+
+            var points = request.points > 0 ? request.points : 3000;
+
             string wkt = null;
             using (var stream = new MemoryStream()) {
                 if (this.RequestContext.Files.Length > 0)
                     this.RequestContext.Files[0].InputStream.CopyTo(stream);
                 else
                     request.RequestStream.CopyTo(stream);
-                wkt = ExtractWKTFromShapefileZip(stream);
+                wkt = ExtractWKTFromShapefileZip(stream, points);
             }
 
             context.Close();
@@ -107,13 +132,21 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this, string.Format("/geometry/kml GET"));
 
+            if (request.points == 0) {
+                var segments = base.Request.PathInfo.Split(new[] { '/' },
+                                                           StringSplitOptions.RemoveEmptyEntries);
+                request.points = System.Int32.Parse(segments[segments.Count() - 1]);
+            }
+
+            var points = request.points > 0 ? request.points : 3000;
+
             string wkt = null;
             using (var stream = new MemoryStream()) {
                 if (this.RequestContext.Files.Length > 0)
                     this.RequestContext.Files[0].InputStream.CopyTo(stream);
                 else
                     request.RequestStream.CopyTo(stream);
-                wkt = ExtractWKTFromKML(stream);
+                wkt = ExtractWKTFromKML(stream, points);
             }
 
             context.Close();
@@ -140,7 +173,7 @@ namespace Terradue.Tep.WebServer.Services {
 			else throw new Exception("Unable to get WKT");
 		}
 
-        private string ExtractWKTFromShapefileZip(Stream stream) { 
+        private string ExtractWKTFromShapefileZip(Stream stream, int points) { 
             string uid = Guid.NewGuid().ToString();
             string path = AppDomain.CurrentDomain.BaseDirectory;
             if (!path.EndsWith("/")) path += "/";
@@ -148,22 +181,6 @@ namespace Terradue.Tep.WebServer.Services {
             var shapeDir = path + "files/" + uid;
             if (stream.Length > 1 * 1000 * 1000) throw new Exception("We only accept files < 1MB");
             using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Read)) {
-                foreach (var entry in archive.Entries) {
-                    var extension = entry.FullName.Substring(entry.FullName.LastIndexOf("."));
-                    switch (extension) {
-                    case ".shp":
-                    case ".cpg":
-                    case ".shx":
-                    case ".idx":
-                    case ".dbf":
-                    case ".prj":
-                    case ".txt":
-                    case ".csv":
-                        break;
-                    default:
-                        throw new Exception("Archive contains invalid files");
-                    }
-                }
                 archive.ExtractToDirectory(shapeDir);
             }
 
@@ -185,24 +202,27 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             string wkt = null;
-            if (finalgeometry != null) wkt = SimplifyGeometry(finalgeometry.AsText());
+            if (finalgeometry != null) {
+                finalgeometry = SimplifyGeometry(finalgeometry, points);
+                foreach (var p in finalgeometry.Coordinates.ToArray()) {
+                    p.X = Math.Round(p.X, 2);
+                    p.Y = Math.Round(p.Y, 2);
+                    p.Z = Math.Round(p.Z, 2);
+                }
+                wkt = finalgeometry.AsText();
+            }
             return wkt;
         }
 
-        private string SimplifyGeometry(string wkt, int pow = 0) {
-            if (wkt.Length < 3000)
-                return wkt;
-            NetTopologySuite.IO.WKTReader wktReader = new NetTopologySuite.IO.WKTReader();
-            wktReader.RepairRings = true;
-            var geometry = wktReader.Read(wkt);
-            if (!geometry.IsValid)
-                geometry = geometry.Buffer(0.001);
+        private IGeometry SimplifyGeometry(IGeometry geometry, int nbPoints, int pow = 1) {
+            if (geometry.NumPoints < nbPoints)
+                return geometry;
+            if (!geometry.IsValid) geometry = geometry.Buffer(0.001);
             var newGeom = NetTopologySuite.Simplify.DouglasPeuckerSimplifier.Simplify(geometry, 0.005 * pow);
-            NetTopologySuite.IO.WKTWriter wktWriter = new NetTopologySuite.IO.WKTWriter();
-            return SimplifyGeometry(wktWriter.Write(newGeom), ++pow);
+            return SimplifyGeometry(newGeom, nbPoints, ++pow);
         }
 
-        private string ExtractWKTFromKML(Stream stream) {
+        private string ExtractWKTFromKML(Stream stream, int points) {
             IGeometry finalgeometry = null;
             stream.Seek(0, SeekOrigin.Begin);
 
@@ -220,7 +240,15 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
             string wkt = null;
-            if (finalgeometry != null) wkt = SimplifyGeometry(finalgeometry.AsText());
+            if (finalgeometry != null) {
+                finalgeometry = SimplifyGeometry(finalgeometry, points);
+                foreach (var p in finalgeometry.Coordinates.ToArray()) {
+                    p.X = Math.Round(p.X, 2);
+                    p.Y = Math.Round(p.Y, 2);
+                    p.Z = Math.Round(p.Z, 2);
+                }
+                wkt = finalgeometry.AsText();
+            }
             return wkt;
         }
 
