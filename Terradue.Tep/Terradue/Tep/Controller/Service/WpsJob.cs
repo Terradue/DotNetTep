@@ -691,6 +691,7 @@ namespace Terradue.Tep {
                             var processIds = "";
                             foreach (var item in urlBOS.Items) processIds += item.Identifier + ",";
                             processIds = processIds.Trim(",".ToCharArray());
+                            if (string.IsNullOrEmpty(processIds)) processIds = "0";
                             return new KeyValuePair<string, string>("ProcessId", processIds);
                         }
                     }

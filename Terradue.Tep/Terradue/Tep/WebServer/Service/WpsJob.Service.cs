@@ -88,6 +88,10 @@ namespace Terradue.Tep.WebServer.Services {
             else
                 format = Request.QueryString["format"];
 
+            if(Request.QueryString["visibility"] != null && Request.QueryString["visibility"] != "all"){
+                wpsjobs.AccessLevel = EntityAccessLevel.Privilege;
+            }
+
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
             IOpenSearchResultCollection osr = ose.Query(wpsjobs, httpRequest.QueryString, responseType);
 
