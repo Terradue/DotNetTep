@@ -624,7 +624,7 @@ namespace Terradue.Tep {
                     throw new ImpossibleSearchException("Ouput result_osd found invalid url : " + url);
                 }
 
-                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
                 return SandboxOpenSearchable.CreateSandboxOpenSearchable(osUrl, settings);
             }
 
@@ -668,7 +668,7 @@ namespace Terradue.Tep {
 		public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
-                    var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
                     var urlBOS = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings);
                     var entity = urlBOS.Entity;
 	                if (entity is EntityList<ThematicCommunity>) {

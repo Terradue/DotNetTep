@@ -54,7 +54,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this, string.Format("/share DELETE self='{0}'", request.self));
 
-            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
             var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), settings).Entity;
 
             if (entitySelf is EntityList<WpsJob>) {
@@ -99,7 +99,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, request.to != null ? string.Join("", request.to) : ""));
                             
-            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
             var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), settings).Entity;
 
             //case WpsJob
@@ -288,7 +288,7 @@ namespace Terradue.Tep.WebServer.Services {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         try {
-                            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
                             var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), settings);
                             redirectUrl += "resultType=" + "data";
                         } catch (Exception e) { 

@@ -63,7 +63,7 @@ namespace Terradue.Tep.WebServer.Services
             context.LogInfo (this, string.Format ("/proxy GET url='{0}'", request.url));
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-			var settings = new OpenSearchableFactorySettings(ose);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
 
             if (uri.Path.EndsWith ("/description") || uri.Path.EndsWith ("/OSDD")) {
                 GenericOpenSearchable urlToShare = new GenericOpenSearchable (new OpenSearchUrl (request.url), settings);

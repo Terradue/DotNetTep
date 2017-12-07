@@ -38,7 +38,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
 
-				var settings = new OpenSearchableFactorySettings(ose);
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
                 MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(twitters.Cast<IOpenSearchable>().ToList(), settings, false);
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 

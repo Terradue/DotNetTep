@@ -57,7 +57,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }catch(Exception){}
 
-				var settings = new OpenSearchableFactorySettings(ose);
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
 				MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
 
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);

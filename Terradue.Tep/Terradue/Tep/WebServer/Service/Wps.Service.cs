@@ -93,7 +93,7 @@ namespace Terradue.Tep.WebServer.Services {
             if (!string.IsNullOrEmpty(httpRequest.QueryString["cache"]) && httpRequest.QueryString["cache"] == "false")
                 MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
 
-			var settings = new OpenSearchableFactorySettings(ose);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
             IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
 

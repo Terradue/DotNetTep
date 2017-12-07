@@ -36,10 +36,11 @@ namespace Terradue.Tep
     /// <summary>
     /// Master catalogue.
     /// </summary>
-    public class MasterCatalogue : IOpenSearchable
-    {
+    public class MasterCatalogue : IOpenSearchable {
 
         private static OpenSearchEngine ose;
+
+        private static OpenSearchableFactorySettings settings;
 
         private static OpenSearchMemoryCache searchCache;
 
@@ -56,7 +57,7 @@ namespace Terradue.Tep
 
         //---------------------------------------------------------------------------------------------------------------------
 
-        public MasterCatalogue(IfyContext context){
+        public MasterCatalogue(IfyContext context) {
             this.context = context;
         }
 
@@ -114,44 +115,44 @@ namespace Terradue.Tep
         }
 
         public OpenSearchDescription GetOpenSearchDescription() {
-			OpenSearchDescription osd = new OpenSearchDescription();
-            osd.ShortName = Identifier  ;
-			osd.Contact = context.GetConfigValue("CompanyEmail");
-			osd.SyndicationRight = "open";
-			osd.AdultContent = "false";
-			osd.Language = "en-us";
-			osd.OutputEncoding = "UTF-8";
-			osd.InputEncoding = "UTF-8";
-			osd.Developer = "Terradue OpenSearch Development Team";
-			osd.Attribution = context.GetConfigValue("CompanyName");
+            OpenSearchDescription osd = new OpenSearchDescription();
+            osd.ShortName = Identifier;
+            osd.Contact = context.GetConfigValue("CompanyEmail");
+            osd.SyndicationRight = "open";
+            osd.AdultContent = "false";
+            osd.Language = "en-us";
+            osd.OutputEncoding = "UTF-8";
+            osd.InputEncoding = "UTF-8";
+            osd.Developer = "Terradue OpenSearch Development Team";
+            osd.Attribution = context.GetConfigValue("CompanyName");
 
-			List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
+            List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
 
-			UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
+            UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
 
-			OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self");
-			urls.Add(url);
+            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self");
+            urls.Add(url);
 
-			urlb = new UriBuilder(GetSearchBaseUrl("application/atom+xml"));
-			NameValueCollection query = GetOpenSearchParameters("application/atom+xml");
+            urlb = new UriBuilder(GetSearchBaseUrl("application/atom+xml"));
+            NameValueCollection query = GetOpenSearchParameters("application/atom+xml");
 
-			NameValueCollection nvc = HttpUtility.ParseQueryString(urlb.Query);
-			foreach (var key in nvc.AllKeys) {
-				query.Set(key, nvc[key]);
-			}
+            NameValueCollection nvc = HttpUtility.ParseQueryString(urlb.Query);
+            foreach (var key in nvc.AllKeys) {
+                query.Set(key, nvc[key]);
+            }
 
-			foreach (var osee in OpenSearchEngine.Extensions.Values) {
-				query.Set("format", osee.Identifier);
+            foreach (var osee in OpenSearchEngine.Extensions.Values) {
+                query.Set("format", osee.Identifier);
 
-				string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urlb.Query = string.Join("&", queryString);
-				url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search");
-				urls.Add(url);
-			}
+                string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                urlb.Query = string.Join("&", queryString);
+                url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search");
+                urls.Add(url);
+            }
 
-			osd.Url = urls.ToArray();
+            osd.Url = urls.ToArray();
 
-			return osd;
+            return osd;
         }
 
         #region IOpenSearchable implementation
@@ -173,13 +174,13 @@ namespace Terradue.Tep
             }
         }
 
-		public virtual OpenSearchUrl GetSearchBaseUrl(string mimetype) {
-			return new OpenSearchUrl(string.Format("{0}/{1}/search", context.BaseUrl, Identifier));
-		}
+        public virtual OpenSearchUrl GetSearchBaseUrl(string mimetype) {
+            return new OpenSearchUrl(string.Format("{0}/{1}/search", context.BaseUrl, Identifier));
+        }
 
-		public virtual OpenSearchUrl GetDescriptionBaseUrl() {
-			return new OpenSearchUrl(string.Format("{0}/{1}/description", context.BaseUrl, Identifier));
-		}
+        public virtual OpenSearchUrl GetDescriptionBaseUrl() {
+            return new OpenSearchUrl(string.Format("{0}/{1}/description", context.BaseUrl, Identifier));
+        }
 
         /// <summary>
         /// Create the specified querySettings and parameters.
@@ -260,6 +261,20 @@ namespace Terradue.Tep
                 }
 
                 return ose;
+            }
+        }
+
+        /// <summary>
+        /// Gets the open search factory settings.
+        /// </summary>
+        /// <value>The open search factory settings.</value>
+        public static OpenSearchableFactorySettings OpenSearchFactorySettings{
+            get {
+                if(settings == null){
+                    settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                    settings.MergeFilters = Terradue.Metadata.EarthObservation.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
+                }
+                return settings;
             }
         }
 

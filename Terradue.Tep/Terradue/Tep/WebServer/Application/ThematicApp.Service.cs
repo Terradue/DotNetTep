@@ -51,7 +51,8 @@ namespace Terradue.Tep.WebServer.Services {
             }
             communities.Load();
 
-            var settings = new OpenSearchableFactorySettings(ose);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+            settings.MergeFilters = Terradue.Metadata.EarthObservation.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
 
 			if (context.UserId != 0)
 			{
@@ -166,7 +167,7 @@ namespace Terradue.Tep.WebServer.Services {
                 osentities.AddRange(app.GetOpenSearchableArray());
             }
 
-            var settings = new OpenSearchableFactorySettings(ose);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, settings);
             var result = ose.Query (multiOSE, nvc, responseType);
 

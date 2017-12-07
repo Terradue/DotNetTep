@@ -169,18 +169,6 @@
     <Reference Include="Terradue.Github">
       <HintPath>..\packages\Terradue.Github.1.1.0\lib\net45\Terradue.Github.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.35\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.35\lib\net45\Terradue.Portal.Agent.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.35\lib\net45\Terradue.Portal.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.15.5\lib\net45\Terradue.OpenSearch.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Authentication.Umsso">
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.10\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
     </Reference>
@@ -194,13 +182,25 @@
       <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.19\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.Twitter">
-      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.4.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.5.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.News">
       <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch">
+      <HintPath>..\packages\Terradue.OpenSearch.1.15.7\lib\net45\Terradue.OpenSearch.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.7.36\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.7.36\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.7.36\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -314,6 +314,14 @@
     <None Include="modules\cloud\db\db-1.0#.sql" />
     <None Include="modules\github\db\db-create.sql" />
     <None Include="core\db\db-create.sql" />
+    <None Include="core\db\db-2.7.11#.sql" />
+    <None Include="modules\umsso\www\register.aspx" />
+    <None Include="modules\umsso\etc\shibboleth\attribute-policy.xml" />
+    <None Include="modules\umsso\etc\shibboleth\attribute-map.xml" />
+    <None Include="modules\umsso\db\db-create.sql" />
+    <None Include="modules\umsso\db\db-1.4#.sql" />
+    <None Include="modules\umsso\db\db-1.3#.sql" />
+    <None Include="modules\news\db\db-create.sql" />
     <None Include="core\db\db-2.7.9#.sql" />
     <None Include="core\db\db-2.7.8#.sql" />
     <None Include="core\db\db-2.7.4#.sql" />
@@ -321,7 +329,8 @@
     <None Include="core\db\db-2.7.3.1#.sql" />
     <None Include="core\db\db-2.7.3#.sql" />
     <None Include="core\db\db-2.7.2#.sql" />
-    <None Include="core\db\db-2.7.11#.sql" />
+    <None Include="core\db\db-2.7.13#.sql" />
+    <None Include="core\db\db-2.7.12#.sql" />
     <None Include="core\db\db-2.7.10#.sql" />
     <None Include="core\db\db-2.7.1#.sql" />
     <None Include="core\db\db-2.7#.sql" />
@@ -338,17 +347,15 @@
     <None Include="core\db\db-2.6.22#.sql" />
     <None Include="core\db\db-2.6.19#.sql" />
     <None Include="core\db\db-2.6.18#.sql" />
+    <None Include="core\db\db-2.5c_REMOTE_10161.sql" />
+    <None Include="core\db\db-2.5c_LOCAL_10161.sql" />
+    <None Include="core\db\db-2.5c_BASE_10161.sql" />
+    <None Include="core\db\db-2.5c_BACKUP_10161.sql" />
     <None Include="core\db\db-2.5c.sql" />
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
-    <None Include="modules\umsso\www\register.aspx" />
-    <None Include="modules\umsso\etc\shibboleth\attribute-policy.xml" />
-    <None Include="modules\umsso\etc\shibboleth\attribute-map.xml" />
-    <None Include="modules\umsso\db\db-create.sql" />
-    <None Include="modules\umsso\db\db-1.4#.sql" />
-    <None Include="modules\umsso\db\db-1.3#.sql" />
-    <None Include="modules\news\db\db-create.sql" />
+    <None Include="core\.DS_Store" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />

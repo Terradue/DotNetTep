@@ -771,7 +771,7 @@ namespace Terradue.Tep {
                             var policy = new CacheItemPolicy();
                             policy.Priority = CacheItemPriority.NotRemovable;
                             policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1);
-                            var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
                             cachedItem = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), settings).Entity;
                             cache.Set(self, cachedItem, policy);
                         }

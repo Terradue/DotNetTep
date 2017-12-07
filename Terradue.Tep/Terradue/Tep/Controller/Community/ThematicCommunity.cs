@@ -546,7 +546,7 @@ namespace Terradue.Tep {
                         result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
 
                         //get all data collections
-                        var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                        var settings = MasterCatalogue.OpenSearchFactorySettings;
                         try {
                             var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(AppsLink), settings), new NameValueCollection(), typeof(AtomFeed));
                             foreach (IOpenSearchResultItem item in apps.Items) {
@@ -626,7 +626,7 @@ namespace Terradue.Tep {
             case "id":
                 return new KeyValuePair<string, string>("Identifier", value);
             case "correlatedTo":
-                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
                     var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings).Entity;
                 if (entity is EntityList<WpsJob>) {
                     var entitylist = entity as EntityList<WpsJob>;

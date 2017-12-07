@@ -434,7 +434,8 @@ namespace Terradue.Tep {
 
 			List<IOpenSearchable> osResources = new List<IOpenSearchable>(Resources.Count);
 
-			var settings = new OpenSearchableFactorySettings(ose);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+
 			string apikey = null;
             string t2userid = null;
             if (context.UserId != 0) {
@@ -549,19 +550,19 @@ namespace Terradue.Tep {
         #region IEntitySearchable implementation
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
-            case "correlatedTo":
-                var settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings).Entity;
-                if (entity is EntityList<ThematicCommunity>) {
-                    var entitylist = entity as EntityList<ThematicCommunity>;
-                    var items = entitylist.GetItemsAsList();
-                    if (items.Count > 0) {
-                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                case "correlatedTo":
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings).Entity;
+                    if (entity is EntityList<ThematicCommunity>) {
+                        var entitylist = entity as EntityList<ThematicCommunity>;
+                        var items = entitylist.GetItemsAsList();
+                        if (items.Count > 0) {
+                            return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                        }
                     }
-                }
-                return new KeyValuePair<string, string>();
-            default:
-                return base.GetFilterForParameter(parameter, value);
+                    return new KeyValuePair<string, string>();
+                default:
+                    return base.GetFilterForParameter(parameter, value);
             }
         }
 
