@@ -177,7 +177,7 @@ namespace Terradue.Tep.WebServer {
         /// <param name="context">Context.</param>
 		public UserTep ToEntity(IfyContext context, UserTep input) {
 			UserTep user = (input == null ? new UserTep(context) : input);
-			base.ToEntity(context, user);
+			user = (UserTep)base.ToEntity(context, user);
 
             return user;
         }
