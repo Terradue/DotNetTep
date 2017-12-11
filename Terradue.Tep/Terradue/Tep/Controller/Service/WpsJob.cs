@@ -802,16 +802,23 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
-            result.Categories.Add(new SyndicationCategory("provider", null, this.WpsId));
-            result.Categories.Add(new SyndicationCategory("provider", null, this.WpsId));
-            string processname = "";
-            try{
-                processname = this.Provider != null ? this.Provider.Identifier : "";
-            }catch(Exception){
-            }
-            result.Categories.Add(new SyndicationCategory("process", null, processname));
 
             return result;
+        }
+
+        public string ExtractProviderContact(string contact){
+            if (!string.IsNullOrEmpty(contact)) {
+                if (contact.Contains("@")) {
+                    //in case contact contains more than an email address
+                    var contacts = contact.Split(" ".ToArray());
+                    foreach (var c in contacts) {
+                        if (c.Contains("@")) {
+                            return c;
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         private AtomItem GetFullWpsJobAtomItem() {
@@ -855,17 +862,6 @@ namespace Terradue.Tep {
                     }
                 }
             }
-
-            if (provider != null && process != null) {
-                if (provider.Proxy) {
-                    identifier = process.Identifier;
-                    providerUrl = context.BaseUrl + "/wps/WebProcessingService";
-                } else {
-                    identifier = process.RemoteIdentifier;
-                    providerUrl = provider.BaseUrl;
-                }
-            }
-
 
             if (process == null || provider == null)
                 return null;
@@ -969,6 +965,12 @@ namespace Terradue.Tep {
 
             entry.Offerings = new List<OwcOffering> { offering };
             entry.Categories.Add(new SyndicationCategory("WpsOffering"));
+            entry.Categories.Add(new SyndicationCategory("process", null, process.Name));
+            var contact = ExtractProviderContact(provider.Contact);
+
+            if (!string.IsNullOrEmpty(contact)) {
+                entry.Categories.Add(new SyndicationCategory("contact", null, contact));
+            }
 
             entry.Content = new TextSyndicationContent("This job has been created using the service " + process.Name);
             return new AtomItem(entry);

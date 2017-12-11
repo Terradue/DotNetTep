@@ -89,6 +89,30 @@ namespace Terradue.Tep.WebServer {
         public int Id { get; set; }
     }
 
+    [Route("/job/wps/{jobId}/contact", "POST", Summary = "POST contact to job", Notes = "")]
+    public class WpsJobSendContactEmailRequestTep : IReturn<List<WebGroup>> {
+        [ApiMember(Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+
+        [ApiMember(Name = "subject", Description = "subject of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Subject { get; set; }
+
+        [ApiMember(Name = "body", Description = "body of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Body { get; set; }
+    }
+
+    [Route("/job/wps/{jobId}/support", "POST", Summary = "POST contact to job", Notes = "")]
+    public class WpsJobSendSupportEmailRequestTep : IReturn<List<WebGroup>> {
+        [ApiMember(Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+
+        [ApiMember(Name = "subject", Description = "subject of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Subject { get; set; }
+
+        [ApiMember(Name = "body", Description = "body of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Body { get; set; }
+    }
+
     public class WebWpsJobTep : WebEntity {
         [ApiMember(Name="RemoteIdentifier", Description = "RemoteIdentifier of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string RemoteIdentifier { get; set; }

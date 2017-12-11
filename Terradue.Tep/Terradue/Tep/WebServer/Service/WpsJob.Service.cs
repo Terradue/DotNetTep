@@ -481,6 +481,57 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool (true);
         }
 
+        public object Post (WpsJobSendContactEmailRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/contact POST identifier='{0}', subject='{1}', body='{2}'", 
+                                                    request.JobId, request.Subject, request.Body));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+
+                //user must be the owner of the job
+                if (context.UserId != job.OwnerId) throw new Exception("Sorry, you must be the owner of the job to contact the service provider for job analysis.");
+
+                if (job.Provider == null) throw new Exception("Unable to find WPS Provider contact");
+                var contact = job.ExtractProviderContact(job.Provider.Contact);
+
+                //send email from job's owner to mailto
+                context.SendMail(job.Owner.Email, contact, request.Subject, request.Body);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        public object Post(WpsJobSendSupportEmailRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/contact POST identifier='{0}', subject='{1}', body='{2}'",
+                                                    request.JobId, request.Subject, request.Body));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+
+                //user must be the owner of the job
+                if (context.UserId != job.OwnerId) throw new Exception("Sorry, you must be the owner of the job to contact the support for job analysis.");
+
+                //send email from job's owner to mailto
+                context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
     }
 }
 
