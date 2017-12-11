@@ -53,47 +53,54 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(GeometryPostRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            context.Open();
-            context.LogInfo(this, string.Format("/geometry/{0} GET", request.points));
             string wkt = "";
 
-            if (request.points == 0) {
-                var segments = base.Request.PathInfo.Split(new[] { '/' },
-                                                           StringSplitOptions.RemoveEmptyEntries);
-                request.points = System.Int32.Parse(segments[segments.Count() - 1]);
-            }
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/geometry/{0} GET", request.points));
 
-            var points = request.points > 0 ? request.points : 3000;
-
-            if (this.RequestContext.Files != null && this.RequestContext.Files.Length > 0) { 
-                var extension = this.RequestContext.Files[0].FileName.Substring(this.RequestContext.Files[0].FileName.LastIndexOf("."));
-                switch (extension) { 
-                    case ".zip":
-                        using (var stream = new MemoryStream()) {
-                            this.RequestContext.Files[0].InputStream.CopyTo(stream);
-                            wkt = ExtractWKTFromShapefileZip(stream, points);
-                        }
-                    break;
-                    case ".kml":
-                        using (var stream = new MemoryStream()) {
-                            this.RequestContext.Files[0].InputStream.CopyTo(stream);
-                            wkt = ExtractWKTFromKML(stream, points);
-                        }   
-                    break;
-                    case ".json":
-					case ".geojson":
-						using (var stream = new MemoryStream()) {
-							this.RequestContext.Files[0].InputStream.CopyTo(stream);
-                            wkt = ExtractWKTFromGeoJson(stream);
-						}
-						break;
-                    default:
-                    throw new Exception("Invalid file type");
-                    break;
+                if (request.points == 0) {
+                    var segments = base.Request.PathInfo.Split(new[] { '/' },
+                                                               StringSplitOptions.RemoveEmptyEntries);
+                    request.points = System.Int32.Parse(segments[segments.Count() - 1]);
                 }
-            }
 
-            context.Close();
+                var points = request.points > 0 ? request.points : 3000;
+
+                if (this.RequestContext.Files != null && this.RequestContext.Files.Length > 0) {
+                    var extension = this.RequestContext.Files[0].FileName.Substring(this.RequestContext.Files[0].FileName.LastIndexOf("."));
+                    switch (extension) {
+                        case ".zip":
+                            using (var stream = new MemoryStream()) {
+                                this.RequestContext.Files[0].InputStream.CopyTo(stream);
+                                wkt = ExtractWKTFromShapefileZip(stream, points);
+                            }
+                            break;
+                        case ".kml":
+                            using (var stream = new MemoryStream()) {
+                                this.RequestContext.Files[0].InputStream.CopyTo(stream);
+                                wkt = ExtractWKTFromKML(stream, points);
+                            }
+                            break;
+                        case ".json":
+                        case ".geojson":
+                            using (var stream = new MemoryStream()) {
+                                this.RequestContext.Files[0].InputStream.CopyTo(stream);
+                                wkt = ExtractWKTFromGeoJson(stream);
+                            }
+                            break;
+                        default:
+                            throw new Exception("Invalid file type");
+                            break;
+                    }
+                }
+
+                context.Close();
+            }catch(Exception e){
+                context.LogError(this,e.Message + "-" + e.StackTrace);
+                context.Close();
+                throw e;
+            }
 
             if (!string.IsNullOrEmpty(wkt)) return new WebResponseString(wkt);
             else throw new Exception("Unable to get WKT");
