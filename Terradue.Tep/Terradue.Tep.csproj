@@ -169,9 +169,6 @@
     <Reference Include="Terradue.Github">
       <HintPath>..\packages\Terradue.Github.1.1.0\lib\net45\Terradue.Github.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Authentication.Umsso">
-      <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.10\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.ServiceModel.Ogc">
       <HintPath>..\packages\Terradue.ServiceModel.Ogc.2.0.6521\lib\net45\Terradue.ServiceModel.Ogc.dll</HintPath>
     </Reference>
@@ -201,6 +198,9 @@
     </Reference>
     <Reference Include="Terradue.Portal">
       <HintPath>..\packages\Terradue.Portal.2.7.36\lib\net45\Terradue.Portal.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Authentication.Umsso">
+      <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.14\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -315,12 +315,6 @@
     <None Include="modules\github\db\db-create.sql" />
     <None Include="core\db\db-create.sql" />
     <None Include="core\db\db-2.7.11#.sql" />
-    <None Include="modules\umsso\www\register.aspx" />
-    <None Include="modules\umsso\etc\shibboleth\attribute-policy.xml" />
-    <None Include="modules\umsso\etc\shibboleth\attribute-map.xml" />
-    <None Include="modules\umsso\db\db-create.sql" />
-    <None Include="modules\umsso\db\db-1.4#.sql" />
-    <None Include="modules\umsso\db\db-1.3#.sql" />
     <None Include="modules\news\db\db-create.sql" />
     <None Include="core\db\db-2.7.9#.sql" />
     <None Include="core\db\db-2.7.8#.sql" />
@@ -356,6 +350,16 @@
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
     <None Include="core\.DS_Store" />
+    <None Include="modules\umsso\www\register.aspx" />
+    <None Include="modules\umsso\ne_110m_land\ne_110m_land.shx" />
+    <None Include="modules\umsso\ne_110m_land\ne_110m_land.shp" />
+    <None Include="modules\umsso\ne_110m_land\ne_110m_land.prj" />
+    <None Include="modules\umsso\ne_110m_land\ne_110m_land.dbf" />
+    <None Include="modules\umsso\etc\shibboleth\attribute-policy.xml" />
+    <None Include="modules\umsso\etc\shibboleth\attribute-map.xml" />
+    <None Include="modules\umsso\db\db-create.sql" />
+    <None Include="modules\umsso\db\db-1.4#.sql" />
+    <None Include="modules\umsso\db\db-1.3#.sql" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
