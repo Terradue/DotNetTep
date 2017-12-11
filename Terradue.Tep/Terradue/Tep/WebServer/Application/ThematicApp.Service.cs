@@ -99,17 +99,19 @@ namespace Terradue.Tep.WebServer.Services {
             if (context.UserId != 0) {
                 var user = UserTep.FromId(context, context.UserId);
                 var app = user.GetPrivateThematicApp();
-				foreach (var item in app.Items) {
-                    if (!string.IsNullOrEmpty(item.Location)) {
-                        try{
-                            var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
-                            osentities.Add(sgOs);
-                            context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
-                        }catch(Exception e){
-                            context.LogError(this, e.Message);
+                if (app != null) {
+                    foreach (var item in app.Items) {
+                        if (!string.IsNullOrEmpty(item.Location)) {
+                            try {
+                                var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+                                osentities.Add(sgOs);
+                                context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
+                            } catch (Exception e) {
+                                context.LogError(this, e.Message);
+                            }
                         }
                     }
-				}
+                }
             }
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
