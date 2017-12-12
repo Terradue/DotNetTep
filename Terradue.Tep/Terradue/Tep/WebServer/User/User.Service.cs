@@ -62,7 +62,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }catch(Exception e){
                     context.LogError(this, e.Message);
                 }
-                result = new WebUserTep(context, user, request.umsso);
+                result = new WebUserTep(context, user, true);
                 context.Close();
             } catch (Exception e) {
 				context.LogError(this, e.Message);

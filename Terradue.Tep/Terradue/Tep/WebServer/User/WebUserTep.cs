@@ -143,11 +143,11 @@ namespace Terradue.Tep.WebServer {
         /// </summary>
         /// <param name="entity">Entity.</param>
         public WebUserTep(IfyWebContext context, UserTep entity, bool umsso = false) : base(entity) {
-            //if (umsso) {
+            if (umsso) {
                 AuthenticationType umssoauthType = IfyWebContext.GetAuthenticationType (typeof (UmssoAuthenticationType));
                 var umssoUser = umssoauthType.GetUserProfile (context, HttpContext.Current.Request, false);
                 if (umssoUser != null) this.UmssoEmail = umssoUser.Email;
-            //}
+            }
 
             //only current user can know the api key
             if (context.UserId == entity.Id) {
