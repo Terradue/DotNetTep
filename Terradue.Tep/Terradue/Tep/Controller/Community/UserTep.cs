@@ -459,8 +459,12 @@ namespace Terradue.Tep {
         /// Creates the private thematic app.
         /// </summary>
         private ThematicApplication CreatePrivateThematicApp() {
+            if (string.IsNullOrEmpty(TerradueCloudUsername)) LoadCloudUsername();
+            if (string.IsNullOrEmpty(TerradueCloudUsername)) return null;
+
             context.LogDebug(this, "Create private Thematic app for user " + this.Username);
             var app = new ThematicApplication(context);
+            app.OwnerId = this.Id;
             app.Identifier = Guid.NewGuid().ToString();
             app.AccessKey = Guid.NewGuid().ToString();
             app.Name = "private thematic app";
@@ -486,7 +490,7 @@ namespace Terradue.Tep {
                 app = CreatePrivateThematicApp();
             } else app = items[0];
 
-            if (loadItems) {
+            if (loadItems && app != null) {
                 app.LoadItems();
                 //add apikey to location
                 foreach (var item in app.Items) item.Location += "?apikey=" + GetSessionApiKey();
