@@ -118,9 +118,9 @@ namespace Terradue.Tep {
             }
 
             //wps jobs analytics
-            WpsJobSuccessCount = GetTotalWpsJobsSucceeded(user.Id);
-            WpsJobFailedCount = GetTotalWpsJobsFailed(user.Id);
-            WpsJobOngoingCount = GetTotalWpsJobsOngoing(user.Id);
+            WpsJobSuccessCount += GetTotalWpsJobsSucceeded(user.Id);
+            WpsJobFailedCount += GetTotalWpsJobsFailed(user.Id);
+            WpsJobOngoingCount += GetTotalWpsJobsOngoing(user.Id);
             WpsJobSubmittedCount = WpsJobSuccessCount + WpsJobFailedCount + WpsJobOngoingCount;
         }
 
