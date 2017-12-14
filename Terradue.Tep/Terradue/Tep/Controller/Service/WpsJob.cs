@@ -778,19 +778,22 @@ namespace Terradue.Tep {
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
+            Uri sharedUrlUsr = null, sharedUrlCommunity = null;
+
+            //if shared with users
+            if (IsSharedToUser()) {
+                sharedUrlUsr = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                status = "restricted";
+            }
+            if (IsSharedToCommunity()) {
+                sharedUrlCommunity = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                status = "restricted";
+            }
+
+            //for owner only, we give the link to know with who the wpsjob is shared
             if (Owner.Id == context.UserId) {
-                //for owner only, we give the link to know with who the wpsjob is shared
-                //if shared with users
-                if (IsSharedToUser()) {
-                    Uri sharedUrlUsr = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
-                    result.Links.Add(new SyndicationLink(sharedUrlUsr, "results", name, "application/atom+xml", 0));
-                    status = "restricted";
-                }
-                if (IsSharedToCommunity()) {
-                    Uri sharedUrlCommunity = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
-                    result.Links.Add(new SyndicationLink(sharedUrlCommunity, "results", name, "application/atom+xml", 0));
-                    status = "restricted";
-                }
+                if (sharedUrlUsr != null) result.Links.Add(new SyndicationLink(sharedUrlUsr, "results", name, "application/atom+xml", 0));
+                if (sharedUrlCommunity != null) result.Links.Add(new SyndicationLink(sharedUrlCommunity, "results", name, "application/atom+xml", 0));
             }
 
             try {
