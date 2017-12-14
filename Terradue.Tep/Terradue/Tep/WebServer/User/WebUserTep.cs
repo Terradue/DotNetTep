@@ -194,6 +194,7 @@ namespace Terradue.Tep.WebServer {
                         if (webroles.Count > 0) {
                             communityroles.Add(new WebCommunityRoles {
                                 Community = community.Name,
+                                Link = string.Format("/#!communities/details/{0}",community.Identifier),
                                 Roles = webroles
                             });
                         }
@@ -212,6 +213,9 @@ namespace Terradue.Tep.WebServer {
     public class WebCommunityRoles {
         [ApiMember(Name = "community", Description = "community name", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Community { get; set; }
+
+        [ApiMember(Name = "link", Description = "community link", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Link { get; set; }
 
         [ApiMember(Name = "roles", Description = "community roles", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
         public List<WebRole> Roles { get; set; }
