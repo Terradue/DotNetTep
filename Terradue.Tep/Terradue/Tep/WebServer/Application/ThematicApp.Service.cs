@@ -52,7 +52,6 @@ namespace Terradue.Tep.WebServer.Services {
             communities.Load();
 
             var settings = MasterCatalogue.OpenSearchFactorySettings;
-            settings.MergeFilters = Terradue.Metadata.EarthObservation.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
 
 			if (context.UserId != 0)
 			{
