@@ -429,6 +429,19 @@ namespace Terradue.Tep {
             else if (response.Status.Item is ProcessSucceededType) this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
             else if (response.Status.Item is ProcessFailedType) this.Status = WpsJobStatus.FAILED;
             else this.Status = WpsJobStatus.NONE;
+
+            if(this.Status == WpsJobStatus.COORDINATOR){
+                var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
+                var data = ServiceStack.Text.JsonSerializer.DeserializeFromString<CoordinatorDataResponse>(parameters);
+                if (data != null && data.coordinatorsId != null && data.coordinatorsId.Count > 0){
+                    var url = data.coordinatorsId[0].result;
+                    if (url != null){
+                        //https://recast.terradue.com/t2api/describe/crossi/_results/workflows/geohazards_tep_dcs_stemp_l8_dcs_stemp_l8_1_0_7/run/aa963f20-e018-11e7-92d0-0242ac110002/ 
+                        //TODO: transform url so recast knows it is a coordinator ?
+                        this.StatusLocation = url;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -1088,8 +1101,6 @@ namespace Terradue.Tep {
     [DataContract]
     public class WpsJobParameter {
 
-        public WpsJobParameter() { }
-
         public static List<WpsJobParameter> GetList(List<KeyValuePair<string,string>> parameters){
             var result = new List<WpsJobParameter>();
             if(parameters != null){
@@ -1105,6 +1116,22 @@ namespace Terradue.Tep {
 
         [DataMember]
         string Value { get; set; }
+    }
+
+    [DataContract]
+    public class CoordinatorsId {
+        [DataMember]
+        public string oozieId { get; set; }
+        [DataMember]
+        public string wpsId { get; set; }
+        [DataMember]
+        public string result { get; set; }
+    }
+
+    [DataContract]
+    public class CoordinatorDataResponse {
+        [DataMember]
+        public List<CoordinatorsId> coordinatorsId { get; set; }
     }
 }
 
