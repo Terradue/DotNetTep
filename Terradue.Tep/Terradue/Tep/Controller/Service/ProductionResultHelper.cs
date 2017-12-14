@@ -165,7 +165,7 @@ namespace Terradue.Tep {
 			}
 			
 			if (execResponse.Status.Item is ProcessSucceededType) {
-				var resultUrl = wpsjob.GetResultUrl(execResponse);
+				var resultUrl = WpsJob.GetResultUrl(execResponse);
 				var url = new Uri(resultUrl);
 
 				System.Text.RegularExpressions.Regex r;

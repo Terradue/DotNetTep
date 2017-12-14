@@ -43,8 +43,8 @@ namespace Terradue.Tep {
         [EntityDataField("status_url")]
         public string StatusLocation { get; set; }
 
-		[EntityDataField("status")]
-		public WpsJobStatus Status { get; set; }
+        [EntityDataField("status")]
+        public WpsJobStatus Status { get; set; }
 
         [EntityDataField("created_time")]
         public DateTime CreatedTime { get; set; }
@@ -54,33 +54,33 @@ namespace Terradue.Tep {
 
         [EntityDataField("access_key")]
         public string accesskey { get; protected set; }
-        public string AccessKey { 
+        public string AccessKey {
             get {
-				if (accesskey == null) {
+                if (accesskey == null) {
                     var accesslevel = context.AccessLevel;
                     context.AccessLevel = EntityAccessLevel.Administrator;
-					accesskey = Guid.NewGuid().ToString();
+                    accesskey = Guid.NewGuid().ToString();
                     var tmpjob = WpsJob.FromId(context, this.Id);
                     tmpjob.AccessKey = accesskey;
-					tmpjob.Store();
+                    tmpjob.Store();
                     context.AccessLevel = accesslevel;
-				}
+                }
                 return accesskey;
-            } 
+            }
             protected set {
                 accesskey = value;
             }
         }
 
-		/// <summary>
-		/// Gets or sets the parameters associated to the job
-		/// </summary>
-		/// <remarks>
-		/// Paramaters are of type key/value
-		/// </remarks>
-		/// <value>The parameters.</value>
-		/// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-		public List<KeyValuePair<string, string>> Parameters {
+        /// <summary>
+        /// Gets or sets the parameters associated to the job
+        /// </summary>
+        /// <remarks>
+        /// Paramaters are of type key/value
+        /// </remarks>
+        /// <value>The parameters.</value>
+        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
+        public List<KeyValuePair<string, string>> Parameters {
             get {
                 List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
                 if (parameters != null)
@@ -108,11 +108,11 @@ namespace Terradue.Tep {
                         string[] identifierParams = WpsId.Split("-".ToCharArray());
                         if (identifierParams.Length == 3) {
                             switch (identifierParams[0]) {
-                            case "one":
-                                provider = new CloudWpsFactory(context).CreateWpsProviderForOne(identifierParams[1]);
-                                break;
-                            default:
-                                break;
+                                case "one":
+                                    provider = new CloudWpsFactory(context).CreateWpsProviderForOne(identifierParams[1]);
+                                    break;
+                                default:
+                                    break;
                             }
                         }
                         provider = null;
@@ -135,14 +135,14 @@ namespace Terradue.Tep {
                     try {
                         process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, ProcessId);
                     } catch (Exception e) {
-                        string [] identifierParams = ProcessId.Split("-".ToCharArray());
+                        string[] identifierParams = ProcessId.Split("-".ToCharArray());
                         if (identifierParams.Length == 3) {
-                            switch (identifierParams [0]) {
-                            case "one":
-                                process = new CloudWpsFactory(context).CreateWpsProcessOfferingForOne(identifierParams [1], identifierParams [2]);
-                                break;
-                            default:
-                                break;
+                            switch (identifierParams[0]) {
+                                case "one":
+                                    process = new CloudWpsFactory(context).CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
+                                    break;
+                                default:
+                                    break;
                             }
                         }
                         if (process == null) throw e;
@@ -225,9 +225,9 @@ namespace Terradue.Tep {
             return result;
         }
 
-		public override void Load() {
-			base.Load();
-		}
+        public override void Load() {
+            base.Load();
+        }
 
         /// <summary>
         /// Store this instance.
@@ -243,7 +243,7 @@ namespace Terradue.Tep {
             base.Store();
             if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
                 var count = context.GetQueryIntegerValue(String.Format("SELECT count(*) FROM {3} WHERE id_{2}={0} AND id_usr={1};", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
-                if(count == 0)
+                if (count == 0)
                     context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
             }
         }
@@ -286,7 +286,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
         /// <param name="id">Identifier.</param>
-        public bool IsSharedToUser(int id) { 
+        public bool IsSharedToUser(int id) {
             var sharedUsersIds = this.GetAuthorizedUserIds();
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
@@ -308,122 +308,122 @@ namespace Terradue.Tep {
 
         }
 
-		/// <summary>
-		/// Creates the job from execute input.
-		/// </summary>
-		/// <returns>The job from execute input.</returns>
-		/// <param name="context">Context.</param>
-		/// <param name="wps">Wps.</param>
-		/// <param name="executeInput">Execute input.</param>
-        public static WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput, List<KeyValuePair<string,string>> parameters) {
-			WpsJob wpsjob = new WpsJob(context);
+        /// <summary>
+        /// Creates the job from execute input.
+        /// </summary>
+        /// <returns>The job from execute input.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="wps">Wps.</param>
+        /// <param name="executeInput">Execute input.</param>
+        public static WpsJob CreateJobFromExecuteInput(IfyContext context, WpsProcessOffering wps, Execute executeInput, List<KeyValuePair<string, string>> parameters) {
+            WpsJob wpsjob = new WpsJob(context);
             context.LogDebug(wpsjob, string.Format("Creating job from execute request"));
-			string newId = Guid.NewGuid().ToString();
+            string newId = Guid.NewGuid().ToString();
 
-			//create WpsJob
-			context.LogDebug(wpsjob, string.Format("Provider is null ? -> " + (wps.Provider == null ? "true" : "false")));
-			
-			wpsjob.Name = wps.Name;
-			wpsjob.Identifier = newId;
-			wpsjob.OwnerId = context.UserId;
-			wpsjob.UserId = context.UserId;
-			wpsjob.WpsId = wps.Provider.Identifier;
-			wpsjob.ProcessId = wps.Identifier;
-			wpsjob.CreatedTime = DateTime.UtcNow;
+            //create WpsJob
+            context.LogDebug(wpsjob, string.Format("Provider is null ? -> " + (wps.Provider == null ? "true" : "false")));
+
+            wpsjob.Name = wps.Name;
+            wpsjob.Identifier = newId;
+            wpsjob.OwnerId = context.UserId;
+            wpsjob.UserId = context.UserId;
+            wpsjob.WpsId = wps.Provider.Identifier;
+            wpsjob.ProcessId = wps.Identifier;
+            wpsjob.CreatedTime = DateTime.UtcNow;
             wpsjob.Status = WpsJobStatus.NONE;
-			wpsjob.Parameters = new List<KeyValuePair<string, string>>();
-			wpsjob.Parameters = parameters;
+            wpsjob.Parameters = new List<KeyValuePair<string, string>>();
+            wpsjob.Parameters = parameters;
 
-			return wpsjob;
-		}
+            return wpsjob;
+        }
 
-		/// <summary>
-		/// Builds the wps job parameters.
-		/// </summary>
-		/// <returns>The wps job parameters.</returns>
-		/// <param name="context">Context.</param>
-		/// <param name="executeInput">Execute input.</param>
-		public static List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput) {
-			context.LogDebug(context, string.Format("Building job parameters from execute request"));
-			List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
-			foreach (var d in executeInput.DataInputs) {
-				context.LogDebug(context, string.Format("Input: " + d.Identifier.Value));
-				if (d.Data != null && d.Data.Item != null) {
-					if (d.Data.Item is LiteralDataType) {
-						context.LogDebug(context, string.Format("Value is LiteralDataType"));
-						output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));
-					} else if (d.Data.Item is ComplexDataType) {
-						context.LogDebug(context, string.Format("Value is ComplexDataType"));
-						throw new Exception("Data Input ComplexDataType not yet implemented");
-					} else if (d.Data.Item is BoundingBoxType) {
-						//for BoundingBoxType, webportal creates LowerCorner and UpperCorner
-						//we just need to save both values as a concatained string
-						context.LogDebug(context, string.Format("Value is BoundingBoxType"));
-						var bbox = d.Data.Item as BoundingBoxType;
-						var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
-						output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));
-					} else {
-						throw new Exception("unhandled type of Data");
-					}
-				} else if (d.Reference != null) {
-					context.LogDebug(context, string.Format("Value is InputReferenceType"));
-					if (!string.IsNullOrEmpty(d.Reference.href)) {
-						output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
-					} else if (d.Reference.Item != null) {
-						throw new Exception("Data Input InputReferenceType item not yet implemented");
-					}
-				}
-			}
-			return output;
-		}
+        /// <summary>
+        /// Builds the wps job parameters.
+        /// </summary>
+        /// <returns>The wps job parameters.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="executeInput">Execute input.</param>
+        public static List<KeyValuePair<string, string>> BuildWpsJobParameters(IfyContext context, Execute executeInput) {
+            context.LogDebug(context, string.Format("Building job parameters from execute request"));
+            List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
+            foreach (var d in executeInput.DataInputs) {
+                context.LogDebug(context, string.Format("Input: " + d.Identifier.Value));
+                if (d.Data != null && d.Data.Item != null) {
+                    if (d.Data.Item is LiteralDataType) {
+                        context.LogDebug(context, string.Format("Value is LiteralDataType"));
+                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));
+                    } else if (d.Data.Item is ComplexDataType) {
+                        context.LogDebug(context, string.Format("Value is ComplexDataType"));
+                        throw new Exception("Data Input ComplexDataType not yet implemented");
+                    } else if (d.Data.Item is BoundingBoxType) {
+                        //for BoundingBoxType, webportal creates LowerCorner and UpperCorner
+                        //we just need to save both values as a concatained string
+                        context.LogDebug(context, string.Format("Value is BoundingBoxType"));
+                        var bbox = d.Data.Item as BoundingBoxType;
+                        var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
+                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));
+                    } else {
+                        throw new Exception("unhandled type of Data");
+                    }
+                } else if (d.Reference != null) {
+                    context.LogDebug(context, string.Format("Value is InputReferenceType"));
+                    if (!string.IsNullOrEmpty(d.Reference.href)) {
+                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
+                    } else if (d.Reference.Item != null) {
+                        throw new Exception("Data Input InputReferenceType item not yet implemented");
+                    }
+                }
+            }
+            return output;
+        }
 
-		/// <summary>
-		/// Updates the job from execute response.
-		/// </summary>
-		/// <param name="context">Context.</param>
-		/// <param name="wpsjob">Wpsjob.</param>
-		/// <param name="execResponse">Exec response.</param>
-		public void UpdateJobFromExecuteResponse(IfyContext context, ExecuteResponse execResponse) {
-			context.LogDebug(this, string.Format("Creating job from execute response"));
-			Uri uri = new Uri(execResponse.statusLocation.ToLower());
+        /// <summary>
+        /// Updates the job from execute response.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <param name="wpsjob">Wpsjob.</param>
+        /// <param name="execResponse">Exec response.</param>
+        public void UpdateJobFromExecuteResponse(IfyContext context, ExecuteResponse execResponse) {
+            context.LogDebug(this, string.Format("Creating job from execute response"));
+            Uri uri = new Uri(execResponse.statusLocation.ToLower());
 
-			//create WpsJob
-			context.LogDebug(this, string.Format("Get identifier from status location"));
-			string identifier = null;
-			NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
-			if (!string.IsNullOrEmpty(nvc["id"])) {
-				identifier = nvc["id"];
-			} else {
-				context.LogDebug(this, string.Format("identifier does not contain the key id in the query"));
+            //create WpsJob
+            context.LogDebug(this, string.Format("Get identifier from status location"));
+            string identifier = null;
+            NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
+            if (!string.IsNullOrEmpty(nvc["id"])) {
+                identifier = nvc["id"];
+            } else {
+                context.LogDebug(this, string.Format("identifier does not contain the key id in the query"));
 
-				//statusLocation url is different for gpod
-				if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
-					context.LogDebug(this, string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
-					identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-				}
-				//statuslocation url is different for pywps
-				else if (uri.AbsoluteUri.Contains("pywps")) {
-					identifier = uri.AbsoluteUri;
-					identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
-					identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
-				}
-			}
-			context.LogDebug(this, string.Format("identifier = " + identifier));
-			this.RemoteIdentifier = identifier;
+                //statusLocation url is different for gpod
+                if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
+                    context.LogDebug(this, string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
+                    identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
+                }
+                //statuslocation url is different for pywps
+                else if (uri.AbsoluteUri.Contains("pywps")) {
+                    identifier = uri.AbsoluteUri;
+                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
+                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
+                }
+            }
+            context.LogDebug(this, string.Format("identifier = " + identifier));
+            this.RemoteIdentifier = identifier;
 
             if (string.IsNullOrEmpty(this.StatusLocation)) this.StatusLocation = execResponse.statusLocation;
 
             UpdateStatusFromExecuteResponse(execResponse);
-			
-			this.Store();
-		}
+
+            this.Store();
+        }
 
         /// <summary>
         /// Updates the status from execute response.
         /// </summary>
         /// <param name="response">Response.</param>
-        public void UpdateStatusFromExecuteResponse(ExecuteResponse response){
-            if(response.Status == null) this.Status = WpsJobStatus.NONE;
+        public void UpdateStatusFromExecuteResponse(ExecuteResponse response) {
+            if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
             else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
             else if (response.Status.Item is ProcessSucceededType) this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
@@ -461,15 +461,15 @@ namespace Terradue.Tep {
 
                 // HTTP request
                 try {
-					using (HttpWebResponse httpWebResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
-						using (Stream responseStream = httpWebResponse.GetResponseStream()) {
-							responseStream.CopyTo(remoteWpsResponseStream);
-						}
-						remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-						string str = new StreamReader(remoteWpsResponseStream).ReadToEnd();
+                    using (HttpWebResponse httpWebResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
+                        using (Stream responseStream = httpWebResponse.GetResponseStream()) {
+                            responseStream.CopyTo(remoteWpsResponseStream);
+                        }
+                        remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                        string str = new StreamReader(remoteWpsResponseStream).ReadToEnd();
                         context.LogDebug(this, "Status response : " + str);
-						
-					}
+
+                    }
 
                 } catch (WebException we) {
                     context.LogError(this, string.Format(we.Message));
@@ -515,9 +515,9 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The result osd URL.</returns>
         /// <param name="execResponse">Exec response.</param>
-        public string GetResultOsdUrl(ExecuteResponse execResponse){
-			// Search for an Opensearch Description Document ouput url
-			var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_osd"));
+        public static string GetResultOsdUrl(ExecuteResponse execResponse) {
+            // Search for an Opensearch Description Document ouput url
+            var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_osd"));
             if (result_osd.Count() > 0) {
                 var po = result_osd.First();
                 //Get result Url
@@ -529,7 +529,7 @@ namespace Terradue.Tep {
                     var reference = po.Item as OutputReferenceType;
                     return reference.href;
                 }
-				throw new ImpossibleSearchException("Ouput result_osd found but no Url set");
+                throw new ImpossibleSearchException("Ouput result_osd found but no Url set");
             }
             return null;
         }
@@ -539,51 +539,51 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The result metadatad URL.</returns>
         /// <param name="execResponse">Exec response.</param>
-		public string GetResultMetadatadUrl(ExecuteResponse execResponse) {
-			// Search for an Opensearch Description Document ouput url
-			var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_metadata"));
-			if (result_osd.Count() > 0) {
-				var po = result_osd.First();
-				string url = null;
-				//Get result Url
-				if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
-					var item = ((DataType)(po.Item)).Item as ComplexDataType;
-					var reference = item.Reference as OutputReferenceType;
-					return reference.href;
-				} else if (po.Item is OutputReferenceType) {
-					var reference = po.Item as OutputReferenceType;
-					return reference.href;
-				}
-				throw new ImpossibleSearchException("Ouput result_metadata found but no Url set");
-			}
-			return null;
-		}
+		public static string GetResultMetadatadUrl(ExecuteResponse execResponse) {
+            // Search for an Opensearch Description Document ouput url
+            var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_metadata"));
+            if (result_osd.Count() > 0) {
+                var po = result_osd.First();
+                string url = null;
+                //Get result Url
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
+                    var reference = item.Reference as OutputReferenceType;
+                    return reference.href;
+                } else if (po.Item is OutputReferenceType) {
+                    var reference = po.Item as OutputReferenceType;
+                    return reference.href;
+                }
+                throw new ImpossibleSearchException("Ouput result_metadata found but no Url set");
+            }
+            return null;
+        }
 
-		public string GetResultHtmlUrl(ExecuteResponse execResponse) {
-			// Search for an Opensearch Description Document ouput url
+        public static string GetResultHtmlUrl(ExecuteResponse execResponse) {
+            // Search for an Opensearch Description Document ouput url
             var result_html = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_html"));
-			if (result_html.Count() > 0) {
-				var po = result_html.First();
-				//Get result Url
-				if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
-					var item = ((DataType)(po.Item)).Item as ComplexDataType;
-					var reference = item.Reference as OutputReferenceType;
-					return reference.href;
-				} else if (po.Item is OutputReferenceType) {
-					var reference = po.Item as OutputReferenceType;
-					return reference.href;
-				}
-				throw new ImpossibleSearchException("Ouput result_html found but no Url set");
-			}
-			return null;
-		}
+            if (result_html.Count() > 0) {
+                var po = result_html.First();
+                //Get result Url
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
+                    var reference = item.Reference as OutputReferenceType;
+                    return reference.href;
+                } else if (po.Item is OutputReferenceType) {
+                    var reference = po.Item as OutputReferenceType;
+                    return reference.href;
+                }
+                throw new ImpossibleSearchException("Ouput result_html found but no Url set");
+            }
+            return null;
+        }
 
         /// <summary>
         /// Gets the result URL.
         /// </summary>
         /// <returns>The result URL.</returns>
         /// <param name="execResponse">Exec response.</param>
-        public string GetResultUrl(ExecuteResponse execResponse){
+        public static string GetResultUrl(ExecuteResponse execResponse) {
             var url = GetResultOsdUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultMetadatadUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultHtmlUrl(execResponse);
@@ -602,7 +602,7 @@ namespace Terradue.Tep {
 
             if (content is ExceptionReport)
                 throw new ImpossibleSearchException("WPS job status raised an exception : "
-                                                    + (content as ExceptionReport).Exception [0].ExceptionText [0]);
+                                                    + (content as ExceptionReport).Exception[0].ExceptionText[0]);
 
             if (!(content is ExecuteResponse))
                 throw new ImpossibleSearchException("WPS job status did not return an ExecuteResponse : "
@@ -616,7 +616,7 @@ namespace Terradue.Tep {
 
             // Search for an Opensearch Description Document ouput url
             var url = GetResultOsdUrl(execResponse);
-            if(!string.IsNullOrEmpty(url)){
+            if (!string.IsNullOrEmpty(url)) {
                 OpenSearchUrl osUrl = null;
                 try {
                     osUrl = new OpenSearchUrl(url);
@@ -628,9 +628,9 @@ namespace Terradue.Tep {
                 return SandboxOpenSearchable.CreateSandboxOpenSearchable(osUrl, settings);
             }
 
-			// Search for a static metadata file
-			url = GetResultMetadatadUrl(execResponse);
-			if (!string.IsNullOrEmpty(url)) {
+            // Search for a static metadata file
+            url = GetResultMetadatadUrl(execResponse);
+            if (!string.IsNullOrEmpty(url)) {
                 AtomFeed feed = null;
                 try {
                     HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(url);
@@ -650,43 +650,43 @@ namespace Terradue.Tep {
             return new ExecuteResponseOutputOpenSearchable(execResponse, context);
         }
 
-		/// <summary>
-		/// Check if the response is from a coordinator.
-		/// </summary>
-		/// <returns><c>true</c>, if response is from a coordinator, <c>false</c> otherwise.</returns>
-		/// <param name="response">Response.</param>
-		public static bool IsResponseFromCoordinator(ExecuteResponse response) {
-			try {
-				var coordinatorsIds = response.ProcessOutputs.Where(po => po.Identifier.Value.Equals("coordinatorIds"));
-				if (coordinatorsIds.Count() > 0) return true;
-			} catch (Exception) { }
-			return false;
-		}
+        /// <summary>
+        /// Check if the response is from a coordinator.
+        /// </summary>
+        /// <returns><c>true</c>, if response is from a coordinator, <c>false</c> otherwise.</returns>
+        /// <param name="response">Response.</param>
+        public static bool IsResponseFromCoordinator(ExecuteResponse response) {
+            try {
+                var coordinatorsIds = response.ProcessOutputs.Where(po => po.Identifier.Value.Equals("coordinatorIds"));
+                if (coordinatorsIds.Count() > 0) return true;
+            } catch (Exception) { }
+            return false;
+        }
 
 
-		#region IEntitySearchable implementation
-		public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+        #region IEntitySearchable implementation
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
                     var urlBOS = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings);
                     var entity = urlBOS.Entity;
-	                if (entity is EntityList<ThematicCommunity>) {
-	                    var entitylist = entity as EntityList<ThematicCommunity>;
-	                    var items = entitylist.GetItemsAsList();
-	                    if (items.Count > 0) {
-	                        return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
-	                    }
-                    } else if (entity is EntityList<WpsProcessOffering>){
+                    if (entity is EntityList<ThematicCommunity>) {
+                        var entitylist = entity as EntityList<ThematicCommunity>;
+                        var items = entitylist.GetItemsAsList();
+                        if (items.Count > 0) {
+                            return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                        }
+                    } else if (entity is EntityList<WpsProcessOffering>) {
                         var entitylist = entity as EntityList<WpsProcessOffering>;
-						var items = entitylist.GetItemsAsList();
-						if (items.Count > 0) {
+                        var items = entitylist.GetItemsAsList();
+                        if (items.Count > 0) {
                             var processIds = "";
                             foreach (var item in items) processIds += item.Identifier + ",";
                             processIds = processIds.Trim(",".ToCharArray());
                             return new KeyValuePair<string, string>("ProcessId", processIds);
-						}
-                    } else if (entity is MultiGenericOpenSearchable){
+                        }
+                    } else if (entity is MultiGenericOpenSearchable) {
                         if (urlBOS.Items != null) {
                             var processIds = "";
                             foreach (var item in urlBOS.Items) processIds += item.Identifier + ",";
@@ -695,9 +695,9 @@ namespace Terradue.Tep {
                             return new KeyValuePair<string, string>("ProcessId", processIds);
                         }
                     }
-                return new KeyValuePair<string, string>();
-            default:
-                return base.GetFilterForParameter(parameter, value);
+                    return new KeyValuePair<string, string>();
+                default:
+                    return base.GetFilterForParameter(parameter, value);
             }
         }
 
@@ -716,8 +716,8 @@ namespace Terradue.Tep {
         public override bool IsPostFiltered(NameValueCollection parameters) {
             foreach (var key in parameters.AllKeys) {
                 switch (key) {
-                default:
-                    break;
+                    default:
+                        break;
                 }
             }
             return false;
@@ -748,7 +748,7 @@ namespace Terradue.Tep {
                 statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
             }
 
-            if (string.IsNullOrEmpty(parameters ["basic"]) || parameters ["basic"] != "true") {
+            if (string.IsNullOrEmpty(parameters["basic"]) || parameters["basic"] != "true") {
                 result = GetFullWpsJobAtomItem();
                 if (result == null) {
                     result = new AtomItem();
@@ -795,7 +795,7 @@ namespace Terradue.Tep {
 
             try {
                 result.ElementExtensions.Add("Parameters", "http://standards.terradue.com", WpsJobParameter.GetList(this.Parameters));
-            } catch (Exception) { 
+            } catch (Exception) {
                 result.ElementExtensions.Add("Parameters", "http://standards.terradue.com", new List<WpsJobParameter>());
             }
 
@@ -806,7 +806,7 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public string ExtractProviderContact(string contact){
+        public string ExtractProviderContact(string contact) {
             if (!string.IsNullOrEmpty(contact)) {
                 if (contact.Contains("@")) {
                     //in case contact contains more than an email address
@@ -842,23 +842,23 @@ namespace Terradue.Tep {
                 provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
             } catch (Exception e) {
                 context.LogError(this, e.Message);
-                string [] identifierParams = this.ProcessId.Split("-".ToCharArray());
+                string[] identifierParams = this.ProcessId.Split("-".ToCharArray());
                 if (identifierParams.Length == 3) {
-                    switch (identifierParams [0]) {
-                    case "one":
-                        CloudWpsFactory wpstep = new CloudWpsFactory(context);
-                        if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
-                        try {
-                            context.LogDebug(this, "Get process -- " + identifierParams [1] + " -- " + identifierParams [2]);
-                            process = wpstep.CreateWpsProcessOfferingForOne(identifierParams [1], identifierParams [2]);
-                            context.LogDebug(this, "Get provider");
-                            provider = process.Provider;
-                        } catch (Exception e2) {
-                            context.LogError(this, e2.Message);
-                        }
-                        break;
-                    default:
-                        break;
+                    switch (identifierParams[0]) {
+                        case "one":
+                            CloudWpsFactory wpstep = new CloudWpsFactory(context);
+                            if (this.IsPublic()) wpstep.StartDelegate(this.OwnerId);
+                            try {
+                                context.LogDebug(this, "Get process -- " + identifierParams[1] + " -- " + identifierParams[2]);
+                                process = wpstep.CreateWpsProcessOfferingForOne(identifierParams[1], identifierParams[2]);
+                                context.LogDebug(this, "Get provider");
+                                provider = process.Provider;
+                            } catch (Exception e2) {
+                                context.LogError(this, e2.Message);
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -904,7 +904,7 @@ namespace Terradue.Tep {
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            operation.Request.Any = (XmlElement)nodes [0];
+            operation.Request.Any = (XmlElement)nodes[0];
             operations.Add(operation);
 
             //describeProcess
@@ -924,7 +924,7 @@ namespace Terradue.Tep {
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            operation.Request.Any = (XmlElement)nodes [0];
+            operation.Request.Any = (XmlElement)nodes[0];
             operations.Add(operation);
 
             //execute
@@ -952,7 +952,7 @@ namespace Terradue.Tep {
 
             operation.Request = new OwcContent();
             operation.Request.Type = "text/xml";
-            operation.Request.Any = (XmlElement)nodes [0];
+            operation.Request.Any = (XmlElement)nodes[0];
             operations.Add(operation);
 
             offering.Operations = operations.ToArray();
@@ -989,6 +989,79 @@ namespace Terradue.Tep {
 
         #endregion
 
+        public string StringStatus {
+            get {
+                switch (Status) {
+                    case WpsJobStatus.NONE:
+                        return "NONE";
+                    case WpsJobStatus.ACCEPTED:
+                        return "ACCEPTED";
+                    case WpsJobStatus.STARTED:
+                        return "STARTED";
+                    case WpsJobStatus.PAUSED:
+                        return "PAUSED";
+                    case WpsJobStatus.SUCCEEDED:
+                        return "SUCCEEDED";
+                    case WpsJobStatus.STAGED:
+                        return "STAGED";
+                    case WpsJobStatus.FAILED:
+                        return "FAILED";
+                    case WpsJobStatus.COORDINATOR:
+                        return "COORDINATOR";
+                    default:
+                        return "";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the result count.
+        /// </summary>
+        /// <returns>The result count.</returns>
+        public long GetResultCount() {
+
+            //check status first
+            switch (Status) {
+                case WpsJobStatus.NONE:
+                case WpsJobStatus.ACCEPTED:
+                case WpsJobStatus.STARTED:
+                case WpsJobStatus.PAUSED:
+                case WpsJobStatus.FAILED:
+                    return 0;
+                case WpsJobStatus.SUCCEEDED:
+                    return GetResultOsdResultCount();
+                case WpsJobStatus.STAGED:
+                    return GetOpenSearchableResultCount(StatusLocation);
+                case WpsJobStatus.COORDINATOR:
+                    return 0;
+                default:
+                    return 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets the recast result count.
+        /// </summary>
+        /// <returns>The recast result count.</returns>
+        private long GetOpenSearchableResultCount(string url) {
+            var nvc = new NameValueCollection();
+            nvc.Set("count", "0");
+            var ios = OpenSearchFactory.FindOpenSearchable(MasterCatalogue.OpenSearchFactorySettings, new OpenSearchUrl(url));
+            var result = MasterCatalogue.OpenSearchEngine.Query(ios, nvc);
+            return result.TotalResults;
+        }
+
+        /// <summary>
+        /// Gets the result osd result count.
+        /// </summary>
+        /// <returns>The result osd result count.</returns>
+        private long GetResultOsdResultCount() {
+            var jobresponse = GetStatusLocationContent();
+            if (!(jobresponse is ExecuteResponse)) return 0;
+            var execResponse = jobresponse as ExecuteResponse;
+            string osd = GetResultOsdUrl(execResponse);
+            return GetOpenSearchableResultCount(osd);
+        }
     }
 
 	/**********************************************************************************************************************/

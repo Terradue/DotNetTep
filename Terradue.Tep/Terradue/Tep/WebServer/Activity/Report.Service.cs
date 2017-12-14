@@ -93,15 +93,15 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/report GET startdate='{0}',enddate='{1}'", request.startdate, request.enddate));
 
-                string sql = "";
-                System.Data.IDbConnection dbConnection = null;
-                System.Data.IDataReader reader = null;
-
                 var skipedIds = context.GetConfigValue("report-ignored-ids");
+                if (string.IsNullOrEmpty(skipedIds)) skipedIds = "0";
 
                 GenerateCsvHeader(context, csv, startdate, enddate, skipedIds);
+                csv.Append(Environment.NewLine);
                 GenerateCsvUsersPart(context, csv, startdate, enddate, skipedIds);
+                csv.Append(Environment.NewLine);
                 GenerateCsvWpsJobPart(context, csv, startdate, enddate, skipedIds);
+                csv.Append(Environment.NewLine);
                 GenerateCsvDataPackagePart(context, csv, startdate, enddate, skipedIds);
 
                 string path = AppDomain.CurrentDomain.BaseDirectory;
@@ -151,6 +151,24 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(Environment.NewLine);
         }
 
+        private List<int> GetActiveUsers(IfyContext context, string startdate, string enddate, string skipedIds){
+            List<int> ids = new List<int>();
+
+            string sql = string.Format("SELECT DISTINCT usr.id FROM usr WHERE " +
+                               "id NOT IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time < '{0}' ) " +
+                                       "AND id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time <= '{1}'){2};",
+                                       startdate, enddate, string.IsNullOrEmpty(skipedIds) ? "" : " AND id NOT IN ("+skipedIds+")");
+            System.Data.IDbConnection dbConnection = context.GetDbConnection();
+            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+            while (reader.Read()) {
+                if (reader.GetValue(0) != DBNull.Value) {
+                    ids.Add(reader.GetInt32(0));
+                }
+            }
+            context.CloseQueryResult(reader, dbConnection);
+            return ids;
+        }
+
         /// <summary>
         /// Generates the csv users part.
         /// </summary>
@@ -162,45 +180,34 @@ namespace Terradue.Tep.WebServer.Services {
         private void GenerateCsvUsersPart(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
             //Total number of users
             string sql = string.Format("SELECT COUNT(*) FROM usr WHERE " +
-                "id NOT IN ({0}) " +
-                "AND id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time < '{0}' );", skipedIds);
+                                       "id NOT IN ({0}) " +
+                                       "AND id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time < '{1}' );"
+                                       , skipedIds, startdate);
             var totalUsers = context.GetQueryIntegerValue(sql);
-            csv.Append(string.Format("Total number of users at {0},{1}{2}",startdate,totalUsers,Environment.NewLine));
+            csv.Append(string.Format("Total number of users at {0},{1}{2}{2}",startdate,totalUsers,Environment.NewLine));
             csv.Append(Environment.NewLine);
 
-            List<int> ids = new List<int>();
+            List<int> ids = GetActiveUsers(context, startdate, enddate, skipedIds);
 
-            // Users signed-in on the GEP Portal: username, sign-in date 
-            // Users with granted access to Cloud resources: username, certificate generation date
-            sql = string.Format("SELECT DISTINCT usr.id FROM usr WHERE " +
-                                "id NOT IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time < '{0}' ) " +
-                                "AND id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time <= '{1}') " +
-                                "AND id NOT IN ({2});", 
-                                startdate, enddate, skipedIds);
-            System.Data.IDbConnection dbConnection = context.GetDbConnection();
-            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
-            while (reader.Read()) {
-                if (reader.GetValue(0) != DBNull.Value) {
-                    ids.Add(reader.GetInt32(0));
-                }
-            }
-            reader.Close();
+            System.Data.IDbConnection dbConnection;
+            System.Data.IDataReader reader;
+
             csv.Append(String.Format("Users signed in between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
             if (ids.Count > 0) {
-                csv.Append("Username,Organization,First Login date,Cloud access" + Environment.NewLine);
+                csv.Append("Username,Name,Affiliation,First Login date,Terradue cloud username" + Environment.NewLine);
                 foreach (int id in ids) {
-                    sql = String.Format("SELECT usr.username, usr.affiliation, usrsession.log_time, usrcert.cert_content_pem FROM usrsession " +
-                    "INNER JOIN usr ON usr.id=usrsession.id_usr " +
-                    "INNER JOIN usrcert ON usrcert.id_usr=usrsession.id_usr " +
-                    "WHERE usrsession.id_usr={0} ORDER BY usrsession.log_time ASC LIMIT 1;", id);
+                    sql = String.Format("SELECT usr.username, CONCAT(usr.firstname,' ',usr.lastname), usr.affiliation, usrsession.log_time, usr_cloud.username FROM usrsession " +
+                                        "INNER JOIN usr ON usr.id=usrsession.id_usr " +
+                                        "INNER JOIN usr_cloud ON usr_cloud.id = usr.id " +
+                                        "WHERE usrsession.id_usr = {0} ORDER BY usrsession.log_time ASC LIMIT 1;", id);
                     dbConnection = context.GetDbConnection();
                     reader = context.GetQueryResult(sql, dbConnection);
                     if (reader.Read()) {
                         if (reader.GetValue(0) != DBNull.Value) {
-                            var aff = reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "";
-                            var pem = reader.GetValue(3) != DBNull.Value ? reader.GetValue(3) : "";
-                            csv.Append(String.Format("{0},{1},{2},{3}", reader.GetString(0), aff.Replace(",","\\,"), reader.GetDateTime(2), pem != DBNull.Value ? "yes" : "no"));
-                            csv.Append(Environment.NewLine);
+                            var name = reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "not set";
+                            var aff = reader.GetValue(2) != DBNull.Value ? reader.GetString(2) : "not set";
+                            var cloud = reader.GetValue(4) != DBNull.Value ? reader.GetString(4) : "not set";
+                            csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", reader.GetString(0), name, aff.Replace(",","\\,"), reader.GetDateTime(3), cloud, Environment.NewLine));
                         }
                     }
                     context.CloseQueryResult(reader, dbConnection);
@@ -209,7 +216,7 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(Environment.NewLine);
 
             //Active users
-            sql = string.Format("SELECT usr.username, COUNT(usrsession.id_usr) FROM usr INNER JOIN usrsession ON usr.id=usrsession.id_usr " +
+            sql = string.Format("SELECT usr.username, CONCAT(usr.firstname,' ',usr.lastname), COUNT(usrsession.id_usr),usr.affiliation FROM usr INNER JOIN usrsession ON usr.id=usrsession.id_usr " +
                                 "WHERE usrsession.log_time > '{0}' AND usrsession.log_time < '{1}' AND usrsession.id_usr NOT IN ({2}) GROUP BY usrsession.id_usr HAVING COUNT(*) >1 " +
                                 "ORDER BY COUNT(usrsession.id_usr) DESC;", 
                                 startdate, enddate, skipedIds);
@@ -220,13 +227,15 @@ namespace Terradue.Tep.WebServer.Services {
             while (reader.Read()) {
                 if (reader.GetValue(0) != DBNull.Value) {
                     nbActU ++;
-                    s += String.Format("{0},{1}{2}",reader.GetString(0), reader.GetInt32(1), Environment.NewLine);
+                    var name = reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "";
+                    var aff = reader.GetValue(3) != DBNull.Value ? reader.GetString(3) : "";
+                    s += String.Format("{0},{1},{2},{3}{4}",reader.GetString(0), name, aff, reader.GetInt32(2), Environment.NewLine);
                 }
             }
             context.CloseQueryResult(reader, dbConnection);
             csv.Append(String.Format("Active users (logged more than once) between {0} and {1},{2}{3}", startdate, enddate, nbActU, Environment.NewLine));
             if (nbActU > 0) {
-                csv.Append("Username,Nb of logins" + Environment.NewLine);
+                csv.Append("Username,Name,Affiliation,Nb of logins" + Environment.NewLine);
                 csv.Append(s);
             }
             csv.Append(Environment.NewLine);
@@ -244,33 +253,30 @@ namespace Terradue.Tep.WebServer.Services {
             }
             context.CloseQueryResult(reader, dbConnection);
 
+            int success = 0;
+            int failed = 0;
             List<WpsJob> jobs = new List<WpsJob>();
             foreach (int id in ids) {
-                jobs.Add(WpsJob.FromId(context, id));
-            }
-
-            csv.Append(String.Format("Wps jobs created between {0} and {1} (ordered by user),{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
-                csv.Append("Username,Wpsjob name,Wpsjob creation date,Process name,Shared" + Environment.NewLine);
-                foreach (WpsJob job in jobs) {
-                    User usr = User.FromId(context, job.OwnerId);
-                    string wpsname = "";
-                    try {
-                        WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
-                        wpsname = wps.Name;
-                    } catch (Exception) {
-                        wpsname = job.ProcessId;
-                    }
-                    string ispublic = job.IsPublic() ? "yes" : "no";
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace(",","\\,"), job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",","\\,"), ispublic, Environment.NewLine));
+                var job = WpsJob.FromId(context, id);
+                jobs.Add(job);
+                switch(job.Status){
+                    case WpsJobStatus.SUCCEEDED:
+                    case WpsJobStatus.STAGED:
+                    case WpsJobStatus.COORDINATOR:
+                        success++;
+                        break;
+                    case WpsJobStatus.FAILED:
+                        failed++;
+                        break;
+                    default:
+                        break;
                 }
             }
-            csv.Append(Environment.NewLine);
 
-            jobs.Sort();
-            csv.Append(String.Format("Wps jobs created between {0} and {1} (ordered by date),{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
-                csv.Append("Username,Wpsjob name,Wpsjob creation date,Process name,Shared" + Environment.NewLine);
+            //list all jobs created
+            if (jobs.Count > 0) {
+                csv.Append(String.Format("Wps jobs created between {0} and {1},{2} ({3} succeeded | {4} failed){5}", startdate, enddate, ids.Count, success, failed, Environment.NewLine));
+                csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
                 foreach (WpsJob job in jobs) {
                     User usr = User.FromId(context, job.OwnerId);
                     string wpsname = "";
@@ -280,73 +286,104 @@ namespace Terradue.Tep.WebServer.Services {
                     } catch (Exception) {
                         wpsname = job.ProcessId;
                     }
-                    string ispublic = job.IsPublic() ? "yes" : "no";
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, job.Name.Replace(",","\\,"), job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",","\\,"), ispublic, Environment.NewLine));
+                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6}{7}",
+                                             job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus, job.GetResultCount(), (job.IsPrivate() ? "no" : "yes"), Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
+            }
 
-                //Nb of wpsjobs per user
+            //Nb of wpsjobs per user
+            List<int> idsUsr = GetActiveUsers(context, startdate, enddate, skipedIds);
+            if (idsUsr.Count > 0) {
                 csv.Append(string.Format("Number of wpsjob created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT usr.username, COUNT(wpsjob.id) FROM usr INNER JOIN wpsjob ON usr.id=wpsjob.id_usr " +
-                "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.id_usr " +
-                "ORDER BY COUNT(wpsjob.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
-                }
-                context.CloseQueryResult(reader, dbConnection);
-                csv.Append(Environment.NewLine);
-
-                //Nb of wpsjobs per group
-                csv.Append(string.Format("Number of wpsjob created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT grp.name, COUNT(wpsjob.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN wpsjob ON wpsjob.id_usr=usr_grp.id_usr " +
-                "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY grp.id " +
-                "ORDER BY COUNT(wpsjob.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
-                }
-                context.CloseQueryResult(reader, dbConnection);
-                csv.Append(Environment.NewLine);
-
-                //Nb of wpsjobs per service
-                csv.Append(string.Format("Number of wpsjob created per service between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT wpsjob.process, COUNT(wpsjob.process) FROM wpsjob " +
-                "WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.process " +
-                "ORDER BY COUNT(wpsjob.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                List<KeyValuePair<string,int>> services = new List<KeyValuePair<string, int>>();
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        services.Add(new KeyValuePair<string, int>(reader.GetString(0), reader.GetInt32(1)));
-                    }
-                }
-                context.CloseQueryResult(reader, dbConnection);
-                foreach (KeyValuePair<string,int> kv in services) {
-                    string wpsname = "";
-                    try {
-                        WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, kv.Key);
-                        context.LogDebug(this,"Wps name = " + wps.Name);
-                        wpsname = wps.Name;
-                    } catch (Exception e) {
-                        context.LogError(this, e.Message);
-                        context.LogDebug(this,"Wps name (key) = " + kv.Key);
-                        wpsname = kv.Key;
-                    }
-                    csv.Append(String.Format("{0},{1}{2}", wpsname.Replace(",","\\,"), kv.Value, Environment.NewLine));
+                csv.Append("Username,Total,Succeeded,Failed" + Environment.NewLine);
+                foreach (var id in idsUsr) {
+                    User usr = User.FromId(context, id);
+                    Analytics analytic = new Analytics(context, usr);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseDataPackages = false;
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             usr.Username,
+                                             analytic.WpsJobSubmittedCount,
+                                             analytic.WpsJobSuccessCount,
+                                             analytic.WpsJobFailedCount,
+                                             Environment.NewLine));
                 }
             }
-            csv.Append(Environment.NewLine);
+
+            //Nb of wpsjobs per communities
+            var domains = new CommunityCollection(context);
+            domains.Load();
+            if (domains.Count > 0) {
+                csv.Append(string.Format("Number of wpsjob created per community between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append("Community,Total,Succeeded,Failed" + Environment.NewLine);
+                foreach (var domain in domains) {
+                    Analytics analytic = new Analytics(context, domain);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseDataPackages = false;
+                    analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             domain.Name,
+                                             analytic.WpsJobSubmittedCount,
+                                             analytic.WpsJobSuccessCount,
+                                             analytic.WpsJobFailedCount,
+                                             Environment.NewLine));
+                }
+            }
+
+            //Nb of wpsjobs per group
+            var grps = new EntityList<Group>(context);
+            grps.Load();
+            if (grps.Count > 0) {
+                csv.Append(string.Format("Number of wpsjob created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append("Group,Total,Succeeded,Failed" + Environment.NewLine);
+                foreach (var grp in grps) {
+                    Analytics analytic = new Analytics(context, grp);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseDataPackages = false;
+                    analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             grp.Name,
+                                             analytic.WpsJobSubmittedCount,
+                                             analytic.WpsJobSuccessCount,
+                                             analytic.WpsJobFailedCount,
+                                             Environment.NewLine));
+                }
+            }
+
+            //Nb of wpsjobs per service
+            sql = String.Format("SELECT wpsjob.process FROM wpsjob WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.process;",
+                                startdate, enddate, skipedIds);
+            dbConnection = context.GetDbConnection();
+            reader = context.GetQueryResult(sql, dbConnection);
+            List<string> services = new List<string>();
+            while (reader.Read()) {
+                if (reader.GetValue(0) != DBNull.Value) {
+                    services.Add(reader.GetString(0));
+                }
+            }
+            context.CloseQueryResult(reader, dbConnection);
+            if (services.Count > 0) {
+                csv.Append(string.Format("Number of wpsjob created per service between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append("Service,Total,Succeeded,Failed" + Environment.NewLine);
+                foreach (var serviceId in services) {
+                    var service = Service.FromIdentifier(context, serviceId);
+                    Analytics analytic = new Analytics(context, service);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseDataPackages = false;
+                    analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             service.Name,
+                                             analytic.WpsJobSubmittedCount,
+                                             analytic.WpsJobSuccessCount,
+                                             analytic.WpsJobFailedCount,
+                                             Environment.NewLine));
+                }
+            }
         }
 
         /// <summary>
@@ -358,6 +395,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="enddate">Enddate.</param>
         /// <param name="skipedIds">Skiped identifiers.</param>
         private void GenerateCsvDataPackagePart(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
+
             //  Data Packages created + shared
             string sql = String.Format("SELECT resourceset.id, usr.username, resourceset.name, resourceset.creation_time from resourceset INNER JOIN usr on usr.id=resourceset.id_usr " +
                                        "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.kind=0;",
@@ -373,8 +411,9 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
             context.CloseQueryResult(reader, dbConnection);
-            csv.Append(String.Format("Data packages created between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
+
             if (ids.Count > 0) {
+                csv.Append(String.Format("Data packages created between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
                 csv.Append("Username,Data package name,Data package creation date, Shared" + Environment.NewLine);
                 for (int i = 0; i < ids.Count; i++) {
                     sql = string.Format("SELECT COUNT(*) FROM resourceset_perm WHERE id_resourceset={0} AND id_usr IS NULL AND id_grp IS NULL;", ids[i]);
@@ -383,33 +422,68 @@ namespace Terradue.Tep.WebServer.Services {
                     csv.Append(Environment.NewLine);
                 }
                 csv.Append(Environment.NewLine);
-                csv.Append(string.Format("Number of Data package created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT usr.username, COUNT(resourceset.id) FROM usr INNER JOIN resourceset ON usr.id=resourceset.id_usr " +
-                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.kind=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY resourceset.id_usr " +
-                "ORDER BY COUNT(resourceset.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
+            }
+
+            //Nb of data packages per user
+            List<int> idsUsr = GetActiveUsers(context, startdate, enddate, skipedIds);
+            if (idsUsr.Count > 0) {
+                csv.Append(string.Format("Number of Data package created/loaded per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append("Username,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
+                foreach (var id in idsUsr) {
+                    User usr = User.FromId(context, id);
+                    Analytics analytic = new Analytics(context, usr);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseJobs = false;
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             usr.Username,
+                                             analytic.DataPackageCreatedCount,
+                                             analytic.DataPackageLoadCount,
+                                             analytic.DataPackageItemsLoadCount,
+                                             Environment.NewLine));
                 }
-                context.CloseQueryResult(reader, dbConnection);
-                csv.Append(Environment.NewLine);
+            }
+
+            //Nb of data packages per communities
+            var domains = new CommunityCollection(context);
+            domains.Load();
+            if (domains.Count > 0) {
+                csv.Append(string.Format("Number of Data package created per community between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append("Community,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
+                foreach (var domain in domains) {
+                    Analytics analytic = new Analytics(context, domain);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseJobs = false;
+                    analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             domain.Name,
+                                             analytic.DataPackageCreatedCount,
+                                             analytic.DataPackageLoadCount,
+                                             analytic.DataPackageItemsLoadCount,
+                                             Environment.NewLine));
+                }
+            }
+
+            //Nb of data packages per group
+            var grps = new EntityList<Group>(context);
+            grps.Load();
+            if (grps.Count > 0) {
                 csv.Append(string.Format("Number of Data package created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
-                sql = String.Format("SELECT grp.name, COUNT(resourceset.id) FROM grp INNER JOIN usr_grp ON usr_grp.id_grp=grp.id INNER JOIN resourceset ON resourceset.id_usr=usr_grp.id_usr " +
-                "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.kind=0 AND resourceset.id_usr NOT IN ({2}) GROUP BY grp.id " +
-                "ORDER BY COUNT(resourceset.id) DESC;",
-                                    startdate, enddate, skipedIds);
-                dbConnection = context.GetDbConnection();
-                reader = context.GetQueryResult(sql, dbConnection);
-                while (reader.Read()) {
-                    if (reader.GetValue(0) != DBNull.Value) {
-                        csv.Append(String.Format("{0},{1}{2}", reader.GetString(0), reader.GetInt32(1), Environment.NewLine));
-                    }
+                csv.Append("Group,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
+                foreach (var grp in grps) {
+                    Analytics analytic = new Analytics(context, grp);
+                    analytic.AnalyseCollections = false;
+                    analytic.AnalyseJobs = false;
+                    analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
+                    analytic.Load(startdate, enddate);
+                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                             grp.Name,
+                                             analytic.DataPackageCreatedCount,
+                                             analytic.DataPackageLoadCount,
+                                             analytic.DataPackageItemsLoadCount,
+                                             Environment.NewLine));
                 }
-                context.CloseQueryResult(reader, dbConnection);
             }
 
             //shared data packages
@@ -433,8 +507,8 @@ namespace Terradue.Tep.WebServer.Services {
                     Activity activity = Activity.FromId(context, id);
                     User user = User.FromId(context, activity.OwnerId);
                     DataPackage dp;
-                    string dpname = "not available";
-                    string dpdate = "not available";
+                    string dpname = "not set";
+                    string dpdate = "not set";
                     try{
                         dp = DataPackage.FromId(context, activity.EntityId);
                         dpname = dp.Name;
