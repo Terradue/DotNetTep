@@ -432,12 +432,11 @@ namespace Terradue.Tep {
 
             if(this.Status == WpsJobStatus.COORDINATOR){
                 var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
-                var data = ServiceStack.Text.JsonSerializer.DeserializeFromString<CoordinatorDataResponse>(parameters);
+                var item = ((DataType)(coordinatorsOutput.Item)).Item as ComplexDataType;
+                var data = ServiceStack.Text.JsonSerializer.DeserializeFromString<CoordinatorDataResponse>(item.Text);
                 if (data != null && data.coordinatorsId != null && data.coordinatorsId.Count > 0){
-                    var url = data.coordinatorsId[0].result;
+                    var url = data.coordinatorsId[0].result_osd;
                     if (url != null){
-                        //https://recast.terradue.com/t2api/describe/crossi/_results/workflows/geohazards_tep_dcs_stemp_l8_dcs_stemp_l8_1_0_7/run/aa963f20-e018-11e7-92d0-0242ac110002/ 
-                        //TODO: transform url so recast knows it is a coordinator ?
                         this.StatusLocation = url;
                     }
                 }
@@ -1060,11 +1059,13 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The recast result count.</returns>
         private long GetOpenSearchableResultCount(string url) {
-            var nvc = new NameValueCollection();
-            nvc.Set("count", "0");
-            var ios = OpenSearchFactory.FindOpenSearchable(MasterCatalogue.OpenSearchFactorySettings, new OpenSearchUrl(url));
-            var result = MasterCatalogue.OpenSearchEngine.Query(ios, nvc);
-            return result.TotalResults;
+            try {
+                var nvc = new NameValueCollection();
+                nvc.Set("count", "0");
+                var ios = OpenSearchFactory.FindOpenSearchable(MasterCatalogue.OpenSearchFactorySettings, new OpenSearchUrl(url));
+                var result = MasterCatalogue.OpenSearchEngine.Query(ios, nvc);
+                return result.TotalResults;
+            } catch (Exception) { return 0; }
         }
 
         /// <summary>
@@ -1072,11 +1073,13 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The result osd result count.</returns>
         private long GetResultOsdResultCount() {
-            var jobresponse = GetStatusLocationContent();
-            if (!(jobresponse is ExecuteResponse)) return 0;
-            var execResponse = jobresponse as ExecuteResponse;
-            string osd = GetResultOsdUrl(execResponse);
-            return GetOpenSearchableResultCount(osd);
+            try{
+                var jobresponse = GetStatusLocationContent();
+                if (!(jobresponse is ExecuteResponse)) return 0;
+                var execResponse = jobresponse as ExecuteResponse;
+                string osd = GetResultOsdUrl(execResponse);
+                return GetOpenSearchableResultCount(osd);
+            } catch (Exception) { return 0; }
         }
     }
 
@@ -1125,7 +1128,7 @@ namespace Terradue.Tep {
         [DataMember]
         public string wpsId { get; set; }
         [DataMember]
-        public string result { get; set; }
+        public string result_osd { get; set; }
     }
 
     [DataContract]
