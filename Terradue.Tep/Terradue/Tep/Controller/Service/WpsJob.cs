@@ -49,6 +49,9 @@ namespace Terradue.Tep {
         [EntityDataField("created_time")]
         public DateTime CreatedTime { get; set; }
 
+        [EntityDataField("nbresults")]
+        public int NbResults { get; set; }
+
         [EntityDataField("params")]
         public string parameters { get; protected set; }
 
@@ -1034,7 +1037,9 @@ namespace Terradue.Tep {
         /// Gets the result count.
         /// </summary>
         /// <returns>The result count.</returns>
-        public long GetResultCount() {
+        public void UpdateResultCount() {
+
+            long nbresults = 0;
 
             //check status first
             switch (Status) {
@@ -1042,17 +1047,25 @@ namespace Terradue.Tep {
                 case WpsJobStatus.ACCEPTED:
                 case WpsJobStatus.STARTED:
                 case WpsJobStatus.PAUSED:
+                    return;
                 case WpsJobStatus.FAILED:
-                    return 0;
+                    nbresults = 0;
+                    break;
                 case WpsJobStatus.SUCCEEDED:
-                    return GetResultOsdResultCount();
+                    nbresults = GetResultOsdResultCount();
+                    break;
                 case WpsJobStatus.STAGED:
-                    return GetOpenSearchableResultCount(StatusLocation);
+                    nbresults = GetOpenSearchableResultCount(StatusLocation);
+                    break;
                 case WpsJobStatus.COORDINATOR:
-                    return 0;
+                    nbresults = GetOpenSearchableResultCount(StatusLocation);
+                    break;
                 default:
-                    return 0;
+                    break;
             }
+
+            this.NbResults = (int)nbresults;
+            this.Store();
         }
 
         /// <summary>
@@ -1066,7 +1079,7 @@ namespace Terradue.Tep {
                 var ios = OpenSearchFactory.FindOpenSearchable(MasterCatalogue.OpenSearchFactorySettings, new OpenSearchUrl(url));
                 var result = MasterCatalogue.OpenSearchEngine.Query(ios, nvc);
                 return result.TotalResults;
-            } catch (Exception) { return 0; }
+            } catch (Exception e) { throw e; }//return 0; }
         }
 
         /// <summary>
