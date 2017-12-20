@@ -149,13 +149,29 @@ namespace Terradue.Tep.WebServer.Services {
                 var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
                 var nvc = httpRequest.QueryString;
 
-                WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable (wpsjob,context);
+                if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
 
-                //var nvc = wpsjobUrl.GetParameters ();
-                var res = ose.Query (wpsjobProductOs, nvc, type);
-                OpenSearchFactory.ReplaceSelfLinks(wpsjobProductOs, httpRequest.QueryString, res, EntrySelfLinkTemplate);
-                OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobProductOs, res);
-                result = new HttpResult (res.SerializeToString (), res.ContentType);
+                    //get credentials from current user
+                    if (context.UserId != 0) {
+                        var user = UserTep.FromId(context, context.UserId);
+                        var apikey = user.GetSessionApiKey();
+                        var t2userid = user.TerradueCloudUsername;
+                        settings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                    }
+                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), settings);
+                    var res = ose.Query(urlToShare, nvc, type);
+                    result = new HttpResult(res.SerializeToString(), res.ContentType);
+                } else {
+
+                    WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);
+
+                    //var nvc = wpsjobUrl.GetParameters ();
+                    var res = ose.Query(wpsjobProductOs, nvc, type);
+                    OpenSearchFactory.ReplaceSelfLinks(wpsjobProductOs, httpRequest.QueryString, res, EntrySelfLinkTemplate);
+                    OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobProductOs, res);
+                    result = new HttpResult(res.SerializeToString(), res.ContentType);
+                }
 
                 context.Close ();
             } catch (Exception e) {
@@ -190,22 +206,6 @@ namespace Terradue.Tep.WebServer.Services {
             return template.ToString();
         }
 
-        //public static string EntrySelfLinkTemplate(IOpenSearchResultItem item, OpenSearchDescription osd, string mimeType) {
-        //    if (item == null)
-        //        return null;
-
-        //    string identifier = item.Identifier;
-
-        //    NameValueCollection nvc = new NameValueCollection();
-
-        //    nvc.Set("id", string.Format("{0}", item.Identifier));
-
-        //    UriBuilder template = new UriBuilder(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType).Template);
-        //    string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
-        //    template.Query = string.Join("&", queryString);
-        //    return template.ToString();
-        //}
-
         public object Get (WpsJobProductDescriptionRequestTep request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
@@ -219,8 +219,35 @@ namespace Terradue.Tep.WebServer.Services {
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 HttpRequest httpRequest = HttpContext.Current.Request;
 
-                WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);
-                OpenSearchDescription osd = wpsjobProductOs.GetProxyOpenSearchDescription ();
+                OpenSearchDescription osd;
+
+                if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
+
+                    //get credentials from current user
+                    if (context.UserId != 0) {
+                        var user = UserTep.FromId(context, context.UserId);
+                        var apikey = user.GetSessionApiKey();
+                        var t2userid = user.TerradueCloudUsername;
+                        settings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                    }
+                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), settings);
+                    osd = urlToShare.GetOpenSearchDescription();
+                    var oldUri = new UriBuilder(osd.DefaultUrl.Template);
+                    var newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");
+                    newUri.Query = oldUri.Query;
+                    osd.DefaultUrl.Template = HttpUtility.UrlDecode(newUri.Uri.AbsoluteUri);
+                    foreach (var url in osd.Url) {
+                        oldUri = new UriBuilder(url.Template);
+                        newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");
+                        newUri.Query = oldUri.Query;
+                        url.Template = HttpUtility.UrlDecode(newUri.Uri.AbsoluteUri);
+                    }
+                } else {
+                    WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);    
+                    osd = wpsjobProductOs.GetProxyOpenSearchDescription();
+                }
+
                 result = new HttpResult (osd, "application/opensearchdescription+xml");
 
                 context.Close ();

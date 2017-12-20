@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Runtime.Serialization;
+using System.Web;
 using OpenGis.Wps;
 using ServiceStack.Text;
 using Terradue.Portal;
@@ -13,8 +14,8 @@ namespace Terradue.Tep {
 			(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
-        static string recastBaseUrl = AppSettings["RecastBaseUrl"];
-        static string catalogBaseUrl = AppSettings["CatalogBaseUrl"];
+        public static string recastBaseUrl = AppSettings["RecastBaseUrl"];
+        public static string catalogBaseUrl = AppSettings["CatalogBaseUrl"];
         static string statusInProgress = "in progress";
         static string statusCompleted = "completed";
         static string statusError = "error";
@@ -295,6 +296,12 @@ namespace Terradue.Tep {
         public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob){
             var response = new ExecuteResponse();
 
+            var statusurl = wpsjob.StatusLocation;
+            var url = new Uri(statusurl);
+            if (url.Host == new Uri(catalogBaseUrl).Host) {
+                statusurl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
+            }
+
             response.Status = new StatusType { Item = new ProcessSucceededType { Value = "Process successful" }, ItemElementName = ItemChoiceType.ProcessSucceeded };
             response.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
             response.serviceInstance = context.BaseUrl + "/wps/WebProcessingService?REQUEST=GetCapabilities&SERVICE=WPS";
@@ -305,7 +312,7 @@ namespace Terradue.Tep {
 					Item = new ComplexDataType {
 						mimeType = "application/xml",
 						Reference = new OutputReferenceType {
-                            href = wpsjob.StatusLocation,
+                            href = statusurl,
 							mimeType = "application/opensearchdescription+xml"
 						}
 					}
