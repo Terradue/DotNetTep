@@ -3,7 +3,7 @@ USE $MAIN$;
 /*****************************************************************************/
 
 -- Adding config...\
-ALTER TABLE wpsjob ADD COLUMN nbresults INT(11) UNSIGNED NULL;
+ALTER TABLE wpsjob ADD COLUMN nbresults INT(10) NULL DEFAULT -1;
 -- RESULT
 
 -- Adding action...\
