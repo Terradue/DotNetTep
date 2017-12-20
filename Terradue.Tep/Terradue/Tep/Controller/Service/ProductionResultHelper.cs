@@ -153,6 +153,15 @@ namespace Terradue.Tep {
         /// <param name="execResponse">Exec response.</param>
         public static ExecuteResponse GetWpsjobRecastResponse(IfyContext context, WpsJob wpsjob, ExecuteResponse execResponse = null) {
             log.DebugFormat("GetWpsjobRecastResponse");
+
+            if(wpsjob.Status == WpsJobStatus.COORDINATOR){
+                log.DebugFormat("GetWpsjobRecastResponse -- Status is Coordinator");
+                var resultUrl = WpsJob.GetResultUrl(execResponse);
+                wpsjob.StatusLocation = resultUrl;
+                wpsjob.Store();
+                return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+            }
+
             if (wpsjob.Status != WpsJobStatus.SUCCEEDED) {
                 log.DebugFormat("GetWpsjobRecastResponse -- Status is not Succeeded");
                 return UpdateProcessOutputs(context, execResponse, wpsjob);
@@ -304,6 +313,15 @@ namespace Terradue.Tep {
 			});
 
 			return response;
+        }
+
+        /// <summary>
+        /// Is the URL a recast URL.
+        /// </summary>
+        /// <returns><c>true</c>, if URL is recast URL, <c>false</c> otherwise.</returns>
+        /// <param name="url">URL.</param>
+        public static bool IsUrlRecastUrl(string url){
+            return !string.IsNullOrEmpty(url) && url.StartsWith(recastBaseUrl);
         }
     }
 

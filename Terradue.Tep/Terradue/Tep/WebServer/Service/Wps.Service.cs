@@ -557,7 +557,11 @@ namespace Terradue.Tep.WebServer.Services {
 
                 if (wpsjob.Status == WpsJobStatus.STAGED) {
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
-                } else {
+                } 
+                else if (wpsjob.Status == WpsJobStatus.COORDINATOR && ProductionResultHelper.IsUrlRecastUrl(wpsjob.StatusLocation)){
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                }
+                else {
                     object jobresponse;
                     try {
                         jobresponse = wpsjob.GetStatusLocationContent();

@@ -430,17 +430,18 @@ namespace Terradue.Tep {
             else if (response.Status.Item is ProcessFailedType) this.Status = WpsJobStatus.FAILED;
             else this.Status = WpsJobStatus.NONE;
 
-            if(this.Status == WpsJobStatus.COORDINATOR){
-                var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
-                var item = ((DataType)(coordinatorsOutput.Item)).Item as ComplexDataType;
-                var data = ServiceStack.Text.JsonSerializer.DeserializeFromString<CoordinatorDataResponse>(item.Text);
-                if (data != null && data.coordinatorsId != null && data.coordinatorsId.Count > 0){
-                    var url = data.coordinatorsId[0].result_osd;
-                    if (url != null){
-                        this.StatusLocation = url;
-                    }
-                }
-            }
+            //if(this.Status == WpsJobStatus.COORDINATOR){
+            //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
+            //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
+            //    var item = ((DataType)(coordinatorsOutput.Item)).Item as ComplexDataType;
+            //    var data = ServiceStack.Text.JsonSerializer.DeserializeFromString<CoordinatorDataResponse>(item.Text);
+            //    if (data != null && data.coordinatorsId != null && data.coordinatorsId.Count > 0){
+            //        var url = data.coordinatorsId[0].store_path;
+            //        if (url != null){
+            //            this.StatusLocation = url;
+            //        }
+            //    }
+            //}
         }
 
         /// <summary>
@@ -1128,7 +1129,7 @@ namespace Terradue.Tep {
         [DataMember]
         public string wpsId { get; set; }
         [DataMember]
-        public string result_osd { get; set; }
+        public string store_path { get; set; }
     }
 
     [DataContract]
