@@ -286,7 +286,7 @@ namespace Terradue.Tep {
                 if (isNew){
                     this.AccessKey = Guid.NewGuid().ToString();
                     this.CreationTime = DateTime.UtcNow;
-                    if(string.IsNullOrEmpty(this.Identifier)) this.Identifier = GetUniqueIdentifier(this.Name);
+                    this.Identifier = GetUniqueIdentifier(this.Name);
                 }
                 base.Store();
 
@@ -309,6 +309,13 @@ namespace Terradue.Tep {
         /// <param name="name">Name.</param>
         public string GetUniqueIdentifier(string name){
             var identifier = TepUtility.ValidateIdentifier(name);
+            try {
+                DataPackage.FromIdentifier(context, identifier);
+            } catch (EntityUnauthorizedException) {
+                //next
+            } catch (EntityNotFoundException e) {
+                return identifier;
+            }
             for (int i = 0; i < 1000; i++){
 				var uname = string.Format("{0}{1}", identifier, i == 0 ? "" : "-" + i);
                 try{
