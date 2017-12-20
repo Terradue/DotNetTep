@@ -15,6 +15,9 @@ namespace Terradue.Tep.WebServer.Services {
 
         [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
         public DateTime enddate { get; set; }
+
+        [ApiMember(Name = "withJobResultsNb", Description = "withJobResultsNb", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool withJobResultsNb { get; set; }
     }
 
     [Route("/reports", "GET", Summary = "GET existing reports", Notes = "")]
@@ -151,12 +154,29 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(Environment.NewLine);
         }
 
-        private List<int> GetActiveUsers(IfyContext context, string startdate, string enddate, string skipedIds){
+        private List<int> GetNewUsers(IfyContext context, string startdate, string enddate, string skipedIds) {
             List<int> ids = new List<int>();
 
             string sql = string.Format("SELECT DISTINCT usr.id FROM usr WHERE " +
                                "id NOT IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time < '{0}' ) " +
                                        "AND id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time <= '{1}'){2};",
+                                       startdate, enddate, string.IsNullOrEmpty(skipedIds) ? "" : " AND id NOT IN (" + skipedIds + ")");
+            System.Data.IDbConnection dbConnection = context.GetDbConnection();
+            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+            while (reader.Read()) {
+                if (reader.GetValue(0) != DBNull.Value) {
+                    ids.Add(reader.GetInt32(0));
+                }
+            }
+            context.CloseQueryResult(reader, dbConnection);
+            return ids;
+        }
+
+        private List<int> GetActiveUsers(IfyContext context, string startdate, string enddate, string skipedIds){
+            List<int> ids = new List<int>();
+
+            string sql = string.Format("SELECT DISTINCT usr.id FROM usr WHERE " +
+                               "id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time >= '{0}' AND usrsession.log_time <= '{1}'){2};",
                                        startdate, enddate, string.IsNullOrEmpty(skipedIds) ? "" : " AND id NOT IN ("+skipedIds+")");
             System.Data.IDbConnection dbConnection = context.GetDbConnection();
             System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
@@ -187,7 +207,7 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(string.Format("Total number of users at {0},{1}{2}{2}",startdate,totalUsers,Environment.NewLine));
             csv.Append(Environment.NewLine);
 
-            List<int> ids = GetActiveUsers(context, startdate, enddate, skipedIds);
+            List<int> ids = GetNewUsers(context, startdate, enddate, skipedIds);
 
             System.Data.IDbConnection dbConnection;
             System.Data.IDataReader reader;
@@ -196,47 +216,30 @@ namespace Terradue.Tep.WebServer.Services {
             if (ids.Count > 0) {
                 csv.Append("Username,Name,Affiliation,First Login date,Terradue cloud username" + Environment.NewLine);
                 foreach (int id in ids) {
-                    sql = String.Format("SELECT usr.username, CONCAT(usr.firstname,' ',usr.lastname), usr.affiliation, usrsession.log_time, usr_cloud.username FROM usrsession " +
-                                        "INNER JOIN usr ON usr.id=usrsession.id_usr " +
-                                        "INNER JOIN usr_cloud ON usr_cloud.id = usr.id " +
-                                        "WHERE usrsession.id_usr = {0} ORDER BY usrsession.log_time ASC LIMIT 1;", id);
-                    dbConnection = context.GetDbConnection();
-                    reader = context.GetQueryResult(sql, dbConnection);
-                    if (reader.Read()) {
-                        if (reader.GetValue(0) != DBNull.Value) {
-                            var name = reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "not set";
-                            var aff = reader.GetValue(2) != DBNull.Value ? reader.GetString(2) : "not set";
-                            var cloud = reader.GetValue(4) != DBNull.Value ? reader.GetString(4) : "not set";
-                            csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", reader.GetString(0), name, aff.Replace(",","\\,"), reader.GetDateTime(3), cloud, Environment.NewLine));
-                        }
-                    }
-                    context.CloseQueryResult(reader, dbConnection);
+                    var usr = UserTep.FromId(context, id);
+                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"), usr.GetFirstLoginDate(), usr.TerradueCloudUsername, Environment.NewLine));
                 }
             }
             csv.Append(Environment.NewLine);
 
             //Active users
-            sql = string.Format("SELECT usr.username, CONCAT(usr.firstname,' ',usr.lastname), COUNT(usrsession.id_usr),usr.affiliation FROM usr INNER JOIN usrsession ON usr.id=usrsession.id_usr " +
-                                "WHERE usrsession.log_time > '{0}' AND usrsession.log_time < '{1}' AND usrsession.id_usr NOT IN ({2}) GROUP BY usrsession.id_usr HAVING COUNT(*) >1 " +
-                                "ORDER BY COUNT(usrsession.id_usr) DESC;", 
-                                startdate, enddate, skipedIds);
-            dbConnection = context.GetDbConnection();
-            reader = context.GetQueryResult(sql, dbConnection);
-            string s = "";
-            int nbActU = 0;
-            while (reader.Read()) {
-                if (reader.GetValue(0) != DBNull.Value) {
-                    nbActU ++;
-                    var name = reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "";
-                    var aff = reader.GetValue(3) != DBNull.Value ? reader.GetString(3) : "";
-                    s += String.Format("{0},{1},{2},{3}{4}",reader.GetString(0), name, aff, reader.GetInt32(2), Environment.NewLine);
-                }
-            }
-            context.CloseQueryResult(reader, dbConnection);
-            csv.Append(String.Format("Active users (logged more than once) between {0} and {1},{2}{3}", startdate, enddate, nbActU, Environment.NewLine));
-            if (nbActU > 0) {
+            ids = GetActiveUsers(context, startdate, enddate, skipedIds);
+            csv.Append(String.Format("Active users between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
+            if (ids.Count > 0) {
                 csv.Append("Username,Name,Affiliation,Nb of logins" + Environment.NewLine);
-                csv.Append(s);
+                var analytics = new List<ReportAnalytic>();
+                foreach (int id in ids) {
+                    var usr = UserTep.FromId(context, id);
+                    var name = string.Format("{0},{1},{2}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"));
+                    analytics.Add(new ReportAnalytic{name = name, Total = usr.GetNbOfLogin(startdate, enddate) });
+                }
+                foreach (var analytic in analytics) {
+                    csv.Append(String.Format("{0},{1}{2}",
+                                             analytic.name,
+                                             analytic.Total,
+                                             Environment.NewLine));
+                }
+                csv.Append(Environment.NewLine);
             }
             csv.Append(Environment.NewLine);
         }
@@ -276,7 +279,7 @@ namespace Terradue.Tep.WebServer.Services {
             //list all jobs created
             if (jobs.Count > 0) {
                 csv.Append(String.Format("Wps jobs created between {0} and {1},{2} ({3} succeeded | {4} failed){5}", startdate, enddate, ids.Count, success, failed, Environment.NewLine));
-                csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
+                csv.Append("Name,Owner,Creation date,Process name,Status,Shared,link" + Environment.NewLine);//csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
                 foreach (WpsJob job in jobs) {
                     User usr = User.FromId(context, job.OwnerId);
                     string wpsname = "";
@@ -286,30 +289,41 @@ namespace Terradue.Tep.WebServer.Services {
                     } catch (Exception) {
                         wpsname = job.ProcessId;
                     }
-                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6}{7}",
-                                             job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus, job.GetResultCount(), (job.IsPrivate() ? "no" : "yes"), Environment.NewLine));
+                    var statuslocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + job.Identifier;
+                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6}{7}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
+                    //csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6}{7}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus, job.GetResultCount(), (job.IsPrivate() ? "no" : "yes"), Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
             }
+
+            var analytics = new List<ReportAnalytic>();
 
             //Nb of wpsjobs per user
             List<int> idsUsr = GetActiveUsers(context, startdate, enddate, skipedIds);
             if (idsUsr.Count > 0) {
                 csv.Append(string.Format("Number of wpsjob created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Total,Succeeded,Failed" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var id in idsUsr) {
                     User usr = User.FromId(context, id);
                     Analytics analytic = new Analytics(context, usr);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseDataPackages = false;
                     analytic.Load(startdate, enddate);
+                    if(analytic.WpsJobSubmittedCount > 0)
+                        analytics.Add(new ReportAnalytic { name = usr.Username, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
+                }
+                analytics.Sort();
+                analytics.Reverse();
+                foreach (var analytic in analytics) {
                     csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             usr.Username,
-                                             analytic.WpsJobSubmittedCount,
-                                             analytic.WpsJobSuccessCount,
-                                             analytic.WpsJobFailedCount,
+                                             analytic.name,
+                                             analytic.Total,
+                                             analytic.Analytic1,
+                                             analytic.Analytic2,
                                              Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
             }
 
             //Nb of wpsjobs per communities
@@ -318,19 +332,27 @@ namespace Terradue.Tep.WebServer.Services {
             if (domains.Count > 0) {
                 csv.Append(string.Format("Number of wpsjob created per community between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Community,Total,Succeeded,Failed" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var domain in domains) {
                     Analytics analytic = new Analytics(context, domain);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseDataPackages = false;
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
+                    if (analytic.WpsJobSubmittedCount > 0)
+                        analytics.Add(new ReportAnalytic { name = domain.Name, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
+                }
+                analytics.Sort();
+                analytics.Reverse();
+                foreach (var analytic in analytics) {
                     csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             domain.Name,
-                                             analytic.WpsJobSubmittedCount,
-                                             analytic.WpsJobSuccessCount,
-                                             analytic.WpsJobFailedCount,
+                                             analytic.name,
+                                             analytic.Total,
+                                             analytic.Analytic1,
+                                             analytic.Analytic2,
                                              Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
             }
 
             //Nb of wpsjobs per group
@@ -339,19 +361,26 @@ namespace Terradue.Tep.WebServer.Services {
             if (grps.Count > 0) {
                 csv.Append(string.Format("Number of wpsjob created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Group,Total,Succeeded,Failed" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var grp in grps) {
                     Analytics analytic = new Analytics(context, grp);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseDataPackages = false;
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
-                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             grp.Name,
-                                             analytic.WpsJobSubmittedCount,
-                                             analytic.WpsJobSuccessCount,
-                                             analytic.WpsJobFailedCount,
-                                             Environment.NewLine));
+                    if (analytic.WpsJobSubmittedCount > 0)
+                        analytics.Add(new ReportAnalytic { name = grp.Name, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
                 }
+            }
+            analytics.Sort();
+            analytics.Reverse();
+            foreach (var analytic in analytics) {
+                csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                                         analytic.name,
+                                         analytic.Total,
+                                         analytic.Analytic1,
+                                         analytic.Analytic2,
+                                         Environment.NewLine));
             }
 
             //Nb of wpsjobs per service
@@ -369,20 +398,35 @@ namespace Terradue.Tep.WebServer.Services {
             if (services.Count > 0) {
                 csv.Append(string.Format("Number of wpsjob created per service between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Service,Total,Succeeded,Failed" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var serviceId in services) {
-                    var service = Service.FromIdentifier(context, serviceId);
+                    Service service = null;
+                    try {
+                        service = Service.FromIdentifier(context, serviceId);
+                    }catch(Exception e){
+                        context.LogError(this, e.Message);
+                        service = new WpsProcessOffering(context);
+                        service.Identifier = serviceId;
+                    }
                     Analytics analytic = new Analytics(context, service);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseDataPackages = false;
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
+                    if (analytic.WpsJobSubmittedCount > 0)
+                        analytics.Add(new ReportAnalytic { name = service.Name, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
+                }
+                analytics.Sort();
+                analytics.Reverse();
+                foreach (var analytic in analytics) {
                     csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             service.Name,
-                                             analytic.WpsJobSubmittedCount,
-                                             analytic.WpsJobSuccessCount,
-                                             analytic.WpsJobFailedCount,
+                                             analytic.name,
+                                             analytic.Total,
+                                             analytic.Analytic1,
+                                             analytic.Analytic2,
                                              Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
             }
         }
 
@@ -395,10 +439,11 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="enddate">Enddate.</param>
         /// <param name="skipedIds">Skiped identifiers.</param>
         private void GenerateCsvDataPackagePart(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
-
+            var analytics = new List<ReportAnalytic>();
             //  Data Packages created + shared
             string sql = String.Format("SELECT resourceset.id, usr.username, resourceset.name, resourceset.creation_time from resourceset INNER JOIN usr on usr.id=resourceset.id_usr " +
-                                       "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.kind=0;",
+                                       "WHERE resourceset.creation_time >= '{0}' AND resourceset.creation_time <= '{1}' AND resourceset.id_usr NOT IN ({2}) AND resourceset.kind=0 " +
+                                       "AND resourceset.identifier NOT LIKE '_series_%' AND resourceset.identifier NOT LIKE '_products_%' AND resourceset.identifier NOT LIKE '_index_%';",
                                        startdate, enddate, skipedIds);
             System.Data.IDbConnection dbConnection = context.GetDbConnection();
             System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
@@ -429,19 +474,27 @@ namespace Terradue.Tep.WebServer.Services {
             if (idsUsr.Count > 0) {
                 csv.Append(string.Format("Number of Data package created/loaded per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var id in idsUsr) {
                     User usr = User.FromId(context, id);
                     Analytics analytic = new Analytics(context, usr);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseJobs = false;
                     analytic.Load(startdate, enddate);
+                    if (analytic.DataPackageCreatedCount > 0)
+                        analytics.Add(new ReportAnalytic{ name = usr.Username, Total = analytic.DataPackageCreatedCount, Analytic1 = analytic.DataPackageLoadCount, Analytic2 = analytic.DataPackageItemsLoadCount });
+                }
+                analytics.Sort();
+                analytics.Reverse();
+                foreach(var analytic in analytics){
                     csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             usr.Username,
-                                             analytic.DataPackageCreatedCount,
-                                             analytic.DataPackageLoadCount,
-                                             analytic.DataPackageItemsLoadCount,
+                                             analytic.name,
+                                             analytic.Total,
+                                             analytic.Analytic1,
+                                             analytic.Analytic2,
                                              Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
             }
 
             //Nb of data packages per communities
@@ -450,19 +503,27 @@ namespace Terradue.Tep.WebServer.Services {
             if (domains.Count > 0) {
                 csv.Append(string.Format("Number of Data package created per community between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Community,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var domain in domains) {
                     Analytics analytic = new Analytics(context, domain);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseJobs = false;
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
+                    if (analytic.DataPackageCreatedCount > 0)
+                        analytics.Add(new ReportAnalytic { name = domain.Name, Total = analytic.DataPackageCreatedCount, Analytic1 = analytic.DataPackageLoadCount, Analytic2 = analytic.DataPackageItemsLoadCount });
+                }
+                analytics.Sort();
+                analytics.Reverse();
+                foreach (var analytic in analytics) {
                     csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             domain.Name,
-                                             analytic.DataPackageCreatedCount,
-                                             analytic.DataPackageLoadCount,
-                                             analytic.DataPackageItemsLoadCount,
+                                             analytic.name,
+                                             analytic.Total,
+                                             analytic.Analytic1,
+                                             analytic.Analytic2,
                                              Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
             }
 
             //Nb of data packages per group
@@ -471,19 +532,27 @@ namespace Terradue.Tep.WebServer.Services {
             if (grps.Count > 0) {
                 csv.Append(string.Format("Number of Data package created per group between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Group,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
+                analytics = new List<ReportAnalytic>();
                 foreach (var grp in grps) {
                     Analytics analytic = new Analytics(context, grp);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseJobs = false;
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
+                    if (analytic.DataPackageCreatedCount > 0)
+                        analytics.Add(new ReportAnalytic { name = grp.Name, Total = analytic.DataPackageCreatedCount, Analytic1 = analytic.DataPackageLoadCount, Analytic2 = analytic.DataPackageItemsLoadCount });
+                }
+                analytics.Sort();
+                analytics.Reverse();
+                foreach (var analytic in analytics) {
                     csv.Append(String.Format("{0},{1},{2},{3}{4}",
-                                             grp.Name,
-                                             analytic.DataPackageCreatedCount,
-                                             analytic.DataPackageLoadCount,
-                                             analytic.DataPackageItemsLoadCount,
+                                             analytic.name,
+                                             analytic.Total,
+                                             analytic.Analytic1,
+                                             analytic.Analytic2,
                                              Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
             }
 
             //shared data packages
@@ -507,8 +576,8 @@ namespace Terradue.Tep.WebServer.Services {
                     Activity activity = Activity.FromId(context, id);
                     User user = User.FromId(context, activity.OwnerId);
                     DataPackage dp;
-                    string dpname = "not set";
-                    string dpdate = "not set";
+                    string dpname = "n/a";
+                    string dpdate = "n/a";
                     try{
                         dp = DataPackage.FromId(context, activity.EntityId);
                         dpname = dp.Name;
@@ -518,6 +587,25 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
             csv.Append(Environment.NewLine);
+        }
+    }
+
+    public class ReportAnalytic : IComparable<ReportAnalytic> {
+        public string name { get; set; }
+        public int Total { get; set; }
+        public int Analytic1 { get; set; }
+        public int Analytic2 { get; set; }
+
+        int IComparable<ReportAnalytic>.CompareTo(ReportAnalytic other) {
+            if (other == null)
+                return 1;
+            else if (this.Total != other.Total)
+                return this.Total.CompareTo(other.Total);
+            else if (this.Analytic1 != other.Analytic1)
+                return this.Analytic1.CompareTo(other.Analytic1);
+            else if (this.Analytic2 != other.Analytic2)
+                return this.Analytic2.CompareTo(other.Analytic2);
+            else return 1;
         }
     }
 }

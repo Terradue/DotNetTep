@@ -209,6 +209,13 @@ namespace Terradue.Tep {
             return result;
         }
 
+        private static string GetDataPackagebCreationDateCondition(string startdate, string enddate) {
+            var result = "";
+            if (!string.IsNullOrEmpty(startdate)) result += " AND resourceset.creation_time > '" + startdate + "'";
+            if (!string.IsNullOrEmpty(startdate)) result += " AND resourceset.creation_time < '" + enddate + "'";
+            return result;
+        }
+
         private int GetWpsJobsForUser(int usrId, string statusCondition, string startdate = null, string enddate = null) {
             string sql = string.Format("SELECT COUNT(*) FROM wpsjob WHERE id_usr={0} AND status {1}{2};", usrId, statusCondition, GetWpsjobCreationDateCondition(startdate, enddate));
             return Context.GetQueryIntegerValue(sql);
@@ -252,7 +259,7 @@ namespace Terradue.Tep {
         }
 
         private int GetDataPackageCreatedCount(int usrId, string startdate = null, string enddate = null){
-            string sql = string.Format("SELECT COUNT(*) FROM resourceset WHERE kind=0 AND id_usr={0}{1};", usrId, GetWpsjobCreationDateCondition(startdate, enddate));
+            string sql = string.Format("SELECT COUNT(*) FROM resourceset WHERE kind=0 AND id_usr={0}{1};", usrId, GetDataPackagebCreationDateCondition(startdate, enddate));
             return Context.GetQueryIntegerValue(sql);
         }
 
@@ -266,8 +273,6 @@ namespace Terradue.Tep {
             WpsJobOngoingCount += GetTotalWpsJobsOngoingForService(service.Identifier, startdate, enddate);
             WpsJobSubmittedCount = WpsJobSuccessCount + WpsJobFailedCount + WpsJobOngoingCount;
         }
-
-
 
     }
 }
