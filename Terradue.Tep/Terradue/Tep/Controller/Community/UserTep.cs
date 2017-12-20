@@ -376,6 +376,17 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Gets the nb of login.
+        /// </summary>
+        /// <returns>The nb of login.</returns>
+        /// <param name="startdate">Startdate.</param>
+        /// <param name="enddate">Enddate.</param>
+        public int GetNbOfLogin(string startdate, string enddate) {
+            string sql = string.Format("SELECT COUNT(id_usr) FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}';", this.Id, startdate, enddate);
+            return context.GetQueryIntegerValue(sql);
+        }
+
+        /// <summary>
         /// Creates the private domain.
         /// </summary>
         public void CreatePrivateDomain() {
