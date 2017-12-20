@@ -1087,13 +1087,14 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The result osd result count.</returns>
         private long GetResultOsdResultCount() {
-            try{
+            try {
                 var jobresponse = GetStatusLocationContent();
                 if (!(jobresponse is ExecuteResponse)) return 0;
                 var execResponse = jobresponse as ExecuteResponse;
-                string osd = GetResultOsdUrl(execResponse);
+                execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, this, execResponse);
+                string osd = GetResultUrl(execResponse);
                 return GetOpenSearchableResultCount(osd);
-            } catch (Exception) { return 0; }
+            } catch (Exception e) { throw e; }//return 0; }
         }
     }
 
