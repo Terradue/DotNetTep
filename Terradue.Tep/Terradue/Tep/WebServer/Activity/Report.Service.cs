@@ -279,7 +279,7 @@ namespace Terradue.Tep.WebServer.Services {
             //list all jobs created
             if (jobs.Count > 0) {
                 csv.Append(String.Format("Wps jobs created between {0} and {1},{2} ({3} succeeded | {4} failed){5}", startdate, enddate, ids.Count, success, failed, Environment.NewLine));
-                csv.Append("Name,Owner,Creation date,Process name,Status,Shared,link" + Environment.NewLine);//csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
+                csv.Append("Name,Owner,Creation date,Process name,Status,Nb results,Shared,link" + Environment.NewLine);//csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
                 foreach (WpsJob job in jobs) {
                     User usr = User.FromId(context, job.OwnerId);
                     string wpsname = "";
@@ -290,8 +290,7 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsname = job.ProcessId;
                     }
                     var statuslocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + job.Identifier;
-                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6}{7}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
-                    //csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6}{7}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus, job.GetResultCount(), (job.IsPrivate() ? "no" : "yes"), Environment.NewLine));
+                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7}{8}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.NbResults, job.StringStatus,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
             }
@@ -382,6 +381,7 @@ namespace Terradue.Tep.WebServer.Services {
                                          analytic.Analytic2,
                                          Environment.NewLine));
             }
+            csv.Append(Environment.NewLine);
 
             //Nb of wpsjobs per service
             sql = String.Format("SELECT wpsjob.process FROM wpsjob WHERE wpsjob.created_time > '{0}' AND wpsjob.created_time < '{1}' AND wpsjob.id_usr NOT IN ({2}) GROUP BY wpsjob.process;",
