@@ -1,4 +1,4 @@
-using System;
+    using System;
 using Terradue.Portal;
 using System.Collections.Generic;
 using Terradue.OpenSearch;
@@ -1091,7 +1091,7 @@ namespace Terradue.Tep {
                 var jobresponse = GetStatusLocationContent();
                 if (!(jobresponse is ExecuteResponse)) return 0;
                 var execResponse = jobresponse as ExecuteResponse;
-                execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, this, execResponse);
+                //execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, this, execResponse);
                 string osd = GetResultUrl(execResponse);
                 return GetOpenSearchableResultCount(osd);
             } catch (Exception e) { throw e; }//return 0; }
