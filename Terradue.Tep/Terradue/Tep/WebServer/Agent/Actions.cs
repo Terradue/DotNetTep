@@ -113,7 +113,7 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         public static void RefreshWpsjobResultNb(IfyContext context) {
             var jobs = new EntityList<WpsJob>(context);
-            jobs.SetFilter("NbResults", SpecialSearchValue.Null);
+            jobs.SetFilter("NbResults", "-1");
             jobs.ItemsPerPage = 50;
             jobs.Load();
             context.WriteInfo(string.Format("RefreshWpjobResultNb -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
