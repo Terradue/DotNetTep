@@ -74,8 +74,8 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
 
-                Series serie = new Series(context);
-                serie = request.ToEntity(context, serie);
+                Collection serie = new Collection(context);
+                serie = (Terradue.Tep.Collection)request.ToEntity(context, serie);
                 serie.Store();
                 serie.GrantPermissionsToAll();
 
@@ -106,7 +106,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/data/collection PUT Id='{0}'", request.Id));
 
-                Series serie = Series.FromId(context, request.Id);
+                Collection serie = Collection.FromId(context, request.Id);
 
                 if(request.Access != null){
                     switch(request.Access){
@@ -122,7 +122,7 @@ namespace Terradue.Tep.WebServer.Services {
                             break;
                     }
                 } else {
-                    serie = request.ToEntity(context, serie);
+                    serie = (Terradue.Tep.Collection)request.ToEntity(context, serie);
                     serie.Store();
                     Activity activity = new Activity(context, serie, EntityOperationType.Change);
                     activity.Store();
