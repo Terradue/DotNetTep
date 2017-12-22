@@ -3,6 +3,11 @@ USE $MAIN$;
 /*****************************************************************************/
 
 -- Adding config...\
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('action-jobPoolSize', 'int', 'Actions job pool size', 'Actions job pool size', '100', '0');
+-- RESULT
+
+
+-- Adding wpsjob nbresults...\
 ALTER TABLE wpsjob ADD COLUMN nbresults INT(10) NULL DEFAULT -1;
 -- RESULT
 

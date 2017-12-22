@@ -73,7 +73,8 @@ namespace Terradue.Tep {
         public static void RefreshWpsjobStatus(IfyContext context) {
             var jobs = new EntityList<WpsJob>(context);
             jobs.SetFilter("Status",(int)WpsJobStatus.ACCEPTED + "," + (int)WpsJobStatus.NONE + "," + (int)WpsJobStatus.PAUSED + "," + (int)WpsJobStatus.STARTED);
-            jobs.ItemsPerPage = 50;
+            var jobsPoolSize = context.GetConfigIntegerValue("action-jobPoolSize");
+            jobs.ItemsPerPage = jobsPoolSize;
             jobs.Load();
             context.WriteInfo(string.Format("RefreshWpjobStatus -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
             foreach(var job in jobs){
@@ -114,7 +115,8 @@ namespace Terradue.Tep {
         public static void RefreshWpsjobResultNb(IfyContext context) {
             var jobs = new EntityList<WpsJob>(context);
             jobs.SetFilter("NbResults", "-1");
-            jobs.ItemsPerPage = 50;
+            var jobsPoolSize = context.GetConfigIntegerValue("action-jobPoolSize");
+            jobs.ItemsPerPage = jobsPoolSize;
             jobs.Load();
             context.WriteInfo(string.Format("RefreshWpjobResultNb -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
             foreach (var job in jobs) {

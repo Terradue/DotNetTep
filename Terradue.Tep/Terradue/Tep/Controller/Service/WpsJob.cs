@@ -1079,6 +1079,21 @@ namespace Terradue.Tep {
                 var ios = OpenSearchFactory.FindOpenSearchable(MasterCatalogue.OpenSearchFactorySettings, new OpenSearchUrl(url));
                 var result = MasterCatalogue.OpenSearchEngine.Query(ios, nvc);
                 return result.TotalResults;
+            } catch (Exception e) {
+                if (new Uri(url).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                    return 0;
+                }
+                throw e; 
+            }
+        }
+
+        private long GetOpenSearchableMetadataResultCount(string url) {
+            try {
+                var nvc = new NameValueCollection();
+                nvc.Set("count", "0");
+                WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(this, context);
+                var result = MasterCatalogue.OpenSearchEngine.Query(wpsjobProductOs, nvc);
+                return result.TotalResults;
             } catch (Exception e) { throw e; }//return 0; }
         }
 
@@ -1091,9 +1106,23 @@ namespace Terradue.Tep {
                 var jobresponse = GetStatusLocationContent();
                 if (!(jobresponse is ExecuteResponse)) return 0;
                 var execResponse = jobresponse as ExecuteResponse;
-                //execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, this, execResponse);
-                string osd = GetResultUrl(execResponse);
-                return GetOpenSearchableResultCount(osd);
+
+                var url = GetResultOsdUrl(execResponse);
+                if (!string.IsNullOrEmpty(url)) {
+                    return GetOpenSearchableResultCount(url);
+                } else {
+                    url = GetResultMetadatadUrl(execResponse);
+                    if (!string.IsNullOrEmpty(url)) {
+                        return GetOpenSearchableMetadataResultCount(url);
+                    } else{
+                        url = GetResultHtmlUrl(execResponse);
+                        if (!string.IsNullOrEmpty(url)) { 
+                            return GetOpenSearchableMetadataResultCount(url);
+                        } else {
+                            throw new Exception("Unable to get wpsjob result url");
+                        }
+                    }
+                }
             } catch (Exception e) { throw e; }//return 0; }
         }
     }

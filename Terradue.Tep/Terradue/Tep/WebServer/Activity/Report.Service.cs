@@ -110,7 +110,7 @@ namespace Terradue.Tep.WebServer.Services {
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
 
-                System.IO.File.WriteAllText(string.Format("{2}files/GEP-report-{0}-{1}.csv",startdate,enddate,path), csv.ToString());
+                System.IO.File.WriteAllText(string.Format("{2}files/TEP-report-{0}-{1}.csv",startdate,enddate,path), csv.ToString());
 
                 context.LogDebug(this,string.Format("Get report {1}-{2} (user Id = {0})", context.UserId, request.startdate, request.enddate));
 
@@ -121,7 +121,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            Response.AddHeader("Content-Disposition", string.Format("attachment;filename=GEP-report-{0}-{1}.csv",startdate,enddate));
+            Response.AddHeader("Content-Disposition", string.Format("attachment;filename=TEP-report-{0}-{1}.csv",startdate,enddate));
             return csv.ToString();
         }
 
@@ -134,7 +134,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="enddate">Enddate.</param>
         /// <param name="skipedIds">Skiped identifiers.</param>
         private void GenerateCsvHeader(IfyContext context, System.Text.StringBuilder csv, string startdate, string enddate, string skipedIds){
-            csv.Append("GEP statistics reporting" + Environment.NewLine);
+            csv.Append(context.GetConfigValue("SiteName") + " statistics reporting" + Environment.NewLine);
             csv.Append("Date of creation," + DateTime.UtcNow.ToString("yyyy-MM-dd") + Environment.NewLine);
             csv.Append("Parameters" + Environment.NewLine);
             csv.Append("Start Date," + startdate + Environment.NewLine);
@@ -290,7 +290,7 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsname = job.ProcessId;
                     }
                     var statuslocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + job.Identifier;
-                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7}{8}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.NbResults, job.StringStatus,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
+                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7}{8}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus,job.NbResults,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
             }
@@ -414,7 +414,7 @@ namespace Terradue.Tep.WebServer.Services {
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
                     if (analytic.WpsJobSubmittedCount > 0)
-                        analytics.Add(new ReportAnalytic { name = service.Name, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
+                        analytics.Add(new ReportAnalytic { name = service.Name ?? service.Identifier, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
                 }
                 analytics.Sort();
                 analytics.Reverse();
