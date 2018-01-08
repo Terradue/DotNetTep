@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -238,6 +239,8 @@ namespace Terradue.Tep.WebServer.Services
                 if (uri_s != null) {
                     result.Links.Add(new SyndicationLink(uri_s, "self", "OpenSearch Search link", "application/atom+xml", 0));
                 }
+
+                MasterCatalogue.ReplaceSelfLinksFormat(result, Request.QueryString);
 
                 ActivityTep activity = new ActivityTep(context, datapackage, EntityOperationType.Search);
                 activity.SetParam("items", result.TotalResults + "");

@@ -448,6 +448,8 @@ namespace Terradue.Tep.WebServer.Services
                 MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
                 result = ose.Query(multiOSE, Request.QueryString, responseType);
 
+                MasterCatalogue.ReplaceSelfLinksFormat(result, Request.QueryString);
+
                 context.Close();
 
             } catch (Exception e) {

@@ -355,6 +355,26 @@ namespace Terradue.Tep
             }
         }
 
+        public static void ReplaceSelfLinksFormat(IOpenSearchResultCollection result, NameValueCollection queryString) {
+            foreach (IOpenSearchResultItem item in result.Items) {
+                var matchLinks = item.Links.Where(l => l.RelationshipType == "self").ToArray();
+                string self = "";
+                foreach (var link in matchLinks) {
+                    self = link.Uri.AbsoluteUri;
+                    item.Links.Remove(link);
+                }
+
+                if (self != null) {
+                    UriBuilder urib = new UriBuilder(self);
+                    var nvc = HttpUtility.ParseQueryString(urib.Query);
+                    if (queryString["format"] != null) nvc.Set("format", queryString["format"]);
+                    urib.Query = string.Join("&", nvc.AllKeys.Where(key => !string.IsNullOrWhiteSpace(nvc[key])).Select(key => string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(nvc[key]))));
+                    item.Links.Add(new SyndicationLink(urib.Uri, "self", "Reference link", result.ContentType, 0));
+                }
+            }
+
+        }
+
     }
 
 }
