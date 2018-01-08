@@ -110,7 +110,7 @@ namespace Terradue.Tep.WebServer.Services {
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
 
-                System.IO.File.WriteAllText(string.Format("{2}files/TEP-report-{0}-{1}.csv",startdate,enddate,path), csv.ToString());
+                System.IO.File.WriteAllText(string.Format("{2}files/{2}-report-{0}-{1}.csv",startdate,enddate,path,context.GetConfigValue("SiteNameShort")), csv.ToString());
 
                 context.LogDebug(this,string.Format("Get report {1}-{2} (user Id = {0})", context.UserId, request.startdate, request.enddate));
 
@@ -121,7 +121,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            Response.AddHeader("Content-Disposition", string.Format("attachment;filename=TEP-report-{0}-{1}.csv",startdate,enddate));
+            Response.AddHeader("Content-Disposition", string.Format("attachment;filename={2}-report-{0}-{1}.csv",startdate,enddate,context.GetConfigValue("SiteNameShort")));
             return csv.ToString();
         }
 
