@@ -235,12 +235,12 @@ namespace Terradue.Tep.WebServer.Services {
                     osd = urlToShare.GetOpenSearchDescription();
                     var oldUri = new UriBuilder(osd.DefaultUrl.Template);
                     var newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");
-                    newUri.Query = oldUri.Query;
+                    newUri.Query = oldUri.Query.TrimStart("?".ToCharArray());
                     osd.DefaultUrl.Template = HttpUtility.UrlDecode(newUri.Uri.AbsoluteUri);
                     foreach (var url in osd.Url) {
                         oldUri = new UriBuilder(url.Template);
                         newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");
-                        newUri.Query = oldUri.Query;
+                        newUri.Query = oldUri.Query.TrimStart("?".ToCharArray());
                         url.Template = HttpUtility.UrlDecode(newUri.Uri.AbsoluteUri);
                     }
                 } else {
