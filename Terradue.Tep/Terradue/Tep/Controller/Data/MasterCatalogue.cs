@@ -272,7 +272,7 @@ namespace Terradue.Tep
             get {
                 if(settings == null){
                     settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
-                    settings.MergeFilters = Terradue.Metadata.EarthObservation.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
+                    settings.MergeFilters = Terradue.Metadata.EarthObservation.Helpers.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
                 }
                 return settings;
             }
@@ -342,7 +342,7 @@ namespace Terradue.Tep
 
             if (!(entity is IProxiedOpenSearchable)) return;
 
-            OpenSearchFactory.ReplaceSelfLinks(entity, request, osr, EarthObservationOpenSearchResultHelpers.EntrySelfLinkTemplate);
+            OpenSearchFactory.ReplaceSelfLinks(entity, request, osr, Terradue.Metadata.EarthObservation.OpenSearch.Helpers.OpenSearchParametersHelper.EntrySelfLinkTemplate);
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(entity, osr);                    
 
         }
