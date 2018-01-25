@@ -152,10 +152,21 @@ namespace Terradue.Tep.WebServer {
                         this.DataContexts = new List<WebThematicAppDataContext>();
                         foreach (var operation in offering.Operations) {
                             if (operation.Any != null && operation.Any.Length > 0) {
-                                this.DataContexts.Add(new WebThematicAppDataContext {
-                                    DataContextName = operation.Any[0].InnerText,
-                                    DataContextDescriptionUrl = operation.Href
-                                });
+                                var datacontext = new WebThematicAppDataContext();
+                                datacontext.DataContextDescriptionUrl = operation.Href;
+                                foreach(var any in operation.Any){
+                                    switch(any.Name){
+                                        case "datacontext":
+                                            datacontext.DataContextName = any.InnerText;
+                                            break;
+                                        case "defaultVisibleItems":
+                                            datacontext.DefaultVisibleItems = any.InnerText;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                                this.DataContexts.Add(datacontext);
                             }
 						}
                         break;
@@ -364,11 +375,13 @@ namespace Terradue.Tep.WebServer {
                     });
                     var datacontext = doc.CreateElement("datacontext");
                     datacontext.InnerText = dc.DataContextName;
+                    var defaultVisibleItems = doc.CreateElement("defaultVisibleItems");
+                    defaultVisibleItems.InnerText = dc.DefaultVisibleItems;
 					osOperations.Add(new OwcOperation {
                         Code = "DescribeDataset",
                         Type = "application/opensearchdescription+xml",
                         Href = dc.DataContextDescriptionUrl,
-                        Any = new System.Xml.XmlElement[]{ datacontext }
+                        Any = new System.Xml.XmlElement[]{ datacontext, defaultVisibleItems }
 					});
                 }
                 offerings.Add(new OwcOffering{
@@ -485,6 +498,9 @@ namespace Terradue.Tep.WebServer {
 
 		[ApiMember(Name = "DataContextDescriptionUrl", Description = "DataContextDescriptionUrl", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string DataContextDescriptionUrl { get; set; }
+
+        [ApiMember(Name = "defaultVisibleItems", Description = "DefaultVisibleItems", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string DefaultVisibleItems { get; set; }
 
 		public WebThematicAppDataContext() { }
 	}
