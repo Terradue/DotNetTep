@@ -200,9 +200,7 @@ namespace Terradue.Tep {
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.WpsJob"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
-        public WpsJob(IfyContext context) : base(context) {
-            this.NbResults = -1;
-        }
+        public WpsJob(IfyContext context) : base(context) {}
 
         /// <summary>
         /// Froms the identifier.
@@ -244,6 +242,7 @@ namespace Terradue.Tep {
                 newjob = true;
                 this.CreatedTime = DateTime.UtcNow;
                 this.AccessKey = Guid.NewGuid().ToString();
+                this.NbResults = -1;
             }
             base.Store();
             if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
