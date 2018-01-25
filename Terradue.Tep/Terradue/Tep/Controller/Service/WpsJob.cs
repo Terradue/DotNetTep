@@ -200,7 +200,9 @@ namespace Terradue.Tep {
         /// Initializes a new instance of the <see cref="T:Terradue.Tep.WpsJob"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
-        public WpsJob(IfyContext context) : base(context) { }
+        public WpsJob(IfyContext context) : base(context) {
+            this.NbResults = -1;
+        }
 
         /// <summary>
         /// Froms the identifier.
@@ -756,7 +758,7 @@ namespace Terradue.Tep {
 
             try {
                 provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
-
+                result.Categories.Add(new SyndicationCategory("provider", null, provider.Name));
                 if (provider.Proxy) statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
 
             } catch (Exception e) {
