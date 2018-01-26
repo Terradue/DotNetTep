@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using OpenGis.Wps;
 using Terradue.Portal;
 
@@ -121,19 +122,17 @@ namespace Terradue.Tep {
             context.WriteInfo(string.Format("RefreshWpjobResultNb -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
             foreach (var job in jobs) {
                 bool noset = false, forced = false;
-                try{
+                try {
                     job.UpdateResultCount();
-                } catch (WpsProxyException e) {
+                } catch (Exception e) {
                     if (DateTime.UtcNow.AddMonths(-1) > job.CreatedTime) {//if job is older than a month and makes an exception, we set result to 0
                         job.NbResults = 0;
                         job.Store();
                         forced = true;
                     } else {
                         noset = true;
-                        context.WriteError(string.Format("RefreshWpjobResultNb -- '{0}'", e.Message + "-" + e.StackTrace));
+                        context.WriteError(string.Format("RefreshWpjobResultNb -- job '{1}' -- '{0}'", e.Message + "-" + e.StackTrace, job.Identifier));
                     }
-                } catch (Exception e) {
-                    context.WriteError(string.Format("RefreshWpjobResultNb -- '{0}'", e.Message + "-" + e.StackTrace));
                 }
                 context.WriteInfo(string.Format("RefreshWpjobResultNb -- job '{0}' -- status = {1} -> {2} results{3}", job.Identifier, job.StringStatus, noset ? "no" : job.NbResults + "", forced ? " (forced)" : ""));
             }
