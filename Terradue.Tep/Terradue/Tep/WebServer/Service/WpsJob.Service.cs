@@ -539,7 +539,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/contact POST identifier='{0}', subject='{1}', body='{2}'",
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/support POST identifier='{0}', subject='{1}', body='{2}'",
                                                     request.JobId, request.Subject, request.Body));
 
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
