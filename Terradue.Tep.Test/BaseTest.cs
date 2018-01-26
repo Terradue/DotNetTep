@@ -15,7 +15,7 @@ namespace Terradue.Tep.Test {
         protected string BaseDirectory { get; set; }
 
         public string GetConnectionString() {
-            string result = "Server=localhost; Port=3306; User Id=root; Database=DotNetTepTest";
+            string result = "Server=localhost; Port=3306; User Id=root; Database=DotNetTepTest; Max Pool Size=200";
             bool replaceDatabaseName = (DatabaseName != null);
             Match match = Regex.Match(result, "Database=([^;]+)");
             if (replaceDatabaseName) {
@@ -44,6 +44,13 @@ namespace Terradue.Tep.Test {
                 Console.Error.WriteLine(e.Message);
                 throw;
             }
+
+            System.Configuration.ConfigurationManager.AppSettings["DataGatewayBaseUrl"] = "https://store.terradue.com";
+            System.Configuration.ConfigurationManager.AppSettings["DataGatewayShareUrl"] = "https://recast.terradue.com/t2api/share";
+            System.Configuration.ConfigurationManager.AppSettings["DataGatewaySecretKey"] = "abcdefg";
+            System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"] = "https://recast.terradue.com";
+            System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"] = "https://catalog.terradue.com";
+
         }
 
         [TestFixtureTearDown]

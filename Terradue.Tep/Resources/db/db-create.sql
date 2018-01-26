@@ -90,7 +90,7 @@ CREATE TABLE wpsjob (
     process varchar(100) NOT NULL COMMENT 'Process name',
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
     status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
-    status_url varchar(200) NOT NULL COMMENT 'Wps job status url',
+    status_url varchar(400) NOT NULL COMMENT 'Wps job status url',
     created_time datetime NOT NULL COMMENT 'Wps created date',
     access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
     CONSTRAINT pk_wpsjob PRIMARY KEY (id),
@@ -248,6 +248,7 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('accounting-enabled', 'bool', 'accounting enabled or not', 'accounting enabled or not', 'true', '1');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('t2portal-usr-starterPlan', 'string', 't2portal user starter Plan', 't2portal user starter Plan', 'FreeTrial', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('t2portal-usr-explorerPlan', 'string', 't2portal user starter Plan', 't2portal user explorer Plan', 'Explorer', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('SiteNameShort', 'string', 'Site Name - short', 'Site Name - short', 'TEP', '0');
 -- RESULT
 
 -- Activities ...\
@@ -303,5 +304,18 @@ ALTER TABLE resourceset
 CHANGE COLUMN `name` `name` VARCHAR(200) NULL DEFAULT NULL ;
 ALTER TABLE resourceset 
 ADD UNIQUE INDEX `uq_name_usr` (`id_usr` ASC, `name` ASC);
+-- RESULT
+
+-- Adding config...\
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('action-jobPoolSize', 'int', 'Actions job pool size', 'Actions job pool size', '100', '0');
+-- RESULT
+
+-- Adding wpsjob nbresults...\
+ALTER TABLE wpsjob ADD COLUMN nbresults INT(10) NULL DEFAULT -1;
+-- RESULT
+
+-- Adding action...\
+INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`, `time_interval`) VALUES ('RefreshWpsjobStatus', 'Refresh wpsjob status', 'This action refresh the status of ongoing wps jobs', 'Terradue.Tep.Actions, Terradue.Tep', 'RefreshWpsjobStatus',1,'2h');
+INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`, `time_interval`) VALUES ('RefreshWpsjobResultNb', 'Refresh wpsjob nb results', 'This action refresh the nb of results of wps jobs for which nb results is not set', 'Terradue.Tep.Actions, Terradue.Tep', 'RefreshWpsjobResultNb',1,'2h');
 -- RESULT
 

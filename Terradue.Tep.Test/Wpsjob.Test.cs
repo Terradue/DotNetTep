@@ -47,6 +47,10 @@ namespace Terradue.Tep.Test {
             usr3.Username = "testusr3";
             usr3.Store();
 
+            UserTep usr4 = new UserTep(context);
+            usr4.Username = "testusr4";
+            usr4.Store();
+
             //create domains
             Domain domain = new Domain(context);
             domain.Identifier = "myDomainTest";
@@ -128,7 +132,7 @@ namespace Terradue.Tep.Test {
             return wpsjob;
         }
 
-        private int NBJOBS_ALL = 10;
+        private int NBJOBS_ALL = 11;
         private int NBJOBS_PUBLIC = 2;
         private int NBJOBS_USR1_ALL = 6;
         private int NBJOBS_USR1_OWNED = 3;
@@ -146,6 +150,7 @@ namespace Terradue.Tep.Test {
             var usr1 = User.FromUsername(context, "testusr1");
             var usr2 = User.FromUsername(context, "testusr2");
             var usr3 = User.FromUsername(context, "testusr3");
+            var usr4 = User.FromUsername(context, "testusr4");
             var domain = Domain.FromIdentifier(context, "myDomainTest");
             var domain2 = Domain.FromIdentifier(context, "otherDomainTest");
 
@@ -194,6 +199,10 @@ namespace Terradue.Tep.Test {
 
             //Create one wpsjob private for usr3
             job = CreateWpsJob("private-job-usr3", process, usr3);
+            job.Store();
+
+            //Create one wpsjob private for usr4
+            job = CreateWpsJob("private-job-usr4", process, usr4);
             job.Store();
 
         }
@@ -597,6 +606,26 @@ namespace Terradue.Tep.Test {
 
                 Assert.False(wpsjob.IsSharedToCommunity());
 
+            } catch (Exception e) {
+                Assert.Fail(e.Message);
+            } finally {
+                context.EndImpersonation();
+            }
+        }
+
+        [Test]
+        public void RefreshWpsjobResultNb(){
+            var usr4 = User.FromUsername(context, "testusr4");
+            context.StartImpersonation(usr4.Id);
+            try{
+                var job = WpsJob.FromIdentifier(context, "private-job-usr4");
+                job.Status = WpsJobStatus.STAGED;
+                job.StatusLocation = "https://recast.terradue.com/t2api/describe/truongvananhhunre/_results/workflows/hydrology_tep_dcs_small_water_body_mapping_small_water_bodies_2_0_8/run/0000204-170920182652224-oozie-oozi-W/456a390e-b542-11e7-97b3-0242ac110002";
+                job.Store();
+
+                Assert.AreEqual(job.NbResults, -1);
+                Actions.RefreshWpsjobResultNb(context);
+                Assert.AreEqual(job.NbResults,0);
             } catch (Exception e) {
                 Assert.Fail(e.Message);
             } finally {
