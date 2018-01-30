@@ -110,7 +110,7 @@ namespace Terradue.Tep.WebServer.Services {
                 string path = AppDomain.CurrentDomain.BaseDirectory;
                 if(!path.EndsWith("/")) path += "/";
 
-                System.IO.File.WriteAllText(string.Format("{2}files/{2}-report-{0}-{1}.csv",startdate,enddate,path,context.GetConfigValue("SiteNameShort")), csv.ToString());
+                System.IO.File.WriteAllText(string.Format("{2}files/{3}-report-{0}-{1}.csv",startdate,enddate,path,context.GetConfigValue("SiteNameShort")), csv.ToString());
 
                 context.LogDebug(this,string.Format("Get report {1}-{2} (user Id = {0})", context.UserId, request.startdate, request.enddate));
 
