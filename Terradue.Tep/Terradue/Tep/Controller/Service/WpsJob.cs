@@ -655,8 +655,10 @@ namespace Terradue.Tep {
                     if (httpRequest.Credentials != null)
                         httpRequest.PreAuthenticate = true;
                     using (var httpResp = httpRequest.GetResponse()) {
-                        feed = AtomFeed.Load(XmlReader.Create(httpResp.GetResponseStream()));
-                        feed.Id = url;
+                        using (var streamReader = new StreamReader(httpResp.GetResponseStream())) {
+                            feed = AtomFeed.Load(XmlReader.Create(streamReader));
+                            feed.Id = url;
+                        }
                     }
                 } catch (Exception e) {
                     throw new ImpossibleSearchException("Ouput result_metadata found but impossible to load url : " + url + e.Message);
