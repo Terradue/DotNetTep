@@ -147,6 +147,7 @@
     <Reference Include="Terradue.Portal">
       <HintPath>..\packages\Terradue.Portal.2.7.37\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseTest.cs" />
@@ -197,6 +198,7 @@
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
     <None Include="core\.DS_Store" />
+    <None Include="Resources\ExecuteResponseFailed.xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Terradue.Tep\Terradue.Tep.csproj">

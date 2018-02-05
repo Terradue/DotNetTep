@@ -6,6 +6,9 @@ using Terradue.Tep;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
 using Terradue.OpenSearch.Engine;
+using System.IO;
+using OpenGis.Wps;
+using System.Xml.Serialization;
 
 namespace Terradue.Tep.Test {
 
@@ -631,6 +634,19 @@ namespace Terradue.Tep.Test {
             } finally {
                 context.EndImpersonation();
             }
+        }
+
+        [Test]
+        public void ExecuteResponseDeserialization() {
+
+            System.IO.FileStream xml = new System.IO.FileStream("../Resources/ExecuteResponseFailed.xml", System.IO.FileMode.Open);
+            var execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(xml);
+
+            Assert.NotNull(execResponse);
+            Assert.That(execResponse.Status.Item is ProcessFailedType);
+
+            var processFail = execResponse.Status.Item as ProcessFailedType;
+            Assert.NotNull(processFail.ExceptionReport);
         }
 
     }

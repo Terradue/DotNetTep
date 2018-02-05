@@ -38,9 +38,11 @@ namespace Terradue.Tep.WebServer.Services
         public object Get(LogoutRequestTep request) 
         {
             TepWebContext wsContext = new TepWebContext(PagePrivileges.EverybodyView);
+            var redirect = HttpContext.Current.Request.Url.Scheme + "://" + HttpContext.Current.Request.Url.Host + "/Shibboleth.sso/Logout";
             try{
                 wsContext.Open();
                 wsContext.LogInfo(this,string.Format("/logout GET"));
+                wsContext.LogDebug(this,string.Format("logout to " + redirect));
                 wsContext.EndSession();
                 wsContext.Close();
             } catch (ThreadAbortException e) {
@@ -49,7 +51,7 @@ namespace Terradue.Tep.WebServer.Services
                 wsContext.Close();
                 throw e;
             }
-            var redirect = HttpContext.Current.Request.Url.Scheme + HttpContext.Current.Request.Url.Host + "/Shibboleth.sso/Logout";
+            
 			var redirectResponse = new HttpResult();
 			redirectResponse.Headers[HttpHeaders.Location] = redirect;
 			redirectResponse.StatusCode = System.Net.HttpStatusCode.Redirect;
