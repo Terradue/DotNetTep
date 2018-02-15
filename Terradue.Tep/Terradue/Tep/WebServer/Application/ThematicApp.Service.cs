@@ -294,6 +294,15 @@ namespace Terradue.Tep.WebServer.Services {
 			context.Open();
             try{
 	            context.LogInfo(this, string.Format("/app/editor GET url='{0}'", request.Url));
+                if (string.IsNullOrEmpty(request.Url)) throw new Exception("Invalid url");
+                if(!request.Url.StartsWith("http")){
+                    var urib = new UriBuilder((context.BaseUrl));
+                    var path = request.Url.Substring(0,request.Url.IndexOf("?"));
+                    var query = request.Url.Substring(request.Url.IndexOf("?") + 1);
+                    urib.Path = path;
+                    urib.Query = query;
+                    request.Url = urib.Uri.AbsoluteUri;
+                }
 
 	            HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(request.Url);
 
