@@ -119,6 +119,33 @@ namespace Terradue.Tep.WebServer.Services{
             return new WebResponseBool (true);
         }
 
+        public object Post(CommunityCreateRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+
+            try {
+                context.Open();
+                if (string.IsNullOrEmpty(request.Identifier)) throw new Exception("Invalid request - missing community identifier");
+
+                context.LogInfo(this, string.Format("/community POST Identifier='{0}'", request.Identifier));
+
+                ThematicCommunity domain = new ThematicCommunity(context);
+                domain = request.ToEntity(context, domain);
+                domain.Store();
+
+                var manager = Role.FromIdentifier(context, RoleTep.MANAGER);
+                User usr = User.FromId(context, context.UserId);
+                manager.GrantToUser(usr, domain);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+
+            return new WebResponseBool(true);
+        }
+
         public object Delete (CommunityRemoveUserRequestTep request)
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.UserView);

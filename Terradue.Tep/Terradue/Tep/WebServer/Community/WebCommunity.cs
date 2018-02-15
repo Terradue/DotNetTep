@@ -31,6 +31,9 @@ namespace Terradue.Tep
     [Route ("/community", "PUT", Summary = "PUT the the community", Notes = "")]
     public class CommunityUpdateRequestTep : WebCommunityTep, IReturn<WebResponseBool> {}
 
+    [Route("/community", "POST", Summary = "PUT the the community", Notes = "")]
+    public class CommunityCreateRequestTep : WebCommunityTep, IReturn<WebResponseBool> { }
+
     [Route ("/community/user", "DELETE", Summary = "POST the current user into the community", Notes = "")]
     public class CommunityRemoveUserRequestTep : IReturn<WebResponseBool>
     {
