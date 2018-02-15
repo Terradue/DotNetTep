@@ -239,9 +239,11 @@ namespace Terradue.Tep.WebServer {
         public OwsContextAtomEntry ToOwsContextAtomEntry(IfyContext context){
             OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
+            if (Identifier == null) throw new Exception("Invalid Identifier");
+
             //properties
-            entry.Title = new ServiceModel.Syndication.TextSyndicationContent(this.Title);
-            entry.Summary = new ServiceModel.Syndication.TextSyndicationContent(this.Summary);
+            if (this.Summary != null) entry.Summary = new ServiceModel.Syndication.TextSyndicationContent(this.Summary);
+            if (Title != null) entry.Title = new ServiceModel.Syndication.TextSyndicationContent(this.Title);
             entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             if(!string.IsNullOrEmpty(this.StartDate) && !string.IsNullOrEmpty(this.EndDate))
                 entry.Date = new DateTimeInterval { StartDate = DateTime.Parse(string.IsNullOrEmpty(this.StartDate) ? this.EndDate : this.StartDate), EndDate = DateTime.Parse(string.IsNullOrEmpty(this.EndDate) ? this.StartDate : this.EndDate) };
@@ -251,14 +253,16 @@ namespace Terradue.Tep.WebServer {
             entry.ElementExtensions.Add("type", "http://www.terradue.com", "app");
 
             //authors
-            foreach(var author in this.Authors){
-                var a = new ServiceModel.Syndication.SyndicationPerson {
-                    Name = author.AuthorName,
-                    Email = author.AuthorEmail,
-                    Uri = author.AuthorUri
-                };
-                a.ElementExtensions.Add("icon","http://www.terradue.com", author.AuthorIcon);
-                entry.Authors.Add(a);
+            if (Authors != null) {
+                foreach (var author in this.Authors) {
+                    var a = new ServiceModel.Syndication.SyndicationPerson {
+                        Name = author.AuthorName,
+                        Email = author.AuthorEmail,
+                        Uri = author.AuthorUri
+                    };
+                    a.ElementExtensions.Add("icon", "http://www.terradue.com", author.AuthorIcon);
+                    entry.Authors.Add(a);
+                }
             }
 
 			//links
@@ -268,20 +272,24 @@ namespace Terradue.Tep.WebServer {
                 Title = "self link",
                 Uri = new Uri(context.GetConfigValue("catalog-baseurl") + "/" + this.Index + "?format=atom&uid=" + this.Identifier)
 			});
-            entry.Links.Add(new ServiceModel.Syndication.SyndicationLink {
-                MediaType = "image/png",
-                RelationshipType = "icon",
-                Uri = new Uri(this.Icon)
-            });
+            if (this.Icon != null) {
+                entry.Links.Add(new ServiceModel.Syndication.SyndicationLink {
+                    MediaType = "image/png",
+                    RelationshipType = "icon",
+                    Uri = new Uri(this.Icon)
+                });
+            }
 
             //categories
             bool hasAppCat = false;
-            foreach(var cat in this.Categories){
-                entry.Categories.Add(new ServiceModel.Syndication.SyndicationCategory{
-                    Label = cat.Label,
-                    Name = cat.Term
-                });
-                if (cat.Label == "App") hasAppCat = true;
+            if (this.Categories != null) {
+                foreach (var cat in this.Categories) {
+                    entry.Categories.Add(new ServiceModel.Syndication.SyndicationCategory {
+                        Label = cat.Label,
+                        Name = cat.Term
+                    });
+                    if (cat.Label == "App") hasAppCat = true;
+                }
             }
             //Add default category "App"
             if (!hasAppCat) {
