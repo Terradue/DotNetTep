@@ -97,6 +97,7 @@ namespace Terradue.Tep.WebServer.Services {
             //get user private thematic app
             if (context.UserId != 0) {
                 var user = UserTep.FromId(context, context.UserId);
+                settings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
                 var app = user.GetPrivateThematicApp();
                 if (app != null) {
                     foreach (var item in app.Items) {
