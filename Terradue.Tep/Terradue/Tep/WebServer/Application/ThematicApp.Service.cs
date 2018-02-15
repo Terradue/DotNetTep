@@ -157,6 +157,55 @@ namespace Terradue.Tep.WebServer.Services {
             return new HttpResult (result.SerializeToString (), result.ContentType);
         }
 
+        public object Get(ThematicAppCurrentUserSearchRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            context.Open();
+            context.LogInfo(this, string.Format("/user/current/apps/search GET"));
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+
+            //get user private thematic app
+            if (context.UserId != 0) {
+                var user = UserTep.FromId(context, context.UserId);
+                settings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+                var app = user.GetPrivateThematicApp();
+                if (app != null) {
+                    foreach (var item in app.Items) {
+                        if (!string.IsNullOrEmpty(item.Location)) {
+                            try {
+                                var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+                                osentities.Add(sgOs);
+                                context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
+                            } catch (Exception e) {
+                                context.LogError(this, e.Message);
+                            }
+                        }
+                    }
+                }
+            }
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+            var result = ose.Query(multiOSE, Request.QueryString, responseType);
+
+            string sresult = result.SerializeToString();
+
+            //replace usernames in apps
+            try {
+                var user = UserTep.FromId(context, context.UserId);
+                sresult = sresult.Replace("${USERNAME}", user.Username);
+                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+            }
+
+            context.Close();
+
+            return new HttpResult(sresult, result.ContentType);
+        }
+
         private IOpenSearchResultCollection GetAppsResultCollection (EntityList<DataPackage> apps, NameValueCollection nvc) { 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             apps.OpenSearchEngine = ose;
