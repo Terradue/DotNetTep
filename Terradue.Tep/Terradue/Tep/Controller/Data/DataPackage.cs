@@ -308,7 +308,7 @@ namespace Terradue.Tep {
         /// <returns>The unique identifier.</returns>
         /// <param name="name">Name.</param>
         public string GetUniqueIdentifier(string name){
-            var identifier = TepUtility.ValidateIdentifier(name);
+            var identifier = string.IsNullOrEmpty(name) ? this.Identifier : TepUtility.ValidateIdentifier(name);
             try {
                 DataPackage.FromIdentifier(context, identifier);
             } catch (EntityUnauthorizedException) {
