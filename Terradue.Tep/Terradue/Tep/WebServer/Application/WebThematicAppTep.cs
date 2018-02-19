@@ -26,6 +26,15 @@ namespace Terradue.Tep.WebServer {
         public string Domain { get; set; }
     }
 
+    [Route("/community/{domain}/apps/", "POST", Summary = "search for thematic apps", Notes = "")]
+    public class ThematicAppAddToCommunityRequestTep : IReturn<List<HttpResult>> {
+        [ApiMember(Name = "domain", Description = "identifier of the domain", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Domain { get; set; }
+
+        [ApiMember(Name = "appUrl", Description = "url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string AppUrl { get; set; }
+    }
+
     //[Route("/apps", "POST", Summary = "create thematic App", Notes = "")]
     //public class ThematicAppCreateRequestTep : IReturn<WebThematicAppTep> {
     //    [ApiMember(Name = "identifier", Description = "thematic app identifier", ParameterType = "query", DataType = "string", IsRequired = true)]

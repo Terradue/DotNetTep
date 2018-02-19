@@ -157,6 +157,24 @@ namespace Terradue.Tep.WebServer.Services {
             return new HttpResult (result.SerializeToString (), result.ContentType);
         }
 
+        public object Post(ThematicAppAddToCommunityRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.Open();
+            context.LogInfo(this, string.Format("/community/{{domain}}/apps POST domain='{0}', appurl='{1}'", request.Domain, request.AppUrl));
+            if (string.IsNullOrEmpty(request.AppUrl)) throw new Exception("Invalid Application Url");
+
+            var domain = ThematicCommunity.FromIdentifier(context, request.Domain);
+            if (!domain.CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Action only allowed to manager of the domain");
+
+            var app = domain.GetThematicApplication();
+            var res = new RemoteResource(context);
+            res.Location = request.AppUrl;
+            app.AddResourceItem(res);
+
+            context.Close();
+            return new WebResponseBool(true);
+        }
+
         public object Get(ThematicAppCurrentUserSearchRequestTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
