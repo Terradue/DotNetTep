@@ -476,6 +476,21 @@ namespace Terradue.Tep {
                 else if (parameters["status"] == "pending" && !isPending) return null;
                 else if (parameters["status"] == "unjoined" && isJoined) return null;
             }
+
+            if (!string.IsNullOrEmpty(parameters["visibility"])) { 
+                switch(parameters["visibility"]){
+                    case "public":
+                        if (this.Kind != DomainKind.Public) return null;
+                        break;
+                    case "private":
+                        if (this.Kind != DomainKind.Private) return null;
+                        break;
+                    case "owned":
+                        if (!CanUserManage(context.UserId)) return null;
+                        break;
+                }
+            }
+
                 
             if (isPending) {
                 result.Categories.Add(new SyndicationCategory("status", null, "pending"));
