@@ -17,16 +17,25 @@ namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class ThematicCommunity : Domain {
 
-        private string appslink;
-        public string AppsLink { 
+        private List<string> appslinks;
+        public List<string> AppsLinks { 
             get {
-                if (string.IsNullOrEmpty(appslink)) {
-                    appslink = LoadAppsLink();
+                if (appslinks == null) {
+                    appslinks = new List<string>();
+                    var app = GetThematicApplication();
+                    if (app != null) {
+                        app.LoadItems();
+                        foreach (var item in app.Items) {
+                            if (!string.IsNullOrEmpty(item.Location)) {
+                                appslinks.Add(item.Location);
+                            }
+                        }
+                    }
                 }
-                return appslink;
+                return appslinks;
             }
             set {
-                appslink = value;
+                appslinks = value;
             }
         }
 
@@ -114,7 +123,6 @@ namespace Terradue.Tep {
             if (string.IsNullOrEmpty(this.Identifier) && !string.IsNullOrEmpty(this.Name))
                 this.Identifier = TepUtility.ValidateIdentifier(this.Name);
             base.Store();
-            StoreAppsLink(AppsLink);
         }
 
         /// <summary>
@@ -406,22 +414,6 @@ namespace Terradue.Tep {
             return string.Empty;
         }
 
-        private void StoreAppsLink(string link) {
-            var app = GetThematicApplication();
-
-            //delete old links
-            app.LoadItems();
-            foreach (var resource in app.Items) {
-                resource.Delete();
-            }
-
-            //add new link
-            var appResource = new RemoteResource(context);
-            appResource.Location = link;
-            appResource.ResourceSet = app;
-            appResource.Store();
-        }
-
         /// <summary>
         /// Shares the entity to the community.
         /// </summary>
@@ -557,54 +549,13 @@ namespace Terradue.Tep {
             //we show these info only for owner and only for specific id view
             if (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) {
                 if (isJoined) {
-                    if (!string.IsNullOrEmpty(AppsLink)) {
-                        result.Links.Add(new SyndicationLink(new Uri(AppsLink), "related", "apps", "application/atom+xml", 0));
+                    if (AppsLinks != null) {
+                        foreach (var appslink in AppsLinks) {
+                            result.Links.Add(new SyndicationLink(new Uri(appslink), "related", "apps", "application/atom+xml", 0));
 
-                        //get all data collections
-                        var settings = MasterCatalogue.OpenSearchFactorySettings;
-                        try {
-                            var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(AppsLink), settings), new NameValueCollection(), typeof(AtomFeed));
-                            foreach (IOpenSearchResultItem item in apps.Items) {
-                                try {
-                                    var offerings = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
-                                    if (offerings != null) {
-                                        foreach (var off in offerings) {
-                                            if (off.Operations != null) {
-                                                foreach (var ops in off.Operations) {
-                                                    if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue;
-                                                    var appTitle = item.Title != null ? item.Title.Text : item.Identifier;
-                                                    if (ops.Code == "ListSeries") {
-                                                        EntityList<Collection> collections = new EntityList<Collection>(context);
-                                                        Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                                                        var uri = new Uri(ops.Href);
-                                                        var nvc = HttpUtility.ParseQueryString(uri.Query);
-                                                        var resultColl = ose.Query(collections, nvc);
-                                                        foreach (var itemColl in resultColl.Items) {
-                                                            var itemCollIdTrim = itemColl.Identifier.Trim().Replace(" ", "");
-                                                            var any = ops.Any[0].InnerText.Trim();
-                                                            var anytrim = any.Replace(" ", "").Replace("*", itemCollIdTrim);
-                                                            any = any.Replace("*", itemColl.Identifier);
-                                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
-                                                            var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
-                                                            if (any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
-                                                        }
-                                                    } else {
-                                                        var any = ops.Any[0].InnerText.Trim();
-                                                        var anytrim = any.Replace(" ", "");
-                                                        var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
-                                                        var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
-                                                        if (any != string.Empty && !result.Links.Contains(sLink)) result.Links.Add(sLink);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }catch(Exception e){
-                                    context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + this.Name);
-                                }
-                            }
-                        }catch(Exception e){
-                            context.LogError(this, e !=null ? e.Message : "Error while getting thematic applications of community " + this.Name);
+                            //get all data collections
+                            var links = GetDataCollectionsAsLinksForApp(context, appslink);
+                            foreach (var link in links) result.Links.Add(link);
                         }
                     }
                     if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
@@ -632,6 +583,56 @@ namespace Terradue.Tep {
             }
 
             return result;
+        }
+
+        private List<SyndicationLink> GetDataCollectionsAsLinksForApp(IfyContext context, string appslink){
+            var results = new List<SyndicationLink>();
+            try{
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
+                var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
+                foreach (IOpenSearchResultItem item in apps.Items) {
+                    try {
+                        var offerings = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+                        if (offerings != null) {
+                            foreach (var off in offerings) {
+                                if (off.Operations != null) {
+                                    foreach (var ops in off.Operations) {
+                                        if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue;
+                                        var appTitle = item.Title != null ? item.Title.Text : item.Identifier;
+                                        if (ops.Code == "ListSeries") {
+                                            EntityList<Collection> collections = new EntityList<Collection>(context);
+                                            Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                                            var uri = new Uri(ops.Href);
+                                            var nvc = HttpUtility.ParseQueryString(uri.Query);
+                                            var resultColl = ose.Query(collections, nvc);
+                                            foreach (var itemColl in resultColl.Items) {
+                                                var itemCollIdTrim = itemColl.Identifier.Trim().Replace(" ", "");
+                                                var any = ops.Any[0].InnerText.Trim();
+                                                var anytrim = any.Replace(" ", "").Replace("*", itemCollIdTrim);
+                                                any = any.Replace("*", itemColl.Identifier);
+                                                var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
+                                                var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
+                                                if (any != string.Empty && !results.Contains(sLink)) results.Add(sLink);
+                                            }
+                                        } else {
+                                            var any = ops.Any[0].InnerText.Trim();
+                                            var anytrim = any.Replace(" ", "");
+                                            var url = context.GetConfigValue("BaseUrl") + "/geobrowser/?id=" + item.Identifier.Trim() + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
+                                            var sLink = new SyndicationLink(new Uri(url), "related", any + " (" + appTitle + ")", "application/atom+xml", 0);
+                                            if (any != string.Empty && !results.Contains(sLink)) results.Add(sLink);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + this.Name);
+                    }
+                }
+            } catch (Exception e) {
+                context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + this.Name);
+            }
+            return results;
         }
 
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {

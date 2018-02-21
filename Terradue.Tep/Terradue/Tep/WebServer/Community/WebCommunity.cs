@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
@@ -92,8 +93,8 @@ namespace Terradue.Tep
 	}
 
     public class WebCommunityTep : WebDomain {
-        [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Apps { get; set; }
+        [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> Apps { get; set; }
 
         [ApiMember(Name = "DiscussCategory", Description = "Discuss category", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string DiscussCategory { get; set; }
@@ -108,7 +109,7 @@ namespace Terradue.Tep
         /// </summary>
         /// <param name="entity">Entity.</param>
         public WebCommunityTep(ThematicCommunity entity, IfyContext context = null) : base(entity) {
-            Apps = entity.AppsLink;
+            Apps = entity.AppsLinks;
             DiscussCategory = entity.DiscussCategory;
             Name = entity.Name ?? entity.Identifier;
             DefaultRole = entity.DefaultRoleName;
@@ -124,7 +125,7 @@ namespace Terradue.Tep
             ThematicCommunity entity = (input == null ? new ThematicCommunity(context) : input);
 
             entity.DiscussCategory = DiscussCategory;
-            entity.AppsLink = Apps;
+            entity.AppsLinks = Apps;
             entity.IconUrl = IconeUrl;
             entity.Identifier = TepUtility.ValidateIdentifier(Identifier);
             entity.Name = Name;

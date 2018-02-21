@@ -109,6 +109,21 @@ namespace Terradue.Tep.WebServer.Services{
                 domain = request.ToEntity(context, domain);
                 domain.Store ();
 
+                //store appslinks
+                var app = domain.GetThematicApplication();
+                //delete old links
+                app.LoadItems();
+                foreach (var resource in app.Items) {
+                    resource.Delete();
+                }
+                app.LoadItems();
+                //add new links
+                foreach (var link in request.Apps) {                    
+                    var res = new RemoteResource(context);
+                    res.Location = link;
+                    app.AddResourceItem(res);
+                }
+
                 context.Close ();
             } catch (Exception e) {
                 context.LogError (this, e.Message);
