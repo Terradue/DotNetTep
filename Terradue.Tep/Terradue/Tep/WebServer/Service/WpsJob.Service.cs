@@ -151,15 +151,16 @@ namespace Terradue.Tep.WebServer.Services {
 
                 if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
 
                     //get credentials from current user
                     if (context.UserId != 0) {
                         var user = UserTep.FromId(context, context.UserId);
                         var apikey = user.GetSessionApiKey();
                         var t2userid = user.TerradueCloudUsername;
-                        settings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
                     }
-                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), settings);
+                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), specsettings);
                     var res = ose.Query(urlToShare, nvc, type);
                     result = new HttpResult(res.SerializeToString(), res.ContentType);
                 } else {
@@ -223,15 +224,16 @@ namespace Terradue.Tep.WebServer.Services {
 
                 if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
 
                     //get credentials from current user
                     if (context.UserId != 0) {
                         var user = UserTep.FromId(context, context.UserId);
                         var apikey = user.GetSessionApiKey();
                         var t2userid = user.TerradueCloudUsername;
-                        settings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
                     }
-                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), settings);
+                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), specsettings);
                     osd = urlToShare.GetOpenSearchDescription();
                     var oldUri = new UriBuilder(osd.DefaultUrl.Template);
                     var newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");

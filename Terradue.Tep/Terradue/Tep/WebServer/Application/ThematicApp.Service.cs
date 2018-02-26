@@ -52,11 +52,11 @@ namespace Terradue.Tep.WebServer.Services {
             communities.Load();
 
             var settings = MasterCatalogue.OpenSearchFactorySettings;
-
+            var specsettings = (OpenSearchableFactorySettings)settings.Clone();
 			if (context.UserId != 0)
 			{
 				var user = UserTep.FromId(context, context.UserId);
-                settings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+                specsettings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
 			}
 
             //foreach community we get the apps link
@@ -68,7 +68,7 @@ namespace Terradue.Tep.WebServer.Services {
                         foreach (var item in app.Items) {
                             if (!string.IsNullOrEmpty(item.Location)) {
                                 try {
-                                    var ios = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+                                    var ios = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
                                     osentities.Add(ios);
                                     context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
                                 } catch (Exception e) {
@@ -90,7 +90,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach (var item in app.Items) {
                     if (!string.IsNullOrEmpty(item.Location)) {
 						try {
-							var ios = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+                            var ios = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
 							osentities.Add(ios);
                             context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
 						} catch (Exception e) {
@@ -103,13 +103,12 @@ namespace Terradue.Tep.WebServer.Services {
             //get user private thematic app
             if (context.UserId != 0) {
                 var user = UserTep.FromId(context, context.UserId);
-                settings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
                 var app = user.GetPrivateThematicApp();
                 if (app != null) {
                     foreach (var item in app.Items) {
                         if (!string.IsNullOrEmpty(item.Location)) {
                             try {
-                                var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+                                var sgOs = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
                                 osentities.Add(sgOs);
                                 context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
                             } catch (Exception e) {
@@ -119,7 +118,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }
             }
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, specsettings);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
             string sresult = result.SerializeToString();
@@ -190,17 +189,19 @@ namespace Terradue.Tep.WebServer.Services {
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
             List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
             var settings = MasterCatalogue.OpenSearchFactorySettings;
+            OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
 
             //get user private thematic app
             if (context.UserId != 0) {
                 var user = UserTep.FromId(context, context.UserId);
-                settings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+
+                specsettings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
                 var app = user.GetPrivateThematicApp();
                 if (app != null) {
                     foreach (var item in app.Items) {
                         if (!string.IsNullOrEmpty(item.Location)) {
                             try {
-                                var sgOs = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(item.Location));
+                                var sgOs = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
                                 osentities.Add(sgOs);
                                 context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
                             } catch (Exception e) {
@@ -210,7 +211,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 }
             }
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, specsettings);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
             string sresult = result.SerializeToString();
