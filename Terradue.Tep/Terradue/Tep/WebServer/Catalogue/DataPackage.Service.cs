@@ -200,8 +200,12 @@ namespace Terradue.Tep.WebServer.Services
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
 
                 foreach(RemoteResource res in def.Resources){
-                    var reqDPUri = new UriBuilder(request.Url.Replace("format=atom", "format=json")).Uri.AbsoluteUri;
-                    var localDPUri = new UriBuilder(res.Location.Replace("format=atom", "format=json")).Uri.AbsoluteUri;
+                    var reqDPUri = new UriBuilder(HttpUtility.UrlDecode(request.Url)).Uri.AbsoluteUri;
+                    var localDPUri = new UriBuilder(HttpUtility.UrlDecode(res.Location)).Uri.AbsoluteUri;
+
+                    reqDPUri = reqDPUri.SetQueryParam("format","atom");
+                    localDPUri = localDPUri.SetQueryParam("format", "atom");
+
                     if(reqDPUri.Equals(localDPUri)){
                         res.Delete();
                         break;
