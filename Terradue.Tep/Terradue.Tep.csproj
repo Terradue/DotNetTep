@@ -187,9 +187,6 @@
     <Reference Include="Terradue.OpenSearch.RdfEO">
       <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.4.0\lib\net45\Terradue.OpenSearch.RdfEO.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.15.8\lib\net45\Terradue.OpenSearch.dll</HintPath>
-    </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
       <HintPath>..\packages\Terradue.Portal.2.7.38\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
@@ -201,6 +198,9 @@
     </Reference>
     <Reference Include="Terradue.OpenSearch.GeoJson">
       <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.20\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.OpenSearch">
+      <HintPath>..\packages\Terradue.OpenSearch.1.15.10\lib\net45\Terradue.OpenSearch.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
