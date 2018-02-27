@@ -75,6 +75,7 @@ namespace Terradue.Tep {
             var jobs = new EntityList<WpsJob>(context);
             jobs.SetFilter("Status",(int)WpsJobStatus.ACCEPTED + "," + (int)WpsJobStatus.NONE + "," + (int)WpsJobStatus.PAUSED + "," + (int)WpsJobStatus.STARTED);
             var jobsPoolSize = context.GetConfigIntegerValue("action-jobPoolSize");
+            var maxDaysJobRefresh = context.GetConfigIntegerValue("action-maxDaysJobRefresh");
             jobs.ItemsPerPage = jobsPoolSize;
             jobs.Load();
             context.WriteInfo(string.Format("RefreshWpjobStatus -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
@@ -90,14 +91,14 @@ namespace Terradue.Tep {
                         if(jobresponse is ExceptionReport){
                             job.Status = WpsJobStatus.FAILED;
                             job.Store();
-                        } else if (DateTime.UtcNow.AddMonths(-1) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
+                        } else if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
                             job.Status = WpsJobStatus.FAILED;
                             job.Store();
                         }
                     }
                 }catch(WpsProxyException e){
                     context.WriteError(string.Format("RefreshWpjobStatus -- '{0}'", e.Message));
-                    if (DateTime.UtcNow.AddMonths(-1) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
+                    if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
                         job.Status = WpsJobStatus.FAILED;
                         job.Store();
                     } else {
@@ -117,6 +118,7 @@ namespace Terradue.Tep {
             var jobs = new EntityList<WpsJob>(context);
             jobs.SetFilter("NbResults", "-1");
             var jobsPoolSize = context.GetConfigIntegerValue("action-jobPoolSize");
+            var maxDaysJobRefresh = context.GetConfigIntegerValue("action-maxDaysJobRefresh");
             jobs.ItemsPerPage = jobsPoolSize;
             jobs.Load();
             context.WriteInfo(string.Format("RefreshWpjobResultNb -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
@@ -125,7 +127,7 @@ namespace Terradue.Tep {
                 try {
                     job.UpdateResultCount();
                 } catch (Exception e) {
-                    if (DateTime.UtcNow.AddMonths(-1) > job.CreatedTime) {//if job is older than a month and makes an exception, we set result to 0
+                    if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set result to 0
                         job.NbResults = 0;
                         job.Store();
                         forced = true;

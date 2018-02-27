@@ -1,4 +1,4 @@
--- VERSION 1.1.2.15
+-- VERSION 1.1.2.16
 
 USE $MAIN$;
 
@@ -308,6 +308,7 @@ ADD UNIQUE INDEX `uq_name_usr` (`id_usr` ASC, `name` ASC);
 
 -- Adding config...\
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('action-jobPoolSize', 'int', 'Actions job pool size', 'Actions job pool size', '100', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('action-maxDaysJobRefresh', 'int', 'Number of days before a job nb results is set to 0 in case of errors', 'Number of days before a job nb results is set to 0 in case of errors', '30', '0');
 -- RESULT
 
 -- Adding wpsjob nbresults...\
