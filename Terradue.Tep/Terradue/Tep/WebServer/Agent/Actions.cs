@@ -86,25 +86,31 @@ namespace Terradue.Tep {
                     if (jobresponse is ExecuteResponse) {
                         var execResponse = jobresponse as ExecuteResponse;
                         job.UpdateStatusFromExecuteResponse(execResponse);
+
+                        //if job status not updated and job is older than the max time allowed, we set as failed
+                        if(
+                            (job.Status == WpsJobStatus.ACCEPTED || job.Status == WpsJobStatus.STARTED || job.Status == WpsJobStatus.PAUSED || job.Status == WpsJobStatus.NONE)
+                            & (DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime)
+                        ){
+                            job.Status = WpsJobStatus.FAILED;
+                        }
                         job.Store();
                     } else {
-                        if(jobresponse is ExceptionReport){
-                            job.Status = WpsJobStatus.FAILED;
-                            job.Store();
-                        } else if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
+                        //if job is an exception or older than the max time allowed, we set as failed
+                        if(jobresponse is ExceptionReport || DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {
                             job.Status = WpsJobStatus.FAILED;
                             job.Store();
                         }
                     }
                 }catch(WpsProxyException e){
-                    context.WriteError(string.Format("RefreshWpjobStatus -- '{0}'", e.Message));
+                    context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
                     if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
                         job.Status = WpsJobStatus.FAILED;
                         job.Store();
                     } else {
                     }
                 }catch(Exception e){
-                    context.WriteError(string.Format("RefreshWpjobStatus -- '{0}'", e.Message));
+                    context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
                 }
                 context.WriteInfo(string.Format("RefreshWpjobStatus -- job '{0}' -- status = {1} -> {2}", job.Identifier, status, job.StringStatus));
             }
@@ -138,7 +144,7 @@ namespace Terradue.Tep {
                 }
                 context.WriteInfo(string.Format("RefreshWpjobResultNb -- job '{0}' -- status = {1} -> {2} results{3}", job.Identifier, job.StringStatus, noset ? "no" : job.NbResults + "", forced ? " (forced)" : ""));
             }
-             jobs = new EntityList<WpsJob>(context);
+            jobs = new EntityList<WpsJob>(context);
             jobs.SetFilter("Status", (int)WpsJobStatus.COORDINATOR + "");
             jobs.Load();
             context.WriteInfo(string.Format("RefreshWpjobResultNb -- found {0} coordinators", jobs.Count));
@@ -146,7 +152,7 @@ namespace Terradue.Tep {
                 try{
                     job.UpdateResultCount();
                 } catch (Exception e) {
-                    context.WriteError(string.Format("RefreshWpjobResultNb -- '{0}'", e.Message));
+                    context.WriteError(string.Format("RefreshWpjobResultNb -- job '{1}'-- '{0}'", e.Message, job.Identifier));
                 }
                 context.WriteInfo(string.Format("RefreshWpjobResultNb -- job '{0}' -- status = {1} -> {2} results", job.Identifier, job.StringStatus, job.NbResults));
             }
