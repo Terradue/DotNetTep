@@ -495,7 +495,26 @@ namespace Terradue.Tep {
                     if (StatusLocation.Contains("gpod.eo.esa.int")) {
                         using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream()) remotestream.CopyTo(remoteWpsResponseStream);
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                        execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
+                        try {
+                            execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
+                        }catch(Exception e){
+                            // Maybe an exceptionReport
+                            OpenGis.Wps.ExceptionReport exceptionReport = null;
+                            remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                            try {
+                                exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
+                                return exceptionReport;
+                            } catch (Exception e2) {
+                                remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                                string errormsg = null;
+                                using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
+                                    errormsg = reader.ReadToEnd();
+                                }
+                                remoteWpsResponseStream.Close();
+                                context.LogError(this, errormsg);
+                                return errormsg;
+                            }
+                        }
                         return execResponse;
                     }
                     throw new WpsProxyException("Error proxying Status location", we);
