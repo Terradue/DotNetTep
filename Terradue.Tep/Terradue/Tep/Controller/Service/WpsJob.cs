@@ -614,6 +614,32 @@ namespace Terradue.Tep {
             return null;
         }
 
+        public static string GetResultMetalinkUrl(ExecuteResponse execResponse) {
+            // Search for an Opensearch Description Document ouput url
+
+            foreach (OutputDataType output in execResponse.ProcessOutputs) {
+                if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
+                    var item = ((DataType)(output.Item)).Item as ComplexDataType;
+                    if (item.Any != null && item.Any[0].LocalName != null) {
+                        if (item.Any[0].LocalName.Equals("RDF")) {
+                            //TODO: feed = CreateFeedForRDF(item.Any[0], request.jobid, context.BaseUrl);
+                        } else if (item.Any[0].LocalName.Equals("metalink")) {
+                            XmlDocument doc = new XmlDocument();
+                            doc.LoadXml(item.Any[0].OuterXml);
+                            XmlNamespaceManager xmlns = new XmlNamespaceManager(doc.NameTable);
+                            xmlns.AddNamespace("ml", "http://www.metalinker.org");
+                            var onlineResource = doc.SelectNodes("ml:metalink/ml:files/ml:file/ml:resources/ml:url", xmlns);
+                            foreach (XmlNode node in onlineResource) {
+                                string url = node.InnerText;
+                                if (url.Contains(".atom")) return url;
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         /// Gets the result URL.
         /// </summary>
@@ -623,6 +649,7 @@ namespace Terradue.Tep {
             var url = GetResultOsdUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultMetadatadUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultHtmlUrl(execResponse);
+            if (string.IsNullOrEmpty(url)) url = GetResultMetalinkUrl(execResponse);
             if (string.IsNullOrEmpty(url)) throw new Exception("Unable to get wpsjob result url");
             return url;
         }
@@ -666,6 +693,7 @@ namespace Terradue.Tep {
 
             // Search for a static metadata file
             url = GetResultMetadatadUrl(execResponse);
+            if (string.IsNullOrEmpty(url)) url = GetResultHtmlUrl(execResponse);
             if (!string.IsNullOrEmpty(url)) {
                 AtomFeed feed = null;
                 try {
@@ -679,6 +707,45 @@ namespace Terradue.Tep {
                             feed.Id = url;
                         }
                     }
+                } catch (Exception e) {
+                    throw new ImpossibleSearchException("Ouput result_metadata found but impossible to load url : " + url + e.Message);
+                }
+                return new AtomFeedOpenSearchable(feed);
+            }
+
+            url = GetResultMetalinkUrl(execResponse);
+            if (!string.IsNullOrEmpty(url)) {
+                AtomFeed feed = null;
+                try {
+                    HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(url);
+                    httpRequest.Credentials = GetCredentials();
+                    if (httpRequest.Credentials != null) httpRequest.PreAuthenticate = true;
+
+                    NetworkCredential credentials = GetCredentials();
+                    var uri = new UriBuilder(url);
+                    HttpWebRequest atomRequest = WpsProvider.CreateWebRequest(url, credentials, context.Username);
+                    atomRequest.Accept = "*/*";
+                    atomRequest.UserAgent = "Terradue TEP";
+
+                    Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
+                    try {
+                        using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse()) {
+                            using (var atomResponseStream = new MemoryStream()) {
+                                using (var stream = atomResponse.GetResponseStream())
+                                    stream.CopyTo(atomResponseStream);
+                                atomResponseStream.Seek(0, SeekOrigin.Begin);
+                                var sr = XmlReader.Create(atomResponseStream);
+                                atomFormatter.ReadFrom(sr);
+                                sr.Close();
+                            }
+                        }
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                        throw e;
+                    }
+                    feed = new AtomFeed(atomFormatter.Feed);
+                    feed.Id = url;
+
                 } catch (Exception e) {
                     throw new ImpossibleSearchException("Ouput result_metadata found but impossible to load url : " + url + e.Message);
                 }
