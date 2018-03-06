@@ -492,7 +492,7 @@ namespace Terradue.Tep {
                     context.LogError(this, string.Format(we.Message));
 
                     //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
-                    if (StatusLocation.Contains("gpod.eo.esa.int")) {
+                    if (StatusLocation.Contains("gpod.eo.esa.int") && we.Response != null) {
                         using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream()) remotestream.CopyTo(remoteWpsResponseStream);
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         try {
