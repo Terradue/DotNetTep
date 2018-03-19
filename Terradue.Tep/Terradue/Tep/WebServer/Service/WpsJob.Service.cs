@@ -495,6 +495,7 @@ namespace Terradue.Tep.WebServer.Services {
                 newjob.Status = job.Status;
                 newjob.Parameters = job.Parameters;
                 newjob.CreatedTime = job.CreatedTime;
+                newjob.EndTime = job.EndTime;
                 newjob.Name = job.Name;
                 newjob.ProcessId = job.ProcessId;
                 newjob.RemoteIdentifier = job.RemoteIdentifier;

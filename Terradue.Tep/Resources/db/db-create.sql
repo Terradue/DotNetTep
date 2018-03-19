@@ -1,4 +1,4 @@
--- VERSION 1.1.2.16
+-- VERSION 1.1.2.17
 
 USE $MAIN$;
 
@@ -320,3 +320,6 @@ INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `ena
 INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`, `time_interval`) VALUES ('RefreshWpsjobResultNb', 'Refresh wpsjob nb results', 'This action refresh the nb of results of wps jobs for which nb results is not set', 'Terradue.Tep.Actions, Terradue.Tep', 'RefreshWpsjobResultNb',1,'2h');
 -- RESULT
 
+-- Add wpsjob end time...\
+ALTER TABLE wpsjob ADD COLUMN `end_time` DATETIME NULL AFTER `created_time`;
+-- RESULT

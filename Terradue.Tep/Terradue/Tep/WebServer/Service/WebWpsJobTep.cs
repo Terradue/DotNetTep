@@ -130,6 +130,8 @@ namespace Terradue.Tep.WebServer {
         public String StatusLocation { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
         public DateTime CreatedTime { get; set; }
+        [ApiMember(Name = "EndTime", Description = "End time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
+        public DateTime EndTime { get; set; }
         [ApiMember(Name="Parameters", Description = "Parameters attached to the job", ParameterType = "query", DataType = "List<KeyValuePair<string, string>>", IsRequired = true)]
         public List<KeyValuePair<string, string>> Parameters { get; set; }
 
@@ -156,6 +158,7 @@ namespace Terradue.Tep.WebServer {
             this.StatusLocation = entity.StatusLocation;
             this.Parameters = entity.Parameters;
             this.CreatedTime = entity.CreatedTime;
+            this.EndTime = entity.EndTime;
             this.RemoteIdentifier = entity.RemoteIdentifier;
             this.Status = (int)entity.Status;
                        
@@ -182,6 +185,7 @@ namespace Terradue.Tep.WebServer {
             entity.Parameters = this.Parameters;
             entity.StatusLocation = this.StatusLocation;
             entity.CreatedTime = this.CreatedTime;
+            entity.EndTime = this.EndTime;
             return entity;
         }
 

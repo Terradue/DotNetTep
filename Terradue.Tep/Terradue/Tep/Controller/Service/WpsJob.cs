@@ -49,6 +49,9 @@ namespace Terradue.Tep {
         [EntityDataField("created_time")]
         public DateTime CreatedTime { get; set; }
 
+        [EntityDataField("end_time")]
+        public DateTime EndTime { get; set; }
+
         [EntityDataField("nbresults")]
         public int NbResults { get; set; }
 
@@ -424,13 +427,17 @@ namespace Terradue.Tep {
 
         /// <summary>
         /// Updates the status from execute response.
+        /// Also get the Creation Time to fill End time in case of Succeeded job
         /// </summary>
         /// <param name="response">Response.</param>
         public void UpdateStatusFromExecuteResponse(ExecuteResponse response) {
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
             else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
-            else if (response.Status.Item is ProcessSucceededType) this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
+            else if (response.Status.Item is ProcessSucceededType) {
+                this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
+                if (this.EndTime == DateTime.MinValue && response.Status.creationTime != this.CreatedTime) this.EndTime = response.Status.creationTime;
+            }
             else if (response.Status.Item is ProcessFailedType) this.Status = WpsJobStatus.FAILED;
             else this.Status = WpsJobStatus.NONE;
 
@@ -870,6 +877,7 @@ namespace Terradue.Tep {
             result.ReferenceData = this;
 
             result.PublishDate = new DateTimeOffset(this.CreatedTime);
+            if(this.EndTime != DateTime.MinValue) result.LastUpdatedTime = new DateTimeOffset(this.EndTime);
 
             var basepath = new UriBuilder(context.BaseUrl);
             basepath.Path = "user";
@@ -1066,8 +1074,6 @@ namespace Terradue.Tep {
             offering.Operations = operations.ToArray();
 
             OwsContextAtomEntry entry = new OwsContextAtomEntry();
-
-            entry.PublishDate = new DateTimeOffset(this.CreatedTime);
 
             entry.Publisher = Owner.Username;
 
