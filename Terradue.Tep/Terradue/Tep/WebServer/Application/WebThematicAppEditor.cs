@@ -385,12 +385,16 @@ namespace Terradue.Tep.WebServer {
                     datacontext.InnerText = dc.DataContextName;
                     var defaultVisibleItems = doc.CreateElement("defaultVisibleItems");
                     defaultVisibleItems.InnerText = dc.DefaultVisibleItems;
-					osOperations.Add(new OwcOperation {
-                        Code = "DescribeDataset",
-                        Type = "application/opensearchdescription+xml",
-                        Href = dc.DataContextDescriptionUrl,
-                        Any = new System.Xml.XmlElement[]{ datacontext, defaultVisibleItems }
-					});
+                    var isDescription = CatalogueFactory.IsUrlOpensearchDescription(dc.DataContextDescriptionUrl);
+                    var isSearch = CatalogueFactory.IsUrlOpensearchSearch(dc.DataContextDescriptionUrl);
+                    if (isDescription || isSearch) {
+                        osOperations.Add(new OwcOperation {
+                            Code = isDescription ? "DescribeDataset" : "SearchDataset",
+                            Type = isDescription ? "application/opensearchdescription+xml" : "application/atom+xml",
+                            Href = dc.DataContextDescriptionUrl,
+                            Any = new System.Xml.XmlElement[] { datacontext, defaultVisibleItems }
+                        });
+                    }
                 }
                 offerings.Add(new OwcOffering{
                     Code = "http://www.terradue.com/spec/owc/1.0/req/atom/opensearch",

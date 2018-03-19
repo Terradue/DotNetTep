@@ -81,5 +81,27 @@ namespace Terradue.Tep {
             }
             return true;
         }
-    }
+
+        /// <summary>
+        /// Ises the URL opensearch description.
+        /// </summary>
+        /// <returns><c>true</c>, if URL opensearch description was ised, <c>false</c> otherwise.</returns>
+        /// <param name="url">URL.</param>
+		public static bool IsUrlOpensearchDescription(string url) {
+            if (string.IsNullOrEmpty(url)) return false;
+            if (url.Contains("/description") || url.Contains("/describe")) return true;
+            return false;
+		}
+
+        /// <summary>
+        /// Ises the URL opensearch search.
+        /// </summary>
+        /// <returns><c>true</c>, if URL opensearch search was ised, <c>false</c> otherwise.</returns>
+        /// <param name="url">URL.</param>
+        public static bool IsUrlOpensearchSearch(string url) {
+            if (string.IsNullOrEmpty(url)) return false;
+            if (url.Contains("/search")) return true;
+            return false;
+        }
+	}
 }
