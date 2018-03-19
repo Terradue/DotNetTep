@@ -151,6 +151,15 @@ namespace Terradue.Tep.WebServer.Services{
                 User usr = User.FromId(context, context.UserId);
                 manager.GrantToUser(usr, domain);
 
+                //store appslinks
+                var app = domain.GetThematicApplication();
+                //add new links
+                foreach (var link in request.Apps) {                    
+                    var res = new RemoteResource(context);
+                    res.Location = link;
+                    app.AddResourceItem(res);
+                }
+
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
