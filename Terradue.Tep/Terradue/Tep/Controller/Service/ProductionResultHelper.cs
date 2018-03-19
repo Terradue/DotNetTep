@@ -160,7 +160,7 @@ namespace Terradue.Tep {
                 var resultUrl = WpsJob.GetResultUrl(execResponse);
                 wpsjob.StatusLocation = resultUrl;
                 wpsjob.Store();
-                return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
             }
 
             if (wpsjob.Status != WpsJobStatus.SUCCEEDED) {
@@ -190,7 +190,7 @@ namespace Terradue.Tep {
 					wpsjob.StatusLocation = resultUrl;
 					wpsjob.Status = WpsJobStatus.STAGED;
 					wpsjob.Store();
-					return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                    return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 } else {
                     //case old sandboxes
     				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
@@ -226,7 +226,7 @@ namespace Terradue.Tep {
                                     wpsjob.StatusLocation = resultUrl;
                                     wpsjob.Status = WpsJobStatus.STAGED;
                                     wpsjob.Store();
-                                    return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                                    return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                                 } else {
                                     //cases external providers
                                     var dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>>(AppSettings["DataGatewaySubstitutions"]);
@@ -262,13 +262,13 @@ namespace Terradue.Tep {
 						var exceptionReport = new ExceptionReport {
 							Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { "Error while staging data to store --- " + recaststatus.message } } }
 						};
-						execResponse.Status = new StatusType { Item = new ProcessFailedType { ExceptionReport = exceptionReport }, ItemElementName = ItemChoiceType.ProcessFailed };
+                        execResponse.Status = new StatusType { Item = new ProcessFailedType { ExceptionReport = exceptionReport }, ItemElementName = ItemChoiceType.ProcessFailed, creationTime = wpsjob.CreatedTime};
                     }
 
 					//recast is still in progress
 					else if (recaststatus.status == statusInProgress) { 
                         log.DebugFormat("Recasting STILL IN PROGRESS job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
-                        execResponse.Status = new StatusType { Item = new ProcessStartedType { Value = "Process in progress", percentCompleted = "99" }, ItemElementName = ItemChoiceType.ProcessStarted };
+                        execResponse.Status = new StatusType { Item = new ProcessStartedType { Value = "Process in progress", percentCompleted = "99" }, ItemElementName = ItemChoiceType.ProcessStarted, creationTime = wpsjob.CreatedTime };
                     }
 
                     //recast is completed
@@ -277,7 +277,7 @@ namespace Terradue.Tep {
 						wpsjob.StatusLocation = newStatusLocation;
 						wpsjob.Status = WpsJobStatus.STAGED;
 						wpsjob.Store();
-                        return CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                        return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                     }
 
                 }catch(Exception e){
@@ -293,8 +293,17 @@ namespace Terradue.Tep {
         /// <returns>The execute response for staged wpsjob.</returns>
         /// <param name="context">Context.</param>
         /// <param name="wpsjob">Wpsjob.</param>
-        public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob){
-            var response = new ExecuteResponse();
+        public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response){
+            if (response == null){
+                response = new ExecuteResponse();
+                response.Status = new StatusType { 
+                    Item = new ProcessSucceededType { 
+                        Value = "Process successful"
+                    }, 
+                    ItemElementName = ItemChoiceType.ProcessSucceeded,
+                    creationTime = wpsjob.EndTime != DateTime.MinValue ? wpsjob.EndTime : wpsjob.CreatedTime    
+                };
+            }
 
             var statusurl = wpsjob.StatusLocation;
             var url = new Uri(statusurl);
@@ -302,7 +311,6 @@ namespace Terradue.Tep {
                 statusurl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
             }
 
-            response.Status = new StatusType { Item = new ProcessSucceededType { Value = "Process successful" }, ItemElementName = ItemChoiceType.ProcessSucceeded };
             response.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
             response.serviceInstance = context.BaseUrl + "/wps/WebProcessingService?REQUEST=GetCapabilities&SERVICE=WPS";
 			response.ProcessOutputs = new List<OutputDataType> { };

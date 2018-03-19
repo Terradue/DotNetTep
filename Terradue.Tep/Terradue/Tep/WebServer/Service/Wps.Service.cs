@@ -556,10 +556,10 @@ namespace Terradue.Tep.WebServer.Services {
                 ExecuteResponse execResponse = null;
 
                 if (wpsjob.Status == WpsJobStatus.STAGED) {
-                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 } 
                 else if (wpsjob.Status == WpsJobStatus.COORDINATOR && ProductionResultHelper.IsUrlRecastUrl(wpsjob.StatusLocation)){
-                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob);
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 }
                 else {
                     object jobresponse;
