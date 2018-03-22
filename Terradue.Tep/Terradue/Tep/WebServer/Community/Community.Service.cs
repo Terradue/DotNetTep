@@ -154,10 +154,12 @@ namespace Terradue.Tep.WebServer.Services{
                 //store appslinks
                 var app = domain.GetThematicApplication();
                 //add new links
-                foreach (var link in request.Apps) {                    
-                    var res = new RemoteResource(context);
-                    res.Location = link;
-                    app.AddResourceItem(res);
+                if (request.Apps != null) {
+                    foreach (var link in request.Apps) {
+                        var res = new RemoteResource(context);
+                        res.Location = link;
+                        app.AddResourceItem(res);
+                    }
                 }
 
                 context.Close();
