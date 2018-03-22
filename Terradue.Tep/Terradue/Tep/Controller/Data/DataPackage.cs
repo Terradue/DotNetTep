@@ -286,7 +286,7 @@ namespace Terradue.Tep {
                 if (isNew){
                     this.AccessKey = Guid.NewGuid().ToString();
                     this.CreationTime = DateTime.UtcNow;
-                    this.Identifier = GetUniqueIdentifier(this.Name);
+                    if(string.IsNullOrEmpty(this.Identifier)) this.Identifier = GetUniqueIdentifier(this.Name);
                 }
                 base.Store();
 
