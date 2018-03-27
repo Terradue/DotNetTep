@@ -629,7 +629,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The private data package catalogue index.</returns>
         public DataPackage GetPrivateDataPackageCatalogueIndex(bool loadItems=true){
-            var identifier = "_index_" + this.Username;
+            var identifier = "_index_" + TepUtility.ValidateIdentifier(this.Username);//identifier should not have special caracters
             var name = "My Index";
             var location = GetPrivateCatalogueIndexUrl(false);
             return GetPrivateDataPackage(identifier, name, location, loadItems);
@@ -640,7 +640,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The private data package catalogue results.</returns>
         public DataPackage GetPrivateDataPackageCatalogueProducts(bool loadItems = true) {
-            var identifier = "_products_" + this.Username;
+            var identifier = "_products_" + TepUtility.ValidateIdentifier(this.Username);//identifier should not have special caracters
             var name = "My Products";
             var location = GetPrivateCatalogueProductsUrl(false);
             return GetPrivateDataPackage(identifier, name, location, loadItems);
@@ -651,7 +651,7 @@ namespace Terradue.Tep {
 		/// </summary>
 		/// <returns>The private data package catalogue series.</returns>
         public DataPackage GetPrivateDataPackageCatalogueSeries(bool loadItems = true) {
-            var identifier = "_series_" + this.Username;
+            var identifier = "_series_" + TepUtility.ValidateIdentifier(this.Username);//identifier should not have special caracters
             var name = "My Results";
             var location = GetPrivateCatalogueSeriesUrl(false);
             return GetPrivateDataPackage(identifier, name, location, loadItems);
