@@ -434,12 +434,14 @@ namespace Terradue.Tep {
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
             else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
-            else if (response.Status.Item is ProcessSucceededType) {
-                this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
-                if (this.EndTime == DateTime.MinValue && response.Status.creationTime != this.CreatedTime) this.EndTime = response.Status.creationTime;
-            }
+            else if (response.Status.Item is ProcessSucceededType) this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
             else if (response.Status.Item is ProcessFailedType) this.Status = WpsJobStatus.FAILED;
             else this.Status = WpsJobStatus.NONE;
+
+            try {
+                var endtime = response.Status.creationTime.ToUniversalTime();
+                if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString())) this.EndTime = endtime;
+            }catch(Exception){}
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
             //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
