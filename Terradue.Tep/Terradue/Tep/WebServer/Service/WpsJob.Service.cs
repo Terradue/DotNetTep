@@ -486,21 +486,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo (this, string.Format ("/job/wps/copy PUT Id='{0}'", request.Id));
 
                 WpsJob job = WpsJob.FromIdentifier (context, request.Identifier);
-
-                WpsJob newjob = new WpsJob (context);
-                newjob.OwnerId = context.UserId;
-                newjob.UserId = context.UserId;
-                newjob.Identifier = Guid.NewGuid().ToString();
-                newjob.StatusLocation = job.StatusLocation;
-                newjob.Status = job.Status;
-                newjob.Parameters = job.Parameters;
-                newjob.CreatedTime = job.CreatedTime;
-                newjob.EndTime = job.EndTime;
-                newjob.Name = job.Name;
-                newjob.ProcessId = job.ProcessId;
-                newjob.RemoteIdentifier = job.RemoteIdentifier;
-                newjob.WpsId = job.WpsId;
-                newjob.Store ();
+                WpsJob newjob = WpsJob.Copy(job, context);
 
                 context.Close ();
             } catch (Exception e) {

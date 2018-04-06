@@ -235,6 +235,28 @@ namespace Terradue.Tep {
             base.Load();
         }
 
+        public static WpsJob Copy(WpsJob job, IfyContext context) {
+            WpsJob newjob = new WpsJob(context);
+            newjob.OwnerId = context.UserId;
+            newjob.UserId = context.UserId;
+            newjob.Identifier = Guid.NewGuid().ToString();
+            newjob.StatusLocation = job.StatusLocation;
+            newjob.Status = job.Status;
+            newjob.Parameters = job.Parameters;
+            newjob.EndTime = job.EndTime;
+            newjob.Name = job.Name;
+            newjob.ProcessId = job.ProcessId;
+            newjob.RemoteIdentifier = job.RemoteIdentifier;
+            newjob.WpsId = job.WpsId;
+            newjob.Store();
+
+            newjob.CreatedTime = job.CreatedTime;
+            newjob.NbResults = job.NbResults;
+            newjob.Store();
+
+            return newjob;
+        }
+
         /// <summary>
         /// Store this instance.
         /// </summary>
@@ -440,7 +462,7 @@ namespace Terradue.Tep {
 
             try {
                 var endtime = response.Status.creationTime.ToUniversalTime();
-                if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString())) this.EndTime = endtime;
+                if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
             }catch(Exception){}
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
