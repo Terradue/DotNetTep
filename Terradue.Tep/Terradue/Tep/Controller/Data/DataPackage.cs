@@ -516,6 +516,7 @@ namespace Terradue.Tep {
             search.Query = "key=" + this.AccessKey;
 
             atomEntry.Links.Add(new SyndicationLink(search.Uri, "public", name, "application/atom+xml", 0));
+            atomEntry.Links.Add(new SyndicationLink(search.Uri, "alternate", name, "application/atom+xml", 0));
 
             Uri share = new Uri(context.BaseUrl + "/share?url=" +id.AbsoluteUri);
             atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
