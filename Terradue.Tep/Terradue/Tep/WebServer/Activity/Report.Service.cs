@@ -279,7 +279,8 @@ namespace Terradue.Tep.WebServer.Services {
             //list all jobs created
             if (jobs.Count > 0) {
                 csv.Append(String.Format("Wps jobs created between {0} and {1},{2} ({3} succeeded | {4} failed){5}", startdate, enddate, ids.Count, success, failed, Environment.NewLine));
-                csv.Append("Name,Owner,Creation date,Process name,Status,Nb results,Shared,link" + Environment.NewLine);//csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
+                csv.Append("Name,Owner,Creation date,Process name,Status,Processing time (minutes),Nb results,Shared,link" + Environment.NewLine);//csv.Append("Name,Owner,Creation date,Process name,Status,Nb of results,Shared" + Environment.NewLine);
+                int totalProcessingTime = 0;
                 foreach (WpsJob job in jobs) {
                     User usr = User.FromId(context, job.OwnerId);
                     string wpsname = "";
@@ -290,8 +291,14 @@ namespace Terradue.Tep.WebServer.Services {
                         wpsname = job.ProcessId;
                     }
                     var statuslocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + job.Identifier;
-                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7}{8}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-dd"), wpsname.Replace(",", "\\,"), job.StringStatus,job.NbResults,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
+                    var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
+                    totalProcessingTime += processingTime;
+                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}{9}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss"), wpsname.Replace(",", "\\,"), job.StringStatus,processingTime,job.NbResults,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
                 }
+                csv.Append(Environment.NewLine);
+                TimeSpan span = TimeSpan.FromMinutes(totalProcessingTime);
+                string totalProcessingTimeString = string.Format("{0}{1}", span.Hours > 0 ? span.Hours+" h " : "", span.Minutes + " minutes");
+                csv.Append(String.Format("Total processing time for wpsjobs created between {0} and {1},{2}{3}", startdate, enddate, totalProcessingTimeString, Environment.NewLine));
                 csv.Append(Environment.NewLine);
             }
 
@@ -300,7 +307,7 @@ namespace Terradue.Tep.WebServer.Services {
             //Nb of wpsjobs per user
             List<int> idsUsr = GetActiveUsers(context, startdate, enddate, skipedIds);
             if (idsUsr.Count > 0) {
-                csv.Append(string.Format("Number of wpsjob created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append(string.Format("Number of wpsjobs created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Total,Succeeded,Failed" + Environment.NewLine);
                 analytics = new List<ReportAnalytic>();
                 foreach (var id in idsUsr) {
@@ -329,7 +336,7 @@ namespace Terradue.Tep.WebServer.Services {
             var domains = new CommunityCollection(context);
             domains.Load();
             if (domains.Count > 0) {
-                csv.Append(string.Format("Number of wpsjob created per community between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
+                csv.Append(string.Format("Number of wpsjobs created per community between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Community,Total,Succeeded,Failed" + Environment.NewLine);
                 analytics = new List<ReportAnalytic>();
                 foreach (var domain in domains) {
