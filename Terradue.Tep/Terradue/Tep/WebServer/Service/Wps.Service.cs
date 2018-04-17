@@ -421,7 +421,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 var cdata = data != null ? data.Item as ComplexDataType : null;
                                 var json = cdata.Text;
                                 var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
-                                if (accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
+                                if (string.IsNullOrEmpty(json) || accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
                                 //calculate estimation with rates
                                 var estimation = Convert.ToInt32(Rates.GetBalanceFromRates(context, wps.Provider, accountings[0].quantity));
                                 WriteCache(cachekey,estimation.ToString(), context);
