@@ -435,6 +435,29 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 csv.Append(Environment.NewLine);
             }
+
+            //Data processed by jobs
+            if (jobs.Count > 0) {
+                int totalDataProcessed = 0;
+                Dictionary<string, int> dictionary = new Dictionary<string, int>();
+                foreach (WpsJob job in jobs) {
+                    foreach(var parameter in job.Parameters){
+                        if(!string.IsNullOrEmpty(parameter.Value) && parameter.Value.StartsWith("http")){
+                            foreach(var url in parameter.Value.Split(',')){
+                                totalDataProcessed++;
+                                if (dictionary.ContainsKey(url)) dictionary[url]++;
+                                else dictionary.Add(url, 1);
+                            }
+                        }
+                    }
+                }
+                csv.Append(String.Format("Data processed by Wps jobs created between {0} and {1},{2}{3}", startdate, enddate, totalDataProcessed, Environment.NewLine));
+                csv.Append("Url,Occurence" + Environment.NewLine);
+                foreach(var key in dictionary.Keys){
+                    csv.Append(String.Format(" {0},{1}{2}", key, dictionary[key] , Environment.NewLine));
+                }
+                csv.Append(Environment.NewLine);
+            }
         }
 
         /// <summary>
