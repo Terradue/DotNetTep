@@ -421,7 +421,7 @@ namespace Terradue.Tep.WebServer.Services {
                     analytic.SkipIds = skipedIds.Split(",".ToCharArray()).Select(s => int.Parse(s)).ToList();
                     analytic.Load(startdate, enddate);
                     if (analytic.WpsJobSubmittedCount > 0)
-                        analytics.Add(new ReportAnalytic { name = service.Name ?? service.Identifier, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
+                        analytics.Add(new ReportAnalytic { name = service.Name != null ? service.Name.Replace(",", "\\,") : service.Identifier, Total = analytic.WpsJobSubmittedCount, Analytic1 = analytic.WpsJobSuccessCount, Analytic2 = analytic.WpsJobFailedCount });
                 }
                 analytics.Sort();
                 analytics.Reverse();
