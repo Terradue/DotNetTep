@@ -445,16 +445,21 @@ namespace Terradue.Tep.WebServer.Services {
                         if(!string.IsNullOrEmpty(parameter.Value) && parameter.Value.StartsWith("http")){
                             foreach(var url in parameter.Value.Split(',')){
                                 totalDataProcessed++;
-                                if (dictionary.ContainsKey(url)) dictionary[url]++;
-                                else dictionary.Add(url, 1);
+                                var urib = new UriBuilder(url);
+                                urib.Path = urib.Path.Trim('/');
+                                var url2 = urib.Uri.AbsoluteUri;
+                                if (dictionary.ContainsKey(url2)) dictionary[url2]++;
+                                else dictionary.Add(url2, 1);
                             }
                         }
                     }
                 }
+                var l = dictionary.OrderBy(key => key.Key);
+                var dic = l.ToDictionary((keyItem) => keyItem.Key, (valueItem) => valueItem.Value);
                 csv.Append(String.Format("Data processed by Wps jobs created between {0} and {1},{2}{3}", startdate, enddate, totalDataProcessed, Environment.NewLine));
-                csv.Append("Url,Occurence" + Environment.NewLine);
-                foreach(var key in dictionary.Keys){
-                    csv.Append(String.Format(" {0},{1}{2}", key, dictionary[key] , Environment.NewLine));
+                csv.Append("Catalog URL,Number" + Environment.NewLine);
+                foreach(var key in dic.Keys){
+                    csv.Append(String.Format(" {0},{1}{2}", key, dic[key] , Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
             }
