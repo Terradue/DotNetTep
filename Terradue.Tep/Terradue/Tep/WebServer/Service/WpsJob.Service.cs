@@ -376,7 +376,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
-                List<int> ids = job.GetAuthorizedGroupIds().ToList();
+                var gids = job.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -406,7 +407,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group POST jobId='{0}',Id='{1}'",request.JobId, request.Id));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
-                List<int> ids = wps.GetAuthorizedGroupIds().ToList();
+                var gids = wps.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));

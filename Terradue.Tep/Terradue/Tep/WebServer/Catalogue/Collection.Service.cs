@@ -177,7 +177,9 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/data/collection/{{collId}}/group GET collId='{0}'", request.CollId));
 
                 Collection coll = Collection.FromId(context, request.CollId);
-                List<int> ids = coll.GetAuthorizedGroupIds().ToList();
+
+                var gids = coll.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -208,7 +210,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 Collection serie = Collection.FromId(context, request.CollId);
 
-                List<int> ids = serie.GetAuthorizedGroupIds().ToList();
+                var gids = serie.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));

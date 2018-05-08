@@ -579,7 +579,9 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group GET DpId='{0}'", request.DpId));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
-                List<int> ids = dp.GetAuthorizedGroupIds().ToList();
+
+                var gids = dp.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -609,7 +611,8 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
-                List<int> ids = dp.GetAuthorizedGroupIds().ToList();
+                var gids = dp.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
