@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Xml;
 using OpenGis.Wps;
 using Terradue.Portal;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
+using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
     public class Actions {

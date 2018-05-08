@@ -4,8 +4,8 @@ using System.Collections;
 using System.Collections.Specialized;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Schema;
+using Terradue.OpenSearch.Request;
 using Terradue.OpenSearch.Result;
-using System.Collections.Generic;
 using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
@@ -91,7 +91,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="osr">IOpenSearchResult cotnaing the result of the a search</param>
         /// <param name="request">Request.</param>
-        public void ApplyResultFilters(Terradue.OpenSearch.Request.OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
+        public void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
             base.ApplyResultFilters(request, ref osr, finalContentType);
             MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
         }

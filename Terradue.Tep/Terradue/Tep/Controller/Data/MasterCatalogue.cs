@@ -2,36 +2,25 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Web;
-using System.Xml;
-using System.Xml.Linq;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Engine.Extensions;
 using Terradue.OpenSearch.Filters;
 using Terradue.OpenSearch.GeoJson.Extensions;
-using Terradue.OpenSearch.GeoJson.Result;
 using Terradue.OpenSearch.Request;
-using Terradue.OpenSearch.Response;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.ServiceModel.Syndication;
-using Terradue.Util;
-using Terradue.Metadata.EarthObservation;
-
-
-using Terradue.Metadata.EarthObservation.OpenSearch;
 using Terradue.OpenSearch.RdfEO.Extensions;
 
 
 
 
 
-namespace Terradue.Tep
-{
+namespace Terradue.Tep {
 
     /// <summary>
     /// Master catalogue.

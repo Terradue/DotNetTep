@@ -25,12 +25,12 @@ namespace Terradue.Tep.OpenSearch
             this.execResponse = execResponse;
         }
 
-        public QuerySettings GetQuerySettings(Terradue.OpenSearch.Engine.OpenSearchEngine ose)
+        public QuerySettings GetQuerySettings(OpenSearchEngine ose)
         {
             return new QuerySettings(this.DefaultMimeType, new AtomOpenSearchEngineExtension().ReadNative);
         }
 
-        public Terradue.OpenSearch.Request.OpenSearchRequest Create(QuerySettings querySettings, System.Collections.Specialized.NameValueCollection parameters)
+        public OpenSearchRequest Create(QuerySettings querySettings, System.Collections.Specialized.NameValueCollection parameters)
         {
             UriBuilder builder = new UriBuilder("http://" + System.Environment.MachineName);
             string[] queryString = Array.ConvertAll(parameters.AllKeys, key => string.Format("{0}={1}", key, parameters[key]));
@@ -40,7 +40,7 @@ namespace Terradue.Tep.OpenSearch
             return request;
         }
 
-        public Terradue.OpenSearch.Schema.OpenSearchDescription GetOpenSearchDescription()
+        public OpenSearchDescription GetOpenSearchDescription()
         {
             OpenSearchDescription osd = new OpenSearchDescription();
 

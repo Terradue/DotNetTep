@@ -6,7 +6,11 @@ using System.Web;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Schema;
+using Terradue.OpenSearch.Result;
 using Terradue.Portal;
+using Terradue.ServiceModel.Syndication;
+using System.Linq;
+using Terradue.Portal.OpenSearch;
 
 /*! 
 \defgroup TepData Data
@@ -80,13 +84,6 @@ It also integrates functions to "manipulate" the results and its metadata with a
 @}
 
 */
-
-
-
-using Terradue.OpenSearch.Result;
-using Terradue.ServiceModel.Syndication;
-using System.Linq;
-using Terradue.Portal.OpenSearch;
 
 namespace Terradue.Tep {
 
@@ -490,7 +487,7 @@ namespace Terradue.Tep {
 
         #region IAtomizable implementation
 
-        public override Terradue.OpenSearch.Result.AtomItem ToAtomItem(NameValueCollection parameters) {
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
 
             string identifier = this.Identifier;
             string name = (this.Name != null ? this.Name : this.Identifier);
