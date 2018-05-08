@@ -569,6 +569,7 @@ namespace Terradue.Tep {
                                     usersCommunity.Add(new UserRole {
                                         Username = user.Username,
                                         Name = user.FirstName + " " + user.LastName,
+                                        Email = CanUserManage(context.UserId) ? user.Email : null,
                                         Role = role.Name ?? role.Identifier,
                                         RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? "pending" : "joined",
