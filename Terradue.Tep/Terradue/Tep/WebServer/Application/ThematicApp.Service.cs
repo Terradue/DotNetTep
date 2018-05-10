@@ -1,6 +1,7 @@
 ﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Net;
 using System.Web;
 using System.Xml;
@@ -32,7 +33,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         /// /apps/{identifier}/search GET
-        public object Get (ThematicAppSearchRequestTep request)
+        public object Get2 (ThematicAppSearchRequestTep request)
         {
             IfyWebContext context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             context.Open ();
@@ -100,24 +101,6 @@ namespace Terradue.Tep.WebServer.Services {
                 }
             }
 
-            //get user private thematic app
-            if (context.UserId != 0) {
-                var user = UserTep.FromId(context, context.UserId);
-                var app = user.GetPrivateThematicApp();
-                if (app != null) {
-                    foreach (var item in app.Items) {
-                        if (!string.IsNullOrEmpty(item.Location)) {
-                            try {
-                                var sgOs = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
-                                osentities.Add(sgOs);
-                                context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
-                            } catch (Exception e) {
-                                context.LogError(this, e.Message);
-                            }
-                        }
-                    }
-                }
-            }
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, specsettings);
             var result = ose.Query(multiOSE, Request.QueryString, responseType);
 
@@ -136,6 +119,49 @@ namespace Terradue.Tep.WebServer.Services {
             context.Close ();
 
             return new HttpResult (sresult, result.ContentType);
+        }
+
+        public object Get(ThematicAppSearchRequestTep request){
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            context.Open();
+            context.LogInfo(this, string.Format("/apps/search GET"));
+
+            var communities = new EntityList<ThematicCommunity>(context);
+            if (context.UserId == 0) communities.SetFilter("Kind", (int)DomainKind.Public + "");
+            else {
+                communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+                communities.AddSort("Kind", SortDirection.Ascending);
+            }
+            communities.Load();
+            List<int> ids = new List<int>();
+            foreach (var c in communities) ids.Add(c.Id);
+
+            EntityList<ThematicApplicationCached> apps = new EntityList<ThematicApplicationCached>(context);
+            //var filterValues = new List<object>{string.Join(",",ids),SpecialSearchValue.Null};
+            var filterValues = new List<object>();
+            filterValues.Add(string.Join(",",ids));
+            filterValues.Add(SpecialSearchValue.Null);
+            apps.SetFilter("DomainId",filterValues.ToArray());
+            apps.SetGroupFilter("UId");
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            string format;
+            if (Request.QueryString["format"] == null)
+                format = "atom";
+            else
+                format = Request.QueryString["format"];
+            
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query(apps, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(apps, osr);
+
+            context.Close();
+            return new HttpResult(osr.SerializeToString(), osr.ContentType);
         }
 
         public object Get (ThematicAppByCommunitySearchRequestTep request)
