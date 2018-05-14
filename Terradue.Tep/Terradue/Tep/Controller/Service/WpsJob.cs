@@ -304,7 +304,7 @@ namespace Terradue.Tep {
         /// <summary>
         /// Is the job shared to user.
         /// </summary>
-        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+		/// <returns><c>true</c>, if shared to user, <c>false</c> otherwise.</returns>
         public bool IsSharedToUser() {
             var sharedUsersIds = this.GetAuthorizedUserIds();
             return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Owner.Id));
@@ -313,10 +313,23 @@ namespace Terradue.Tep {
         /// <summary>
         /// Is the job shared to user.
         /// </summary>
-        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+		/// <returns><c>true</c>, if shared to user, <c>false</c> otherwise.</returns>
         /// <param name="id">Identifier.</param>
-        public bool IsSharedToUser(int id) {
-            var sharedUsersIds = this.GetAuthorizedUserIds();
+		/// <param name="policy">Policy of sharing (direct = permission directly given to the user, role = permission only given via role and privilege, none = one of both previous cases ).</param>
+		public bool IsSharedToUser(int id, string policy = "none") {
+			bool permissionOnly = false;
+			bool privilegeOnly = false;
+			switch(policy){
+				case "permission":
+				    permissionOnly = true;
+				    break;
+				case "privilege":
+				    privilegeOnly = true;
+                    break;
+				default:
+					break;
+			}
+			var sharedUsersIds = this.GetAuthorizedUserIds(permissionOnly, privilegeOnly);
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 

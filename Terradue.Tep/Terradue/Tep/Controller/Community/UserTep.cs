@@ -777,6 +777,8 @@ namespace Terradue.Tep {
                 ObjectCache cache = MemoryCache.Default;
                 var self = parameters["correlatedTo"];
 
+				var correlatedPolicy = parameters["correlatedPolicy"];
+
                 var cachedItem = cache[self];
                 if (cachedItem == null) { // if no cache yet, or is expired
                     lock (_Lock) { // we lock only in this case
@@ -798,14 +800,14 @@ namespace Terradue.Tep {
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var job = items[0];
-                        if (job.Owner.Id == this.Id || !job.IsSharedToUser(this.Id)) return null;
+						if (job.Owner.Id == this.Id || !job.IsSharedToUser(this.Id, correlatedPolicy)) return null;
                     }
                 } else if (cachedItem is EntityList<DataPackage>) {
                     var entitylist = cachedItem as EntityList<DataPackage>;
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var dp = items[0];
-                        if (dp.Owner.Id == this.Id || !dp.IsSharedToUser(this.Id)) return null;
+						if (dp.Owner.Id == this.Id || !dp.IsSharedToUser(this.Id, correlatedPolicy)) return null;
                     }
                 }
 
