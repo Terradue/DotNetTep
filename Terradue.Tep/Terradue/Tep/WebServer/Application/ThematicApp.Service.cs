@@ -415,6 +415,21 @@ namespace Terradue.Tep.WebServer.Services {
 			return new WebResponseBool(true);
 		}
 
+		public object Get(ThematicAppCacheRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            context.Open();
+			try {
+                context.LogInfo(this, string.Format("/apps/cache GET"));
+                Actions.RefreshThematicAppsCache(context);
+                context.Close();
+			} catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return null;
+        }
+
     }
 }
 
