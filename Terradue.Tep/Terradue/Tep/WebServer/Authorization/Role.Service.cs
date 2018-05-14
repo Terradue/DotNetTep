@@ -147,7 +147,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo (this, string.Format ("/role/priv PUT Id='{0}'", request.Id));
 
                 Role role = Role.FromId (context, request.Id);
-                role.IncludePrivileges (request.Privileges, false);
+                role.IncludePrivileges (request.Privileges, true);
                 result = new WebRole (role);
                 context.Close ();
             } catch (Exception e) {
