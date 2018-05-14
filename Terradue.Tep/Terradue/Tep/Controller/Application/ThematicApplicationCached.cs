@@ -148,15 +148,6 @@ namespace Terradue.Tep {
         }
 
        public override AtomItem ToAtomItem(NameValueCollection parameters) {
-            foreach (var key in parameters.AllKeys) {
-                switch (key) {
-                    case "q":
-                        var value = parameters[key].Trim('*');
-                        if (!this.TextFeed.Contains(value)) return null;
-                        break;
-                }
-            }
-
             var atomFormatter = new Atom10FeedFormatter();
             XmlReader xmlreader = XmlReader.Create(new StringReader(TextFeed = this.TextFeed));
             atomFormatter.ReadFrom(xmlreader);
