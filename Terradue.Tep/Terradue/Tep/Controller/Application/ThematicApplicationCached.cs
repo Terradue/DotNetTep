@@ -21,6 +21,9 @@ namespace Terradue.Tep {
         [EntityDataField("uid", IsUsedInKeywordSearch = true)]
         public string UId { get; set; }
 
+		[EntityDataField("last_update")]
+		public DateTime LastUpdate { get; set; }
+
         protected OwsContextAtomFeed Feed { get; set; }
 
         public ThematicApplicationCached(IfyContext context) : base(context){}
@@ -51,6 +54,7 @@ namespace Terradue.Tep {
             var appcached = new ThematicApplicationCached(context);
             appcached.UId = identifier;
             appcached.DomainId = domainid;
+
             try {
                 appcached.Load();
             }catch(Exception e){}
@@ -60,6 +64,7 @@ namespace Terradue.Tep {
 
             appcached.Feed = feed;
             appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
+			appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
             appcached.Store();
 
             return appcached;

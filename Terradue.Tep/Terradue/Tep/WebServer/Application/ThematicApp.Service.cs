@@ -66,6 +66,7 @@ namespace Terradue.Tep.WebServer.Services {
 				filterValues.Add(SpecialSearchValue.Null);
 				appsCached.SetFilter("DomainId", filterValues.ToArray());
 				appsCached.SetGroupFilter("UId");
+				appsCached.AddSort("LastUpdate", SortDirection.Descending);
 
 				result = ose.Query(appsCached, httpRequest.QueryString, responseType);
 				OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);            

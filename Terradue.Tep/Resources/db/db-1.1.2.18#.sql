@@ -8,6 +8,7 @@ CREATE TABLE app_cache (
 	uid varchar(50) NOT NULL COMMENT 'Unique identifier',
     id_domain int unsigned COMMENT 'FK: Owning domain',
     feed TEXT NOT NULL COMMENT 'app feed',
+    last_update datetime COMMENT 'Last update time',
     CONSTRAINT pk_appcache PRIMARY KEY (id),
     CONSTRAINT fk_appcache_domain FOREIGN KEY (id_domain) REFERENCES domain(id) ON DELETE CASCADE,
     UNIQUE INDEX `uq_uid_domain` (`uid` ASC, `id_domain` ASC)
