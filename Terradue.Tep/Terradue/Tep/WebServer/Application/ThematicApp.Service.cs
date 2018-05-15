@@ -405,7 +405,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            return null;
+			return new WebResponseBool(true);
         }
 
     }

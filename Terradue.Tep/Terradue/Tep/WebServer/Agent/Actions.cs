@@ -161,8 +161,15 @@ namespace Terradue.Tep {
                 context.WriteInfo(string.Format("RefreshWpjobResultNb -- job '{0}' -- status = {1} -> {2} results", job.Identifier, job.StringStatus, job.NbResults));
             }
         }
-
+        
         public static void RefreshThematicAppsCache(IfyContext context) {
+			//Get all existing apps
+			EntityList<ThematicApplicationCached> oldapps = new EntityList<ThematicApplicationCached>(context);
+			oldapps.Load();
+
+            //will be filled with all updated ids
+			List<int> upIds = new List<int>();
+
             // get the apps from the communities
             var communities = new EntityList<ThematicCommunity>(context);
             communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
@@ -184,6 +191,7 @@ namespace Terradue.Tep {
                                     if (feed.Items != null) {
                                         foreach (OwsContextAtomEntry item in feed.Items) {
                                             var appcached = ThematicApplicationCached.CreateOrUpdate(context, item, community.Id);
+											upIds.Add(appcached.Id);
                                             context.WriteInfo(string.Format("RefreshThematicAppsCache -- Cached '{0}' for community '{1}' from '{2}'", appcached.UId, community.Identifier, url));
                                         }
                                     }
@@ -217,6 +225,7 @@ namespace Terradue.Tep {
                                 if (feed.Items != null) {
                                     foreach (OwsContextAtomEntry item in feed.Items) {
                                         var appcached = ThematicApplicationCached.CreateOrUpdate(context, item, 0);
+										upIds.Add(appcached.Id);
                                         context.WriteInfo(string.Format("RefreshThematicAppsCache -- Cached '{0}' (public) from '{1}'", appcached.UId, url));
                                     }
                                 }
@@ -227,6 +236,14 @@ namespace Terradue.Tep {
                     }
                 }
             }
+
+			//delete apps not updated
+			foreach (var app in oldapps) {
+				if (!upIds.Contains(app.Id)) {
+					context.WriteInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
+					app.Delete();
+				}
+			}
         }
 
     }
