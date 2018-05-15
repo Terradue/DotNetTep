@@ -56,7 +56,9 @@ namespace Terradue.Tep.WebServer.Services {
 			if (request.cache) {
 
 				List<int> ids = new List<int>();
-				foreach (var c in communities) ids.Add(c.Id);
+				foreach (var c in communities) {
+					if (c.IsUserJoined(context.UserId)) ids.Add(c.Id);
+				}
 
 				EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);
 				var filterValues = new List<object>();
