@@ -18,7 +18,10 @@ namespace Terradue.Tep.WebServer {
     public class ThematicAppCacheRequestTep : IReturn<List<HttpResult>> { }
     
     [Route ("/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
-    public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>> {}
+    public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>> {
+		[ApiMember(Name = "cache", Description = "uses cached apps", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool cache { get; set; }
+	}
 
     [Route("/user/current/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
     public class ThematicAppCurrentUserSearchRequestTep : IReturn<List<HttpResult>> { }
