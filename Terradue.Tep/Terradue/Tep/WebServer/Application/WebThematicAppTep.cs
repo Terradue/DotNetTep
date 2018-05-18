@@ -30,6 +30,9 @@ namespace Terradue.Tep.WebServer {
     public class ThematicAppByCommunitySearchRequestTep : IReturn<List<HttpResult>>{
         [ApiMember (Name = "domain", Description = "identifier of the domain", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Domain { get; set; }
+
+		[ApiMember(Name = "cache", Description = "uses cached apps", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool cache { get; set; }
     }
 
     [Route("/community/{domain}/apps/", "POST", Summary = "search for thematic apps", Notes = "")]

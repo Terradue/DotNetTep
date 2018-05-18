@@ -124,7 +124,7 @@ namespace Terradue.Tep.WebServer.Services {
 				}
 
 				MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, specsettings);
-				result = ose.Query(multiOSE, Request.QueryString, responseType);
+				result = ose.Query(multiOSE, httpRequest.QueryString, responseType);
 			}
 
 			var sresult = result.SerializeToString();
@@ -149,22 +149,61 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open ();
             context.LogInfo (this, string.Format ("/community/{{domain}}/apps/search GET domain='{0}'",request.Domain));
 
-            var domain = Domain.FromIdentifier (context, request.Domain);
-            var apps = new EntityList<DataPackage> (context);
-            apps.SetFilter ("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString ());
-            apps.SetFilter ("DomainId", domain.Id.ToString());
-            apps.Load ();
+			var domain = Domain.FromIdentifier(context, request.Domain);
+			IOpenSearchResultCollection result;
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+            HttpRequest httpRequest = HttpContext.Current.Request;         
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);         
 
-            // the opensearch cache system uses the query parameters
-            // we add to the parameters the filters added to the load in order to avoir wrong cache
-            // we use 't2-' in order to not interfer with possibly used query parameters
-            var qs = new NameValueCollection(Request.QueryString);
-            foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
+			if (request.cache) {
+                
+				EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);            
+				appsCached.SetFilter("DomainId", domain.Id);
+				appsCached.AddSort("LastUpdate", SortDirection.Descending);
 
-            var result = GetAppsResultCollection (apps, qs);
+				result = ose.Query(appsCached, httpRequest.QueryString, responseType);
+				OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);
 
-            context.Close ();
-            return new HttpResult (result.SerializeToString (), result.ContentType);
+			} else {
+                
+				var apps = new EntityList<DataPackage>(context);
+				apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
+				apps.SetFilter("DomainId", domain.Id.ToString());
+				apps.Load();
+
+				// the opensearch cache system uses the query parameters
+				// we add to the parameters the filters added to the load in order to avoir wrong cache
+				// we use 't2-' in order to not interfer with possibly used query parameters
+				var qs = new NameValueCollection(Request.QueryString);
+				foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
+                   
+                apps.OpenSearchEngine = ose;
+     
+                List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+                foreach (var app in apps.Items) {
+                    app.OpenSearchEngine = ose;
+                    osentities.AddRange(app.GetOpenSearchableArray());
+                }
+
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
+                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+				result = ose.Query(multiOSE, httpRequest.QueryString, responseType);
+			}
+
+			var sresult = result.SerializeToString();
+
+            //replace usernames in apps
+            try {
+                var user = UserTep.FromId(context, context.UserId);
+                sresult = sresult.Replace("${USERNAME}", user.Username);
+                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+            }
+            
+            context.Close ();         
+            return new HttpResult (sresult, result.ContentType);         
         }
 
         public object Post(ThematicAppAddToCommunityRequestTep request) {
@@ -234,25 +273,6 @@ namespace Terradue.Tep.WebServer.Services {
             context.Close();
 
             return new HttpResult(sresult, result.ContentType);
-        }
-
-        private IOpenSearchResultCollection GetAppsResultCollection (EntityList<DataPackage> apps, NameValueCollection nvc) { 
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-            apps.OpenSearchEngine = ose;
-
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
-            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable> ();
-            foreach (var app in apps.Items) {
-                app.OpenSearchEngine = ose;
-                //osentities.Add (app);
-                osentities.AddRange(app.GetOpenSearchableArray());
-            }
-
-            var settings = MasterCatalogue.OpenSearchFactorySettings;
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable (osentities, settings);
-            var result = ose.Query (multiOSE, nvc, responseType);
-
-            return result;
         }
 
         /// <summary>
