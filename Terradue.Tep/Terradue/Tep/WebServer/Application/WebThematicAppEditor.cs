@@ -72,6 +72,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "TimeseriesOfferingPresent", Description = "TimeseriesOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
         public bool TimeseriesOfferingPresent { get; set; }
 
+		[ApiMember(Name = "TimebarOfferingPresent", Description = "TimebarOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool TimebarOfferingPresent { get; set; }
+
 		[ApiMember(Name = "StoreUploadOfferingPresent", Description = "StoreUploadOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
 		public bool StoreUploadOfferingPresent { get; set; }
 
@@ -108,8 +111,9 @@ namespace Terradue.Tep.WebServer {
             var identifiers = entry.ElementExtensions.ReadElementExtensions<string>("identifier", OwcNamespaces.Dc);
             if (identifiers.Count() > 0) this.Identifier = identifiers.First();
             if (entry.Date != null) {
-                this.StartDate = entry.Date.StartDate.ToString("d");
-                this.EndDate = entry.Date.EndDate.ToString("d");
+				this.StartDate = entry.Date.StartDate.ToString("yyyy-MM-dd");
+				this.EndDate = entry.Date.EndDate.ToString("yyyy-MM-dd");
+				this.TimebarOfferingPresent = true;
             }
 
             //authors
@@ -272,12 +276,14 @@ namespace Terradue.Tep.WebServer {
                 Title = "self link",
                 Uri = new Uri(context.GetConfigValue("catalog-baseurl") + "/" + this.Index + "?format=atom&uid=" + this.Identifier)
 			});
-            if (this.Icon != null) {
-                entry.Links.Add(new ServiceModel.Syndication.SyndicationLink {
-                    MediaType = "image/png",
-                    RelationshipType = "icon",
-                    Uri = new Uri(this.Icon)
-                });
+			if (!string.IsNullOrEmpty(this.Icon)) {
+				try {
+					entry.Links.Add(new ServiceModel.Syndication.SyndicationLink {
+						MediaType = "image/png",
+						RelationshipType = "icon",
+						Uri = new Uri(this.Icon)
+					});
+				}catch(Exception){}
             }
 
             //categories
