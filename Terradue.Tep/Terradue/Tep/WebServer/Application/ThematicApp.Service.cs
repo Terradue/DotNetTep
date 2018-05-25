@@ -302,42 +302,7 @@ namespace Terradue.Tep.WebServer.Services {
             HttpResult hr = new HttpResult (osd, "application/opensearchdescription+xml");
             return hr;
         }
-
-        //public object Post(ThematicAppCreateRequestTep request) {
-        //    var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-        //    try {
-        //        context.Open();
-        //        context.LogInfo(this, string.Format("/apps POST"));
-
-        //        var minLevel = context.GetConfigIntegerValue("appExternalPostUserLevel");
-        //        if (context.UserLevel < minLevel) throw new UnauthorizedAccessException("User is not allowed to create a thematic app");
-
-        //        //create atom feed
-        //        var feed = new AtomFeed();
-        //        var entries = new List<AtomItem>();
-        //        var atomEntry = new AtomItem();
-        //        var entityType = EntityType.GetEntityType(typeof(ThematicApplication));
-        //        Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + request.Identifier);
-        //        atomEntry = new AtomItem(request.Identifier, request.Title, null, id.ToString(), DateTime.UtcNow);
-        //        atomEntry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", request.Identifier);
-        //        atomEntry.Links.Add(new SyndicationLink(id, "self", request.Title, "application/atom+xml", 0));
-        //        if (!string.IsNullOrEmpty(request.Url)) atomEntry.Links.Add(new SyndicationLink(new Uri(request.Url), "alternate", "Thematic app url", "application/html", 0));
-        //        if(!string.IsNullOrEmpty(request.Icon)) atomEntry.Links.Add(new SyndicationLink(new Uri(request.Icon), "icon", "Icon url", "image/png", 0));
-        //        entries.Add(atomEntry);
-        //        feed.Items = entries;
-
-        //        //post to catalogue
-        //        CatalogueFactory.PostAtomFeedToIndex(context, feed, request.Index);
-
-        //        context.Close();
-        //    } catch (Exception e) {
-        //        context.LogError(this, e.Message);
-        //        context.Close();
-        //        throw e;
-        //    }
-        //    return new WebResponseBool(true);
-        //}
-
+              
 		public object Get(ThematicAppEditorGetRequestTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebThematicAppEditor result = null;
@@ -345,30 +310,80 @@ namespace Terradue.Tep.WebServer.Services {
             try{
 	            context.LogInfo(this, string.Format("/app/editor GET url='{0}'", request.Url));
                 if (string.IsNullOrEmpty(request.Url)) throw new Exception("Invalid url");
-                if(!request.Url.StartsWith("http")){
-                    var urib = new UriBuilder((context.BaseUrl));
-                    var path = request.Url.Substring(0,request.Url.IndexOf("?"));
-                    var query = request.Url.Substring(request.Url.IndexOf("?") + 1);
-                    urib.Path = path;
-                    urib.Query = query;
-                    request.Url = urib.Uri.AbsoluteUri;
-                }
 
-	            HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(request.Url);
+				OwsContextAtomFeed feed = null;
 
-	            using (var resp = httpRequest.GetResponse()){
-	                using(var stream = resp.GetResponseStream()){
-						var sr = XmlReader.Create(stream);
-						Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
-						atomFormatter.ReadFrom(sr);
-						sr.Close();
-						var feed = new OwsContextAtomFeed(atomFormatter.Feed, true);
-						foreach (OwsContextAtomEntry item in feed.Items) {
-							if (result == null) result = new WebThematicAppEditor(item);
+				if(!request.Url.StartsWith("http") || request.Url.StartsWith(context.BaseUrl)){
+					if (!request.Url.StartsWith("http")) {
+						var urib = new UriBuilder((context.BaseUrl));
+						var path = request.Url.Substring(0, request.Url.IndexOf("?"));
+						var query = request.Url.Substring(request.Url.IndexOf("?") + 1);
+						urib.Path = path;
+						urib.Query = query;
+						request.Url = urib.Uri.AbsoluteUri;
+					}
+
+					var url = new Uri(request.Url);
+     
+					var r = new System.Text.RegularExpressions.Regex(@"^\/t2api\/community\/(?<community>[a-zA-Z0-9_\-]+)\/apps\/search");
+					var m = r.Match(url.AbsolutePath);
+					if (m.Success) {
+						var community = m.Result("${community}");
+						var nvc = HttpUtility.ParseQueryString(url.Query);
+						var uid = nvc["uid"];
+
+						var domain = Domain.FromIdentifier(context, community);
+
+						OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+						Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+						var apps = new EntityList<DataPackage>(context);
+						apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
+						apps.SetFilter("DomainId", domain.Id.ToString());
+						apps.Load();
+
+						// the opensearch cache system uses the query parameters
+						// we add to the parameters the filters added to the load in order to avoir wrong cache
+						// we use 't2-' in order to not interfer with possibly used query parameters
+						var qs = new NameValueCollection(Request.QueryString);
+						foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
+
+						apps.OpenSearchEngine = ose;
+
+						List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+						foreach (var app in apps.Items) {
+							app.OpenSearchEngine = ose;
+							osentities.AddRange(app.GetOpenSearchableArray());
 						}
-	                }
-	            }
-				
+                        
+						nvc.Set("format", "atom");
+
+						var settings = MasterCatalogue.OpenSearchFactorySettings;                  
+						MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+						var response = ose.Query(multiOSE, nvc, typeof(AtomFeed));
+						feed = ThematicApplicationCached.GetOwsContextAtomFeed(response.SerializeToString());
+					}
+				} else {
+					var urib = new UriBuilder(request.Url);
+					var nvc = HttpUtility.ParseQueryString(urib.Query);
+					nvc.Set("format", "atom");
+					var queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
+                    urib.Query = string.Join("&", queryString);               
+					HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(request.Url);
+                    using (var resp = httpRequest.GetResponse()) {
+                        using (var stream = resp.GetResponseStream()) {
+                            feed = ThematicApplicationCached.GetOwsContextAtomFeed(stream);
+                        }
+                    }                
+                }
+                
+				if(feed != null){
+					if (feed.Items != null) {
+                        foreach (OwsContextAtomEntry item in feed.Items) {
+                            if (result == null) result = new WebThematicAppEditor(item);
+                        }
+                    }
+				}
+
 				context.Close();
 			} catch (Exception e) {
 				context.LogError(this, e.Message);

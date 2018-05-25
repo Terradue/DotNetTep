@@ -18,8 +18,14 @@ namespace Terradue.Tep.WebServer {
 
 	[Route("/app/editor", "GET", Summary = "POST a thematic app", Notes = "")]
 	public class ThematicAppEditorGetRequestTep : IReturn<WebThematicAppEditor> {
-		[ApiMember(Name = "Url", Description = "Url", ParameterType = "query", DataType = "string", IsRequired = true)]
+		[ApiMember(Name = "Url", Description = "Url", ParameterType = "query", DataType = "string", IsRequired = false)]
 		public string Url { get; set; }
+
+		[ApiMember(Name = "Community", Description = "Community", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Community { get; set; }
+
+		[ApiMember(Name = "Uid", Description = "Uid", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Uid { get; set; }
     }
 
 	public class WebThematicAppEditor {
@@ -387,10 +393,17 @@ namespace Terradue.Tep.WebServer {
                         Name = dc.DataContextName,
                         Title = dc.DataContextName
                     });
-                    var datacontext = doc.CreateElement("datacontext");
-                    datacontext.InnerText = dc.DataContextName;
-                    var defaultVisibleItems = doc.CreateElement("defaultVisibleItems");
-                    defaultVisibleItems.InnerText = dc.DefaultVisibleItems;
+					var any = new List<System.Xml.XmlElement>();
+					if (!string.IsNullOrEmpty(dc.DataContextName)) {
+						var datacontext = doc.CreateElement("datacontext", "http://www.terradue.com");
+						datacontext.InnerText = dc.DataContextName;
+						any.Add(datacontext);
+					}
+					if (!string.IsNullOrEmpty(dc.DefaultVisibleItems)) {
+						var defaultVisibleItems = doc.CreateElement("defaultVisibleItems", "http://www.terradue.com");
+						defaultVisibleItems.InnerText = dc.DefaultVisibleItems;
+						any.Add(defaultVisibleItems);
+					}
                     var isDescription = CatalogueFactory.IsUrlOpensearchDescription(dc.DataContextDescriptionUrl);
                     var isSearch = CatalogueFactory.IsUrlOpensearchSearch(dc.DataContextDescriptionUrl);
                     if (isDescription || isSearch) {
@@ -398,7 +411,7 @@ namespace Terradue.Tep.WebServer {
                             Code = isDescription ? "DescribeDataset" : "SearchDataset",
                             Type = isDescription ? "application/opensearchdescription+xml" : "application/atom+xml",
                             Href = dc.DataContextDescriptionUrl,
-                            Any = new System.Xml.XmlElement[] { datacontext, defaultVisibleItems }
+							Any = any.ToArray()
                         });
                     }
                 }
@@ -414,7 +427,7 @@ namespace Terradue.Tep.WebServer {
             if (this.BaseMaps != null && this.BaseMaps.Count > 0) {
                 var bmStylesets = new List<OwcStyleSet>();
                 foreach (var bm in this.BaseMaps) {
-                    var type = doc.CreateElement("type");
+					var type = doc.CreateElement("type","http://www.terradue.com");
                     type.InnerText = bm.BaseMapType;
 					bmStylesets.Add(new OwcStyleSet {
                         Default = bm.BaseMapDefault,
