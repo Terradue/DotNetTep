@@ -35,6 +35,12 @@ namespace Terradue.Tep.WebServer {
         public int CollId { get; set; }
     }
 
+	[Route("/data/collection/{collId}/tdensity", "GET", Summary = "GET tdensity of a collection", Notes = "")]
+    public class CollectionGetDensityRequestTep : IReturn<List<WebGroup>> {
+        [ApiMember(Name = "collId", Description = "id of the collection", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string CollId { get; set; }
+    }
+
     [Route("/data/collection/{collId}/group", "POST", Summary = "POST group to collection", Notes = "")]
     public class CollectionAddGroupRequestTep : WebGroup, IReturn<List<WebGroup>>
     {

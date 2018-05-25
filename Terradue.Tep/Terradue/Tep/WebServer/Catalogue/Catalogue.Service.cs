@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -54,26 +56,28 @@ namespace Terradue.Tep.WebServer.Services
 				urib = new UriBuilder( baseUrl.ToString() );
 
                 OSDD = serie.GetOpenSearchDescription();
-				urib.Path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/search";
-				query.Set("format","atom");
-                query.Add(serie.GetOpenSearchParameters("application/atom+xml"));
 
-				queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urib.Query = string.Join("&", queryString);
-				newUrls.Add("application/atom+xml",new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search"));
+				foreach(var url in OSDD.Url){
+					string path = "";
+					switch(url.Type){
+						case "application/opensearchdescription+xml":
+							path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/description";
+							break;
+						case "application/tdensity+json":
+							path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/tdensity";
+							break;
+						default:
+							path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/search";
+							break;
+					}               
+                    
+					var queryUrl = url.Template != null && url.Template.IndexOf("?") >= 0 ? url.Template.Substring(url.Template.IndexOf("?")) : "";
 
-				query.Set("format","json");
-				queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urib.Query = string.Join("&", queryString);
-				newUrls.Add("application/json",new OpenSearchDescriptionUrl("application/json", urib.ToString(), "search"));
-
-				query.Set("format","html");
-				queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urib.Query = string.Join("&", queryString);
-				newUrls.Add("text/html",new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search"));
-				OSDD.Url = new OpenSearchDescriptionUrl[newUrls.Count];
-
-				newUrls.Values.CopyTo(OSDD.Url,0);
+					var urlB = new UriBuilder(context.BaseUrl);               
+					urlB.Path = path;               
+					url.Template = urlB.Uri.AbsoluteUri + queryUrl;
+				}
+                            
 				context.Close ();
 			}catch(Exception e) {
                 context.LogError(this, e.Message);
@@ -82,6 +86,41 @@ namespace Terradue.Tep.WebServer.Services
 			}
 			HttpResult hr = new HttpResult ( OSDD, "application/opensearchdescription+xml" );
 			return hr;
+		}
+
+		public object Get(CollectionGetDensityRequestTep request){
+			var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+			string result = "";
+            try {
+                context.Open();
+				context.LogInfo(this, string.Format("/data/collection/{{serieId}}/tdensity GET serieId='{0}'", request.CollId));
+
+				Terradue.Tep.Collection serie = Terradue.Tep.Collection.FromIdentifier(context, request.CollId);
+				var OSDD = serie.GetOpenSearchDescription();
+				var tdensityUrl = OSDD.Url.First(p => p.Type == "application/tdensity+json");
+				if(tdensityUrl != null){
+					var query = HttpContext.Current.Request.QueryString;
+					var urib = new UriBuilder(tdensityUrl.Template);
+					var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                    urib.Query = string.Join("&", queryString);
+
+					HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urib.Uri.AbsoluteUri);
+                    using (var resp = httpRequest.GetResponse()) {
+                        using (var stream = resp.GetResponseStream()) {
+							StreamReader reader = new StreamReader(stream);
+                            result = reader.ReadToEnd();
+                        }
+                    }                
+
+				}
+
+				context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+			return result;
 		}
 
 		/// <summary>
