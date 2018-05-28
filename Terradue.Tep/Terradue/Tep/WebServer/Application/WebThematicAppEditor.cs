@@ -65,12 +65,9 @@ namespace Terradue.Tep.WebServer {
 
 		[ApiMember(Name = "WpsServiceOfferingPresent", Description = "WpsServiceOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
 		public bool WpsServiceOfferingPresent { get; set; }
-
-		[ApiMember(Name = "WpsServiceOfferingDomain", Description = "WpsServiceOfferingDomain", ParameterType = "query", DataType = "string", IsRequired = true)]
-		public string WpsServiceOfferingDomain { get; set; }
-
-		[ApiMember(Name = "WpsServiceOfferingTags", Description = "WpsServiceOfferingTags", ParameterType = "query", DataType = "string", IsRequired = true)]
-		public string WpsServiceOfferingTags { get; set; }
+        
+		[ApiMember(Name = "WpsServiceOfferingFilters", Description = "WpsServiceOfferingFilters", ParameterType = "query", DataType = "List<WebKeyValue>", IsRequired = true)]
+		public List<WebKeyValue> WpsServiceOfferingFilters { get; set; }
 
 		[ApiMember(Name = "ChronogramOfferingPresent", Description = "ChronogramOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
 		public bool ChronogramOfferingPresent { get; set; }
@@ -220,8 +217,16 @@ namespace Terradue.Tep.WebServer {
                             var href = offering.Operations[0].Href;
                             var uri = new Uri(href);
                             var nvc = HttpUtility.ParseQueryString(uri.Query);
-                            if (!string.IsNullOrEmpty(nvc["domain"])) this.WpsServiceOfferingDomain = nvc["domain"];
-                            if (!string.IsNullOrEmpty(nvc["tag"])) this.WpsServiceOfferingTags = nvc["tag"];
+							foreach(var key in nvc.AllKeys){
+								switch (key) {
+									case "format":
+										break;
+									default:
+										if (this.WpsServiceOfferingFilters == null) this.WpsServiceOfferingFilters = new List<WebKeyValue>();
+										this.WpsServiceOfferingFilters.Add(new WebKeyValue(key, nvc[key]));
+										break;
+								}
+    						}
                         }
                         break;
                     case "http://www.terradue.com/spec/owc/1.0/req/atom/timeseries":
@@ -344,11 +349,12 @@ namespace Terradue.Tep.WebServer {
 				});
 			}
             if (WpsServiceOfferingPresent) {
-                var queryTag = !string.IsNullOrEmpty(this.WpsServiceOfferingTags) ? "tag=" + this.WpsServiceOfferingTags : "";
-                var queryDomain = !string.IsNullOrEmpty(this.WpsServiceOfferingDomain) ? "domain=" + this.WpsServiceOfferingDomain : "";
-                var query = (queryTag + "&" + queryDomain).TrimStart("&".ToCharArray()).TrimEnd("&".ToCharArray());
-                query = !string.IsNullOrEmpty(query) ? "?" + query : "";
-
+				string query = "";
+				if(this.WpsServiceOfferingFilters != null){
+					foreach(var filter in this.WpsServiceOfferingFilters){
+						query += (query == "" ? "?" : "&") + filter.Key + "=" + filter.Value;
+					}
+				}
 				offerings.Add(new OwcOffering {
 					Code = "http://www.opengis.net/spec/owc/1.0/req/atom/wps",
 					Operations = new OwcOperation[]{
