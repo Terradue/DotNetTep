@@ -421,6 +421,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/current/logstatus GET"));
+				UserTep.UpdateUserSessionEndTime(context, context.UserId);
             } catch (Exception e) {
                 return new WebResponseBool(false);
             }

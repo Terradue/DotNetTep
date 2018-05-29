@@ -1,4 +1,4 @@
--- VERSION 1.1.2.18
+-- VERSION 1.1.2.19
 
 USE $MAIN$;
 
@@ -342,4 +342,9 @@ INSERT INTO type (class, caption_sg, caption_pl, keyword) VALUES ('Terradue.Tep.
 -- Adding action...\
 INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`, `time_interval`) VALUES ('RefreshThematicAppsCache', 'Refresh thematic apps cached', 'This action refresh the cached thematic apps', 'Terradue.Tep.Actions, Terradue.Tep', 'RefreshThematicAppsCache',1,'1D');
 -- RESULT
+
+-- Add usrsession end time...\
+ALTER TABLE usrsession ADD COLUMN `log_end` DATETIME NULL AFTER `log_time`;
+-- RESULT
+
 

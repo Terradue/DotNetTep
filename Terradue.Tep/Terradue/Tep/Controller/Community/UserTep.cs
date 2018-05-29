@@ -890,6 +890,20 @@ namespace Terradue.Tep {
             return Role.GetUserRolesForDomain(context, this.Id, domain.Id).ToList();
         }
 
+		/// <summary>
+        /// Updates the user session end time.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <param name="userId">User identifier.</param>
+        public static void UpdateUserSessionEndTime(IfyContext context, int userId) {
+            try {
+                string sql = string.Format("UPDATE usrsession SET log_end='{0}' WHERE id_usr={1} order by log_time desc LIMIT 1;", context.Now.ToString(@"yyyy\-MM\-dd HH\:mm\:ss"), userId);
+                context.Execute(sql);
+            } catch (Exception e) {
+                context.LogError(context, e.Message);
+            }
+        }
+
         #region ACCOUNTING
 
         /// <summary>

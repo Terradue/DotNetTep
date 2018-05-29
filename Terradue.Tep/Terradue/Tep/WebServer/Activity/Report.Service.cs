@@ -208,10 +208,7 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(Environment.NewLine);
 
             List<int> ids = GetNewUsers(context, startdate, enddate, skipedIds);
-
-            System.Data.IDbConnection dbConnection;
-            System.Data.IDataReader reader;
-
+                     
             csv.Append(String.Format("Users signed in between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
             if (ids.Count > 0) {
                 csv.Append("Username,Name,Affiliation,First Login date,Terradue cloud username" + Environment.NewLine);
@@ -226,17 +223,34 @@ namespace Terradue.Tep.WebServer.Services {
             ids = GetActiveUsers(context, startdate, enddate, skipedIds);
             csv.Append(String.Format("Active users between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
             if (ids.Count > 0) {
-                csv.Append("Username,Name,Affiliation,Nb of logins" + Environment.NewLine);
+				csv.Append("Username,Name,Affiliation,Nb of logins,Average session (min)" + Environment.NewLine);
                 var analytics = new List<ReportAnalytic>();
                 foreach (int id in ids) {
                     var usr = UserTep.FromId(context, id);
                     var name = string.Format("{0},{1},{2}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"));
-                    analytics.Add(new ReportAnalytic{name = name, Total = usr.GetNbOfLogin(startdate, enddate) });
+
+					//get average session time
+					sql = string.Format("SELECT log_time,log_end FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}' AND log_end IS NOT NULL order by log_time desc;",id,startdate,enddate);
+					System.Data.IDbConnection dbConnection = context.GetDbConnection();
+                    System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+					int totalsession = 0;
+					int i = 1;
+					while (reader.Read()) {
+						DateTime logStart = reader.GetDateTime(0);
+						DateTime logEnd = reader.GetDateTime(1);
+						int session = (int)Math.Round((logEnd - logStart).TotalMinutes);
+						totalsession += session;
+						i++;
+					}
+					context.CloseQueryResult(reader, dbConnection);
+					int averagesession = totalsession / i;               
+					analytics.Add(new ReportAnalytic{name = name, Total = usr.GetNbOfLogin(startdate, enddate), Analytic1 = averagesession });
                 }
                 foreach (var analytic in analytics) {
-                    csv.Append(String.Format("{0},{1}{2}",
+					csv.Append(String.Format("{0},{1},{2}{3}",
                                              analytic.name,
                                              analytic.Total,
+					                         analytic.Analytic1,
                                              Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
