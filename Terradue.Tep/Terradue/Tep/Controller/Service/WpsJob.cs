@@ -461,6 +461,7 @@ namespace Terradue.Tep {
             }
             if (StatusLocation.Contains ("gpod.eo.esa.int")) {
                 executeHttpRequest.Headers.Add ("X-UserID", context.GetConfigValue ("GpodWpsUser"));
+                executeHttpRequest.Timeout = 10000;
             }
 
             using (var remoteWpsResponseStream = new MemoryStream ()) {
@@ -476,7 +477,7 @@ namespace Terradue.Tep {
                 } catch (WebException we) {
                     context.LogError (this, string.Format (we.Message));
                     //PATCH, waiting for http://project.terradue.com/issues/13615 to be resolved
-                    if (StatusLocation.Contains ("gpod.eo.esa.int")) {
+                    if (StatusLocation.Contains ("gpod.eo.esa.int") && we.Response != null) {
                         using (var remotestream = ((HttpWebResponse)we.Response).GetResponseStream ()) remotestream.CopyTo (remoteWpsResponseStream);
                         remoteWpsResponseStream.Seek (0, SeekOrigin.Begin);
                         execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (remoteWpsResponseStream);
