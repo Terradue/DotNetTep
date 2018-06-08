@@ -130,6 +130,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "balance", Description = "User accounting balance", ParameterType = "query", DataType = "double", IsRequired = false)]
         public double Balance { get; set; }
 
+		[ApiMember(Name = "RegistrationDate", Description = "User registration date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
+		public DateTime RegistrationDate { get; set; }
+        
         [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<List<string>>", IsRequired = false)]
         public List<WebCommunityRoles> Roles { get; set; }
 
@@ -160,6 +163,10 @@ namespace Terradue.Tep.WebServer {
                 this.T2Username = entity.TerradueCloudUsername;
                 if (context.GetConfigBooleanValue("accounting-enabled")) this.Balance = entity.GetAccountingBalance();
                 this.Roles = GetUserCommunityRoles(context, entity);
+				if (context.UserLevel == UserLevel.Administrator) {
+					if (entity.RegistrationDate == DateTime.MinValue) entity.LoadRegistrationInfo();
+					this.RegistrationDate = entity.RegistrationDate;
+				}
             } else {
                 this.Email = null;
                 this.Affiliation = null;
