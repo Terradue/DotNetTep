@@ -207,7 +207,8 @@ namespace Terradue.Tep.WebServer {
                                 MapFeatureName = styleset.Name,
                                 MapFeatureDefault = styleset.Default,
                                 MapFeatureUrl = styleset.Content != null ? styleset.Content.Href : null,
-                                MapFeatureAttribution = attribution != null ? attribution.InnerText : null
+                                MapFeatureAttribution = attribution != null ? attribution.InnerText : null,
+								MapFeatureContentType = styleset.Content != null ? styleset.Content.Type : null
                             });
                         }
                         break;
@@ -451,17 +452,26 @@ namespace Terradue.Tep.WebServer {
             if (this.MapFeatures != null && this.MapFeatures.Count > 0) {
 				var mfStylesets = new List<OwcStyleSet>();
                 foreach (var mf in this.MapFeatures){
-                    var type = doc.CreateElement("type");
-                    type.InnerText = mf.MapFeatureType;
+					var any = new List<System.Xml.XmlElement>();               
+					if (!string.IsNullOrEmpty(mf.MapFeatureType)) {
+						var type = doc.CreateElement("type", "http://www.terradue.com");
+                        type.InnerText = mf.MapFeatureType;
+                        any.Add(type);
+                    }
+					if (!string.IsNullOrEmpty(mf.MapFeatureAttribution)) {
+                        var attribution = doc.CreateElement("attribution", "http://www.terradue.com");
+						attribution.InnerText = mf.MapFeatureAttribution;
+						any.Add(attribution);
+                    }
 					mfStylesets.Add(new OwcStyleSet {
 						Default = mf.MapFeatureDefault,
                         Title = mf.MapFeatureTitle,
                         Name = mf.MapFeatureName,
                         Abstract = mf.MapFeatureName,
-						Any = new System.Xml.XmlElement[] { type },
-						Content = new OwcContent { Text = mf.MapFeatureUrl }
+						Any = any.ToArray(),
+						Content = new OwcContent { Href = mf.MapFeatureUrl, Type = string.IsNullOrEmpty(mf.MapFeatureContentType) ? "image/png" : mf.MapFeatureContentType }
 					});
-                }
+                }            
 				offerings.Add(new OwcOffering {
 					Code = "http://www.terradue.com/spec/owc/1.0/req/atom/mapfeatures",
 					StyleSets = mfStylesets.ToArray()
@@ -518,6 +528,9 @@ namespace Terradue.Tep.WebServer {
 
 		[ApiMember(Name = "MapFeatureUrl", Description = "MapFeatureUrl", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string MapFeatureUrl { get; set; }
+
+		[ApiMember(Name = "MapFeatureContentType", Description = "MapFeatureContentType", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string MapFeatureContentType { get; set; }
 
 		[ApiMember(Name = "MapFeatureAttribution", Description = "MapFeatureAttribution", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string MapFeatureAttribution { get; set; }
