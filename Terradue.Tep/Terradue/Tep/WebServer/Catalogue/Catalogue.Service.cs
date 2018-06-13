@@ -178,6 +178,8 @@ namespace Terradue.Tep.WebServer.Services
                     result.Links.Add (new SyndicationLink (new Uri(descriptionUrl.Template), descriptionUrl.Relation, "OpenSearch Description link", descriptionUrl.Type, 0));
                 }
 
+				MasterCatalogue.ReplaceSelfLinksFormat(result, Request.QueryString);
+
 				context.Close ();
 
 			}catch(Exception e) {
