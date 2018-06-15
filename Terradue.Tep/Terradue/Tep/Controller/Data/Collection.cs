@@ -93,7 +93,7 @@ namespace Terradue.Tep {
         /// <param name="request">Request.</param>
         public void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
             base.ApplyResultFilters(request, ref osr, finalContentType);
-            MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
+            //MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
         }
 
         public OpenSearchUrl GetSearchBaseUrl ()
