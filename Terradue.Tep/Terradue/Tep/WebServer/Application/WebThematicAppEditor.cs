@@ -104,6 +104,12 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "ApiKey", Description = "ApiKey", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string ApiKey { get; set; }
 
+		[ApiMember(Name = "UpdateCacheDomain", Description = "Name of the domain to update the cache", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string UpdateCacheDomain { get; set; }
+
+        [ApiMember(Name = "UpdateCache", Description = "UpdateCache", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool UpdateCache { get; set; }
+
 		public WebThematicAppEditor() { }
 
         public WebThematicAppEditor(OwsContextAtomEntry entry) {
