@@ -163,87 +163,9 @@ namespace Terradue.Tep {
         }
         
         public static void RefreshThematicAppsCache(IfyContext context) {
-			//Get all existing apps
-			EntityList<ThematicApplicationCached> oldapps = new EntityList<ThematicApplicationCached>(context);
-			oldapps.Load();
-
-            //will be filled with all updated ids
-			List<int> upIds = new List<int>();
-
-            // get the apps from the communities
-            var communities = new EntityList<ThematicCommunity>(context);
-            communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
-            communities.Load();
-            foreach (var community in communities.Items) {
-                var links = community.AppsLinks;
-                if(links != null){
-                    foreach(var link in links){
-                        if (string.IsNullOrEmpty(link)) continue;
-                        //TODO: IMPROVE
-                        var url = link.Replace("/description", "/search");
-                        if (!url.Contains("/search")) continue;
-                        //end TODO
-                        try {
-                            HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
-                            using (var resp = httpRequest.GetResponse()) {
-                                using (var stream = resp.GetResponseStream()) {
-                                    var feed = ThematicApplicationCached.GetOwsContextAtomFeed(stream);
-                                    if (feed.Items != null) {
-                                        foreach (OwsContextAtomEntry item in feed.Items) {
-                                            var appcached = ThematicApplicationCached.CreateOrUpdate(context, item, community.Id);
-											upIds.Add(appcached.Id);
-                                            context.WriteInfo(string.Format("RefreshThematicAppsCache -- Cached '{0}' for community '{1}' from '{2}'", appcached.UId, community.Identifier, url));
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (Exception e) { 
-                            context.WriteError(string.Format("RefreshThematicAppsCache -- community = '{2}' -- {0} - {1}", e.Message, e.StackTrace, community.Identifier));
-                        }
-                    }
-                }
-            }
-
-            //get public apps 
-            var apps = new EntityList<ThematicApplication>(context);
-            apps.SetFilter("DomainId", SpecialSearchValue.Null);
-            apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
-            apps.Load();
-            foreach (var app in apps) {
-                app.LoadItems();
-                foreach (var appItem in app.Items){
-                    if (string.IsNullOrEmpty(appItem.Location)) continue;
-                    //TODO: IMPROVE
-                    var url = appItem.Location.Replace("/description", "/search");
-                    if (!url.Contains("/search")) continue;
-                    //end TODO
-                    try {
-                        HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
-                        using (var resp = httpRequest.GetResponse()) {
-                            using (var stream = resp.GetResponseStream()) {
-                                var feed = ThematicApplicationCached.GetOwsContextAtomFeed(stream);
-                                if (feed.Items != null) {
-                                    foreach (OwsContextAtomEntry item in feed.Items) {
-                                        var appcached = ThematicApplicationCached.CreateOrUpdate(context, item, 0);
-										upIds.Add(appcached.Id);
-                                        context.WriteInfo(string.Format("RefreshThematicAppsCache -- Cached '{0}' (public) from '{1}'", appcached.UId, url));
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        context.WriteError(string.Format("RefreshThematicAppsCache -- {0} - {1}", e.Message, e.StackTrace));
-                    }
-                }
-            }
-
-			//delete apps not updated
-			foreach (var app in oldapps) {
-				if (!upIds.Contains(app.Id)) {
-					context.WriteInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
-					app.Delete();
-				}
-			}
+			var appFactory = new ThematicAppCachedFactory(context);
+			appFactory.ForAgent = true;         
+			appFactory.RefreshCachedApps(false, true, true);
         }
 
     }

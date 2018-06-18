@@ -224,51 +224,66 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool(true);
         }
 
-        public object Get(ThematicAppCurrentUserSearchRequestTep request) {
-            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            context.Open();
-            context.LogInfo(this, string.Format("/user/current/apps/search GET"));
+		public object Get(ThematicAppCurrentUserSearchRequestTep request) {
+			IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+			context.Open();
+			context.LogInfo(this, string.Format("/user/current/apps/search GET"));
 
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
-            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
-            var settings = MasterCatalogue.OpenSearchFactorySettings;
-            OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
+			IOpenSearchResultCollection result;
+			OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+			Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+			List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+			var settings = MasterCatalogue.OpenSearchFactorySettings;
+			OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
 
-            //get user private thematic app
-            if (context.UserId != 0) {
-                var user = UserTep.FromId(context, context.UserId);
+			UserTep user = null;
 
-                specsettings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
-                var app = user.GetPrivateThematicApp();
-                if (app != null) {
-                    foreach (var item in app.Items) {
-                        if (!string.IsNullOrEmpty(item.Location)) {
-                            try {
-                                var sgOs = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
-                                osentities.Add(sgOs);
-                                context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
-                            } catch (Exception e) {
-                                context.LogError(this, e.Message);
-                            }
-                        }
-                    }
-                }
-            }
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, specsettings);
-            var result = ose.Query(multiOSE, Request.QueryString, responseType);
+			if (context.UserId != 0) {
+				user = UserTep.FromId(context, context.UserId);            
+				if (request.cache) {               
+					var domain = user.GetPrivateDomain();
+					EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);
+                    appsCached.SetFilter("DomainId", domain.Id);
+                    appsCached.AddSort("LastUpdate", SortDirection.Descending);               
+
+					result = ose.Query(appsCached, Request.QueryString, responseType);
+					OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);               
+				} else {               
+					//get user private thematic app
+					specsettings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+					var app = user.GetPrivateThematicApp();
+					if (app != null) {
+						foreach (var item in app.Items) {
+							if (!string.IsNullOrEmpty(item.Location)) {
+								try {
+									var sgOs = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(item.Location));
+									osentities.Add(sgOs);
+									context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
+								} catch (Exception e) {
+									context.LogError(this, e.Message);
+								}
+							}
+						}
+					}
+					MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, specsettings);
+                    result = ose.Query(multiOSE, Request.QueryString, responseType);
+				}            
+			} else {
+				result = ose.Query(new MultiGenericOpenSearchable(osentities, specsettings), Request.QueryString, responseType);
+			}
 
             string sresult = result.SerializeToString();
 
-            //replace usernames in apps
-            try {
-                var user = UserTep.FromId(context, context.UserId);
-                sresult = sresult.Replace("${USERNAME}", user.Username);
-                sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
-                sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
-            } catch (Exception e) {
-                context.LogError(this, e.Message);
-            }
+			//replace usernames in apps
+			if (user != null) {
+				try {
+					sresult = sresult.Replace("${USERNAME}", user.Username);
+					sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+					sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
+				} catch (Exception e) {
+					context.LogError(this, e.Message);
+				}
+			}
 
             context.Close();
 
@@ -334,33 +349,38 @@ namespace Terradue.Tep.WebServer.Services {
 
 						var domain = Domain.FromIdentifier(context, community);
 
-						OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-						Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
-						var apps = new EntityList<DataPackage>(context);
-						apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
-						apps.SetFilter("DomainId", domain.Id.ToString());
-						apps.Load();
+						if (!string.IsNullOrEmpty(nvc["cache"]) && nvc["cache"] == "true") {
+							var app = ThematicApplicationCached.FromUidAndDomain(context, uid, domain.Id);
+							feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+						} else {
+							OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+							Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+							var apps = new EntityList<DataPackage>(context);
+							apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
+							apps.SetFilter("DomainId", domain.Id.ToString());
+							apps.Load();
 
-						// the opensearch cache system uses the query parameters
-						// we add to the parameters the filters added to the load in order to avoir wrong cache
-						// we use 't2-' in order to not interfer with possibly used query parameters
-						var qs = new NameValueCollection(Request.QueryString);
-						foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
+							// the opensearch cache system uses the query parameters
+							// we add to the parameters the filters added to the load in order to avoir wrong cache
+							// we use 't2-' in order to not interfer with possibly used query parameters
+							var qs = new NameValueCollection(Request.QueryString);
+							foreach (var filter in apps.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
-						apps.OpenSearchEngine = ose;
+							apps.OpenSearchEngine = ose;
 
-						List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
-						foreach (var app in apps.Items) {
-							app.OpenSearchEngine = ose;
-							osentities.AddRange(app.GetOpenSearchableArray());
+							List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+							foreach (var app in apps.Items) {
+								app.OpenSearchEngine = new OpenSearchEngine();
+								osentities.AddRange(app.GetOpenSearchableArray());
+							}
+
+							nvc.Set("format", "atom");
+
+							var settings = MasterCatalogue.OpenSearchFactorySettings;
+							MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+							var response = ose.Query(multiOSE, nvc, typeof(AtomFeed));
+							feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(response.SerializeToString());
 						}
-                        
-						nvc.Set("format", "atom");
-
-						var settings = MasterCatalogue.OpenSearchFactorySettings;                  
-						MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
-						var response = ose.Query(multiOSE, nvc, typeof(AtomFeed));
-						feed = ThematicApplicationCached.GetOwsContextAtomFeed(response.SerializeToString());
 					}
 				} else {
 					var urib = new UriBuilder(request.Url);
@@ -371,7 +391,7 @@ namespace Terradue.Tep.WebServer.Services {
 					HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(request.Url);
                     using (var resp = httpRequest.GetResponse()) {
                         using (var stream = resp.GetResponseStream()) {
-                            feed = ThematicApplicationCached.GetOwsContextAtomFeed(stream);
+							feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
                         }
                     }                
                 }
@@ -420,6 +440,16 @@ namespace Terradue.Tep.WebServer.Services {
 					throw new Exception("Unable to POST to " + index + " - " + e.Message);
 				}
 
+				if(request.UpdateCache && !string.IsNullOrEmpty(request.UpdateCacheDomain)){
+					try{
+						var appFactory = new ThematicAppCachedFactory(context);
+						var community = ThematicCommunity.FromIdentifier(context, request.UpdateCacheDomain);
+                        appFactory.RefreshCachedAppsForCommunity(community);
+					}catch(Exception e){
+						context.LogError(this, string.Format("Unable to cache app -- " + e.Message));
+					}
+				}
+
 			    context.Close();
 			} catch (Exception e) {
 				context.LogError(this, e.Message);
@@ -434,7 +464,9 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
 			try {
                 context.LogInfo(this, string.Format("/apps/cache GET"));
-                Actions.RefreshThematicAppsCache(context);
+				var appFactory = new ThematicAppCachedFactory(context);
+				//case TEP -- we don't want user privates apps to be cached
+				appFactory.RefreshCachedApps(false, true, true);
                 context.Close();
 			} catch (Exception e) {
                 context.LogError(this, e.Message);

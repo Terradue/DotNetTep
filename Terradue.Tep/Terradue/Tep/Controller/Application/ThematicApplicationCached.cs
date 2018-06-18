@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Web;
 using System.Xml;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
@@ -21,10 +23,11 @@ namespace Terradue.Tep {
         [EntityDataField("uid", IsUsedInKeywordSearch = true)]
         public string UId { get; set; }
 
+
 		[EntityDataField("last_update")]
 		public DateTime LastUpdate { get; set; }
 
-        protected OwsContextAtomFeed Feed { get; set; }
+        public OwsContextAtomFeed Feed { get; set; }
 
         public ThematicApplicationCached(IfyContext context) : base(context){}
             
@@ -39,54 +42,73 @@ namespace Terradue.Tep {
             this.UId = identifier;
             this.DomainId = domainid;
             this.TextFeed = feed;
-            this.Feed = GetOwsContextAtomFeed(feed);
+			this.Feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(feed);
         }
 
-        /// <summary>
-        /// Creates or update the cached app
-        /// </summary>
-        /// <returns>The or update.</returns>
-        /// <param name="context">Context.</param>
-        /// <param name="entry">Entry.</param>
-        /// <param name="domainid">Domainid.</param>
-        public static ThematicApplicationCached CreateOrUpdate(IfyContext context, OwsContextAtomEntry entry, int domainid) {
-            var identifier = GetIdentifierFromFeed(entry);
-            var appcached = new ThematicApplicationCached(context);
-            appcached.UId = identifier;
-            appcached.DomainId = domainid;
-
-            try {
-                appcached.Load();
-            }catch(Exception e){}
-
-            var feed = new OwsContextAtomFeed();
-            feed.Items = new List<OwsContextAtomEntry> { entry };
-
-            appcached.Feed = feed;
-            appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
-			appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
-            appcached.Store();
-
-            return appcached;
-        }
-
+		public static ThematicApplicationCached FromUidAndDomain(IfyContext context, string identifier, int domainid){
+			var app = new ThematicApplicationCached(context);
+			app.UId = identifier;
+			app.DomainId = domainid;
+			app.Load();
+			return app;
+		}
+              
         public override string GetIdentifyingConditionSql() {
             if (this.UId == null) return null;
             return String.Format("t.uid={0} AND t.id_domain{1}", StringUtils.EscapeSql(this.UId), DomainId == 0 ? " IS NULL" : "=" + DomainId);
         }
-
-        /// <summary>
-        /// Gets the cached apps from domain.
-        /// </summary>
-        /// <returns>The cached apps from domain.</returns>
-        /// <param name="context">Context.</param>
-        /// <param name="domainid">Domainid.</param>
-        public static EntityList<ThematicApplicationCached> GetCachedAppsFromDomain(IfyContext context, int domainid) {
-            EntityList<ThematicApplicationCached> result = new EntityList<ThematicApplicationCached>(context);
-            if (domainid == 0) result.SetFilter("DomainId", SpecialSearchValue.Null);
-            else result.SetFilter("DomainId", domainid+"");
-            result.Load();
+  
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+            var atomFormatter = new Atom10FeedFormatter();
+            XmlReader xmlreader = XmlReader.Create(new StringReader(TextFeed = this.TextFeed));
+            atomFormatter.ReadFrom(xmlreader);
+            var feed = new OwsContextAtomFeed(atomFormatter.Feed, true);
+            var result = new AtomItem(feed.Items.First());
             return result;
+        }
+
+        public bool CanCache {
+            get {
+                return false;
+            }
+        }
+
+        #region IEntitySearchable implementation
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+            switch (parameter) {
+                case "uid":
+                    if (!string.IsNullOrEmpty(value))
+                        return new KeyValuePair<string, string>("UId", value);
+                    else return new KeyValuePair<string, string>();
+                default:
+                    return base.GetFilterForParameter(parameter, value);
+            }
+        }
+
+        #endregion      
+    }
+
+	public class ThematicAppCachedFactory {
+
+		public IfyContext context { get; set; }
+		public bool ForAgent { get; set; }
+
+		public ThematicAppCachedFactory(IfyContext context){
+			this.context = context;
+			this.ForAgent = false;
+		}
+
+		private void LogDebug(string message){
+			if (ForAgent) context.WriteDebug(0,message);
+			else context.LogDebug(this, message);
+		}
+		private void LogInfo(string message) {
+            if (ForAgent) context.WriteInfo(message);
+            else context.LogInfo(this, message);
+        }
+		private void LogError(string message) {
+            if (ForAgent) context.WriteError(message);
+            else context.LogError(this, message);
         }
 
         /// <summary>
@@ -152,35 +174,255 @@ namespace Terradue.Tep {
             return result;
         }
 
-       public override AtomItem ToAtomItem(NameValueCollection parameters) {
-            var atomFormatter = new Atom10FeedFormatter();
-            XmlReader xmlreader = XmlReader.Create(new StringReader(TextFeed = this.TextFeed));
-            atomFormatter.ReadFrom(xmlreader);
-            var feed = new OwsContextAtomFeed(atomFormatter.Feed, true);
-            var result = new AtomItem(feed.Items.First());
+        /// <summary>
+        /// Creates the or update app from the url.
+        /// </summary>
+        /// <returns>The or update app.</returns>
+        /// <param name="url">URL.</param>
+        /// <param name="domainId">Domain identifier.</param>
+		public List<int> CreateOrUpdateCachedAppFromUrl(string url, int domainId){
+			List<int> upIds = new List<int>();
+			if (string.IsNullOrEmpty(url)) return upIds;
+
+            //TODO: IMPROVE
+            url = url.Replace("/description", "/search");
+            if (!url.Contains("/search")) return upIds;
+			//end TODO
+
+			var urib = new UriBuilder(url);
+            var query = HttpUtility.ParseQueryString(urib.Query);
+
+			//add user apikey
+			var user = UserTep.FromId(context, context.UserId);
+			var apikey = user.GetSessionApiKey();
+			if(!string.IsNullOrEmpty(apikey)) query.Set("apikey", apikey);
+
+			//add random for cache
+			var random = new Random();
+			query.Set("random", random.Next()+"");
+
+			var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urib.Query = string.Join("&", queryString);
+            url = urib.Uri.AbsoluteUri;
+                                    
+            try {
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+                        var feed = GetOwsContextAtomFeed(stream);
+                        if (feed.Items != null) {
+                            foreach (OwsContextAtomEntry item in feed.Items) {
+								var appcached = CreateOrUpdateCachedApp(item, domainId);
+								upIds.Add(appcached.Id);
+								this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));                        
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+				this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}", e.Message, e.StackTrace));
+            }
+
+			return upIds;
+		}
+
+		/// <summary>
+        /// Creates or update the cached app
+        /// </summary>
+        /// <returns>The or update.</returns>
+        /// <param name="entry">Entry.</param>
+        /// <param name="domainid">Domainid.</param>
+        public ThematicApplicationCached CreateOrUpdateCachedApp(OwsContextAtomEntry entry, int domainid) {
+            var identifier = GetIdentifierFromFeed(entry);
+            var appcached = new ThematicApplicationCached(context);
+            appcached.UId = identifier;
+            appcached.DomainId = domainid;
+
+            try {
+                appcached.Load();
+            } catch (Exception e) { }
+
+            var feed = new OwsContextAtomFeed();
+            feed.Items = new List<OwsContextAtomEntry> { entry };
+
+            appcached.Feed = feed;
+            appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
+            appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
+            appcached.Store();
+
+            return appcached;
+        }
+
+		/// <summary>
+        /// Gets the cached apps from domain.
+        /// </summary>
+        /// <returns>The cached apps from domain.</returns>
+        /// <param name="domainid">Domainid.</param>
+        public EntityList<ThematicApplicationCached> GetCachedAppsFromDomain(int domainid) {
+            EntityList<ThematicApplicationCached> result = new EntityList<ThematicApplicationCached>(context);
+            if (domainid == 0) result.SetFilter("DomainId", SpecialSearchValue.Null);
+            else result.SetFilter("DomainId", domainid + "");
+            result.Load();
             return result;
         }
-
-        public bool CanCache {
-            get {
-                return false;
+  
+        /// <summary>
+        /// Creates the or update community apps.
+        /// </summary>
+        /// <returns>The or update community apps.</returns>
+        /// <param name="community">Community.</param>
+        public List<int> CreateOrUpdateCachedAppsFromCommunity(ThematicCommunity community) {
+            List<int> upIds = new List<int>();
+            var links = community.AppsLinks;
+            if (links != null) {
+                foreach (var link in links) {
+					var ids = CreateOrUpdateCachedAppFromUrl(link, community.Id);
+					upIds.AddRange(ids);
+                }
             }
+            return upIds;
         }
 
-        #region IEntitySearchable implementation
-        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
-            switch (parameter) {
-                case "uid":
-                    if (!string.IsNullOrEmpty(value))
-                        return new KeyValuePair<string, string>("UId", value);
-                    else return new KeyValuePair<string, string>();
-                default:
-                    return base.GetFilterForParameter(parameter, value);
+        /// <summary>
+        /// Creates the or update cached apps from user.
+        /// </summary>
+        /// <returns>The or update cached apps from user.</returns>
+        /// <param name="user">User.</param>
+		public List<int> CreateOrUpdateCachedAppsFromUser(UserTep user) {
+            List<int> upIds = new List<int>();
+			var app = user.GetPrivateThematicApp();         
+			var domain = user.GetPrivateDomain();
+            foreach (var appItem in app.Items) {
+                var ids = CreateOrUpdateCachedAppFromUrl(appItem.Location, domain.Id);
+                upIds.AddRange(ids);
             }
+            return upIds;
         }
 
-        #endregion
+        /// <summary>
+        /// Refreshs the cached apps.
+        /// </summary>
+        /// <param name="withUserPrivateApps">If set to <c>true</c> with user private apps.</param>
+        /// <param name="withCommunitiesApps">If set to <c>true</c> with communities apps.</param>
+        /// <param name="withPublicApps">If set to <c>true</c> with public apps.</param>
+		public void RefreshCachedApps(bool withUserPrivateApps, bool withCommunitiesApps, bool withPublicApps){
 
+			//Get all existing apps
+			EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
+			List<int> existingIds = new List<int>();
+			if (withUserPrivateApps || withCommunitiesApps) {
+				var domains = new EntityList<Domain>(context);
+                string kind = (withUserPrivateApps ? (int)DomainKind.User+"" : "") + (withCommunitiesApps ? (withUserPrivateApps ? "," : "") + (int)DomainKind.Public + "," + (int)DomainKind.Private : "");
+				domains.SetFilter("Kind", kind);
+                domains.Load();
+				foreach (var d in domains) existingIds.Add(d.Id);
+			}
+            var filterValues = new List<object>();
+			filterValues.Add(string.Join(",", existingIds));
+			if (withPublicApps) filterValues.Add(SpecialSearchValue.Null);
+			existingApps.SetFilter("DomainId", filterValues.ToArray());
+            existingApps.Load();
 
-    }
+            //will be filled with all updated ids
+            List<int> upIds = new List<int>();
+
+			// get the apps from the users
+			if (withUserPrivateApps) {
+				this.LogInfo(string.Format("RefreshCachedApps -- Get the apps from users"));
+                var communities = new EntityList<ThematicCommunity>(context);
+				communities.SetFilter("Kind", (int)DomainKind.User);
+                communities.Load();
+                foreach (var community in communities.Items) {
+                    var ids = CreateOrUpdateCachedAppsFromCommunity(community);
+                    upIds.AddRange(ids);
+                }
+            }
+
+			// get the apps from the communities
+			if (withCommunitiesApps) {
+				this.LogInfo(string.Format("RefreshCachedApps -- Get the apps from communities"));
+				var communities = new EntityList<ThematicCommunity>(context);
+				communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+				communities.Load();
+				foreach (var community in communities.Items) {
+					var ids = CreateOrUpdateCachedAppsFromCommunity(community);
+					upIds.AddRange(ids);
+				}
+			}
+
+			//get public apps 
+			if (withPublicApps) {
+				this.LogInfo(string.Format("RefreshCachedApps -- Get public apps"));
+				var apps = new EntityList<ThematicApplication>(context);
+				apps.SetFilter("DomainId", SpecialSearchValue.Null);
+				apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
+				apps.Load();
+				foreach (var app in apps) {
+					app.LoadItems();
+					foreach (var appItem in app.Items) {
+						var ids = CreateOrUpdateCachedAppFromUrl(appItem.Location, 0);
+						upIds.AddRange(ids);
+					}
+				}
+			}
+
+            //delete apps not updated
+            foreach (var app in existingApps) {
+                if (!upIds.Contains(app.Id)) {
+					this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
+                    app.Delete();
+                }
+            }
+		}
+
+        /// <summary>
+        /// Refreshs the cached apps for user.
+        /// </summary>
+        /// <param name="user">User.</param>
+		public void RefreshCachedAppsForUser(UserTep user){
+			//Get all existing apps for the user
+            EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
+            List<int> existingIds = new List<int>();
+			var domain = user.GetPrivateDomain();
+			existingApps.SetFilter("DomainId", domain.Id);
+            existingApps.Load();
+
+			//will be filled with all updated ids
+			List<int> upIds = CreateOrUpdateCachedAppsFromUser(user);
+
+			//delete apps not updated
+            foreach (var app in existingApps) {
+                if (!upIds.Contains(app.Id)) {
+                    this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
+                    app.Delete();
+                }
+            }
+   
+		}
+
+        /// <summary>
+        /// Refreshs the cached apps for community.
+        /// </summary>
+        /// <param name="community">Community.</param>
+		public void RefreshCachedAppsForCommunity(ThematicCommunity community) {
+            //Get all existing apps for the community
+            EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
+			List<int> existingIds = new List<int>();
+			existingApps.SetFilter("DomainId", community.Id);
+            existingApps.Load();
+
+            //will be filled with all updated ids
+			List<int> upIds = CreateOrUpdateCachedAppsFromCommunity(community);
+
+            //delete apps not updated
+            foreach (var app in existingApps) {
+                if (!upIds.Contains(app.Id)) {
+                    this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
+                    app.Delete();
+                }
+            }
+
+        }
+
+	}
 }

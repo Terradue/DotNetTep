@@ -15,7 +15,13 @@ namespace Terradue.Tep.WebServer {
     }
 
 	[Route("/apps/cache", "GET", Summary = "cache thematic apps", Notes = "")]
-    public class ThematicAppCacheRequestTep : IReturn<List<HttpResult>> { }
+    public class ThematicAppCacheRequestTep : IReturn<List<HttpResult>> {
+		[ApiMember(Name = "username", Description = "identifier of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Username { get; set; }
+
+		[ApiMember(Name = "community", Description = "identifier of the community", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Community { get; set; }
+	}
     
     [Route ("/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
     public class ThematicAppSearchRequestTep : IReturn<List<HttpResult>> {
@@ -24,7 +30,10 @@ namespace Terradue.Tep.WebServer {
 	}
 
     [Route("/user/current/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
-    public class ThematicAppCurrentUserSearchRequestTep : IReturn<List<HttpResult>> { }
+    public class ThematicAppCurrentUserSearchRequestTep : IReturn<List<HttpResult>> { 
+		[ApiMember(Name = "cache", Description = "uses cached apps", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool cache { get; set; }
+	}
 
     [Route("/community/{domain}/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
     public class ThematicAppByCommunitySearchRequestTep : IReturn<List<HttpResult>>{
