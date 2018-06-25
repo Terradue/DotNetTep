@@ -256,6 +256,10 @@ namespace Terradue.Tep.WebServer {
 			//WKT
             var spatials = entry.ElementExtensions.ReadElementExtensions<string>("spatial", "http://purl.org/dc/terms/");
             if (spatials.Count() > 0) this.Spatial = spatials.First();
+
+            //Index
+			var self = entry.Links.FirstOrDefault(l => l.RelationshipType == "self");
+			if (self != null) this.Index = ThematicAppCachedFactory.GetIndexFromUrl(self.Uri.AbsoluteUri);
         }
 
         public OwsContextAtomEntry ToOwsContextAtomEntry(IfyContext context){

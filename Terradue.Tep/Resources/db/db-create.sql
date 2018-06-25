@@ -1,4 +1,4 @@
--- VERSION 1.1.2.19
+-- VERSION 1.1.2.20
 
 USE $MAIN$;
 
@@ -328,6 +328,7 @@ ALTER TABLE wpsjob ADD COLUMN `end_time` DATETIME NULL AFTER `created_time`;
 CREATE TABLE app_cache (
     id int unsigned NOT NULL auto_increment,
     uid varchar(50) NOT NULL COMMENT 'Unique identifier',
+    cat_index varchar(50) NULL COMMENT 'index',
     id_domain int unsigned COMMENT 'FK: Owning domain',
     feed TEXT NOT NULL COMMENT 'app feed',
     last_update datetime COMMENT 'Last update time',

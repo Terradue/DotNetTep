@@ -23,6 +23,8 @@ namespace Terradue.Tep {
         [EntityDataField("uid", IsUsedInKeywordSearch = true)]
         public string UId { get; set; }
 
+		[EntityDataField("cat_index")]
+        public string Index { get; set; }
 
 		[EntityDataField("last_update")]
 		public DateTime LastUpdate { get; set; }
@@ -174,6 +176,18 @@ namespace Terradue.Tep {
             return result;
         }
 
+		public static string GetIndexFromUrl(string url){
+			try {
+				var urib = new UriBuilder(url);
+				var path = urib.Uri.AbsolutePath;
+				path = path.TrimStart('/');
+				var index = path.Substring(0, path.IndexOf('/'));
+				return index;
+			}catch(Exception e){
+				return null;
+			}
+		}
+
         /// <summary>
         /// Creates the or update app from the url.
         /// </summary>
@@ -204,6 +218,8 @@ namespace Terradue.Tep {
 			var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
             urib.Query = string.Join("&", queryString);
             url = urib.Uri.AbsoluteUri;
+
+			var index = GetIndexFromUrl(url);
                                     
             try {
                 HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -212,7 +228,7 @@ namespace Terradue.Tep {
                         var feed = GetOwsContextAtomFeed(stream);
                         if (feed.Items != null) {
                             foreach (OwsContextAtomEntry item in feed.Items) {
-								var appcached = CreateOrUpdateCachedApp(item, domainId);
+								var appcached = CreateOrUpdateCachedApp(item, domainId, index);
 								upIds.Add(appcached.Id);
 								this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));                        
                             }
@@ -232,12 +248,12 @@ namespace Terradue.Tep {
         /// <returns>The or update.</returns>
         /// <param name="entry">Entry.</param>
         /// <param name="domainid">Domainid.</param>
-        public ThematicApplicationCached CreateOrUpdateCachedApp(OwsContextAtomEntry entry, int domainid) {
+        public ThematicApplicationCached CreateOrUpdateCachedApp(OwsContextAtomEntry entry, int domainid, string index = null) {
             var identifier = GetIdentifierFromFeed(entry);
             var appcached = new ThematicApplicationCached(context);
             appcached.UId = identifier;
             appcached.DomainId = domainid;
-
+            
             try {
                 appcached.Load();
             } catch (Exception e) { }
@@ -245,6 +261,7 @@ namespace Terradue.Tep {
             var feed = new OwsContextAtomFeed();
             feed.Items = new List<OwsContextAtomEntry> { entry };
 
+			appcached.Index = index;
             appcached.Feed = feed;
             appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
             appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
