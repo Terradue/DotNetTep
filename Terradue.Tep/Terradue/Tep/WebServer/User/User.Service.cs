@@ -226,14 +226,14 @@ namespace Terradue.Tep.WebServer.Services {
         /// <returns>the users</returns>
         public object Get(GetUsers request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-			List<WebUserTep> result = new List<WebUserTep>();
+			List<WebUser> result = new List<WebUser>();
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user GET"));
 
-				EntityList<UserTep> users = new EntityList<UserTep>(context);
+				EntityList<User> users = new EntityList<User>(context);
                 users.Load();
-                foreach(UserTep u in users) result.Add(new WebUserTep(context,u));
+				foreach (User u in users) result.Add(new WebUser(u));
 
                 context.Close();
             } catch (Exception e) {
