@@ -284,8 +284,8 @@ namespace Terradue.Tep {
             if (context.UserId != this.Id || context.UserId == 0) return false;
             if (AccountStatus != AccountStatusType.Enabled) return false;
             if (Level < 2) return false; //User must be at least starter
-            var isloading = HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true";
-            if (isloading) return false;
+			if (HttpContext.Current == null || HttpContext.Current.Session == null) return false;//if there is no Current context or session, we won't get the apikey
+			if (HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true") return false;//if loading the apikey, we cannot get it yet
             var apikey = GetSessionApiKey();
             if (TerradueCloudUsername == null || apikey == null) return true;
             else return false;
@@ -296,7 +296,7 @@ namespace Terradue.Tep {
         /// </summary>
         public void LoadTerradueUserInfo(){
             context.LogDebug(this, "Loading Terradue info - " + this.Username);
-            HttpContext.Current.Session["t2loading"] = "true";
+			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = "true";
             try {
                 var payload = string.Format("username={0}&email={1}&originator={2}{3}",
                     this.Username,
@@ -328,9 +328,9 @@ namespace Terradue.Tep {
                     }
                 }
             }catch(Exception e){
-				HttpContext.Current.Session["t2profileError"] = e.Message;
+				if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2profileError"] = e.Message;
             }
-            HttpContext.Current.Session["t2loading"] = null;
+			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = null;
         }
 
         /// <summary>
@@ -339,7 +339,11 @@ namespace Terradue.Tep {
         /// <param name="value">Value.</param>
         private void SetSessionApikey(string value){
             context.LogDebug(this, "SESSION - SET t2apikey="+value);
-            HttpContext.Current.Session["t2apikey"] = value;
+			try {
+				HttpContext.Current.Session["t2apikey"] = value;
+            } catch (Exception e) { 
+				context.LogError(this, "SESSION - SET t2apikey -- " + e.Message);
+			}
         }
 
         /// <summary>
@@ -347,7 +351,12 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The session API key.</returns>
         public string GetSessionApiKey(){
-            var apikey = HttpContext.Current.Session["t2apikey"] as string;
+			var apikey = "";
+			try {
+				apikey = HttpContext.Current.Session["t2apikey"] as string;
+			}catch(Exception e){
+				context.LogError(this, "SESSION - GET t2apikey -- " + e.Message);
+			}
             context.LogDebug(this, "SESSION - GET t2apikey=" + apikey);
             return apikey;
         }
