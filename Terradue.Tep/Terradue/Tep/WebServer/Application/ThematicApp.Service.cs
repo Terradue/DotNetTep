@@ -476,6 +476,24 @@ namespace Terradue.Tep.WebServer.Services {
 			return new WebResponseBool(true);
         }
 
+		public object Get(ThematicAppCheckAvailabilityRequest request){
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			bool result = false;
+            context.Open();
+            try {
+                context.LogInfo(this, string.Format("/apps/available GET"));
+				var user = UserTep.FromId(context, context.UserId);
+				var apikey = user.GetSessionApiKey();
+				result = !CatalogueFactory.CheckIdentifierExists(context, request.Index, request.Uid, apikey);
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(result);
+		}
+
     }
 }
 

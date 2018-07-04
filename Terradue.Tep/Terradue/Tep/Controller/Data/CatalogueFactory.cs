@@ -9,6 +9,13 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep {
     public class CatalogueFactory {
 
+        /// <summary>
+        /// Posts the index of the atom feed to.
+        /// </summary>
+        /// <returns><c>true</c>, if atom feed to index was posted, <c>false</c> otherwise.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="feed">Feed.</param>
+        /// <param name="index">Index.</param>
         public static bool PostAtomFeedToIndex(IfyContext context, AtomFeed feed, string index) {
             var baseurl = context.GetConfigValue("catalog-baseurl");
             var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/";
@@ -46,6 +53,15 @@ namespace Terradue.Tep {
         //    }
         //}
 
+        /// <summary>
+        /// Posts the index of the atom feed to.
+        /// </summary>
+        /// <returns><c>true</c>, if atom feed to index was posted, <c>false</c> otherwise.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="feed">Feed.</param>
+        /// <param name="index">Index.</param>
+        /// <param name="username">Username.</param>
+        /// <param name="apikey">Apikey.</param>
         public static bool PostAtomFeedToIndex(IfyContext context, OwsContextAtomFeed feed, string index, string username, string apikey) {
             using (var stream = new MemoryStream()) {
                 var sw = System.Xml.XmlWriter.Create(stream);
@@ -58,6 +74,15 @@ namespace Terradue.Tep {
             }
         }
 
+        /// <summary>
+        /// Posts the index of the stream to.
+        /// </summary>
+        /// <returns><c>true</c>, if stream to index was posted, <c>false</c> otherwise.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="stream">Stream.</param>
+        /// <param name="index">Index.</param>
+        /// <param name="username">Username.</param>
+        /// <param name="apikey">Apikey.</param>
         public static bool PostStreamToIndex(IfyContext context, Stream stream, string index, string username, string apikey) {
             var baseurl = context.GetConfigValue("catalog-baseurl");
             var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/";
@@ -81,6 +106,37 @@ namespace Terradue.Tep {
             }
             return true;
         }
+
+        /// <summary>
+        /// Checks the identifier availability on index.
+        /// </summary>
+        /// <returns><c>true</c>, if identifier exists on index, <c>false</c> otherwise.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="index">Index.</param>
+        /// <param name="identifier">Identifier.</param>
+        /// <param name="apikey">Apikey.</param>
+		public static bool CheckIdentifierExists(IfyContext context, string index, string identifier, string apikey){
+			var baseurl = context.GetConfigValue("catalog-baseurl");
+			var url = (index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index) + "/search?uid=" + identifier + "&apikey=" + apikey;
+            
+			bool result = false;
+			try {
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+						var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                        if (feed.Items != null) {
+                            foreach (OwsContextAtomEntry item in feed.Items) {
+								result = true;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+				context.LogError(context, string.Format("CheckIdentifierExists -- {0} - {1}", e.Message, e.StackTrace));
+            }
+			return result;
+		}
 
         /// <summary>
         /// Ises the URL opensearch description.

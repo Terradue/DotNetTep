@@ -29,6 +29,15 @@ namespace Terradue.Tep.WebServer {
         public bool cache { get; set; }
 	}
 
+	[Route("/apps/available", "GET", Summary = "Check if apps is available", Notes = "")]
+	public class ThematicAppCheckAvailabilityRequest : IReturn<WebResponseBool> { 
+		[ApiMember(Name = "uid", Description = "identifier of the app", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Uid { get; set; }
+
+        [ApiMember(Name = "index", Description = "index of the app", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Index { get; set; }
+	}
+
     [Route("/user/current/apps/search", "GET", Summary = "search for thematic apps", Notes = "")]
     public class ThematicAppCurrentUserSearchRequestTep : IReturn<List<HttpResult>> { 
 		[ApiMember(Name = "cache", Description = "uses cached apps", ParameterType = "query", DataType = "bool", IsRequired = false)]
