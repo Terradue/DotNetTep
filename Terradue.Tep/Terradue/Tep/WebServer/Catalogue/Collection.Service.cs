@@ -116,7 +116,7 @@ namespace Terradue.Tep.WebServer.Services {
                             activity.Store();
                             break;
                         case "private":
-                            serie.GrantPermissionsToAll();
+							serie.RevokePermissionsFromAll(true, false);
                             break;
                         default:
                             break;

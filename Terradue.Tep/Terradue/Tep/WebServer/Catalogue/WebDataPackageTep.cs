@@ -78,7 +78,10 @@ namespace Terradue.Tep.WebServer {
     }
 
     [Route("/data/package", "PUT", Summary = "PUT a datapackage", Notes = "Update a datapackage in database")]
-    public class DataPackageUpdateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}
+    public class DataPackageUpdateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{
+		[ApiMember(Name = "access", Description = "Define if the data package shall be public or private", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Access { get; set; }
+	}
 
     [Route("/data/package/export", "PUT", Summary = "PUT a datapackage", Notes = "export a datapackage as series")]
     public class DataPackageExportRequestTep : WebDataPackageTep, IReturn<WebSeries>{}

@@ -288,8 +288,24 @@ namespace Terradue.Tep.WebServer.Services
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
                 else throw new Exception("Undefined data package, set at least Id or Identifier");
 
-                tmp = (DataPackage)request.ToEntity(context, tmp);
-				tmp.Store();
+				if (request.Access != null) {
+                    switch (request.Access) {
+                        case "public":
+							tmp.GrantPermissionsToAll();
+							Activity activity = new Activity(context, tmp, EntityOperationType.Share);
+                            activity.Store();
+                            break;
+                        case "private":
+							tmp.RevokePermissionsFromAll(true, false);                     
+                            break;
+                        default:
+                            break;
+                    }
+                } else {
+					tmp = (DataPackage)request.ToEntity(context, tmp);
+                    tmp.Store();
+                }
+    
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
