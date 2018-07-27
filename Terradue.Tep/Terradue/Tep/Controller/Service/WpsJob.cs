@@ -696,7 +696,6 @@ namespace Terradue.Tep {
             if (string.IsNullOrEmpty(url)) url = GetResultMetadatadUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultHtmlUrl(execResponse);
             if (string.IsNullOrEmpty(url)) url = GetResultMetalinkUrl(execResponse);
-            if (string.IsNullOrEmpty(url)) throw new Exception("Unable to get wpsjob result url");
             return url;
         }
 
