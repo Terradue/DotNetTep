@@ -593,8 +593,13 @@ namespace Terradue.Tep.WebServer.Services {
 
                     execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
-                    //get job recast response
-                    execResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
+					//get job recast response
+					try {
+						var recastResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
+						execResponse = recastResponse;
+					}catch(Exception e){
+						context.LogError(this, e.Message);
+					}
                 }
                 Uri uri = new Uri(execResponse.serviceInstance);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;

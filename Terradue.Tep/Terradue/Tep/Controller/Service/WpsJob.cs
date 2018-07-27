@@ -562,7 +562,9 @@ namespace Terradue.Tep {
                         return execResponse;
                     }
                     throw new WpsProxyException("Error proxying Status location", we);
-                }
+				}catch(Exception e){
+					context.LogError(this, string.Format(e.Message));
+				}
 
                 // Deserialization
                 try {
