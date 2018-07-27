@@ -158,6 +158,7 @@ namespace Terradue.Tep {
             if(wpsjob.Status == WpsJobStatus.COORDINATOR){
                 log.DebugFormat("GetWpsjobRecastResponse -- Status is Coordinator");
                 var resultUrl = WpsJob.GetResultUrl(execResponse);
+				if(resultUrl == null) return UpdateProcessOutputs(context, execResponse, wpsjob); 
                 wpsjob.StatusLocation = resultUrl;
                 wpsjob.Store();
                 return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
@@ -176,6 +177,7 @@ namespace Terradue.Tep {
 			
 			if (execResponse.Status.Item is ProcessSucceededType) {
 				var resultUrl = WpsJob.GetResultUrl(execResponse);
+				if (resultUrl == null) return UpdateProcessOutputs(context, execResponse, wpsjob);
 				var url = new Uri(resultUrl);
 
 				System.Text.RegularExpressions.Regex r;
@@ -307,7 +309,11 @@ namespace Terradue.Tep {
 
             var statusurl = wpsjob.StatusLocation;
             var url = new Uri(statusurl);
-            if (url.Host == new Uri(catalogBaseUrl).Host) {
+			bool statusNotOpensearchable = 
+				!(url.Host == new Uri(recastBaseUrl).Host) &&
+				!statusurl.Contains("/search") &&
+				!statusurl.Contains("/description");
+			if (url.Host == new Uri(catalogBaseUrl).Host || statusNotOpensearchable) {
                 statusurl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
             }
 
