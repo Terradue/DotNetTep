@@ -629,9 +629,14 @@ namespace Terradue.Tep {
                 string url = null;
                 //Get result Url
                 if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
-                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
-                    var reference = item.Reference as OutputReferenceType;
-                    return reference.href;
+					if (((DataType)(po.Item)).Item is ComplexDataType) {
+						var item = ((DataType)(po.Item)).Item as ComplexDataType;
+						var reference = item.Reference as OutputReferenceType;
+						return reference.href;
+					} else if (((DataType)(po.Item)).Item is LiteralDataType) { 
+						var item = ((DataType)(po.Item)).Item as LiteralDataType;
+						return item.Value;
+					}
                 } else if (po.Item is OutputReferenceType) {
                     var reference = po.Item as OutputReferenceType;
                     return reference.href;
