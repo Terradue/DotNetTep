@@ -14,28 +14,31 @@ using Terradue.Portal;
 using Terradue.OpenSearch.Request;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal.OpenSearch;
+using System.Collections.Generic;
 
 namespace Terradue.Tep {
 
     public class UrlBasedOpenSearchable : IOpenSearchable {
         IfyContext context;
         IOpenSearchable entity;
-        OpenSearchEngine ose;
         OpenSearchUrl url;
         OpenSearchDescription osd;
+        OpenSearchableFactorySettings settings;
 
-        public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchEngine ose) {
+        public IEnumerable<IOpenSearchResultItem> Items;
+
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchUrl url, OpenSearchableFactorySettings settings) {
 
             this.context = context;
             this.url = url;
-            this.ose = ose;
+            this.settings = settings;
 
         }
 
-        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchEngine ose) {
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchableFactorySettings settings) {
             this.context = context;
             this.osd = osd;
-            this.ose = ose;
+            this.settings = settings;
         }
 
         public IOpenSearchable Entity {
@@ -47,6 +50,8 @@ namespace Terradue.Tep {
 
                         if (match.Success) {
 
+                            var ose = settings.OpenSearchEngine;
+
                             if (match.Groups[1].Value == "/data/collection") {
                                 string seriesId = match.Groups[2].Value;
                                 Series ds = Series.FromIdentifier(context, seriesId);
@@ -54,45 +59,60 @@ namespace Terradue.Tep {
                             }
 
                             if (match.Groups[1].Value == "/data/package") {
-//                                string datapackageId = match.Groups[2].Value;
-//                                DataPackage dp = DataPackage.FromIdentifier(context, datapackageId);
-//                                entity = dp;
                                 EntityList<DataPackage> list = new EntityList<DataPackage>(context);
-                                list.Load();
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 
                             if (match.Groups[1].Value == "/service/wps") {
-//                                string wpsId = match.Groups[2].Value;
-//                                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, wpsId);
-                                EntityList<WpsProcessOffering> list = new EntityList<WpsProcessOffering>(context);
-                                list.Load();
-//                                list.Include(wps);
-                                entity = list;
+								//EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+								//CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+								//var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+								//MultiGenericOpenSearchable list = new MultiGenericOpenSearchable(entities, ose);
+								//IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+								//entity = list;
+								EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+								wpsProcesses.SetFilter("Available", "true");
+								wpsProcesses.OpenSearchEngine = ose;
+                                CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+								wpsOneProcesses.OpenSearchEngine = ose;
+								wpsProcesses.Identifier = "service/wps";
+								var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+
+                                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
+                                IOpenSearchResultCollection osr = ose.Query(multiOSE, url.SearchAttributes);
+                                entity = multiOSE;
+                                Items = osr.Items;
                             }
 
                             if (match.Groups[1].Value == "/cr/wps") {
-//                                string wpsId = match.Groups[2].Value;
-//                                WpsProvider wps = (WpsProvider)WpsProvider.FromIdentifier(context, wpsId);
                                 EntityList<WpsProvider> list = new EntityList<WpsProvider>(context);
-                                list.Load();
-//                                list.Include(wps);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 
                             if (match.Groups[1].Value == "/job/wps") {
-//                                string jobId = match.Groups[2].Value;
-//                                WpsJob job = WpsJob.FromIdentifier(context, jobId);
                                 EntityList<WpsJob> list = new EntityList<WpsJob>(context);
-                                list.Load();
-//                                list.Include(job);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+                                entity = list;
+                            }
+
+                            if (match.Groups[1].Value == "/user") {
+                                EntityList<UserTep> list = new EntityList<UserTep>(context);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+                                entity = list;
+                            }
+
+                            if (match.Groups[1].Value == "/community") {
+                                EntityList<ThematicCommunity> list = new EntityList<ThematicCommunity>(context);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
                                 entity = list;
                             }
 
                         }
 
                     }
-                    if (entity == null) entity = new SmartGenericOpenSearchable(url, ose);
+                    if (entity == null) entity = OpenSearchFactory.FindOpenSearchable(settings, new OpenSearchUrl(url));
                 }
                 return entity;
             }
@@ -114,14 +134,13 @@ namespace Terradue.Tep {
 
         #region IOpenSearchable implementation
 
-        public OpenSearchRequest Create (QuerySettings querySettings, NameValueCollection parameters)
-        {
-            NameValueCollection nvc = new NameValueCollection (parameters);
-            NameValueCollection query = HttpUtility.ParseQueryString (url.Query);
+        public OpenSearchRequest Create(QuerySettings querySettings, NameValueCollection parameters) {
+            NameValueCollection nvc = new NameValueCollection(parameters);
+            NameValueCollection query = HttpUtility.ParseQueryString(url.Query);
             foreach (var key in query.AllKeys) {
-                nvc.Set (key, query [key]);
+                nvc.Set(key, query[key]);
             }
-            return Entity.Create (querySettings, nvc);
+            return Entity.Create(querySettings, nvc);
         }
 
         public QuerySettings GetQuerySettings(OpenSearchEngine ose) {
@@ -174,6 +193,7 @@ namespace Terradue.Tep {
                 if (IsProduct) return 1;
                 NameValueCollection nvc = new NameValueCollection();
                 nvc.Set("count", "0");
+                var ose = settings.OpenSearchEngine;
                 IOpenSearchResultCollection osr = ose.Query(Entity, nvc, typeof(AtomFeed));
                 AtomFeed feed = (AtomFeed)osr;
                 try {
@@ -199,20 +219,20 @@ namespace Terradue.Tep {
     public class UrlBasedOpenSearchableFactory : IOpenSearchableFactory {
         IfyContext context;
 
-        OpenSearchEngine ose;
-
-        public UrlBasedOpenSearchableFactory(IfyContext context, OpenSearchEngine ose){
-            this.ose = ose;
+        public UrlBasedOpenSearchableFactory(IfyContext context, OpenSearchableFactorySettings settings){
             this.context = context;
+            Settings = (OpenSearchableFactorySettings)settings.Clone();
         }
+
+        public OpenSearchableFactorySettings Settings { get; private set; }
 
         #region IOpenSearchableFactory implementation
         public IOpenSearchable Create(OpenSearchUrl url) {
-            return new UrlBasedOpenSearchable(context, url, ose);
+            return new UrlBasedOpenSearchable(context, url, Settings);
         }
 
         public IOpenSearchable Create(OpenSearchDescription osd) {
-            return new UrlBasedOpenSearchable(context, osd, ose);
+            return new UrlBasedOpenSearchable(context, osd, Settings);
         }
         #endregion
     }

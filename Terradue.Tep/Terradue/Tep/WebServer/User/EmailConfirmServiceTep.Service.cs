@@ -27,7 +27,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Get(ConfirmUserEmail request) {
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             // Let's try to open context
             try {
                 context.LogInfo(this,string.Format("/user/emailconfirm GET"));
@@ -65,12 +65,16 @@ namespace Terradue.Tep.WebServer.Services {
                     context.LogDebug(this,string.Format("User now logged -- Email confirmed"));
 
                     //send an email to Support to warn them
-                    string emailFrom = context.GetConfigValue("MailSenderAddress");
-                    string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
-                    string body = context.GetConfigValue ("EmailConfirmedNotification");
-                    body = body.Replace ("$(USERNAME)", umssoUser.Username);
-                    body = body.Replace ("$(EMAIL)", umssoUser.Email);
-                    context.SendMail(emailFrom, emailFrom, subject, body);
+                    try {
+                        string emailFrom = context.GetConfigValue("MailSenderAddress");
+                        string subject = string.Format("[{0}] - Email verification for user {1}", context.GetConfigValue("SiteName"), umssoUser.Username);
+                        string body = context.GetConfigValue("EmailConfirmedNotification");
+                        body = body.Replace("$(USERNAME)", umssoUser.Username);
+                        body = body.Replace("$(EMAIL)", umssoUser.Email);
+                        context.SendMail(emailFrom, emailFrom, subject, body);
+                    } catch (Exception e1) { 
+                        context.LogError(this, e1.Message);
+                    }
                 } else {
                     context.LogError(this, e.Message);
                     throw e;
@@ -88,7 +92,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(SendUserEmailConfirmationEmail request) {
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 
             try {
                 context.Open();
@@ -115,8 +119,7 @@ namespace Terradue.Tep.WebServer.Services {
                 string subject = context.GetConfigValue("RegistrationMailSubject");
                 subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
 
-                string activationToken = context.GetQueryStringValue(String.Format("SELECT token FROM usrreg WHERE id_usr={0};", umssoUser.Id));
-                string confirmUrl = context.GetConfigValue("EmailConfirmationUrl").Replace("$(BASEURL)", context.HostUrl).Replace("$(TOKEN)", activationToken);
+                string confirmUrl = context.GetConfigValue("EmailConfirmationUrl").Replace("$(BASEURL)", context.GetConfigValue("BaseUrl")).Replace("$(TOKEN)", umssoUser.ActivationToken);
                 string body = context.GetConfigValue("RegistrationMailBody");
                 body = body.Replace("$(USERNAME)", umssoUser.Username);
                 body = body.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));

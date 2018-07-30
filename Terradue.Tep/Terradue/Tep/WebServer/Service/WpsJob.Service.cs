@@ -11,6 +11,10 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.Linq;
+using System.Net;
+using OpenGis.Wps;
+using Terradue.Tep.OpenSearch;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -19,18 +23,15 @@ namespace Terradue.Tep.WebServer.Services {
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class WpsJobServiceTep : ServiceStack.ServiceInterface.Service {
 
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
-            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         public object Get(WpsJobsGetRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<WebWpsJobTep> result = new List<WebWpsJobTep>();
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/job/wps GET"));
 
                 EntityList<WpsJob> services = new EntityList<WpsJob>(context);
-                if(context.UserLevel != UserLevel.Administrator) services.OwnedItemsOnly = true;
+                if(context.UserLevel != UserLevel.Administrator) services.ItemVisibility = EntityItemVisibility.OwnedOnly;
                 services.Load();
 
                 foreach (WpsJob job in services) {
@@ -48,10 +49,11 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(WpsJobGetOneRequestTep request){
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebWpsJobTep result = new WebWpsJobTep();
             try {
                 context.Open();
+                context.ConsoleDebug = true;
                 context.LogInfo(this,string.Format("/job/wps/{{Id}} GET Id='{0}'", request.Id));
 
                 WpsJob job = WpsJob.FromId(context, request.Id);
@@ -69,19 +71,11 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(WpsJobSearchRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            object result;
             context.Open();
             context.LogInfo(this,string.Format("/job/wps/search GET"));
 
-            EntityList<WpsJob> tmp = new EntityList<WpsJob>(context);
-            tmp.Load();
-
-            List<WpsJob> jobs = tmp.GetItemsAsList();
-            jobs.Sort();
-            jobs.Reverse();
-
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            foreach (WpsJob job in jobs) wpsjobs.Include(job);
+            wpsjobs.AddSort("Id", SortDirection.Descending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
@@ -93,6 +87,10 @@ namespace Terradue.Tep.WebServer.Services {
                 format = "atom";
             else
                 format = Request.QueryString["format"];
+
+            if(Request.QueryString["visibility"] != null && Request.QueryString["visibility"] != "all"){
+                wpsjobs.AccessLevel = EntityAccessLevel.Privilege;
+            }
 
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
             IOpenSearchResultCollection osr = ose.Query(wpsjobs, httpRequest.QueryString, responseType);
@@ -125,15 +123,152 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
-        public object Post(WpsJobCreateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+        public object Get (WpsJobProductSearchRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             HttpResult result = null;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/{0}/products/search GET", request.JobId));
+
+                WpsJob wpsjob = null;
+
+				try {
+					wpsjob = WpsJob.FromIdentifier(context, request.JobId);
+				} catch (Exception e) {
+					if (request.Key != null){//or if public
+						context.AccessLevel = EntityAccessLevel.Administrator;
+						wpsjob = WpsJob.FromIdentifier(context, request.JobId);
+						if (request.Key != null && !request.Key.Equals(wpsjob.AccessKey))
+							throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);
+                    } else throw e;
+				}
+
+                OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                HttpRequest httpRequest = HttpContext.Current.Request;
+                var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+                var nvc = httpRequest.QueryString;
+
+                if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
+
+                    //get credentials from current user
+                    if (context.UserId != 0) {
+                        var user = UserTep.FromId(context, context.UserId);
+                        var apikey = user.GetSessionApiKey();
+                        var t2userid = user.TerradueCloudUsername;
+                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                    }
+                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), specsettings);
+                    var res = ose.Query(urlToShare, nvc, type);
+                    result = new HttpResult(res.SerializeToString(), res.ContentType);
+                } else {
+
+                    WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);
+
+                    //var nvc = wpsjobUrl.GetParameters ();
+                    var res = ose.Query(wpsjobProductOs, nvc, type);
+                    OpenSearchFactory.ReplaceSelfLinks(wpsjobProductOs, httpRequest.QueryString, res, EntrySelfLinkTemplate);
+                    OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobProductOs, res);
+                    result = new HttpResult(res.SerializeToString(), res.ContentType);
+                }
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        string EntrySelfLinkTemplate(IOpenSearchResultItem item, OpenSearchDescription osd, string mimeType) {
+            string identifier = item.Identifier;
+            return EntrySelfLinkTemplate(identifier, osd, mimeType);
+        }
+
+        string EntrySelfLinkTemplate(string identifier, OpenSearchDescription osd, string mimeType) {
+            if (identifier == null)
+                return null;
+            NameValueCollection nvc = OpenSearchFactory.GetOpenSearchParameters(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType));
+            nvc.Set("uid", string.Format("{0}", identifier));
+            nvc.AllKeys.FirstOrDefault(k => {
+                if (nvc[k] == "{geo:uid?}")
+                    nvc[k] = identifier;
+                var matchParamDef = System.Text.RegularExpressions.Regex.Match(nvc[k], @"^{([^?]+)\??}$");
+                if (matchParamDef.Success)
+                    nvc.Remove(k);
+                return false;
+            });
+            UriBuilder template = new UriBuilder(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType).Template);
+            string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
+            template.Query = string.Join("&", queryString);
+            return template.ToString();
+        }
+
+        public object Get (WpsJobProductDescriptionRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            HttpResult result = null;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/job/wps/{0}/products/description GET", request.JobId));
+
+                WpsJob wpsjob = WpsJob.FromIdentifier(context, request.JobId);
+
+                OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                HttpRequest httpRequest = HttpContext.Current.Request;
+
+                OpenSearchDescription osd;
+
+                if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
+
+                    //get credentials from current user
+                    if (context.UserId != 0) {
+                        var user = UserTep.FromId(context, context.UserId);
+                        var apikey = user.GetSessionApiKey();
+                        var t2userid = user.TerradueCloudUsername;
+                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                    }
+                    GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), specsettings);
+                    osd = urlToShare.GetOpenSearchDescription();
+                    var oldUri = new UriBuilder(osd.DefaultUrl.Template);
+                    var newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");
+                    newUri.Query = oldUri.Query.TrimStart("?".ToCharArray());
+                    osd.DefaultUrl.Template = HttpUtility.UrlDecode(newUri.Uri.AbsoluteUri);
+                    foreach (var url in osd.Url) {
+                        oldUri = new UriBuilder(url.Template);
+                        newUri = new UriBuilder(context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/search");
+                        newUri.Query = oldUri.Query.TrimStart("?".ToCharArray());
+                        url.Template = HttpUtility.UrlDecode(newUri.Uri.AbsoluteUri);
+                    }
+                } else {
+                    WpsJobProductOpenSearchable wpsjobProductOs = new WpsJobProductOpenSearchable(wpsjob, context);    
+                    osd = wpsjobProductOs.GetProxyOpenSearchDescription();
+                }
+
+                result = new HttpResult (osd, "application/opensearchdescription+xml");
+
+                context.Close ();
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Post(WpsJobCreateRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
             try{
                 job.Store();
-            }catch(DuplicateEntityIdentifierException e){
+            }catch(DuplicateEntityIdentifierException){
                 job = WpsJob.FromIdentifier(context, request.Identifier);
                 job.Name = request.Name;
                 job.Store();
@@ -145,7 +280,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogDebug(this,string.Format("WpsJob '{0}' created",job.Name));
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            wpsjobs.OwnedItemsOnly = true;
+            wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             wpsjobs.Load();
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
@@ -169,8 +304,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(WpsJobUpdateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            HttpResult result = null;
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
             context.LogInfo(this,string.Format("/job/wps PUT Id='{0}'",request.Id));
 
@@ -184,7 +318,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-            wpsjobs.OwnedItemsOnly = true;
+            wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             wpsjobs.Load();
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
@@ -208,7 +342,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(WpsJobDeleteRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             bool result = false;
             try {
                 context.Open();
@@ -228,22 +362,6 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool(result);
         }
 
-        public static string EntrySelfLinkTemplate(IOpenSearchResultItem item, OpenSearchDescription osd, string mimeType) {
-            if (item == null)
-                return null;
-
-            string identifier = item.Identifier;
-
-            NameValueCollection nvc = new NameValueCollection();
-
-            nvc.Set("id", string.Format("{0}", item.Identifier));
-
-            UriBuilder template = new UriBuilder(OpenSearchFactory.GetOpenSearchUrlByType(osd, mimeType).Template);
-            string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
-            template.Query = string.Join("&", queryString);
-            return template.ToString();
-        }
-
         /// <summary>
         /// Get the specified request.
         /// </summary>
@@ -258,7 +376,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
-                List<int> ids = job.GetGroupsWithPrivileges();
+                var gids = job.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -288,7 +407,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group POST jobId='{0}',Id='{1}'",request.JobId, request.Id));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
-                List<int> ids = wps.GetGroupsWithPrivileges();
+                var gids = wps.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -296,8 +416,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach(Group grp in groups){
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
-
-                wps.StorePrivilegesForGroups(new int[]{request.Id});
+                wps.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
@@ -320,10 +439,10 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/job/wps/{{jobId}}/group PUT jobId='{0}',Id='{1}'",request.JobId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 WpsJob wps = WpsJob.FromIdentifier(context, request.JobId);
 
-                string sql = String.Format("DELETE FROM wpsjob_priv WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
+                string sql = String.Format("DELETE FROM wpsjob_perm WHERE id_wpsjob={0} AND id_grp IS NOT NULL;",wps.Id);
                 context.Execute(sql);
 
-                wps.StorePrivilegesForGroups(request.ToArray());
+                wps.GrantPermissionsToGroups(request.ToArray());
 
                 context.Close();
             } catch (Exception e) {
@@ -349,7 +468,7 @@ namespace Terradue.Tep.WebServer.Services {
                 WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM wpjob_priv WHERE id_wpsjob={0} AND id_grp={1};",request.JobId, job.Id);
+                string sql = String.Format("DELETE FROM wpjob_perm WHERE id_wpsjob={0} AND id_grp={1};",request.JobId, job.Id);
                 context.Execute(sql);
 
                 context.Close();
@@ -368,20 +487,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/job/wps/copy PUT Id='{0}'", request.Id));
 
-                WpsJob job = WpsJob.FromId (context, request.Id);
-
-                WpsJob newjob = new WpsJob (context);
-                newjob.OwnerId = context.UserId;
-                newjob.UserId = context.UserId;
-                newjob.Identifier = Guid.NewGuid().ToString();
-                newjob.StatusLocation = job.StatusLocation;
-                newjob.Parameters = job.Parameters;
-                newjob.CreatedTime = job.CreatedTime;
-                newjob.Name = job.Name;
-                newjob.ProcessId = job.ProcessId;
-                newjob.RemoteIdentifier = job.RemoteIdentifier;
-                newjob.WpsId = job.WpsId;
-                newjob.Store ();
+                WpsJob job = WpsJob.FromIdentifier (context, request.Identifier);
+                WpsJob newjob = WpsJob.Copy(job, context);
 
                 context.Close ();
             } catch (Exception e) {
@@ -390,6 +497,57 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return new WebResponseBool (true);
+        }
+
+        public object Post (WpsJobSendContactEmailRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/contact POST identifier='{0}', subject='{1}', body='{2}'", 
+                                                    request.JobId, request.Subject, request.Body));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+
+                //user must be the owner of the job
+                if (context.UserId != job.OwnerId) throw new Exception("Sorry, you must be the owner of the job to contact the service provider for job analysis.");
+
+                if (job.Provider == null) throw new Exception("Unable to find WPS Provider contact");
+                var contact = job.ExtractProviderContact(job.Provider.Contact);
+
+                //send email from job's owner to mailto
+                context.SendMail(job.Owner.Email, contact, request.Subject, request.Body);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        public object Post(WpsJobSendSupportEmailRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/support POST identifier='{0}', subject='{1}', body='{2}'",
+                                                    request.JobId, request.Subject, request.Body));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+
+                //user must be the owner of the job
+                if (context.UserId != job.OwnerId) throw new Exception("Sorry, you must be the owner of the job to contact the support for job analysis.");
+
+                //send email from job's owner to mailto
+                context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
         }
 
     }

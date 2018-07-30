@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Web;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using Terradue.OpenNebula;
+using Terradue.OpenSearch;
+using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch.Result;
+using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
@@ -24,13 +29,12 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetRequestTep request) {
             WebUserTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{Id}} GET Id='{0}'", request.Id));
                 UserTep user = UserTep.FromId(context, request.Id);
-                result = 
-                    new WebUserTep(context, user);
+                result = new WebUserTep(context, user);
 
                 context.Close();
             } catch (Exception e) {
@@ -50,18 +54,19 @@ namespace Terradue.Tep.WebServer.Services {
             WebUserTep result;
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
-                log.DebugFormat ("/user/current GET -- before context open");
                 context.Open();
-                context.LogInfo(this,string.Format("/user/current GET"));
+                context.LogInfo(this, string.Format("/user/current GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
-                log.DebugFormat ("/user/current GET -- after user load");
-                result = new WebUserTep(context, user, request.umsso);
-                log.DebugFormat ("/user/current GET -- after webuser load");
+                try {
+                    user.PrivateSanityCheck();//we do it here, because we do not want to do on each Load(), and we are sure users always pass by here
+                }catch(Exception e){
+                    context.LogError(this, e.Message);
+                }
+                result = new WebUserTep(context, user, true);
                 context.Close();
-                log.DebugFormat ("/user/current GET -- after context close");
             } catch (Exception e) {
-                context.LogError(this, e.Message);
-                context.Close();
+				context.LogError(this, e.Message);
+				context.Close();
                 throw e;
             }
             return result;
@@ -78,7 +83,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/current/sso GET"));
                 UserTep user = UserTep.FromId(context, context.UserId);
-                user.FindTerradueCloudUsername();
+                //user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -96,7 +101,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/sso/{{Id}} GET Id='{0}'", request.Id));
                 UserTep user = UserTep.FromId(context, request.Id);
-                user.FindTerradueCloudUsername();
+                //user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -152,12 +157,12 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetPublicProfileRequestTep request) {
             WebUserProfileTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/{{id}}/public GET Id='{0}'", request.id));
-                context.RestrictedMode = false;
-                UserTep user = UserTep.GetPublicUser(context, request.id);
+                context.LogInfo(this,string.Format("/user/{{id}}/public GET Id='{0}'", request.identifier));
+                context.AccessLevel = EntityAccessLevel.Administrator;
+                UserTep user = UserTep.GetPublicUser(context, request.identifier);
                 result = new WebUserProfileTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -198,7 +203,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetPublicProfilesRequestTep request) {
             List<WebUserProfileTep> result = new List<WebUserProfileTep>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/public GET"));
@@ -220,15 +225,15 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the users</returns>
         public object Get(GetUsers request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            List<WebUser> result = new List<WebUser>();
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			List<WebUser> result = new List<WebUser>();
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user GET"));
 
-                EntityList<User> users = new EntityList<User>(context);
+				EntityList<User> users = new EntityList<User>(context);
                 users.Load();
-                foreach(User u in users) result.Add(new WebUser(u));
+				foreach (User u in users) result.Add(new WebUser(u));
 
                 context.Close();
             } catch (Exception e) {
@@ -245,7 +250,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the user</returns>
         public object Put(UserUpdateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebUserTep result;
             try {
                 context.Open();
@@ -312,7 +317,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(UserCreateRequestTep request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             WebUserTep result;
             try{
                 context.Open();
@@ -344,15 +349,15 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post (UserCreateApiKeyRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
             WebUserTep result;
             try {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/user/key POST Id='{0}'", context.UserId));
 
                 UserTep user = UserTep.FromId (context, context.UserId);
-                user.GenerateApiKey ();
-                user.Store ();
+                //user.GenerateApiKey ();
+                //user.Store ();
                 
                 result = new WebUserTep (context, user);
                 context.Close ();
@@ -366,7 +371,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Delete (UserDeleteApiKeyRequestTep request)
         {
-            var context = TepWebContext.GetWebContext (PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
             WebUserTep result;
             try {
                 context.Open ();
@@ -416,6 +421,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/current/logstatus GET"));
+				UserTep.UpdateUserSessionEndTime(context, context.UserId);
             } catch (Exception e) {
                 return new WebResponseBool(false);
             }
@@ -426,7 +432,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetUsageRequestTep request){
             List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{id}}/usage GET id='{0}'", request.Id));
@@ -462,6 +468,57 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return result;
+        }
+
+        public object Get (UserSearchRequest request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
+            context.Open ();
+            context.LogInfo (this, string.Format ("/user/search GET"));
+
+            EntityList<UserTep> users = new EntityList<UserTep> (context);
+            users.AddSort("Identifier", SortDirection.Ascending);
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            string format;
+            if (Request.QueryString ["format"] == null)
+                format = "atom";
+            else
+                format = Request.QueryString ["format"];
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (users, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (users, osr);
+
+            context.Close ();
+            return new HttpResult (osr.SerializeToString (), osr.ContentType);
+        }
+
+        public object Get (UserDescriptionRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/user/description GET"));
+
+                EntityList<UserTep> users = new EntityList<UserTep> (context);
+                users.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+
+                OpenSearchDescription osd = users.GetOpenSearchDescription ();
+
+                context.Close ();
+
+                return new HttpResult (osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
+                throw e;
+            }
         }
 
     }

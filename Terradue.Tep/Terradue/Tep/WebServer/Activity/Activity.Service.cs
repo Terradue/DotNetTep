@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -14,12 +15,20 @@ namespace Terradue.Tep.WebServer.Services {
     
     [Route("/activity/search", "GET", Summary = "GET activity as opensearch", Notes = "")]
     public class ActivitySearchRequestTep : IReturn<HttpResult>{
-        [ApiMember(Name="nologin", Description = "get login activities", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        [ApiMember(Name="nologin", Description = "dont get login activities", ParameterType = "query", DataType = "bool", IsRequired = false)]
         public bool nologin { get; set; }
     }
 
     [Route("/activity/description", "GET", Summary = "GET activity description", Notes = "")]
     public class ActivityDescriptionRequestTep : IReturn<HttpResult>{}
+
+    [Route ("/community/{domain}/activity/search", "GET", Summary = "search activities per community", Notes = "")]
+    public class ActivityByCommunitySearchRequestTep : IReturn<List<HttpResult>>
+    {
+        [ApiMember (Name = "domain", Description = "identifier of the domain", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Domain { get; set; }
+    }
+
 
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
@@ -31,43 +40,87 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(ActivitySearchRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             context.Open();
             context.LogInfo(this,string.Format("/activity/search GET nologin='{0}'", request.nologin));
 
-            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
-
-            EntityList<Activity> activities = new EntityList<Activity>(context);
-            activities.Load();
-
-            List<Activity> tmplist = new List<Activity>();
-            tmplist = activities.GetItemsAsList();
-            tmplist.Sort();
-            tmplist.Reverse();
-
-            activities = new EntityList<Activity>(context);
-            activities.Identifier = "activity";
-            foreach (Activity item in tmplist) {
-                if(!request.nologin || (item.Privilege.EntityTypeId != EntityType.GetEntityTypeFromKeyword("users").Id && !item.Privilege.Operation.Equals("l")))
-                    activities.Include(item);
-            }
-            osentities.Add(activities);
+            EntityList<ActivityTep> activities = new EntityList<ActivityTep>(context);
+            activities.AddSort("CreationTime", SortDirection.Descending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
-
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
+            IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
 
-            multiOSE.Identifier = "activity";
+            activities.Identifier = "activity";
 
-            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(multiOSE, osr);
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(activities, osr);
 
             context.Close();
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
+        }
+
+        public object Get (ActivityByCommunitySearchRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.UserView);
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            context.Open ();
+            context.LogInfo (this, string.Format ("/community/{{community}}/activity/search GET - community='{0}'", request.Domain));
+
+            ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Domain);
+
+            //We only want some Privileges
+            var privlist = new List<int> ();
+
+            var privs = Privilege.Get (EntityType.GetEntityType (typeof (WpsJob)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+
+            privs = Privilege.Get (EntityType.GetEntityType (typeof (DataPackage)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+
+            privs = Privilege.Get (EntityType.GetEntityType (typeof (Series)));
+            foreach (var priv in privs) privlist.Add (priv.Id);
+
+            EntityList<ActivityTep> activities = new EntityList<ActivityTep> (context);
+            activities.AddSort ("CreationTime", SortDirection.Descending);
+            activities.SetFilter ("PrivilegeId", string.Join (",", privlist));
+            activities.SetFilter ("DomainId",domain.Id.ToString());
+            activities.Identifier = "activity";
+            activities.Load ();
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            // the opensearch cache system uses the query parameters
+            // we add to the parameters the filters added to the load in order to avoir wrong cache
+            // we use 't2-' in order to not interfer with possibly used query parameters
+            var qs = new NameValueCollection(Request.QueryString);
+            foreach (var filter in activities.FilterValues) qs.Set("t2-" + filter.Key.FieldName, filter.Value.ToString());
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (activities, qs, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (activities, osr);
+
+            context.Close ();
+            return new HttpResult (osr.SerializeToString (), osr.ContentType);
+        }
+
+        private IOpenSearchResultCollection GetActivityResultCollection (EntityList<Activity> activities) { 
+            
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (activities, osr);
+
+            return osr;
         }
             
         public object Get(ActivityDescriptionRequestTep request) {
@@ -76,10 +129,10 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/activity/description GET"));
 
-                EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
-                wpsjobs.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+                EntityList<Activity> activities = new EntityList<Activity>(context);
+                activities.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
-                OpenSearchDescription osd = wpsjobs.GetOpenSearchDescription();
+                OpenSearchDescription osd = activities.GetOpenSearchDescription();
 
                 context.Close();
 

@@ -1,45 +1,35 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Web;
-using System.Xml;
-using System.Xml.Linq;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Engine.Extensions;
 using Terradue.OpenSearch.Filters;
 using Terradue.OpenSearch.GeoJson.Extensions;
-using Terradue.OpenSearch.GeoJson.Result;
 using Terradue.OpenSearch.Request;
-using Terradue.OpenSearch.Response;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.ServiceModel.Syndication;
-using Terradue.Util;
-using Terradue.Metadata.EarthObservation;
-
-
-using Terradue.Metadata.EarthObservation.OpenSearch;
 using Terradue.OpenSearch.RdfEO.Extensions;
 
 
 
 
 
-namespace Terradue.Tep
-{
+namespace Terradue.Tep {
 
     /// <summary>
     /// Master catalogue.
     /// </summary>
-    public class MasterCatalogue : IOpenSearchable
-    {
+    public class MasterCatalogue : IOpenSearchable {
 
         private static OpenSearchEngine ose;
+
+        private static OpenSearchableFactorySettings settings;
 
         private static OpenSearchMemoryCache searchCache;
 
@@ -56,7 +46,7 @@ namespace Terradue.Tep
 
         //---------------------------------------------------------------------------------------------------------------------
 
-        public MasterCatalogue(IfyContext context){
+        public MasterCatalogue(IfyContext context) {
             this.context = context;
         }
 
@@ -114,15 +104,44 @@ namespace Terradue.Tep
         }
 
         public OpenSearchDescription GetOpenSearchDescription() {
-            OpenSearchDescription OSDD = GetWebServerOpenSearchDescription();
+            OpenSearchDescription osd = new OpenSearchDescription();
+            osd.ShortName = Identifier;
+            osd.Contact = context.GetConfigValue("CompanyEmail");
+            osd.SyndicationRight = "open";
+            osd.AdultContent = "false";
+            osd.Language = "en-us";
+            osd.OutputEncoding = "UTF-8";
+            osd.InputEncoding = "UTF-8";
+            osd.Developer = "Terradue OpenSearch Development Team";
+            osd.Attribution = context.GetConfigValue("CompanyName");
 
-            OSDD.Url = new OpenSearchDescriptionUrl[1];
-            UriBuilder uri = new UriBuilder(context.BaseUrl);
-            uri.Path += "/data/collection/search";
-            OpenSearchDescriptionUrl osdu = new OpenSearchDescriptionUrl("application/atom+xml", uri.ToString(), "search");
-            OSDD.Url[0] = osdu;
+            List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
 
-            return OSDD;
+            UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
+
+            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self");
+            urls.Add(url);
+
+            urlb = new UriBuilder(GetSearchBaseUrl("application/atom+xml"));
+            NameValueCollection query = GetOpenSearchParameters("application/atom+xml");
+
+            NameValueCollection nvc = HttpUtility.ParseQueryString(urlb.Query);
+            foreach (var key in nvc.AllKeys) {
+                query.Set(key, nvc[key]);
+            }
+
+            foreach (var osee in OpenSearchEngine.Extensions.Values) {
+                query.Set("format", osee.Identifier);
+
+                string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                urlb.Query = string.Join("&", queryString);
+                url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search");
+                urls.Add(url);
+            }
+
+            osd.Url = urls.ToArray();
+
+            return osd;
         }
 
         #region IOpenSearchable implementation
@@ -144,7 +163,33 @@ namespace Terradue.Tep
             }
         }
 
+        public virtual OpenSearchUrl GetSearchBaseUrl(string mimetype) {
+            return new OpenSearchUrl(string.Format("{0}/{1}/search", context.BaseUrl, Identifier));
+        }
 
+        public virtual OpenSearchUrl GetDescriptionBaseUrl() {
+            return new OpenSearchUrl(string.Format("{0}/{1}/description", context.BaseUrl, Identifier));
+        }
+
+        /// <summary>
+        /// Create the specified querySettings and parameters.
+        /// </summary>
+        /// <param name="querySettings">Query settings.</param>
+        /// <param name="parameters">Parameters.</param>
+        public OpenSearchRequest Create(QuerySettings querySettings, NameValueCollection parameters) {
+
+            UriBuilder url = new UriBuilder(context.BaseUrl);
+            url.Path += "/data/collection/";
+            var array = (from key in parameters.AllKeys
+                         from value in parameters.GetValues(key)
+                         select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value)))
+                .ToArray();
+            url.Query = string.Join("&", array);
+
+            AtomOpenSearchRequest request = new AtomOpenSearchRequest(new OpenSearchUrl(url.ToString()), GenerateCatalogueAtomFeed);
+
+            return request;
+        }
         /// <summary>
         /// Gets the open search parameters.
         /// </summary>
@@ -209,11 +254,25 @@ namespace Terradue.Tep
         }
 
         /// <summary>
+        /// Gets the open search factory settings.
+        /// </summary>
+        /// <value>The open search factory settings.</value>
+        public static OpenSearchableFactorySettings OpenSearchFactorySettings{
+            get {
+                if(settings == null){
+                    settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
+                    settings.MergeFilters = Terradue.Metadata.EarthObservation.Helpers.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
+                }
+                return settings;
+            }
+        }
+
+        /// <summary>
         /// Generates the catalogue syndication feed.
         /// </summary>
         /// <param name="stream">Stream.</param>
         /// <param name="parameters">Parameters.</param>
-        public void GenerateCatalogueAtomFeed(Stream stream, NameValueCollection parameters) {
+        public AtomFeed GenerateCatalogueAtomFeed(NameValueCollection parameters) {
             UriBuilder myUrl = new UriBuilder(context.BaseUrl + "/" + Name);
             string[] queryString = Array.ConvertAll(parameters.AllKeys, key => String.Format("{0}={1}", key, parameters[key]));
             myUrl.Query = string.Join("&", queryString);
@@ -265,43 +324,46 @@ namespace Terradue.Tep
 
             feed.Items = items;
 
-            //Atomizable.SerializeToStream ( res, stream.OutputStream );
-            var sw = XmlWriter.Create(stream);
-            Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter(feed.Feed);
-            atomFormatter.WriteTo(sw);
-            sw.Flush();
-            sw.Close();
-
+            return feed;
         }
 
         public static void ProxyOpenSearchResult(IOpenSearchable entity, OpenSearchRequest request, IOpenSearchResultCollection osr) {
 
             if (!(entity is IProxiedOpenSearchable)) return;
 
-            OpenSearchFactory.ReplaceSelfLinks(entity, request, osr, EarthObservationOpenSearchResultHelpers.EntrySelfLinkTemplate);
+            OpenSearchFactory.ReplaceSelfLinks(entity, request, osr, Terradue.Metadata.EarthObservation.OpenSearch.Helpers.OpenSearchParametersHelper.EntrySelfLinkTemplate);
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(entity, osr);                    
 
         }
 
-        /// <summary>
-        /// Create the specified querySettings and parameters.
-        /// </summary>
-        /// <param name="querySettings">Query settings.</param>
-        /// <param name="parameters">Parameters.</param>
-        public OpenSearchRequest Create (QuerySettings querySettings, NameValueCollection parameters)
+        public static OpenSearchMemoryCache SearchCache
         {
-            UriBuilder url = new UriBuilder (context.BaseUrl);
-            url.Path += "/data/collection/";
-            var array = (from key in parameters.AllKeys
-                         from value in parameters.GetValues (key)
-                         select string.Format ("{0}={1}", HttpUtility.UrlEncode (key), HttpUtility.UrlEncode (value)))
-                .ToArray ();
-            url.Query = string.Join ("&", array);
-            MemoryOpenSearchRequest request = new MemoryOpenSearchRequest (new OpenSearchUrl (url.ToString ()), querySettings.PreferredContentType);
-            Stream input = request.MemoryInputStream;
-            GenerateCatalogueAtomFeed (input, parameters);
-            return request;
+            get
+            {
+                return searchCache;
+            }
         }
+
+        public static void ReplaceSelfLinksFormat(IOpenSearchResultCollection result, NameValueCollection queryString) {
+            foreach (IOpenSearchResultItem item in result.Items) {
+                var matchLinks = item.Links.Where(l => l.RelationshipType == "self").ToArray();
+                string self = "";
+                foreach (var link in matchLinks) {
+                    self = link.Uri.AbsoluteUri;
+                    item.Links.Remove(link);
+                }
+
+                if (self != null) {
+                    UriBuilder urib = new UriBuilder(self);
+                    var nvc = HttpUtility.ParseQueryString(urib.Query);
+                    if (queryString["format"] != null) nvc.Set("format", queryString["format"]);
+                    urib.Query = string.Join("&", nvc.AllKeys.Where(key => !string.IsNullOrWhiteSpace(nvc[key])).Select(key => string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(nvc[key]))));
+                    item.Links.Add(new SyndicationLink(urib.Uri, "self", "Reference link", result.ContentType, 0));
+                }
+            }
+
+        }
+
     }
 
 }

@@ -4,6 +4,7 @@ using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.Linq;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -46,7 +47,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(SerieGetRequestTep request) {
             WebDataCollectionTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/data/collection/{{Id}} GET Id='{0}'", request.Id));
@@ -73,12 +74,12 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
 
-                Series serie = new Series(context);
-                serie = request.ToEntity(context, serie);
+                Collection serie = new Collection(context);
+                serie = (Terradue.Tep.Collection)request.ToEntity(context, serie);
                 serie.Store();
-                serie.StoreGlobalPrivileges();
+                serie.GrantPermissionsToAll();
 
-                Activity activity = new Activity(context, serie, OperationPriv.CREATE);
+                Activity activity = new Activity(context, serie, EntityOperationType.Create);
                 activity.Store();
 
                 context.LogInfo(this,string.Format("/data/collection POST Id='{0}'", serie.Id));
@@ -105,25 +106,25 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/data/collection PUT Id='{0}'", request.Id));
 
-                Series serie = Series.FromId(context, request.Id);
+                Collection serie = Collection.FromId(context, request.Id);
 
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":
-                            serie.StoreGlobalPrivileges();
-                            Activity activity = new Activity(context, serie, OperationPriv.MAKE_PUBLIC);
+                            serie.GrantPermissionsToAll();
+                            Activity activity = new Activity(context, serie, EntityOperationType.Share);
                             activity.Store();
                             break;
                         case "private":
-                            serie.RemoveGlobalPrivileges();
+							serie.RevokePermissionsFromAll(true, false);
                             break;
                         default:
                             break;
                     }
                 } else {
-                    serie = request.ToEntity(context, serie);
+                    serie = (Terradue.Tep.Collection)request.ToEntity(context, serie);
                     serie.Store();
-                    Activity activity = new Activity(context, serie, OperationPriv.MODIFY);
+                    Activity activity = new Activity(context, serie, EntityOperationType.Change);
                     activity.Store();
                 }
 
@@ -152,7 +153,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 Series serie = Series.FromId(context, request.Id);
                 serie.Delete();
-                Activity activity = new Activity(context, serie, OperationPriv.DELETE);
+                Activity activity = new Activity(context, serie, EntityOperationType.Delete);
                 activity.Store();
                 context.Close();
             } catch (Exception e) {
@@ -176,7 +177,9 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/data/collection/{{collId}}/group GET collId='{0}'", request.CollId));
 
                 Collection coll = Collection.FromId(context, request.CollId);
-                List<int> ids = coll.GetGroupsWithPrivileges();
+
+                var gids = coll.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -207,7 +210,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 Collection serie = Collection.FromId(context, request.CollId);
 
-                List<int> ids = serie.GetGroupsWithPrivileges();
+                var gids = serie.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -216,7 +220,7 @@ namespace Terradue.Tep.WebServer.Services {
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
 
-                serie.StorePrivilegesForGroups(new int[]{request.Id});
+                serie.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
@@ -232,8 +236,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(CollectionDeleteGroupRequestTep request) {
-            List<WebGroup> result = new List<WebGroup>();
-
+            
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
@@ -242,7 +245,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Series serie = Series.FromId(context, request.CollId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM series_priv WHERE id_series={0} AND id_grp={1};",request.CollId, request.Id);
+                string sql = String.Format("DELETE FROM series_perm WHERE id_series={0} AND id_grp={1};",request.CollId, request.Id);
                 context.Execute(sql);
 
                 context.Close();
@@ -253,6 +256,27 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return new WebResponseBool(true);
         }
+
+		public object Delete(SerieDeleteRequestTep request) {
+			List<WebGroup> result = new List<WebGroup>();
+
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+				context.LogInfo(this, string.Format("/data/collection/{{collId}} DELETE collId='{0}'", request.Identifier));
+
+				Series serie = Series.FromIdentifier(context, request.Identifier);
+                serie.Delete();
+
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(true);
+		}
+
 
     }
 }

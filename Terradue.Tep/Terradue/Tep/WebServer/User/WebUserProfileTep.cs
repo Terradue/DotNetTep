@@ -6,10 +6,10 @@ using Terradue.Tep.WebServer;
 
 namespace Terradue.Tep.WebServer {
     
-    [Route("/user/{id}/public", "GET", Summary = "GET the user public info", Notes = "User is found from id")]
+    [Route("/user/{identifier}/public", "GET", Summary = "GET the user public info", Notes = "User is found from identifier")]
     public class UserGetPublicProfileRequestTep : IReturn<WebUserProfileTep> {
-        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int id { get; set; }
+        [ApiMember(Name = "identifier", Description = "User identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string identifier { get; set; }
     }
 
     [Route("/user/{id}/admin", "GET", Summary = "GET the user", Notes = "User is found from id")]
@@ -61,7 +61,7 @@ namespace Terradue.Tep.WebServer {
             try{
                 var github = Terradue.Github.GithubProfile.FromId(context, this.Id);
                 this.Github = github.Name;
-                this.Gravatar = github.Avatar;
+                this.Gravatar = entity.GetAvatar();
             }catch(Exception){}
             if(String.IsNullOrEmpty(this.Gravatar)) 
                 this.Gravatar = string.Format("http://www.gravatar.com/avatar/{0}", HashEmailForGravatar(string.IsNullOrEmpty(this.Email) ? "" : this.Email));
@@ -70,20 +70,20 @@ namespace Terradue.Tep.WebServer {
             DateTime timel = entity.GetLastLoginDate();
             this.LastLoginDate = (timel == DateTime.MinValue ? null : timel.ToString("U"));
 
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             EntityList<WpsJob> jobs = new EntityList<WpsJob>(context);
             jobs.UserId = this.Id;
-            jobs.OwnedItemsOnly = true;
+            jobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             jobs.Load();
             CreatedJobs = jobs.Count;
 
             EntityList<DataPackage> dp = new EntityList<DataPackage>(context);
             dp.UserId = this.Id;
-            dp.OwnedItemsOnly = true;
+            dp.ItemVisibility = EntityItemVisibility.OwnedOnly;
             dp.Load();
             CreatedDataPackages = dp.Count;
 
-            var dpdefault = DataPackage.GetTemporaryForUser(context, this.Id);
+            var dpdefault = DataPackage.GetTemporaryForUser(context, entity);
             DefaultDataPackageItems = dpdefault.Items.Count;
 
         }

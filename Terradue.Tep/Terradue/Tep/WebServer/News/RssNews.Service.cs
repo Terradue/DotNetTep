@@ -41,7 +41,8 @@ namespace Terradue.Tep.WebServer.Services {
                 EntityList<RssNews> rss = new EntityList<RssNews>(context);
                 rss.Load();
 
-                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(rss.Cast<IOpenSearchable>().ToList(), ose);
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
+                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(rss.Cast<IOpenSearchable>().ToList(), settings);
 
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 
@@ -87,6 +88,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/news/rss GET"));
 
                 EntityList<RssNews> articles = new EntityList<RssNews>(context);
+                context.ConsoleDebug = true;
                 articles.Load();
                 foreach(RssNews article in articles) result.Add(new WebNews(article));
 

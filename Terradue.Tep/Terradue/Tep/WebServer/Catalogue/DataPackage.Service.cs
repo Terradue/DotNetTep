@@ -15,6 +15,7 @@ using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
+using System.Linq;
 
 
 
@@ -96,25 +97,28 @@ namespace Terradue.Tep.WebServer.Services
                 context.StartTransaction();
 
                 if(string.IsNullOrEmpty(request.Identifier) && string.IsNullOrEmpty(request.Name)) throw new Exception("No identifier set");
-                var identifier = !string.IsNullOrEmpty(request.Identifier) ? DataPackage.GenerateIdentifier(request.Identifier) : DataPackage.GenerateIdentifier(request.Name);
+                //var identifier = !string.IsNullOrEmpty(request.Identifier) ? TepUtility.ValidateIdentifier(request.Identifier) : TepUtility.ValidateIdentifier(request.Name);
 
                 if(request.Overwrite && tmp.OwnerId == context.UserId){
-                    tmp = DataPackage.FromIdentifier(context, identifier);
+                    tmp = DataPackage.FromNameAndOwner(context, request.Name, context.UserId);
                     foreach(var res in tmp.Resources){
                         res.Delete();
                     }
                 } else {
                     tmp = (DataPackage)request.ToEntity(context, tmp);
-                    tmp.Identifier = identifier;
+                    //tmp.Identifier = identifier;
                     try{
                         tmp.Store();
                     }catch(DuplicateEntityIdentifierException e){
-                        tmp = DataPackage.FromIdentifier(context, identifier);
-                        if(tmp.OwnerId == context.UserId){
+                        //tmp = DataPackage.FromIdentifier(context, identifier);
+                        //if(tmp.OwnerId == context.UserId){
                             throw new DuplicateNameException(e.Message);
-                        } else {
-                            throw e;
-                        }
+                        //} else {
+                        //    throw e;
+                        //}
+                    }catch(Exception e){
+                        if(e.Message.StartsWith("Duplicate entry")) throw new DuplicateNameException(e.Message);
+                        throw e;
                     }
                 }
   
@@ -169,7 +173,8 @@ namespace Terradue.Tep.WebServer.Services
             try{
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/default/{{userId}} DELETE userId='{0}", request.userId));
-                DataPackage def = DataPackage.GetTemporaryForUser(context, request.userId);
+                User user = User.FromId (context, request.userId);
+                DataPackage def = DataPackage.GetTemporaryForUser(context, user);
 
                 foreach(RemoteResource res in def.Resources){
                     res.Delete();
@@ -195,8 +200,12 @@ namespace Terradue.Tep.WebServer.Services
                 DataPackage def = DataPackage.GetTemporaryForCurrentUser(context);
 
                 foreach(RemoteResource res in def.Resources){
-                    var reqDPUri = new UriBuilder(request.Url.Replace("format=atom", "format=json")).Uri.AbsoluteUri;
-                    var localDPUri = new UriBuilder(res.Location.Replace("format=atom", "format=json")).Uri.AbsoluteUri;
+                    var reqDPUri = new UriBuilder(HttpUtility.UrlDecode(request.Url)).Uri.AbsoluteUri;
+                    var localDPUri = new UriBuilder(HttpUtility.UrlDecode(res.Location)).Uri.AbsoluteUri;
+
+                    reqDPUri = reqDPUri.SetQueryParam("format","atom");
+                    localDPUri = localDPUri.SetQueryParam("format", "atom");
+
                     if(reqDPUri.Equals(localDPUri)){
                         res.Delete();
                         break;
@@ -226,18 +235,31 @@ namespace Terradue.Tep.WebServer.Services
 			try{
 				context.Open();
 
+                var identifier = !string.IsNullOrEmpty(request.Identifier) ? TepUtility.ValidateIdentifier(request.Identifier) : TepUtility.ValidateIdentifier(request.Name);
+
                 DataPackage tmp = new DataPackage(context);
                 tmp = (DataPackage)request.ToEntity(context, tmp);
-                try{
-				    tmp.Store();
-                }catch(DuplicateEntityIdentifierException e){
-                    tmp = DataPackage.FromIdentifier(context, request.Identifier);
-                    if(tmp.OwnerId == context.UserId){
-                        throw new DuplicateNameException(e.Message);
-                    } else {
-                        throw e;
+
+                if (request.Overwrite && tmp.OwnerId == context.UserId) {
+                    tmp = DataPackage.FromIdentifier(context, identifier);
+                    foreach (var res in tmp.Resources) {
+                        res.Delete();
+                    }
+                } else {
+                    tmp = (DataPackage)request.ToEntity(context, tmp);
+                    tmp.Identifier = identifier;
+                    try {
+                        tmp.Store();
+                    } catch (DuplicateEntityIdentifierException e) {
+                        tmp = DataPackage.FromIdentifier(context, identifier);
+                        if (tmp.OwnerId == context.UserId) {
+                            throw new DuplicateNameException(e.Message);
+                        } else {
+                            throw e;
+                        }
                     }
                 }
+
                 result = new WebDataPackageTep(tmp);
                 context.LogInfo(this,string.Format("/data/package POST Id='{0}'", tmp.Id));
 				context.Close ();
@@ -266,8 +288,24 @@ namespace Terradue.Tep.WebServer.Services
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
                 else throw new Exception("Undefined data package, set at least Id or Identifier");
 
-                tmp = (DataPackage)request.ToEntity(context, tmp);
-				tmp.Store();
+				if (request.Access != null) {
+                    switch (request.Access) {
+                        case "public":
+							tmp.GrantPermissionsToAll();
+							Activity activity = new Activity(context, tmp, EntityOperationType.Share);
+                            activity.Store();
+                            break;
+                        case "private":
+							tmp.RevokePermissionsFromAll(true, false);                     
+                            break;
+                        default:
+                            break;
+                    }
+                } else {
+					tmp = (DataPackage)request.ToEntity(context, tmp);
+                    tmp.Store();
+                }
+    
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
@@ -289,19 +327,21 @@ namespace Terradue.Tep.WebServer.Services
             WebDataPackageTep result;
             try{
                 context.Open();
-                context.LogInfo(this,string.Format("/data/package/export PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/data/package/export PUT Id='{0}'", request.Id == 0 ? request.Identifier : request.Id.ToString()));
                 DataPackage tmp;
                 if(request.Id != 0) tmp = DataPackage.FromId(context, request.Id);
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
                 else throw new Exception("Undefined data package, set at least Id or Identifier");
 
-                Series serie = new Series(context);
+                var serie = new Collection(context);
                 serie.Identifier = tmp.Identifier;
                 serie.Name = tmp.Name;
                 var entityType = EntityType.GetEntityType(typeof(DataPackage));
                 var description = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + tmp.Identifier + "/description");
                 description.Query = "key=" + tmp.AccessKey;
                 serie.CatalogueDescriptionUrl = description.Uri.AbsoluteUri;
+                var user = UserTep.FromId(context, context.UserId);
+                serie.Domain = user.Domain;
                 serie.Store();
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
@@ -338,14 +378,11 @@ namespace Terradue.Tep.WebServer.Services
                         tmpres.Location = res.Location;
                         def.AddResourceItem(tmpres);
                     }
+                    ActivityTep activity = new ActivityTep(context, tmp, EntityOperationType.View);
+                    activity.SetParam("items", tmp.Resources.Count + "");
+                    activity.Store();
                 }else{
                     def = (DataPackage)request.ToEntity(context, def);    
-                }
-                def.Store();
-
-                if(!def.IsDefault){ //we dont store activities about the temporary data package
-                    Activity activity = new Activity(context, def, OperationPriv.VIEW);
-                    activity.Store();
                 }
 
                 result = new WebDataPackageTep(def);
@@ -424,11 +461,14 @@ namespace Terradue.Tep.WebServer.Services
 
                 Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request,ose);
 
-                if(!String.IsNullOrEmpty(Request.QueryString["grouped"]) && Request.QueryString["grouped"] == "true"){
-                    result = ose.Query(datapackage, Request.QueryString, responseType);
-                }else{
-                    result = ose.Query(datapackage, Request.QueryString, responseType);
-                }
+                List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+                osentities.AddRange(datapackage.GetOpenSearchableArray());
+
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
+                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
+                result = ose.Query(multiOSE, Request.QueryString, responseType);
+
+                MasterCatalogue.ReplaceSelfLinksFormat(result, Request.QueryString);
 
                 context.Close();
 
@@ -555,7 +595,9 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group GET DpId='{0}'", request.DpId));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
-                List<int> ids = dp.GetGroupsWithPrivileges();
+
+                var gids = dp.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -585,7 +627,8 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group POST DpId='{0}', Id='{1}'", request.DpId, request.Id));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
-                List<int> ids = dp.GetGroupsWithPrivileges();
+                var gids = dp.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -594,7 +637,7 @@ namespace Terradue.Tep.WebServer.Services
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
 
-                dp.StorePrivilegesForGroups(new int[]{request.Id});
+                dp.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
@@ -617,10 +660,10 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/data/package/{{DpId}}/group PUT DpId='{0}', Id='{1}'", request.DpId, request.ToArray() != null ? string.Join(",",request.ToArray()) : "null"));
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
-                string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
+                string sql = String.Format("DELETE FROM resourceset_perm WHERE id_resourceset={0} AND id_grp IS NOT NULL;",dp.Id);
                 context.Execute(sql);
 
-                dp.StorePrivilegesForGroups(request.ToArray());
+                dp.GrantPermissionsToGroups(request.ToArray());
 
                 context.Close();
             } catch (Exception e) {
@@ -645,7 +688,7 @@ namespace Terradue.Tep.WebServer.Services
                 DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_grp={1};",dp.Id, request.Id);
+                string sql = String.Format("DELETE FROM resourceset_perm WHERE id_resourceset={0} AND id_grp={1};",dp.Id, request.Id);
                 context.Execute(sql);
 
                 context.Close();
@@ -657,6 +700,31 @@ namespace Terradue.Tep.WebServer.Services
             return new WebResponseBool(true);
         }
 
+
+		public object Get(DataPackageGetAvailableIdentifierRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var available = true;
+			try {
+				context.Open();
+				context.LogInfo(this, string.Format("/data/package/{{DpId}}/available GET DpId='{0}'", request.DpId));
+                context.AccessLevel = EntityAccessLevel.Administrator;
+                try {
+                    DataPackage dp = DataPackage.FromIdentifier(context, request.DpId);
+                    available = false;
+                }catch(EntityNotFoundException){
+                    available = true;
+                }catch(Exception){
+                    available = false;
+                }
+
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return new WebResponseBool(available);
+		}
 	}
 }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -31,11 +31,26 @@ namespace Terradue.Tep.WebServer {
     [Route("/job/wps/description", "GET", Summary = "GET WPS job as opensearch", Notes = "")]
     public class WpsJobDescriptionRequestTep : IReturn<HttpResult>{}
 
-//    [Route("/job/wps/{id}", "DELETE", Summary = "DELETE a WPS job", Notes = "")]
-//    public class DeleteWPSJob : IReturn<WebWpsJob>{
-//        [ApiMember(Name="id", Description = "Id of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
-//        public int id { get; set; }
-//    }
+    [Route ("/job/wps/{jobId}/products/search", "GET", Summary = "GET WPS job products as opensearch", Notes = "")]
+    public class WpsJobProductSearchRequestTep : IReturn<HttpResult> {
+        [ApiMember (Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+
+		[ApiMember(Name = "key", Description = "user api key", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Key { get; set; }
+    }
+
+    [Route ("/job/wps/{jobId}/products/description", "GET", Summary = "GET WPS job products as opensearch", Notes = "")]
+    public class WpsJobProductDescriptionRequestTep : IReturn<HttpResult> {
+        [ApiMember (Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+    }
+
+    //    [Route("/job/wps/{id}", "DELETE", Summary = "DELETE a WPS job", Notes = "")]
+    //    public class DeleteWPSJob : IReturn<WebWpsJob>{
+    //        [ApiMember(Name="id", Description = "Id of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
+    //        public int id { get; set; }
+    //    }
 
     [Route("/job/wps/{id}", "DELETE", Summary = "DELETE a WPS job", Notes = "")]
     public class WpsJobDeleteRequestTep : IReturn<WebWpsJobTep>{
@@ -74,6 +89,30 @@ namespace Terradue.Tep.WebServer {
         public int Id { get; set; }
     }
 
+    [Route("/job/wps/{jobId}/contact", "POST", Summary = "POST contact to job", Notes = "")]
+    public class WpsJobSendContactEmailRequestTep : IReturn<List<WebGroup>> {
+        [ApiMember(Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+
+        [ApiMember(Name = "subject", Description = "subject of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Subject { get; set; }
+
+        [ApiMember(Name = "body", Description = "body of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Body { get; set; }
+    }
+
+    [Route("/job/wps/{jobId}/support", "POST", Summary = "POST contact to job", Notes = "")]
+    public class WpsJobSendSupportEmailRequestTep : IReturn<List<WebGroup>> {
+        [ApiMember(Name = "jobId", Description = "id of the service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+
+        [ApiMember(Name = "subject", Description = "subject of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Subject { get; set; }
+
+        [ApiMember(Name = "body", Description = "body of the mail", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Body { get; set; }
+    }
+
     public class WebWpsJobTep : WebEntity {
         [ApiMember(Name="RemoteIdentifier", Description = "RemoteIdentifier of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string RemoteIdentifier { get; set; }
@@ -85,10 +124,14 @@ namespace Terradue.Tep.WebServer {
         public String ProcessId { get; set; }
         [ApiMember(Name="ProcessName", Description = "Process name attached to the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String ProcessName { get; set; }
+		[ApiMember(Name = "Status", Description = "Status of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
+		public int Status { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String StatusLocation { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
         public DateTime CreatedTime { get; set; }
+        [ApiMember(Name = "EndTime", Description = "End time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
+        public DateTime EndTime { get; set; }
         [ApiMember(Name="Parameters", Description = "Parameters attached to the job", ParameterType = "query", DataType = "List<KeyValuePair<string, string>>", IsRequired = true)]
         public List<KeyValuePair<string, string>> Parameters { get; set; }
 
@@ -115,7 +158,9 @@ namespace Terradue.Tep.WebServer {
             this.StatusLocation = entity.StatusLocation;
             this.Parameters = entity.Parameters;
             this.CreatedTime = entity.CreatedTime;
+            this.EndTime = entity.EndTime;
             this.RemoteIdentifier = entity.RemoteIdentifier;
+            this.Status = (int)entity.Status;
                        
         }
 
@@ -132,13 +177,15 @@ namespace Terradue.Tep.WebServer {
 			entity.Name = this.Name;
             entity.OwnerId = context.UserId;
             entity.ProcessId = this.ProcessId;
-            if (entity.Provider != null) {
-                entity.WpsId = entity.Provider.Identifier;
+            if (!string.IsNullOrEmpty (this.DomainId)) entity.DomainId = Int32.Parse (this.DomainId);
+            if (String.IsNullOrEmpty(this.WpsId) && !String.IsNullOrEmpty(this.ProcessId)) {
+                entity.WpsId = entity.Process.Provider.Identifier;
             }
             else entity.WpsId = this.WpsId;
             entity.Parameters = this.Parameters;
             entity.StatusLocation = this.StatusLocation;
             entity.CreatedTime = this.CreatedTime;
+            entity.EndTime = this.EndTime;
             return entity;
         }
 

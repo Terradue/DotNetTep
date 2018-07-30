@@ -1,6 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -32,7 +35,7 @@ namespace Terradue.Tep.WebServer.Services
 		public object Get(GetOpensearchDescription request)
 		{
 			OpenSearchDescription OSDD;
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
 			try{
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/{{serieId}}/description GET serieId='{0}'", request.serieId));
@@ -53,26 +56,28 @@ namespace Terradue.Tep.WebServer.Services
 				urib = new UriBuilder( baseUrl.ToString() );
 
                 OSDD = serie.GetOpenSearchDescription();
-				urib.Path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/search";
-				query.Set("format","atom");
-                query.Add(serie.GetOpenSearchParameters("application/atom+xml"));
 
-				queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urib.Query = string.Join("&", queryString);
-				newUrls.Add("application/atom+xml",new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search"));
+				foreach(var url in OSDD.Url){
+					string path = "";
+					switch(url.Type){
+						case "application/opensearchdescription+xml":
+							path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/description";
+							break;
+						case "application/tdensity+json":
+							path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/tdensity";
+							break;
+						default:
+							path = baseUrl.Path + "/data/collection/" + serie.Identifier + "/search";
+							break;
+					}               
+                    
+					var queryUrl = url.Template != null && url.Template.IndexOf("?") >= 0 ? url.Template.Substring(url.Template.IndexOf("?")) : "";
 
-				query.Set("format","json");
-				queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urib.Query = string.Join("&", queryString);
-				newUrls.Add("application/json",new OpenSearchDescriptionUrl("application/json", urib.ToString(), "search"));
-
-				query.Set("format","html");
-				queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-				urib.Query = string.Join("&", queryString);
-				newUrls.Add("text/html",new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search"));
-				OSDD.Url = new OpenSearchDescriptionUrl[newUrls.Count];
-
-				newUrls.Values.CopyTo(OSDD.Url,0);
+					var urlB = new UriBuilder(context.BaseUrl);               
+					urlB.Path = path;               
+					url.Template = urlB.Uri.AbsoluteUri + queryUrl;
+				}
+                            
 				context.Close ();
 			}catch(Exception e) {
                 context.LogError(this, e.Message);
@@ -83,13 +88,48 @@ namespace Terradue.Tep.WebServer.Services
 			return hr;
 		}
 
+		public object Get(CollectionGetDensityRequestTep request){
+			var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+			string result = "";
+            try {
+                context.Open();
+				context.LogInfo(this, string.Format("/data/collection/{{serieId}}/tdensity GET serieId='{0}'", request.CollId));
+
+				Terradue.Tep.Collection serie = Terradue.Tep.Collection.FromIdentifier(context, request.CollId);
+				var OSDD = serie.GetOpenSearchDescription();
+				var tdensityUrl = OSDD.Url.First(p => p.Type == "application/tdensity+json");
+				if(tdensityUrl != null){
+					var query = HttpContext.Current.Request.QueryString;
+					var urib = new UriBuilder(tdensityUrl.Template);
+					var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                    urib.Query = string.Join("&", queryString);
+
+					HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urib.Uri.AbsoluteUri);
+                    using (var resp = httpRequest.GetResponse()) {
+                        using (var stream = resp.GetResponseStream()) {
+							StreamReader reader = new StreamReader(stream);
+                            result = reader.ReadToEnd();
+                        }
+                    }                
+
+				}
+
+				context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+			return result;
+		}
+
 		/// <summary>
 		/// Get the specified request.
 		/// </summary>
 		/// <param name="request">Request.</param>
 		public object Get(GetOpensearchDescriptions request){
 			OpenSearchDescription OSDD;
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
 			try{
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/description GET"));
@@ -133,6 +173,13 @@ namespace Terradue.Tep.WebServer.Services
 
                 result = ose.Query(serie, httpRequest.QueryString, type);
 
+                var descriptionUrl = serie.GetDescriptionBaseUrl("application/opensearchdescription+xml");
+                if (descriptionUrl != null) {
+                    result.Links.Add (new SyndicationLink (new Uri(descriptionUrl.Template), descriptionUrl.Relation, "OpenSearch Description link", descriptionUrl.Type, 0));
+                }
+
+				MasterCatalogue.ReplaceSelfLinksFormat(result, Request.QueryString);
+
 				context.Close ();
 
 			}catch(Exception e) {
@@ -161,12 +208,18 @@ namespace Terradue.Tep.WebServer.Services
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/search GET"));
 
-                MasterCatalogue cat = new MasterCatalogue(context);
-                OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-                ose.DefaultTimeOut = 60000;
+				//MasterCatalogue cat = new MasterCatalogue(context);
+				//OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+				//ose.DefaultTimeOut = 60000;
 
-                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                result = ose.Query(cat, httpRequest.QueryString, type);		
+				//Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+				//result = ose.Query(cat, httpRequest.QueryString, type);		
+
+                EntityList<Collection> collections = new EntityList<Collection>(context);
+				OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+				Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+				result = ose.Query(collections, httpRequest.QueryString, responseType);
 
 				context.Close ();
 			}catch(Exception e) {
@@ -195,7 +248,7 @@ namespace Terradue.Tep.WebServer.Services
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                 }catch(Exception e){
                     if(request.Key != null) {//or if public
-                        context.RestrictedMode = false;
+                        context.AccessLevel = EntityAccessLevel.Administrator;
                         datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                         if(request.Key != null && !request.Key.Equals(datapackage.AccessKey))
                             throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);
@@ -203,19 +256,13 @@ namespace Terradue.Tep.WebServer.Services
                         datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                 }
 
-
-
                 datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
                 Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request,ose);
 
-                if(!String.IsNullOrEmpty(Request.QueryString["grouped"]) && Request.QueryString["grouped"] == "true"){
-                    result = ose.Query(datapackage, Request.QueryString, responseType);
-                }else{
-                    result = ose.Query(datapackage, Request.QueryString, responseType);
-                }
+                result = ose.Query(datapackage, Request.QueryString, responseType);
 
                 var openSearchDescription = datapackage.GetLocalOpenSearchDescription();
                 var uri_s = datapackage.GetSearchBaseUrl();
@@ -233,6 +280,12 @@ namespace Terradue.Tep.WebServer.Services
                 if (uri_s != null) {
                     result.Links.Add(new SyndicationLink(uri_s, "self", "OpenSearch Search link", "application/atom+xml", 0));
                 }
+
+                MasterCatalogue.ReplaceSelfLinksFormat(result, Request.QueryString);
+
+                ActivityTep activity = new ActivityTep(context, datapackage, EntityOperationType.Search);
+                activity.SetParam("items", result.TotalResults + "");
+                activity.Store();
 
                 context.Close();
 
@@ -256,31 +309,26 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/search GET"));
 
-                EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage>(context);
                 EntityList<Terradue.Tep.DataPackage> datapackages = new EntityList<DataPackage>(context);
                 if (!string.IsNullOrEmpty (request.Key)) {
                     UserTep user = UserTep.FromApiKey (context, request.Key);
-                    tmp_datapackages.UserId = user.Id;
+                    datapackages.UserId = user.Id;
+                    context.AccessLevel = EntityAccessLevel.Privilege;
                 }
-                tmp_datapackages.Load();
-
-                foreach (DataPackage dp in tmp_datapackages) {
-                    if (!dp.IsDefault) {
-                        datapackages.Include (dp);
-                        Console.WriteLine ("DataPackage = " + dp.Id);
-                        context.LogDebug (this, "DataPackage = " + dp.Id);
-                    }
-                }
+                datapackages.SetFilter("Kind", RemoteResourceSet.KINDRESOURCESETNORMAL.ToString());
+               
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-                string format;
-                if ( Request.QueryString["format"] == null ) format = "atom";
-                else format = Request.QueryString["format"];
+                // the opensearch cache system uses the query parameters
+                // we add to the parameters the filters added to the load in order to avoir wrong cache
+                // we use 't2-' in order to not interfer with possibly used query parameters
+                var qs = new NameValueCollection(Request.QueryString);
+                foreach (var filter in datapackages.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
                 Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                result = ose.Query(datapackages, httpRequest.QueryString, responseType);
+                result = ose.Query(datapackages, qs, responseType);
 
                 context.Close();
 
@@ -306,7 +354,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 Terradue.Tep.DataPackage datapackage;
                 if(request.Key != null) {
-                    context.RestrictedMode = false;
+                    context.AccessLevel = EntityAccessLevel.Administrator;
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                     if(request.Key != null && !request.Key.Equals(datapackage.AccessKey))
                         throw new UnauthorizedAccessException(CustomErrorMessages.WRONG_ACCESSKEY);
@@ -323,6 +371,27 @@ namespace Terradue.Tep.WebServer.Services
             } catch (Exception e) {
                 context.LogError(this, e.Message);
                 context.Close();
+                throw e;
+            }
+        }
+
+        public object Get (DataPackagesDescriptionRequest request)
+        {
+            var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/data/package/description GET"));
+
+                EntityList<Terradue.Tep.DataPackage> tmp_datapackages = new EntityList<DataPackage> (context);
+
+                OpenSearchDescription osd = tmp_datapackages.GetOpenSearchDescription ();
+
+                context.Close ();
+
+                return new HttpResult (osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError (this, e.Message);
+                context.Close ();
                 throw e;
             }
         }

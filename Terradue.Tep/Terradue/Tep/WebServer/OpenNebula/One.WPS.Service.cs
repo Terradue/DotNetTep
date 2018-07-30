@@ -20,7 +20,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetWPSRequestTep request) {
             List<WpsProvider> result = new List<WpsProvider>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/one/wps GET"));

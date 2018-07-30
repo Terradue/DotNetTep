@@ -2,35 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Runtime.Caching;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
+using System.Xml;
 using OpenGis.Wps;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
+using ServiceStack.Text;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
+using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
-namespace Terradue.Tep.WebServer.Services
-{
+namespace Terradue.Tep.WebServer.Services {
 
-    [Api("Tep Terradue webserver")]
+     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json | EndpointAttributes.Xml,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json | EndpointAttributes.Xml)]
     public class WpsServiceTep : ServiceStack.ServiceInterface.Service {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        
+
+        static readonly ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
+
         public object Get(SearchWPSProviders request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.RestrictedMode = false;
-            object result;
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.AccessLevel = EntityAccessLevel.Administrator;
             context.Open();
             context.LogInfo(this,string.Format("/cr/wps/search GET"));
 
@@ -63,16 +67,53 @@ namespace Terradue.Tep.WebServer.Services
             return new HttpResult(osr.SerializeToString(), osr.ContentType);
         }
 
-        public object Get (GetWPSProcessDescription request) { 
+        public object Get(SearchWPSServices request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            context.Open();
+            context.LogInfo(this,string.Format("/service/wps/search GET"));
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+
+            //Create EntityList from DB
+            EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+            wpsProcesses.SetFilter("Available", "true");
+            wpsProcesses.OpenSearchEngine = ose;
+            wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);
+
+            CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+            wpsOneProcesses.OpenSearchEngine = ose;
+            //wpsProcesses.Identifier = wpsOneProcesses.Identifier;
+
+            wpsProcesses.Identifier = "service/wps";
+            var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+
+            if (!string.IsNullOrEmpty(httpRequest.QueryString["cache"]) && httpRequest.QueryString["cache"] == "false")
+                MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
+
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
+            IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
+
+            context.Close();
+            return new HttpResult(osr.SerializeToString(), osr.ContentType);
+        }
+
+        public object Get (GetWPSProcessDescription request)
+        {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             try {
                 context.Open ();
-                context.LogInfo (this, string.Format ("/service/wps/description GET"));
+                context.LogInfo (this, string.Format ("/job/wps/description GET"));
 
-                EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering> (context);
-                services.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+                EntityList<WpsProcessOffering> wpsservices = new EntityList<WpsProcessOffering> (context);
+                wpsservices.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
-                OpenSearchDescription osd = services.GetOpenSearchDescription ();
+                OpenSearchDescription osd = wpsservices.GetOpenSearchDescription ();
 
                 context.Close ();
 
@@ -84,42 +125,9 @@ namespace Terradue.Tep.WebServer.Services
             }
         }
 
-        public object Get(SearchWPSServices request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            object result;
-            context.Open();
-            context.LogInfo(this,string.Format("/service/wps/search GET"));
-
-            var parameters = HttpContext.Current.Request.QueryString;
-
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-
-            bool cancache = string.IsNullOrEmpty (parameters ["disableCache"]) || parameters ["disableCache"] != "true";
-            CloudWpsFactory wpsFinder = new CloudWpsFactory (context);
-            EntityList<WpsProcessOffering> wpsProcesses = wpsFinder.GetWpsServices (cancache, true, true);
-
-            // Load the complete request
-            HttpRequest httpRequest = HttpContext.Current.Request;
-
-            string format;
-            if (Request.QueryString["format"] == null)
-                format = "atom";
-            else
-                format = Request.QueryString["format"];
-
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            wpsProcesses.OpenSearchEngine = ose;
-            IOpenSearchResultCollection osr = ose.Query(wpsProcesses, httpRequest.QueryString, responseType);
-
-            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
-            //            OpenSearchFactory.ReplaceSelfLinks(wpsProcesses, httpRequest.QueryString, osr.Result, EntrySelfLinkTemplate );
-
-            context.Close();
-            return new HttpResult(osr.SerializeToString(), osr.ContentType);
-        }
 
         public object Get(GetWPSServices request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<WebServiceTep> result = new List<WebServiceTep>();
             try {
                 context.Open();
@@ -136,7 +144,6 @@ namespace Terradue.Tep.WebServer.Services
                 } catch (Exception e) {
                     //we do nothing, we will return the list without any WPS from the cloud
                 }
-
                 foreach (WpsProvider wps in wpss) {
                     try {
                         foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
@@ -172,14 +179,14 @@ namespace Terradue.Tep.WebServer.Services
         public object Get(GetWebProcessingServices request) {
             IfyWebContext context;
             System.IO.Stream stream = new System.IO.MemoryStream();
-            context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.RestrictedMode = false;
+            context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.AccessLevel = EntityAccessLevel.Administrator;
 
             context.Open();
             context.LogInfo(this,string.Format("/wps/WebProcessingService GET service='{4}',request='{2}',version='{5}',identifier='{1}',dataInputs='{0}',responseDocument='{3}'",
                                               request.DataInputs, request.Identifier, request.Request, request.ResponseDocument, request.Service, request.Version));
 
-            if (request.Service.ToLower() != "wps")
+            if (string.IsNullOrEmpty(request.Service) || string.IsNullOrEmpty(request.Request) || request.Service.ToLower() != "wps")
                 throw new Exception("Web Processing Service Request is not valid");
             WpsProcessOffering wps = null;
             switch (request.Request.ToLower()) {
@@ -209,10 +216,10 @@ namespace Terradue.Tep.WebServer.Services
 
                         if (describeResponse is ProcessDescriptions) {
                             var descResponse = describeResponse as ProcessDescriptions;
-                            descResponse = WpsFactory.DescribeProcessCleanup(descResponse);
+                            descResponse = WpsFactory.DescribeProcessCleanup(context, descResponse);
                             System.Xml.Serialization.XmlSerializerNamespaces ns = new System.Xml.Serialization.XmlSerializerNamespaces();
                             ns.Add("wps", "http://www.opengis.net/wps/1.0.0");
-                            new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);    
+                            new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);
                             return new HttpResult(stream, "application/xml");
                         } else {
                             return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
@@ -250,170 +257,362 @@ namespace Terradue.Tep.WebServer.Services
         }
 
         public object Post(WpsExecutePostRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.Open();
-            context.LogInfo(this,string.Format("/wps/WebProcessingService POST"));
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            object response = null;
+            try {
+                context.Open ();
+                context.LogInfo (this, string.Format ("/wps/WebProcessingService POST"));
 
-            Execute executeInput = (Execute)new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.Execute)).Deserialize(request.RequestStream);
-            context.LogDebug(this,string.Format("Deserialization done"));
-            var response = Execute(context, executeInput);
+                var executeInput = (Execute)new System.Xml.Serialization.XmlSerializer (typeof (Execute)).Deserialize (request.RequestStream);
+                context.LogDebug (this, string.Format ("Deserialization done"));
+                response = Execute (context, executeInput);
+                if (response is double) response = new WebResponseString(response.ToString());
+            } catch (Exception e){
+                context.Close ();
+                return new HttpError (e.Message);
+            }
             context.Close();
             return response;
+        }
+
+        /// <summary>
+        /// Reads the cache.
+        /// </summary>
+        /// <returns>The cache.</returns>
+        /// <param name="key">Key.</param>
+        private string ReadCache(string key, IfyContext context = null) {
+            if (context != null) context.LogDebug(this, string.Format("Read Cache - {0}", key));
+            //First we do a read lock to see if it already exists, this allows multiple readers at the same time.
+            cacheLock.EnterReadLock();
+            try {
+                //Returns null if the string does not exist, prevents a race condition where the cache invalidates between the contains check and the retreival.
+                var cachedString = MemoryCache.Default.Get(key, null) as string;
+
+                if (cachedString != null) {
+                    if (context != null) context.LogDebug(this, string.Format("Cache found : {0}", cachedString));
+                    return cachedString;
+                }
+                if (context != null) context.LogDebug(this, string.Format("Cache not found"));
+            } finally {
+                cacheLock.ExitReadLock();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Writes the cache.
+        /// </summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value.</param>
+        private void WriteCache(string key, string value, IfyContext context = null){
+            if (context != null) context.LogDebug(this, string.Format("Write Cache - {0} - {1}",key,value));
+
+            //First we do a read lock to see if it already exists, this allows multiple readers at the same time.
+            cacheLock.EnterReadLock();
+            try {
+                //Returns null if the string does not exist, prevents a race condition where the cache invalidates between the contains check and the retreival.
+                var cachedString = MemoryCache.Default.Get(key, null) as string;
+                if (cachedString != null) {
+                    if (context != null) context.LogDebug(this, string.Format("Cache already exists, we do not create it"));
+                    return;
+                }
+            } finally {
+                cacheLock.ExitReadLock();
+            }
+
+            //Only one UpgradeableReadLock can exist at one time, but it can co-exist with many ReadLocks
+            cacheLock.EnterUpgradeableReadLock();
+            try {
+                //We need to check again to see if the string was created while we where waiting to enter the EnterUpgradeableReadLock
+                var cachedString = MemoryCache.Default.Get(key, null) as string;
+                if (cachedString != null) {
+                    if (context != null) context.LogDebug(this, string.Format("Cache already exists (2), we do not create it"));
+                    return;
+                }
+
+                //The entry still does not exist so we need to create it and enter the write lock
+                cacheLock.EnterWriteLock(); //This will block till all the Readers flush.
+                try {
+                    CacheItemPolicy cip = new CacheItemPolicy() {
+                        AbsoluteExpiration = new DateTimeOffset(DateTime.Now.AddMinutes(1))
+                    };
+                    MemoryCache.Default.Set(key, value, cip);
+                    if (context != null) context.LogDebug(this, string.Format("Cache added"));
+                    return;
+                } finally {
+                    cacheLock.ExitWriteLock();
+                }
+            } finally {
+                cacheLock.ExitUpgradeableReadLock();
+            }
         }
 
         private object Execute(IfyContext context, Execute executeInput){
             WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, executeInput.Identifier.Value);
             object executeResponse = null;
             var stream = new System.IO.MemoryStream();
+            WpsJob wpsjob = null;
 
             try{
-                executeResponse = wps.Execute(executeInput);
+                var user = UserTep.FromId(context, context.UserId);
+                var parameters = WpsJob.BuildWpsJobParameters(context, executeInput);
+                bool accountingEnabled = context.GetConfigBooleanValue("accounting-enabled");
+                bool quotationMode = false;
+                bool isQuotable = false;
+                string cachekey = wps.Identifier;
 
-                if (executeResponse is ExecuteResponse) {
-                    context.LogDebug(this,string.Format("Execute response ok"));
-                    var execResponse = executeResponse as ExecuteResponse;
+                //Check if it need to add back hidden field
+                var describeResponse = wps.DescribeProcess();
+				if (describeResponse is ProcessDescriptions) {
+                    var descResponse = describeResponse as ProcessDescriptions;
+					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2Username")) {
+						var input = new InputType();
+						input.Identifier = new CodeType { Value = "_T2Username" };
+						input.Data = new DataType {
+							Item = new LiteralDataType {
+								Value = user.TerradueCloudUsername
+							}
+						};
+						executeInput.DataInputs.Add(input);
+					}
+					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ApiKey")) {
+						var input = new InputType();
+						input.Identifier = new CodeType { Value = "_T2ApiKey" };
+						input.Data = new DataType {
+							Item = new LiteralDataType {
+                                Value = user.GetSessionApiKey()
+							}
+						};
+						executeInput.DataInputs.Add(input);
+					}
+				} else {
+					return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
+				}
 
-                    context.LogDebug(this,string.Format("Creating job"));
-                    WpsJob wpsjob = null;
-                    try{
-                        wpsjob = CreateJobFromExecute(context, wps, execResponse, executeInput);
-                    }catch(Exception e){
-                        context.LogError(this,string.Format(e.Message));
-                        throw e;
+
+                if (accountingEnabled) {
+                    //check if the service is quotable (=has quotation parameter)
+                    foreach (var p in parameters) {
+                        if (p.Key == "quotation") {
+                            isQuotable = true;
+                            if (p.Value == "true" || p.Value == "Yes") quotationMode = true;
+                        } else {
+                            cachekey += p.Key + p.Value;
+                        }
                     }
-                    context.LogDebug(this,string.Format("job created"));
-
-                    Uri uri = new Uri(execResponse.serviceInstance);
-                    execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
-                    execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
-                    new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
-
-                    return new HttpResult(stream, "application/xml");
-                } else if (executeResponse is ExceptionReport) {
-                    context.LogDebug(this,string.Format("Exception report ok"));
-                    var exceptionReport = executeResponse as ExceptionReport;
-                    new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExceptionReport)).Serialize(stream, exceptionReport);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    using (StreamReader reader = new StreamReader(stream)) {
-                        string errormsg = reader.ReadToEnd();
-                        context.LogError(this,string.Format(errormsg));
-                        return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
-                    }
-                } else {
-                    return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
                 }
+
+                //part is quotable
+                if (isQuotable) {
+                    cachekey = "quotation-" + CalculateMD5Hash(cachekey);
+
+                    if (quotationMode) {
+                        //we do a quotation request to the WPS service and then put the calculated estimation in the response
+                        //calculation is done from the rates associated to the wps service
+
+                        executeResponse = wps.Execute(executeInput);
+
+                        if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
+
+                        var executeresponse = executeResponse as ExecuteResponse;
+                        foreach (var processOutput in executeresponse.ProcessOutputs) {
+                            if (processOutput.Identifier != null && processOutput.Identifier.Value == "QUOTATION") {
+                                var data = processOutput.Item as DataType;
+                                var cdata = data != null ? data.Item as ComplexDataType : null;
+                                var json = cdata.Text;
+                                var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
+                                if (string.IsNullOrEmpty(json) || accountings.Count == 0) throw new Exception("Wrong Execute response to quotation");
+                                //calculate estimation with rates
+                                var estimation = Convert.ToInt32(Rates.GetBalanceFromRates(context, wps.Provider, accountings[0].quantity));
+                                WriteCache(cachekey,estimation.ToString(), context);
+
+                                var ldata = new LiteralDataType();
+                                ldata.Value = estimation.ToString();
+                                data.Item = ldata;
+
+                                new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, executeresponse);
+                                return new HttpResult(stream, "application/xml");
+                            }
+                        }
+                        throw new Exception("Wrong Execute response to quotation");
+                    } else {
+                        //we do a normal Execute request to a wps service which is quotable
+                        //it means that the quotation must have been done (found in cache) and that user has enough credit
+                        var quotation = ReadCache(cachekey, context);
+                        if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
+
+                        var balance = user.GetAccountingBalance();
+                        if (double.Parse(quotation) > balance) throw new Exception("User credit insufficiant for this request.");
+                        wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
+                        executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
+
+                        if (!(executeResponse is ExecuteResponse) 
+                            || ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType)
+                            || string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) return HandleWrongExecuteResponse(context, executeResponse);
+
+                        wpsjob.UpdateJobFromExecuteResponse(context, executeResponse as ExecuteResponse);
+
+                        //We store the accounting deposit
+                        if (string.IsNullOrEmpty(quotation)) throw new Exception("Unable to read the quotation, please do a new one.");
+                        var transaction = new Transaction(context);
+                        transaction.Entity = wpsjob;
+                        transaction.OwnerId = context.UserId;
+                        transaction.Identifier = wpsjob.Identifier;
+                        transaction.LogTime = DateTime.UtcNow;
+                        transaction.ProviderId = wps.OwnerId;
+                        transaction.Balance = double.Parse(quotation);
+                        transaction.Kind = TransactionKind.ActiveDeposit;
+                        transaction.Store();
+                    }
+                } else { 
+                    //case is not quotable
+                    wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
+                    executeResponse = wps.Execute(executeInput);
+
+                    if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
+
+                    wpsjob.UpdateJobFromExecuteResponse(context, executeResponse as ExecuteResponse);
+                }
+
+                context.LogDebug(this, string.Format("Execute response ok"));
+
+                var execResponse = executeResponse as ExecuteResponse;
+                Uri uri = new Uri(execResponse.serviceInstance);
+                execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
+                execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
+                new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
+
+                return new HttpResult(stream, "application/xml");
+
             }catch(Exception e){
                 context.LogError(this, e.Message);
                 return new HttpError(e.Message);
             }
         }
 
-        private WpsJob CreateJobFromExecute(IfyContext context, WpsProcessOffering wps, ExecuteResponse execResponse, Execute executeInput){
-            Uri uri = new Uri(execResponse.statusLocation);
-            string newId = Guid.NewGuid().ToString();
-
-            //create WpsJob
-            context.LogDebug(this,string.Format("Get identifier from status location"));
-            string identifier = null;
-            try {
-                identifier = uri.Query.Substring(uri.Query.IndexOf("id=") + 3);
-            } catch (Exception e) {
-                context.LogDebug(this,string.Format("identifier does not contain id="));
-                //statusLocation url is different for gpod
-                if (uri.AbsoluteUri.Contains("gpod.eo.esa.int")) {
-                    context.LogDebug(this,string.Format("identifier taken from gpod url : " + uri.AbsoluteUri));
-                    identifier = uri.AbsoluteUri.Substring(uri.AbsoluteUri.LastIndexOf("status") + 7);
-                } else if (uri.AbsoluteUri.Contains("pywps")) {
-                    identifier = uri.AbsoluteUri;
-                    identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
-                    identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
-                } else {
-                    context.LogError(this,string.Format(e.Message));
-                    throw e;
+        private object HandleWrongExecuteResponse(IfyContext context, object executeResponse) {
+            if (executeResponse is ExceptionReport) {
+                var stream = new System.IO.MemoryStream();
+                context.LogDebug(this, string.Format("Exception report ok"));
+                var exceptionReport = executeResponse as ExceptionReport;
+                new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExceptionReport)).Serialize(stream, exceptionReport);
+                stream.Seek(0, SeekOrigin.Begin);
+                using (StreamReader reader = new StreamReader(stream)) {
+                    string errormsg = reader.ReadToEnd();
+                    context.LogError(this, string.Format(errormsg));
+                    return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
+                }
+            } else if (executeResponse is ExecuteResponse) {
+                if ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType) {
+                    var processFailed = (executeResponse as ExecuteResponse).Status.Item as ProcessFailedType;
+                    string error = "Unknown error during the Execute";
+                    try {
+                        error = processFailed.ExceptionReport.Exception[0].ExceptionText[0];
+                    } catch (Exception) { }
+                    return new HttpError(error, HttpStatusCode.BadRequest, "NoApplicableCode", "");
+                } else if (string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) { 
+                    return new HttpError("Missing status location in the Execute response", HttpStatusCode.BadRequest, "NoApplicableCode", "");
                 }
             }
-            context.LogDebug(this,string.Format("identifier = " + identifier));
-            context.LogDebug(this,string.Format("Provider is null ? -> " + (wps.Provider == null ? "true" : "false")));
-            WpsJob wpsjob = new WpsJob(context);
-            wpsjob.Name = wps.Name;
-            wpsjob.RemoteIdentifier = identifier;
-            wpsjob.Identifier = newId;
-            wpsjob.OwnerId = context.UserId;
-            wpsjob.UserId = context.UserId;
-            wpsjob.WpsId = wps.Provider.Identifier;
-            wpsjob.ProcessId = wps.Identifier;
-            wpsjob.CreatedTime = DateTime.UtcNow;
+            return new HttpError("Unknown error during the Execute", HttpStatusCode.BadRequest, "NoApplicableCode", "");
+        }
 
-            //in case of username:password in the provider url, we take them from provider
-            var statusuri = new UriBuilder(wps.Provider.BaseUrl);
-            var statusuri2 = new UriBuilder(execResponse.statusLocation);
-            statusuri2.UserName = statusuri.UserName;
-            statusuri2.Password = statusuri.Password;
-            wpsjob.StatusLocation = statusuri2.Uri.AbsoluteUri;
+        private string CalculateMD5Hash(string input){
+            var md5 = System.Security.Cryptography.MD5.Create();
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hash = md5.ComputeHash(inputBytes);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < hash.Length; i++) sb.Append(hash[i].ToString("X2"));
+            return sb.ToString();
+        }
 
-            wpsjob.Parameters = new List<KeyValuePair<string, string>>();
-            List<KeyValuePair<string, string>> output = new List<KeyValuePair<string, string>>();
-            foreach (var d in executeInput.DataInputs) {
-                context.LogDebug(this,string.Format("Input: " + d.Identifier.Value));
-                if (d.Data != null && d.Data.Item != null) {
-                    if (d.Data.Item is LiteralDataType) {
-                        context.LogDebug(this,string.Format("Value is LiteralDataType"));
-                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, ((LiteralDataType)(d.Data.Item)).Value));  
-                    } else if (d.Data.Item is ComplexDataType) {
-                        context.LogDebug(this,string.Format("Value is ComplexDataType"));
-                        throw new Exception("Data Input ComplexDataType not yet implemented");
-                    } else if (d.Data.Item is BoundingBoxType) {
-                        //for BoundingBoxType, webportal creates LowerCorner and UpperCorner
-                        //we just need to save both values as a concatained string
-                        context.LogDebug(this,string.Format("Value is BoundingBoxType"));
-                        var bbox = d.Data.Item as BoundingBoxType;
-                        var bboxVal = (bbox != null && bbox.UpperCorner != null && bbox.LowerCorner != null) ? bbox.LowerCorner.Replace(" ", ",") + "," + bbox.UpperCorner.Replace(" ", ",") : "";
-                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, bboxVal));  
-                    } else {
-                        throw new Exception("unhandled type of Data");
-                    } 
-                } else if (d.Reference != null){
-                    context.LogDebug(this,string.Format("Value is InputReferenceType"));
-                    if (!string.IsNullOrEmpty(d.Reference.href)) {
-                        output.Add(new KeyValuePair<string, string>(d.Identifier.Value, d.Reference.href));
-                    } else if (d.Reference.Item != null){
-                        throw new Exception("Data Input InputReferenceType item not yet implemented");
-                    }
+
+        private List<T2Accounting> GetAccountingsFromExecute(ExecuteResponse executeresponse) {
+            foreach (var processOutput in executeresponse.ProcessOutputs) {
+                if (processOutput.Identifier != null && processOutput.Identifier.Value == "QUOTATION") {
+                    var data = processOutput.Item as DataType;
+                    var cdata = data != null ? data.Item as ComplexDataType : null;
+                    var json = cdata.Text;
+                    var accountings = JsonSerializer.DeserializeFromString<List<T2Accounting>>(json);
+                    return accountings;
                 }
             }
-            wpsjob.Parameters = output;
-            wpsjob.Store();
-
-            return wpsjob;
+            return new List<T2Accounting>();
         }
 
         public object Get(GetResultsServlets request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
-            context.RestrictedMode = false;
+            context.AccessLevel = EntityAccessLevel.Administrator;
             System.IO.Stream stream = new System.IO.MemoryStream();
             try{
                 context.Open();
                 context.LogInfo(this,string.Format("/wps/RetrieveResultServlet GET Id='{0}'", request.Id));
 
+                bool accountingEnabled = context.GetConfigBooleanValue("accounting-enabled");
+
                 //load job from request identifier
                 WpsJob wpsjob = WpsJob.FromIdentifier(context, request.Id);
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
-                string executeUrl = wpsjob.StatusLocation;
+                ExecuteResponse execResponse = null;
 
-                OpenGis.Wps.ExecuteResponse execResponse = null;
+                if (wpsjob.Status == WpsJobStatus.STAGED) {
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
+                } 
+                else if (wpsjob.Status == WpsJobStatus.COORDINATOR && ProductionResultHelper.IsUrlRecastUrl(wpsjob.StatusLocation)){
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
+                }
+                else {
+                    object jobresponse;
+                    try {
+                        jobresponse = wpsjob.GetStatusLocationContent();
+                    }catch(Exception esl){
+                        throw esl;
+                    }
+                    if (accountingEnabled){
+                        var tFactory = new TransactionFactory(context);
+                        tFactory.UpdateDepositTransactionFromEntityStatus(context, wpsjob, jobresponse);
+                    }
 
-                wpsjob.CanCache = true;//TODO:=request.DisableCache;
+                    if (jobresponse is HttpResult) return jobresponse;
+                    else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                    else if (jobresponse is ExceptionReport) {
+                        stream = new System.IO.MemoryStream();
+                        context.LogDebug(this, string.Format("Exception report ok"));
+                        var exceptionReport = jobresponse as ExceptionReport;
+                        new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExceptionReport)).Serialize(stream, exceptionReport);
+                        stream.Seek(0, SeekOrigin.Begin);
+                        using (StreamReader reader = new StreamReader(stream)) {
+                            string errormsg = reader.ReadToEnd();
+                            context.LogError(this, string.Format(errormsg));
+                            return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
+                        }
+                    } else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 
-                var jobstatusResponse = wpsjob.GetExecuteResponse ();
-                if (jobstatusResponse is ExecuteResponse)
-                    execResponse = (ExecuteResponse)jobstatusResponse;
-                else
-                    return jobstatusResponse;
+					wpsjob.UpdateStatusFromExecuteResponse(execResponse);
+					wpsjob.Store();
 
+                    execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
+
+					//get job recast response
+					try {
+						var recastResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
+						execResponse = recastResponse;
+					}catch(Exception e){
+						context.LogError(this, e.Message);
+					}
+                }
+                Uri uri = new Uri(execResponse.serviceInstance);
+                execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
                 new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
                 context.Close();
 
-                return new HttpResult(stream, "application/xml");
+                var result = new HttpResult(stream, "application/xml");
+
+                result.Headers.Remove("Cache-Control");
+                result.Headers.Add("Cache-Control", "max-age=60");
+
+                return result;
+
             }catch(Exception e){
                 context.LogError(this, e.Message);
                 return new HttpResult(e.Message, HttpStatusCode.BadRequest);
@@ -421,8 +620,8 @@ namespace Terradue.Tep.WebServer.Services
         }
 
         public object Get(GetWPSProviders request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            context.RestrictedMode = false;
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.AccessLevel = EntityAccessLevel.Administrator;
             List<WebWpsProvider> result = new List<WebWpsProvider>();
             try {
                 context.Open();
@@ -471,8 +670,8 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/cr/wps POST Id='{0}'", wpsProvider.Id));
 
                 //Make it public, the authorizations will then be done on the services
-                wpsProvider.StoreGlobalPrivileges();
-                wpsProvider.CanCache = false;//we dont want the cached response (even if unlikely to be cached) 
+                wpsProvider.GrantPermissionsToAll();
+
                 wpsProvider.StoreProcessOfferings();
 
                 result = new WebWpsProvider(wpsProvider);
@@ -597,8 +796,16 @@ namespace Terradue.Tep.WebServer.Services
                 WpsProvider wps = (request.Id == 0 ? null : (WpsProvider)WpsProvider.FromId(context, request.Id));
 
                 if (!string.IsNullOrEmpty(request.Mode) && request.Mode.Equals("synchro")){
-                    wps.CanCache = false;//we dont want the cached response (even if unlikely to be cached) 
-                    wps.UpdateProcessOfferings();
+                    User user = null;
+                    if (wps.DomainId != 0) {
+                        var role = Role.FromIdentifier(context, RoleTep.OWNER);
+                        var usrs = role.GetUsers(wps.DomainId);
+                        if (usrs != null && usrs.Length > 0) {
+                            user = User.FromId(context, usrs[0]);//we take only the first owner
+                        }
+                    }
+                    wps.CanCache = false;
+                    wps.UpdateProcessOfferings(false, user);
                 } else {
                     var namebefore = wps.Identifier;
                     wps = request.ToEntity(context, wps);
@@ -609,10 +816,8 @@ namespace Terradue.Tep.WebServer.Services
                         EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
                         wpsjobs.Load();
                         foreach(var job in wpsjobs){
-                            if (job.WpsId == namebefore) {
-                                job.WpsId = wps.Identifier;
-                                job.Store();
-                            }
+                            job.WpsId = wps.Identifier;
+                            job.Store();
                         }
                     }
                 }
@@ -640,10 +845,10 @@ namespace Terradue.Tep.WebServer.Services
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":
-                            wps.StoreGlobalPrivileges();
+                        wps.GrantPermissionsToAll();
                             break;
                         case "private":
-                            wps.RemoveGlobalPrivileges();
+                            wps.RevokePermissionsFromAll(true, false);
                             break;
                         default:
                             break;
@@ -766,12 +971,13 @@ namespace Terradue.Tep.WebServer.Services
 
                 WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
 
-                List<int> ids = wps.GetGroupsWithPrivileges();
-
+                var gids = wps.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
+                      
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
 
-                foreach(Group grp in groups){
+                foreach (Group grp in groups) {
                     result.Add(new WebGroup(grp));
                 }
 
@@ -796,7 +1002,8 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group POST WpsId='{0}'", request.WpsId));
                 WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
 
-                List<int> ids = wps.GetGroupsWithPrivileges();
+                var gids = wps.GetAuthorizedGroupIds();
+                List<int> ids = gids != null ? gids.ToList() : new List<int>();
 
                 List<Group> groups = new List<Group>();
                 foreach (int id in ids) groups.Add(Group.FromId(context, id));
@@ -805,7 +1012,7 @@ namespace Terradue.Tep.WebServer.Services
                     if(grp.Id == request.Id) return new WebResponseBool(false);
                 }
 
-                wps.StorePrivilegesForGroups(new int[]{request.Id});
+                wps.GrantPermissionsToGroups(new int[]{request.Id});
 
                 context.Close();
             } catch (Exception e) {
@@ -829,7 +1036,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group/{{Id}} DELETE WpsId='{0}',Id='{1}'", request.WpsId, request.Id));
 
                 //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM service_priv WHERE id_service={0} AND id_grp={1};",request.WpsId, request.Id);
+                string sql = String.Format("DELETE FROM service_perm WHERE id_service={0} AND id_grp={1};",request.WpsId, request.Id);
                 context.Execute(sql);
 
                 context.Close();
@@ -848,7 +1055,7 @@ namespace Terradue.Tep.WebServer.Services
         public object Get(WpsServiceGetRequestTep request) {
             WebServiceTep result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/service/wps/{{Id}} GET Id='{0}'", request.Id));
@@ -861,6 +1068,34 @@ namespace Terradue.Tep.WebServer.Services
                 throw e;
             }
             return result;
+        }
+
+        /// <summary>
+        /// Put the specified request.
+        /// </summary>
+        /// <returns>The put.</returns>
+        /// <param name="request">Request.</param>
+        public object Put(WpsServiceUpdateTagsRequestTep request){
+			WebServiceTep result;
+
+			var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+			try {
+				context.Open();
+                context.AccessLevel = EntityAccessLevel.Privilege;
+				context.LogInfo(this, string.Format("/service/wps/{{Id}} GET Id='{0}'", request.Id));
+				WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
+                wps.AccessLevel = EntityAccessLevel.Privilege;
+                wps.Tags = "";
+                foreach (var tag in request.Tags) wps.AddTag(tag);
+                wps.Store();
+				result = new WebServiceTep(context, wps);
+				context.Close();
+			} catch (Exception e) {
+				context.LogError(this, e.Message);
+				context.Close();
+				throw e;
+			}
+			return result;
         }
     }
 

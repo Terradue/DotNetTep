@@ -6,7 +6,11 @@ using System.Web;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Schema;
+using Terradue.OpenSearch.Result;
 using Terradue.Portal;
+using Terradue.ServiceModel.Syndication;
+using System.Linq;
+using Terradue.Portal.OpenSearch;
 
 /*! 
 \defgroup TepData Data
@@ -81,12 +85,6 @@ It also integrates functions to "manipulate" the results and its metadata with a
 
 */
 
-
-
-using Terradue.OpenSearch.Result;
-using Terradue.ServiceModel.Syndication;
-using System.Linq;
-
 namespace Terradue.Tep {
 
     /// <summary>
@@ -100,16 +98,16 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepData
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above)]
+    [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class DataPackage : RemoteResourceSet, IAtomizable {
-
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
-            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-        private EntityType entitytype { get; set; }
-        private EntityType entityType { 
-            get{ 
-                if(entitytype == null) entitytype = EntityType.GetEntityType(typeof(DataPackage));
+        
+        protected EntityType entitytype { get; set; }
+        protected EntityType entityType { 
+            get{
+                if (entitytype == null) {
+                    var type = this.GetType();
+                    entitytype = EntityType.GetEntityType(type);
+                }
                 return entitytype;
             } 
         }
@@ -125,9 +123,14 @@ namespace Terradue.Tep {
         /// </summary>
         /// <value>is owned by a \ref User</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public User Owner {
-            get;
-            set;
+        private UserTep owner;
+        public UserTep Owner {
+            get {
+                if (owner == null) {
+                    if (OwnerId != 0) owner = UserTep.FromId (context, OwnerId);
+                }
+                return owner;
+            }
         }
 
         /// <summary>
@@ -181,6 +184,18 @@ namespace Terradue.Tep {
             return result;
         }
 
+		public static DataPackage FromNameAndOwner(IfyContext context, string name, int userid) {
+			DataPackage result = new DataPackage(context);
+			result.Name = name;
+            result.OwnerId = userid;
+			try {
+				result.Load();
+			} catch (Exception e) {
+				throw e;
+			}
+			return result;
+		}
+
         /// <summary>
         /// Froms the identifier.
         /// </summary>
@@ -199,13 +214,14 @@ namespace Terradue.Tep {
         }
 
         public static DataPackage GetTemporaryForCurrentUser(IfyContext context){
-            return GetTemporaryForUser(context, context.UserId);
+            User user = User.FromId (context, context.UserId);
+            return GetTemporaryForUser(context, user);
         }
 
-        public static DataPackage GetTemporaryForUser(IfyContext context, int id){
+        public static DataPackage GetTemporaryForUser(IfyContext context, User user){
             DataPackage result = new DataPackage(context);
-            result.OwnerId = id;
-            result.IsDefault = true;
+            result.OwnerId = user.Id;
+            result.Kind = KINDRESOURCESETUSER;
             try {
                 result.Load();
             } catch (Exception e) {
@@ -213,22 +229,17 @@ namespace Terradue.Tep {
                 result.Identifier = Guid.NewGuid().ToString();
                 result.Name = "temporary workspace";
                 result.CreationTime = DateTime.UtcNow;
+                result.DomainId = user.Domain.Id;
+                result.Kind = KINDRESOURCESETUSER;
                 result.Store();
             }
             return result;
         }
 
-        public override string AlternativeIdentifyingCondition{
-            get { 
-                if (OwnerId != 0 && IsDefault) return String.Format("t.id_usr={0} AND t.is_default={1}",OwnerId,IsDefault); 
-                return null;
-            }
-        }
-
-        public static string GenerateIdentifier(string identifier){
-            if (string.IsNullOrEmpty(identifier)) return "";
-            string result = identifier.Replace(" ","").Replace(".","").Replace("?","").Replace("&","").Replace("%","");
-            return result;
+        public override string GetIdentifyingConditionSql (){
+            if (OwnerId != 0 && !string.IsNullOrEmpty(Name)) return String.Format("t.id_usr={0} AND t.name='{1}'", OwnerId, Name);
+            if (OwnerId != 0 && Kind == KINDRESOURCESETUSER) return String.Format("t.id_usr={0} AND t.kind={1}",OwnerId,Kind);
+            return null;
         }
 
         /// <summary>
@@ -237,8 +248,10 @@ namespace Terradue.Tep {
         /// <param name="item">Item.</param>
         public void AddResourceItem(RemoteResource item) {
             item.ResourceSet = this;
-            item.Store();
-            Items.Include(item);
+            var res = Resources;
+            res.AllowDuplicates = false;
+            res.Include(item);
+            res.StoreNew ();
         }
 
         /// <summary>
@@ -263,16 +276,19 @@ namespace Terradue.Tep {
         /// </summary>
         public override void Store() {
             context.StartTransaction();
+            if (DomainId == 0) DomainId = Owner.Domain.Id;
+            if (DomainId == -1) DomainId = 0;
             bool isNew = this.Id == 0;
             try {
                 if (isNew){
                     this.AccessKey = Guid.NewGuid().ToString();
                     this.CreationTime = DateTime.UtcNow;
+                    if(string.IsNullOrEmpty(this.Identifier)) this.Identifier = GetUniqueIdentifier(this.Name);
                 }
                 base.Store();
 
-                if (IsDefault)
-                    this.StorePrivilegesForUsers(null, true);
+                if (Kind == KINDRESOURCESETUSER)
+                    this.GrantPermissionsToUsers (new int [] { Owner.Id }, true);
 
                 Resources.StoreExactly();
                 LoadItems();
@@ -281,7 +297,33 @@ namespace Terradue.Tep {
                 context.Rollback();
                 throw e;
             }
+        }
 
+        /// <summary>
+        /// Gets the unique identifier.
+        /// </summary>
+        /// <returns>The unique identifier.</returns>
+        /// <param name="name">Name.</param>
+        public string GetUniqueIdentifier(string name){
+            var identifier = string.IsNullOrEmpty(name) ? this.Identifier : TepUtility.ValidateIdentifier(name);
+            try {
+                DataPackage.FromIdentifier(context, identifier);
+            } catch (EntityUnauthorizedException) {
+                //next
+            } catch (EntityNotFoundException e) {
+                return identifier;
+            }
+            for (int i = 0; i < 1000; i++){
+				var uname = string.Format("{0}{1}", identifier, i == 0 ? "" : "-" + i);
+                try{
+                    DataPackage.FromIdentifier(context, uname);
+                } catch (EntityUnauthorizedException) {
+					//next
+                }catch(EntityNotFoundException e){
+                    return uname;
+                }
+			}
+			throw new Exception("Sorry, we were not able to find a valid data package name");
         }
 
         /// <summary>
@@ -289,7 +331,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="usrId">Usr identifier.</param>
         public void AllowUser(int usrId) {
-            String sql = String.Format("INSERT IGNORE INTO resourceset_priv (id_resourceset, id_usr) VALUES ({0},{1});", this.Id, usrId);
+            String sql = String.Format("INSERT IGNORE INTO resourceset_perm (id_resourceset, id_usr) VALUES ({0},{1});", this.Id, usrId);
             context.Execute(sql);
         }
 
@@ -298,20 +340,60 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="usrId">Usr identifier.</param>
         public void RemoveUser(int usrId) {
-            String sql = String.Format("DELETE FROM resourceset_priv WHERE id_resourceset={0} AND id_usr={1};", this.Id, usrId);
+            String sql = String.Format("DELETE FROM resourceset_perm WHERE id_resourceset={0} AND id_usr={1};", this.Id, usrId);
             context.Execute(sql);
         }
 
         public bool IsPublic(){
-            return HasGlobalPrivilege();
+            return DoesGrantGlobalPermission();
         }
 
         public bool IsPrivate(){
             return !IsPublic() && !IsRestricted();
         }
 
+        /// <summary>
+        /// Is the data package shared to community.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        public bool IsSharedToCommunity() {
+            return (this.Owner != null && this.DomainId != this.Owner.DomainId);
+        }
+
+        /// <summary>
+        /// Is the data package shared to user.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        public bool IsSharedToUser() {
+            var sharedUsersIds = this.GetAuthorizedUserIds();
+            return sharedUsersIds != null && (sharedUsersIds.Length > 1 || !sharedUsersIds.Contains(this.Id));
+        }
+
+        /// <summary>
+        /// Is the data package shared to user.
+        /// </summary>
+        /// <returns><c>true</c>, if shared to community, <c>false</c> otherwise.</returns>
+        /// <param name="id">Identifier.</param>
+		/// <param name="policy">Policy of sharing (direct = permission directly given to the user, role = permission only given via role and privilege, none = one of both previous cases ).</param>
+		public bool IsSharedToUser(int id, string policy = "none") {
+            bool permissionOnly = false;
+            bool privilegeOnly = false;
+            switch (policy) {
+                case "permission":
+                    permissionOnly = true;
+                    break;
+                case "privilege":
+                    privilegeOnly = true;
+                    break;
+                default:
+                    break;
+            }
+            var sharedUsersIds = this.GetAuthorizedUserIds(permissionOnly, privilegeOnly);
+            return sharedUsersIds != null && (sharedUsersIds.Contains(id));
+        }
+
         public bool IsRestricted(){
-			string sql = String.Format("SELECT COUNT(*) FROM resourceset_priv WHERE id_resourceset={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
+			string sql = String.Format("SELECT COUNT(*) FROM resourceset_perm WHERE id_resourceset={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue(sql) > 0;
         }
 
@@ -319,19 +401,19 @@ namespace Terradue.Tep {
             this.ose = ose;
         }
 
-        public virtual OpenSearchUrl GetSearchBaseUrl(string mimeType) {
-            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/search?key={2}", context.BaseUrl, (IsDefault ? "default" : this.Identifier), this.AccessKey));
+        public override OpenSearchUrl GetSearchBaseUrl(string mimeType) {
+            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/search?key={2}", context.BaseUrl, (Kind == KINDRESOURCESETUSER ? "default" : this.Identifier), this.AccessKey));
         }
 
-        public virtual OpenSearchUrl GetDescriptionBaseUrl() {
-            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/description?key={2}", context.BaseUrl, (IsDefault ? "default" : this.Identifier), this.AccessKey));
+        public override OpenSearchUrl GetDescriptionBaseUrl() {
+            return new OpenSearchUrl (string.Format("{0}/"+entityType.Keyword+"/{1}/description?key={2}", context.BaseUrl, (Kind == KINDRESOURCESETUSER ? "default" : this.Identifier), this.AccessKey));
         }
 
         /// <summary>
         /// Gets the local open search description.
         /// </summary>
         /// <returns>The local open search description.</returns>
-        public OpenSearchDescription GetLocalOpenSearchDescription() {
+        public virtual OpenSearchDescription GetLocalOpenSearchDescription() {
             OpenSearchDescription osd = base.GetOpenSearchDescription();
 
             List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
@@ -358,7 +440,7 @@ namespace Terradue.Tep {
 
             osd.Url = urls.ToArray();
 
-            if (this.IsDefault) {
+            if (Kind == KINDRESOURCESETUSER) {
                 osd.ShortName = "Default datapackage";
             }
 
@@ -366,21 +448,46 @@ namespace Terradue.Tep {
         }
 
         public override IOpenSearchable[] GetOpenSearchableArray() {
-            List<UrlBasedOpenSearchable> osResources = new List<UrlBasedOpenSearchable>(Resources.Count);
 
-            foreach (RemoteResource res in Resources) {
-                var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(res.Location), ose);
-                var eosd = entity.GetOpenSearchDescription();
-                if (eosd.DefaultUrl != null && eosd.DefaultUrl.Type == "application/json") {
-                    var atomUrl = eosd.Url.FirstOrDefault(u => u.Type == "application/atom+xml");
-                    if (atomUrl != null)
-                        eosd.DefaultUrl = atomUrl;
-                }
+			List<IOpenSearchable> osResources = new List<IOpenSearchable>(Resources.Count);
 
-                osResources.Add(entity);
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+
+			string apikey = null;
+            string t2userid = null;
+            if (context.UserId != 0) {
+                var user = UserTep.FromId(context, context.UserId);
+                apikey = user.GetSessionApiKey();
+                t2userid = user.TerradueCloudUsername;
             }
 
-            return osResources.ToArray();
+			foreach (RemoteResource res in Resources)
+			{
+                OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
+                // For Terradue resources, use the API key
+				if (res.Location.StartsWith(context.GetConfigValue("catalog-baseurl")) && !string.IsNullOrEmpty(apikey))
+				{
+                    specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+				}
+                try {
+                    IOpenSearchable entity;
+                    try {
+                        entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location), "application/atom+xml");
+                    }catch(Exception e){
+                        entity = null;
+                    }
+                    if(entity == null) entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
+
+				    osResources.Add(entity);
+				}
+				catch (Exception e)
+				{
+					context.LogError(this, e.Message);
+				}
+			}
+
+			return osResources.ToArray();
+
         }
 
         #region IOpenSearchable implementation
@@ -392,28 +499,18 @@ namespace Terradue.Tep {
         #endregion
 
         #region IAtomizable implementation
-        public bool IsSearchable (NameValueCollection parameters) {
+
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+
             string identifier = this.Identifier;
             string name = (this.Name != null ? this.Name : this.Identifier);
             string text = (this.TextContent != null ? this.TextContent : "");
 
-            if (parameters ["q"] != null) {
-                string q = parameters ["q"].ToLower ();
-                if (!(name.ToLower ().Contains (q) || this.Identifier.ToLower ().Contains (q) || text.ToLower ().Contains (q)))
-                    return false;
-            }
-            return true;
-        }
-        public Terradue.OpenSearch.Result.AtomItem ToAtomItem(NameValueCollection parameters) {
-
-            string name = (this.Name != null ? this.Name : this.Identifier);
-
-            if (!IsSearchable (parameters)) return null;
-
             AtomItem atomEntry = null;
+            var entityType = EntityType.GetEntityType(typeof(DataPackage));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
             try {
-                atomEntry = new AtomItem(Identifier, name, null, id.ToString(), DateTime.UtcNow);
+                atomEntry = new AtomItem(identifier, name, null, id.ToString(), DateTime.UtcNow);
             } catch (Exception e) {
                 atomEntry = new AtomItem();
             }
@@ -422,41 +519,69 @@ namespace Terradue.Tep {
 
             atomEntry.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
 
-            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + (IsDefault ? "default" : Identifier) + "/description");
+            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + (Kind == KINDRESOURCESETUSER ? "default" : identifier) + "/description");
             atomEntry.Links.Add(new SyndicationLink(search.Uri, "search", name, "application/atom+xml", 0));
 
-            search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + Identifier + "/search");
+            search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + identifier + "/search");
             search.Query = "key=" + this.AccessKey;
 
             atomEntry.Links.Add(new SyndicationLink(search.Uri, "public", name, "application/atom+xml", 0));
+            atomEntry.Links.Add(new SyndicationLink(search.Uri, "alternate", name, "application/atom+xml", 0));
 
             Uri share = new Uri(context.BaseUrl + "/share?url=" +id.AbsoluteUri);
             atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             atomEntry.ReferenceData = this;
 
-            //TODO: temporary until https://git.terradue.com/sugar/terradue-portal/issues/15 is solved
-            atomEntry.PublishDate = new DateTimeOffset(DateTime.SpecifyKind(this.CreationTime, DateTimeKind.Utc));
-//            atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
+            atomEntry.PublishDate = new DateTimeOffset(this.CreationTime);
 
-            User owner = User.FromId(context, this.OwnerId);
-            var basepath = new UriBuilder(context.BaseUrl);
-            basepath.Path = "user";
-            string usrUri = basepath.Uri.AbsoluteUri + "/" + owner.Username ;
-            string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(owner.LastName) ? owner.FirstName + " " + owner.LastName : owner.Username);
-            SyndicationPerson author = new SyndicationPerson(owner.Email, usrName, usrUri);
-            author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", owner.Username));
-            atomEntry.Authors.Add(author);
-            atomEntry.Categories.Add(new SyndicationCategory("visibility", null, IsPublic() ? "public" : (IsRestricted() ? "restricted" : "private")));
-            if (IsDefault) {
-                atomEntry.Categories.Add(new SyndicationCategory("default", null, "true"));
+            if (Owner != null) {
+                var basepath = new UriBuilder(context.BaseUrl);
+                basepath.Path = "user";
+                string usrUri = basepath.Uri.AbsoluteUri + "/" + Owner.Username;
+                string usrName = (!String.IsNullOrEmpty(owner.FirstName) && !String.IsNullOrEmpty(Owner.LastName) ? Owner.FirstName + " " + Owner.LastName : Owner.Username);
+                SyndicationPerson author = new SyndicationPerson(null, usrName, usrUri);
+                author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
+                atomEntry.Authors.Add(author);
+                atomEntry.Categories.Add(new SyndicationCategory("visibility", null, IsPublic() ? "public" : (IsRestricted() ? "restricted" : "private")));
+                if (Kind == KINDRESOURCESETUSER) {
+                    atomEntry.Categories.Add(new SyndicationCategory("default", null, "true"));
+                }
+
+                if (Owner.Id == context.UserId) {
+                    //for owner only, we give the link to know with who the data package is shared
+                    Uri sharedUrl = null;
+                    //if shared with users
+                    if (IsSharedToUser()) {
+                        sharedUrl = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    } else if (IsSharedToCommunity()) {
+                        sharedUrl = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
+                    }
+                    if (sharedUrl != null) atomEntry.Links.Add(new SyndicationLink(sharedUrl, "results", name, "application/atom+xml", 0));
+                }
             }
 
             return atomEntry;
         }
 
+        #endregion
 
-        public NameValueCollection GetOpenSearchParameters() {
-            return OpenSearchFactory.GetBaseOpenSearchParameter();
+        #region IEntitySearchable implementation
+        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+            switch (parameter) {
+                case "correlatedTo":
+                    var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    var entity = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings).Entity;
+                    if (entity is EntityList<ThematicCommunity>) {
+                        var entitylist = entity as EntityList<ThematicCommunity>;
+                        var items = entitylist.GetItemsAsList();
+                        if (items.Count > 0) {
+                            return new KeyValuePair<string, string>("DomainId", items[0].Id.ToString());
+                        }
+                    }
+                    return new KeyValuePair<string, string>();
+                default:
+                    return base.GetFilterForParameter(parameter, value);
+            }
         }
 
         #endregion
