@@ -40,20 +40,24 @@ namespace Terradue.Tep.WebServer.Services {
                 Analytics analytics = null;
 
                 switch (request.Type) {
-                case "user":
-                    analytics = new Analytics(context, UserTep.FromIdentifier(context, request.Identifier));
-                    analytics.Load();
-                    break;
-                case "community":
-                    analytics = new Analytics(context, ThematicCommunity.FromIdentifier(context, request.Identifier));
-                    analytics.Load();
-                    break;
-                case "group":
-                    analytics = new Analytics(context, Group.FromIdentifier(context, request.Identifier));
-                    analytics.Load();
-                    break;
-                default:
-                    break;
+                    case "user":
+                        analytics = new Analytics(context, UserTep.FromIdentifier(context, request.Identifier));
+                        analytics.Load();
+                        break;
+                    case "community":
+                        analytics = new Analytics(context, ThematicCommunity.FromIdentifier(context, request.Identifier));
+                        analytics.Load();
+                        break;
+                    case "group":
+                        analytics = new Analytics(context, Group.FromIdentifier(context, request.Identifier));
+                        analytics.Load();
+                        break;
+    				case "all":
+                        analytics = new Analytics(context);
+                        analytics.Load();
+                        break;
+                    default:
+                        break;
                 }
                 if (analytics != null) result = new WebAnalytics(analytics);
 

@@ -40,6 +40,12 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "IconUrl", Description = "Icon Url", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string IconUrl { get; set; }
 
+		[ApiMember(Name = "TotalUsers", Description = "Total Users", ParameterType = "path", DataType = "int", IsRequired = false)]
+		public int TotalUsers { get; set; }
+
+		[ApiMember(Name = "ActiveUsers", Description = "Active Users", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int ActiveUsers { get; set; }
+
         public WebAnalytics() {}
 
         public WebAnalytics(Analytics entity){
@@ -51,6 +57,8 @@ namespace Terradue.Tep.WebServer {
             this.WpsJobFailedCount = entity.WpsJobFailedCount;
 			this.WpsJobOngoingCount = entity.WpsJobOngoingCount;
 			this.IconUrl = entity.IconUrl;
+			this.ActiveUsers = entity.ActiveUsers;
+			this.TotalUsers = entity.TotalUsers;
         }
 
     }
