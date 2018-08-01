@@ -14,7 +14,13 @@ namespace Terradue.Tep.WebServer {
         public int Id { get; set; }
     }
 
-    [Route("/data/collection", "PUT", Summary = "PUT update collection", Notes = "")]
+	[Route("/data/collection", "DELETE", Summary = "DELETE a series", Notes = "Series can be filtered by User Id, Status, ...")]
+    public class SerieDeleteRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "identifier", Description = "Identifier of the series", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string Identifier { get; set; }
+	}
+
+	[Route("/data/collection", "PUT", Summary = "PUT update collection", Notes = "")]
     public class CollectionUpdateRequestTep : WebSeries, IReturn<List<WebGroup>> {
         
         [ApiMember(Name = "access", Description = "Define if the collection shall be public or private", ParameterType = "query", DataType = "string", IsRequired = false)]
@@ -27,6 +33,12 @@ namespace Terradue.Tep.WebServer {
     {
         [ApiMember(Name = "collId", Description = "id of the collection", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int CollId { get; set; }
+    }
+
+	[Route("/data/collection/{collId}/tdensity", "GET", Summary = "GET tdensity of a collection", Notes = "")]
+    public class CollectionGetDensityRequestTep : IReturn<List<WebGroup>> {
+        [ApiMember(Name = "collId", Description = "id of the collection", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string CollId { get; set; }
     }
 
     [Route("/data/collection/{collId}/group", "POST", Summary = "POST group to collection", Notes = "")]

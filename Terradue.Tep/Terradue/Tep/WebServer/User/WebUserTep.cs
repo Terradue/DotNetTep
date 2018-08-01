@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Text;
 using System.Web;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using ServiceStack.ServiceInterface.ServiceModel;
@@ -29,9 +30,13 @@ namespace Terradue.Tep.WebServer {
     }
 
     [Route("/user/current/logstatus", "GET", Summary = "GET the status of the current user", Notes = "true = is logged, false = is not logged")]
-    public class UserCurrentIsLoggedRequestTep : IReturn<WebResponseBool>
-    {
-    }
+    public class UserCurrentIsLoggedRequestTep : IReturn<WebResponseBool> {}
+
+    [Route("/user/search", "GET", Summary = "GET user as opensearch", Notes = "")]
+    public class UserSearchRequestTep : IReturn<HttpResult> { }
+
+    [Route("/user/description", "GET", Summary = "GET user as opensearch", Notes = "")]
+    public class UserDescriptionRequestTep : IReturn<HttpResult> { }
 
     [Route("/user/current/sso", "GET", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserGetCurrentSSORequestTep : IReturn<WebUserTep> {}
@@ -56,7 +61,6 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "Password", Description = "Password", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Password { get; set; }
     }
-
 
 //    [Route("/user/current/sso", "POST", Summary = "GET the current user", Notes = "User is the current user")]
 //    public class UserPostCurrentSSORequestTep : IReturn<WebUserTep> {
@@ -114,8 +118,23 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string T2Username { get; set; }
 
-        [ApiMember (Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
-        public string ApiKey { get; set; }
+        [ApiMember(Name = "t2profileError", Description = "Error message to get T2 profile", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string T2ProfileError { get; set; }
+
+        [ApiMember (Name = "t2apikey", Description = "T2 User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string T2ApiKey { get; set; }
+
+		[ApiMember(Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
+		public string ApiKey { get; set; }
+
+        [ApiMember(Name = "balance", Description = "User accounting balance", ParameterType = "query", DataType = "double", IsRequired = false)]
+        public double Balance { get; set; }
+
+		[ApiMember(Name = "RegistrationDate", Description = "User registration date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
+		public DateTime RegistrationDate { get; set; }
+        
+        [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<List<string>>", IsRequired = false)]
+        public List<WebCommunityRoles> Roles { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
@@ -132,9 +151,30 @@ namespace Terradue.Tep.WebServer {
                 var umssoUser = umssoauthType.GetUserProfile (context, HttpContext.Current.Request, false);
                 if (umssoUser != null) this.UmssoEmail = umssoUser.Email;
             }
-            this.T2Username = entity.TerradueCloudUsername;
+
             //only current user can know the api key
-            if(context.UserId == entity.Id) this.ApiKey = entity.ApiKey;
+            if (context.UserId == entity.Id) {
+                this.ApiKey = entity.ApiKey;
+                this.T2ProfileError = HttpContext.Current.Session["t2profileError"] as string;
+                this.T2ApiKey = entity.GetSessionApiKey();
+            }
+
+            if (context.UserId == entity.Id || context.UserLevel == UserLevel.Administrator){
+                this.T2Username = entity.TerradueCloudUsername;
+                if (context.GetConfigBooleanValue("accounting-enabled")) this.Balance = entity.GetAccountingBalance();
+                this.Roles = GetUserCommunityRoles(context, entity);
+				if (context.UserLevel == UserLevel.Administrator) {
+					if (entity.RegistrationDate == DateTime.MinValue) entity.LoadRegistrationInfo();
+					this.RegistrationDate = entity.RegistrationDate;
+				}
+            } else {
+                this.Email = null;
+                this.Affiliation = null;
+                this.Level = 0;
+                this.AccountStatus = 0;
+                this.DomainId = null;
+            }
+
         }
 
         /// <summary>
@@ -144,11 +184,48 @@ namespace Terradue.Tep.WebServer {
         /// <param name="context">Context.</param>
 		public UserTep ToEntity(IfyContext context, UserTep input) {
 			UserTep user = (input == null ? new UserTep(context) : input);
-			base.ToEntity(context, user);
+			user = (UserTep)base.ToEntity(context, user);
 
             return user;
         }
+
+        public List<WebCommunityRoles> GetUserCommunityRoles(IfyContext context, UserTep entity) { 
+            var communityroles = new List<WebCommunityRoles>();
+            try {
+                var communities = entity.GetUserCommunities();
+                foreach (var community in communities) {
+                    try {
+                        var roles = entity.GetUserRoles(community);
+                        var webroles = new List<WebRole>();
+                        foreach (var role in roles) webroles.Add(new WebRole(role));
+                        if (webroles.Count > 0) {
+                            communityroles.Add(new WebCommunityRoles {
+                                Community = community.Name,
+                                Link = string.Format("/#!communities/details/{0}",community.Identifier),
+                                Roles = webroles
+                            });
+                        }
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
+                }
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+            }
+            return communityroles;
+        }
             
+    }
+
+    public class WebCommunityRoles {
+        [ApiMember(Name = "community", Description = "community name", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Community { get; set; }
+
+        [ApiMember(Name = "link", Description = "community link", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Link { get; set; }
+
+        [ApiMember(Name = "roles", Description = "community roles", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
+        public List<WebRole> Roles { get; set; }
     }
 }
 

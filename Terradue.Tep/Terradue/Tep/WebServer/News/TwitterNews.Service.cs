@@ -38,7 +38,8 @@ namespace Terradue.Tep.WebServer.Services {
 
                 List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
 
-                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(twitters.Cast<IOpenSearchable>().ToList(), ose, false);
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
+                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(twitters.Cast<IOpenSearchable>().ToList(), settings, false);
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 
                 context.Close ();
@@ -58,11 +59,12 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/news/twitter/feeds GET"));
 
-                List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
+                var twitterCollection = TwitterNews.LoadTwitterCollection(context);
+                var twitters = twitterCollection.GetFeeds(new System.Collections.Specialized.NameValueCollection());
                 List<TwitterNews> tweetsfeeds = new List<TwitterNews>();
-                foreach(TwitterFeed tweet in twitters) tweetsfeeds.AddRange(TwitterNews.FromFeeds(context, tweet.GetFeeds()));
-                foreach(TwitterNews tweetfeed in tweetsfeeds) result.Add(new WebNews(tweetfeed));
-                
+                tweetsfeeds.AddRange(TwitterNews.FromFeeds(context, twitters));
+                foreach (TwitterNews tweetfeed in tweetsfeeds) result.Add(new WebNews(tweetfeed));
+ 
                 context.Close ();
             }catch(Exception e) {
                 context.LogError(this, e.Message);

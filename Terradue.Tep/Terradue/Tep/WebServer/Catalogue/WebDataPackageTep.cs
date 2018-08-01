@@ -20,6 +20,14 @@ namespace Terradue.Tep.WebServer {
     {
     }
 
+	//[Route("/data/package/_index/search", "GET", Summary = "GET my index datapackage search", Notes = "datapackage item is contained in the body")]
+	//public class DataPackageSearchMyIndexRequestTep : IReturn<HttpResult> {
+	//}
+
+	//[Route("/data/package/_products/search", "GET", Summary = "GET my products datapackage search", Notes = "datapackage item is contained in the body")]
+	//public class DataPackageSearchMyProductsRequestTep : IReturn<HttpResult> {
+	//}
+
     [Route("/data/package/default/description", "GET", Summary = "GET default datapackage description", Notes = "datapackage item is contained in the body")]
     public class DataPackageDescriptionDefaultRequestTep : IReturn<HttpResult>
     {
@@ -63,10 +71,17 @@ namespace Terradue.Tep.WebServer {
     }
 
     [Route("/data/package", "POST", Summary = "POST a datapackage", Notes = "Add a new datapackage in database")]
-    public class DataPackageCreateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}
+    public class DataPackageCreateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>
+    {
+        [ApiMember(Name = "Overwrite", Description = "indicates if we overwrite the dp", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool Overwrite { get; set; }
+    }
 
     [Route("/data/package", "PUT", Summary = "PUT a datapackage", Notes = "Update a datapackage in database")]
-    public class DataPackageUpdateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{}
+    public class DataPackageUpdateRequestTep : WebDataPackageTep, IReturn<WebDataPackageTep>{
+		[ApiMember(Name = "access", Description = "Define if the data package shall be public or private", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Access { get; set; }
+	}
 
     [Route("/data/package/export", "PUT", Summary = "PUT a datapackage", Notes = "export a datapackage as series")]
     public class DataPackageExportRequestTep : WebDataPackageTep, IReturn<WebSeries>{}
@@ -102,6 +117,12 @@ namespace Terradue.Tep.WebServer {
         public int Id { get; set; }
     }
 
+    [Route("/data/package/{dpId}/available", "GET", Summary = "GET list of groups that can access a datapackage", Notes = "")]
+    public class DataPackageGetAvailableIdentifierRequestTep : IReturn<WebResponseBool> {
+		[ApiMember(Name = "dpId", Description = "identifier of the datapackage", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string DpId { get; set; }
+	}
+
     public class WebDataPackageTep : Terradue.WebService.Model.WebDataPackage {
 
         [ApiMember(Name="AccessKey", Description = "Remote resource AccessKey", ParameterType = "path", DataType = "string", IsRequired = false)]
@@ -122,12 +143,8 @@ namespace Terradue.Tep.WebServer {
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebDataPackageTep"/> class.
         /// </summary>
         /// <param name="entity">Entity.</param>
-        public WebDataPackageTep(DataPackage entity, IfyContext context = null)
+        public WebDataPackageTep(DataPackage entity, IfyContext context = null) : base(entity)
         {
-            this.Id = entity.Id;
-            this.Name = entity.Name;
-            this.Identifier = entity.Identifier;
-            this.IsDefault = entity.IsDefault;
             this.AccessKey = entity.AccessKey;
             this.IsPublic = entity.IsPublic();
             this.Items = new List<WebDataPackageItem>();
@@ -152,7 +169,8 @@ namespace Terradue.Tep.WebServer {
 
             result.Name = this.Name;
             result.Identifier = this.Identifier;
-            result.IsDefault = this.IsDefault;
+            if (!string.IsNullOrEmpty (this.DomainId)) result.DomainId = Int32.Parse (this.DomainId);
+            result.Kind = this.Kind;
             result.Items = new EntityList<RemoteResource>(context);
             result.Items.Template.ResourceSet = result;
             if (this.Items != null) {

@@ -49,7 +49,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetOneUser request) {
             WebOneUser result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/one/user/{{Id}} GET ProviderId='{0}',Id='{1}'", request.ProviderId, request.Id));
@@ -70,7 +70,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetOneCurrentUser request) {
             WebOneUser result = new WebOneUser();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/one/user/current GET ProviderId='{0}'", request.ProviderId));
@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Put(UpdateOneUser request) {
             bool result;
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/one/user PUT ProviderId='{0}',Id='{1}'", request.ProviderId, request.Id));
@@ -123,7 +123,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(CreateOneUser request){
             WebOneUser result;
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
 

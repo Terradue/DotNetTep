@@ -29,9 +29,14 @@ This component uses extensively \ref OWSContext model to represent the dataset c
 @}
 */
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Web;
+using Terradue.OpenSearch;
+using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 
-namespace Terradue.Tep {
+namespace Terradue.Tep
+{
 
     /// <summary>
     /// Thematic Application
@@ -42,47 +47,94 @@ namespace Terradue.Tep {
     /// </description>
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
     /// \ingroup TepApplication
-    public class ThematicApplication : Entity {
-        public ThematicApplication() : base(null){
+    public class ThematicApplication : DataPackage
+    {
+
+        public static readonly int KINDRESOURCESETAPPS = 2;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Terradue.Tep.ThematicApplicationSet"/> class.
+        /// </summary>
+        /// <param name="context">Context.</param>
+        public ThematicApplication (IfyContext context) : base (context){
+            this.Kind = KINDRESOURCESETAPPS;
         }
 
         /// <summary>
-        /// Collections available in the application
+        /// Froms the identifier.
         /// </summary>
-        /// <value>contains \ref Collection</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public List<Collection> Collections {
-            get;
-            set;
+        /// <returns>The identifier.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="identifier">Identifier.</param>
+        public static new ThematicApplication FromIdentifier (IfyContext context, string identifier)
+        {
+            ThematicApplication result = new ThematicApplication (context);
+            result.Identifier = identifier;
+            try {
+                result.Load ();
+            } catch (Exception e) {
+                throw e;
+            }
+            return result;
+        }
+
+        public new void Store () {
+            this.Kind = KINDRESOURCESETAPPS;
+            base.Store ();
         }
 
         /// <summary>
-        /// Processing Services available in the application
+        /// Gets the search base URL.
         /// </summary>
-        /// <value>contains \ref WpsProcessOffering</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public List<WpsProcessOffering> WPSServices {
-            get;
-            set;
+        /// <returns>The search base URL.</returns>
+        /// <param name="mimeType">MIME type.</param>
+        public override OpenSearchUrl GetSearchBaseUrl (string mimeType)
+        {
+            return new OpenSearchUrl(string.Format("{0}/" + entityType.Keyword + "/search", context.BaseUrl));
         }
 
         /// <summary>
-        /// Title of the application
+        /// Gets the description base URL.
         /// </summary>
-        /// <value>The title.</value>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public string Description {
-            get;
-            set;
+        /// <returns>The description base URL.</returns>
+        public override OpenSearchUrl GetDescriptionBaseUrl ()
+        {
+            return new OpenSearchUrl (string.Format ("{0}/" + entityType.Keyword + "/description", context.BaseUrl));
         }
 
         /// <summary>
-        /// Features and widgets defining the application maps, layers, features.
+        /// Gets the local open search description.
         /// </summary>
-        /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-        public List<string> Features {
-            get;
-            set;
+        /// <returns>The local open search description.</returns>
+        public override OpenSearchDescription GetLocalOpenSearchDescription ()
+        {
+            OpenSearchDescription osd = base.GetOpenSearchDescription ();
+
+            List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl> ();
+            UriBuilder urlb = new UriBuilder (GetDescriptionBaseUrl ());
+            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl ("application/opensearchdescription+xml", urlb.ToString (), "self");
+            urls.Add (url);
+
+            NameValueCollection query = HttpUtility.ParseQueryString (urlb.Query);
+
+            urlb = new UriBuilder (GetSearchBaseUrl ("application/atom+xml"));
+            query = GetOpenSearchParameters ("application/atom+xml");
+            NameValueCollection nvc = HttpUtility.ParseQueryString (urlb.Query);
+            foreach (var key in nvc.AllKeys) {
+                query.Set (key, nvc [key]);
+            }
+
+            foreach (var osee in OpenSearchEngine.Extensions.Values) {
+                query.Set ("format", osee.Identifier);
+                string [] queryString = Array.ConvertAll (query.AllKeys, key => string.Format ("{0}={1}", key, query [key]));
+                urlb.Query = string.Join ("&", queryString);
+                url = new OpenSearchDescriptionUrl (osee.DiscoveryContentType, urlb.ToString (), "search");
+                urls.Add (url);
+            }
+
+            osd.Url = urls.ToArray ();
+
+            return osd;
         }
     }
 }

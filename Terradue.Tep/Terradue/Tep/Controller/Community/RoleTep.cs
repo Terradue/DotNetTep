@@ -18,10 +18,18 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepCommunity
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-    public class RoleTep : Entity {
+    public class RoleTep : Role {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public static readonly string OWNER = "owner";
+        public static readonly string MANAGER = "manager";
+        public static readonly string MEMBER = "member";
+        public static readonly string PENDING = "pending";
+        public static readonly string VISITOR = "visitor";
+        public static readonly string STARTER = "starter";
+        public static readonly string EXPLORER = "explorer";
 
         public RoleTep() : base(null) {
         }

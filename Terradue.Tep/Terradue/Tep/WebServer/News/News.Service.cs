@@ -38,24 +38,27 @@ namespace Terradue.Tep.WebServer.Services {
 
                 List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 
-                try{
-                    EntityList<Article> articles = new EntityList<Article>(context);
-                    articles.Load();
-                    osentities.Add(articles);
-                }catch(Exception){}
+                //try{
+                //    EntityList<Article> articles = new EntityList<Article>(context);
+                //    articles.Load();
+                //    osentities.Add(articles);
+                //}catch(Exception){}
 
                 try{
-                    List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
-                    foreach(TwitterFeed twitter in twitters) osentities.Add(twitter);
+                    var twitters = TwitterNews.LoadTwitterCollection(context);
+                    osentities.Add(twitters);
                 }catch(Exception){}
 
                 try{
                     EntityList<RssNews> rsss = new EntityList<RssNews>(context);
                     rsss.Load();
-                    foreach(RssNews rss in rsss) osentities.Add(rss);
+                    if (rsss != null) {
+                        foreach (RssNews rss in rsss) osentities.Add(rss);
+                    }
                 }catch(Exception){}
 
-                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, ose);
+                var settings = MasterCatalogue.OpenSearchFactorySettings;
+				MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
 
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 
@@ -79,22 +82,22 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/news/feeds GET"));
 
                 //get internal news
-                try{
-                    EntityList<Article> news = new EntityList<Article>(context);
-                    news.Load();
-                    foreach(Terradue.Portal.Article f in news){
-                        if(f.GetType() == typeof(Article))
-                            result.Add(new WebNews(f));
-                    }
-                }catch(Exception){}
+                //try{
+                //    EntityList<Article> news = new EntityList<Article>(context);
+                //    news.Load();
+                //    foreach(Terradue.Portal.Article f in news){
+                //        if(f.GetType() == typeof(Article))
+                //            result.Add(new WebNews(f));
+                //    }
+                //}catch(Exception){}
 
                 //get twitter news
-                try{
-                    List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
+                try {
+                    var twitterCollection = TwitterNews.LoadTwitterCollection(context);
+                    var twitters = twitterCollection.GetFeeds(new System.Collections.Specialized.NameValueCollection());
                     List<TwitterNews> tweetsfeeds = new List<TwitterNews>();
-                    foreach(TwitterFeed tweet in twitters) tweetsfeeds.AddRange(TwitterNews.FromFeeds(context, tweet.GetFeeds()));
-                    foreach(TwitterNews tweetfeed in tweetsfeeds) result.Add(new WebNews(tweetfeed));
-                }catch(Exception){}
+                    tweetsfeeds.AddRange(TwitterNews.FromFeeds(context, twitters));
+                } catch (Exception) { }
 
                 //get rss news
                 try{
@@ -157,7 +160,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Post(CreateNews request) {
             WebNews result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
 
@@ -173,6 +176,12 @@ namespace Terradue.Tep.WebServer.Services {
                     rss = (RssNews)request.ToEntity(context, rss);
                     rss.Store();
                     result = new WebNews(rss);
+                //} else if (request.Type.Equals(EntityType.GetEntityType(typeof(TumblrNews)).Keyword)){
+                //    TumblrNews tumblr = null;
+                //    tumblr = new TumblrNews(context);
+                //    tumblr = (TumblrNews)request.ToEntity(context, tumblr);
+                //    tumblr.Store();
+                //    result = new WebNews(tumblr);
                 } else {
                     Article article = null;
                     article = new Article(context);
@@ -195,7 +204,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Put(UpdateNews request) {
             WebNews result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/news PUT Id='{0}'", request.Id));
@@ -212,6 +221,12 @@ namespace Terradue.Tep.WebServer.Services {
                     rss = (RssNews)request.ToEntity(context, rss);
                     rss.Store();
                     result = new WebNews(rss);
+                //} else if (request.Type.Equals(EntityType.GetEntityType(typeof(TumblrNews)).Keyword)){
+                //    TumblrNews tumblr = null;
+                //    tumblr = TumblrNews.FromId(context, request.Id);
+                //    tumblr = (TumblrNews)request.ToEntity(context, tumblr);
+                //    tumblr.Store();
+                //    result = new WebNews(tumblr);
                 } else {
                     Article article = null;
                     article = Article.FromId(context, request.Id);
@@ -230,7 +245,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Delete(DeleteNews request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/news/{{Id}} DELETE Id='{0}'", request.Id));

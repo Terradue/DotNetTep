@@ -16,20 +16,29 @@ namespace Terradue.Tep.WebServer.Services {
 
     [Route("/share", "POST", Summary = "share an entity", Notes = "")]
     public class ShareCreateRequestTep : IReturn<WebResponseBool>{
-        [ApiMember(Name="url", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string url { get; set; }
+        [ApiMember(Name="self", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string self { get; set; }
 
-        [ApiMember(Name="visibility", Description = "type of sharing", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string visibility { get; set; }
+        [ApiMember(Name = "to", Description = "url(s) representing the item to which the entity is shared", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> to { get; set; }
 
-        [ApiMember(Name="groups", Description = "group identifier", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public List<int> groups { get; set; }
+        [ApiMember(Name="id", Description = "thematic application id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string id { get; set; }
+    }
+
+    [Route("/share", "DELETE", Summary = "share an entity", Notes = "")]
+    public class ShareDeleteRequestTep : IReturn<WebResponseBool> {
+        [ApiMember(Name = "self", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string self { get; set; }
     }
 
     [Route("/share", "GET", Summary = "share an entity", Notes = "")]
     public class ShareGetRequestTep {
         [ApiMember(Name="url", Description = "url representing the item shared", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string url { get; set; }
+
+        [ApiMember(Name="id", Description = "thematic applicaiton id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string id { get; set; }
     }
 
      [Api("Tep Terradue webserver")]
@@ -40,45 +49,207 @@ namespace Terradue.Tep.WebServer.Services {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public object Post(ShareCreateRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
-            object result;
+        public object Delete(ShareDeleteRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
-            context.LogInfo(this,string.Format("/share POST url='{0}',visibility='{1}',groups='{2}'", request.url, request.visibility, request.groups != null ? string.Join("'",request.groups) : "null"));
-                            
-            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+            context.LogInfo(this, string.Format("/share DELETE self='{0}'", request.self));
 
-            UrlBasedOpenSearchable urlToShare = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.url), ose);
-            IOpenSearchResultCollection searchResult = null;
-            try{
-                searchResult = ose.Query(urlToShare, new System.Collections.Specialized.NameValueCollection());
-            }catch(Exception e){
-                throw e;
-            }
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), settings).Entity;
 
-            foreach (IOpenSearchResultItem item in searchResult.Items) {
-                if (item is AtomItem && ((AtomItem)item).ReferenceData is Entity) {
-                    Entity ent = ((AtomItem)item).ReferenceData as Entity;
-                    if (ent.OwnerId == context.UserId) {
-                        string visibility = (request.visibility != null ? request.visibility : "public");
-                        switch (visibility){
-                            case "public":
-                                ent.StoreGlobalPrivileges();
-                                break;
-                            case "restricted":
-                                ent.RemoveGlobalPrivileges();
-                                if(request.groups != null && request.groups.Count > 0)
-                                    ent.StorePrivilegesForGroups(request.groups.ToArray(), true);
-                                break;
-                            case "private":
-                                ent.StorePrivilegesForGroups(null, true);
-								ent.RemoveGlobalPrivileges();
-                                break;
-                            default:
-                                break;
+            if (entitySelf is EntityList<WpsJob>) {
+                var entitylist = entitySelf as EntityList<WpsJob>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count > 0) {
+                    foreach (var item in items) {
+                        item.RevokePermissionsFromAll(true, false);
+                        if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
+                            item.DomainId = item.Owner.DomainId;
+                            item.Store();
+                        }
+
+                        //share on store
+                        try {
+                            DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"),item.StatusLocation, "results", "private");
+                        }catch(Exception e){
+                            context.LogError(this, "Unable to share on STORE : " + e.Message);
                         }
                     }
                 }
+            } else if (entitySelf is EntityList<DataPackage>) {
+                var entitylist = entitySelf as EntityList<DataPackage>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count > 0) {
+                    foreach (var item in items) {
+                        item.RevokePermissionsFromAll(true, false);
+                        if (item.Owner != null && item.DomainId != item.Owner.DomainId) {
+                            item.DomainId = item.Owner.DomainId;
+                            item.Store();
+                        }
+                    }
+                }
+            }
+
+            context.Close();
+            return new WebResponseBool(true);
+        }
+
+        public object Post(ShareCreateRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.Open();
+            context.LogInfo(this,string.Format("/share POST self='{0}',to='{1}'", request.self, request.to != null ? string.Join("", request.to) : ""));
+                            
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+            var entitySelf = new UrlBasedOpenSearchable(context, new OpenSearchUrl(request.self), settings).Entity;
+
+            //case WpsJob
+            if (entitySelf is EntityList<WpsJob>) {
+                var entitylist = entitySelf as EntityList<WpsJob>;
+                var wpsjobs = entitylist.GetItemsAsList();
+                if (wpsjobs.Count == 0) return new WebResponseBool(false);
+
+                //if to is null, we share publicly
+                if (request.to == null) {
+                    foreach (var job in wpsjobs) { //the entitySelf can return several entities
+                        job.GrantPermissionsToAll();
+
+						//share on store
+						try {
+							DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), job.StatusLocation, "results", "public");
+						} catch (Exception e) {
+							context.LogError(this, "Unable to share on STORE : " + e.Message);
+						}
+
+                        Activity activity = new Activity(context, job, EntityOperationType.Share);
+                        activity.Store();
+                    }
+                }
+
+                //we share with restriction (community + users)
+                else {
+                    foreach (var job in wpsjobs) { //the entitySelf can return several entities
+
+                        //remove previous visibility sharing
+                        job.RevokePermissionsFromAll(true, false);
+                        if (job.Owner != null && job.DomainId != job.Owner.DomainId) {
+                            job.DomainId = job.Owner.DomainId;
+                            job.Store();
+                        }
+
+                        var sharedUsers = new List<string>();
+                        var sharedCommunities = new List<ThematicCommunity>();
+
+                        foreach (var to in request.to) {
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), settings).Entity;
+
+                            //case community
+                            if (entityTo is EntityList<ThematicCommunity>) {
+                                var entityTolist = entityTo as EntityList<ThematicCommunity>;
+                                var communities = entityTolist.GetItemsAsList();
+                                if (communities.Count == 0) return new WebResponseBool(false);
+
+                                var community = communities[0];
+
+                                //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
+                                community.ShareEntity(job);
+                                job.DomainId = community.Id;
+                                job.Store();
+
+                                sharedCommunities.Add(community);
+
+                                ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.DomainId = communities[0].Id;
+                                activity.Store();
+                            }
+
+                            //case user
+                            else if (entityTo is EntityList<UserTep>) {
+                                var entityTolist = entityTo as EntityList<UserTep>;
+                                var users = entityTolist.GetItemsAsList();
+                                if (users.Count == 0) return new WebResponseBool(false);
+                                job.GrantPermissionsToUsers(users);
+
+                                foreach (var usr in users) {
+                                    if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) usr.LoadCloudUsername();
+                                    if (!string.IsNullOrEmpty(usr.TerradueCloudUsername)) sharedUsers.Add(usr.TerradueCloudUsername);
+                                }
+
+                                ActivityTep activity = new ActivityTep(context, job, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
+                            }
+                        }
+
+						//share on store
+						try {
+							DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), job.StatusLocation, "results", "restricted", sharedUsers, sharedCommunities);
+						} catch (Exception e) {
+							context.LogError(this, "Unable to share on STORE : " + e.Message);
+						}
+                    }
+                }
+            }
+
+            //case DataPackage
+            else if (entitySelf is EntityList<DataPackage>) {
+                var entitylist = entitySelf as EntityList<DataPackage>;
+                var datapackages = entitylist.GetItemsAsList();
+                if (datapackages.Count == 0) return new WebResponseBool(false);
+
+                //if to is null, we share publicly
+                if (request.to == null) {
+                    foreach (var dp in datapackages) { //the entitySelf can return several entities
+                        dp.GrantPermissionsToAll();
+
+                        Activity activity = new Activity(context, dp, EntityOperationType.Share);
+                        activity.Store();
+                    }
+                }
+
+                //we share with restriction (community + users)
+                else {
+                    foreach (var dp in datapackages) { //the entitySelf can return several entities
+                        //remove previous visibility sharing
+                        dp.RevokePermissionsFromAll(true, false);
+                        if (dp.Owner != null && dp.DomainId != dp.Owner.DomainId) {
+                            dp.DomainId = dp.Owner.DomainId;
+                            dp.Store();
+                        }
+
+                        foreach (var to in request.to) {
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), settings).Entity;
+
+                            //case community
+                            if (entityTo is EntityList<ThematicCommunity>) {
+                                var entityTolist = entityTo as EntityList<ThematicCommunity>;
+                                var communities = entityTolist.GetItemsAsList();
+                                if (communities.Count == 0) return new WebResponseBool(false);
+                                //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
+                                dp.DomainId = communities[0].Id;
+                                dp.Store();
+
+                                ActivityTep activity = new ActivityTep(context, dp, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.DomainId = communities[0].Id;
+                                activity.Store();
+                            }
+
+                            //case user
+                            else if (entityTo is EntityList<UserTep>) {
+                                var entityTolist = entityTo as EntityList<UserTep>;
+                                var users = entityTolist.GetItemsAsList();
+                                if (users.Count == 0) return new WebResponseBool(false);
+                                dp.GrantPermissionsToUsers(users);
+
+                                ActivityTep activity = new ActivityTep(context, dp, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
+                            }
+                        }
+                    }
+                }
+
             }
 
             context.Close ();
@@ -88,13 +259,16 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(ShareGetRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.Open();
-                context.LogInfo(this,string.Format("/share GET url='{0}'", request.url));
+            context.LogInfo(this,string.Format("/share GET url='{0}'", request.url));
+
+            var AppSettings = System.Configuration.ConfigurationManager.AppSettings;
 
             var redirect = new UriBuilder(context.BaseUrl);
             redirect.Path = "geobrowser";
-            string redirectUrl = redirect.Uri.AbsoluteUri + "/#!";
+            string redirectUrl = redirect.Uri.AbsoluteUri + (!string.IsNullOrEmpty (request.id) ? "/?id=" + request.id : "/") + "#!";
 
-            Match match = Regex.Match(new Uri(request.url).LocalPath.Replace(new Uri(context.BaseUrl).LocalPath, ""), @"(/.*)(/?.*)/search");
+            var pathUrl = new Uri(request.url).LocalPath.Replace(new Uri(context.BaseUrl).LocalPath, "");
+            Match match = Regex.Match(pathUrl, @"(\/?.*)search(\/?.*)");
             if (match.Success) {
                 var resultType = match.Groups[1].Value.Trim('/');
                 if (resultType.Equals(EntityType.GetEntityType(typeof(Series)).Keyword)) {
@@ -110,13 +284,14 @@ namespace Terradue.Tep.WebServer.Services {
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword;
                 } else {
-                    if (request.url.StartsWith(context.GetConfigValue("catalog-baseurl"))) {
+                    if (request.url.StartsWith(AppSettings["CatalogBaseUrl"]) || request.url.StartsWith(AppSettings["RecastBaseUrl"])) {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         try {
-                            new GenericOpenSearchable (new OpenSearchUrl (request.url), MasterCatalogue.OpenSearchEngine);
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
+                            var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), settings);
                             redirectUrl += "resultType=" + "data";
-                        } catch (Exception) { 
+                        } catch (Exception e) { 
                             redirectUrl += "resultType=" + "na";
                         }
                     }

@@ -20,7 +20,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(OneGetImageRequestTep request) {
             string result = null;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/one/{{providerId}}/img/{{imageId}} GET providerId='{0}',imageId='{1}'", request.ProviderId, request.ImageId));

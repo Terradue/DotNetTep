@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.IO;
 using ServiceStack.Common.Web;
+using System.Xml.Serialization;
+using System.Runtime.Caching;
 
 
 /*!
@@ -32,6 +34,9 @@ namespace Terradue.Tep {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private IfyContext context { get; set; }
+
+        public static XmlSerializer ExceptionReportSerializer = new XmlSerializer(typeof(OpenGis.Wps.ExceptionReport));
+        public static XmlSerializer ExecuteResponseSerializer = new XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse));
 
         public WpsFactory(IfyContext context) {
             this.context = context;
@@ -173,17 +178,50 @@ namespace Terradue.Tep {
         // DescribeProcess
         //****************************************************************************************
 
-        public static ProcessDescriptions DescribeProcessCleanup(ProcessDescriptions input){
-            foreach (var desc in input.ProcessDescription) {
+        public static ProcessDescriptions DescribeProcessCleanup(IfyContext context, ProcessDescriptions input){
+			foreach (var desc in input.ProcessDescription) {
+                var newinputs = new List<InputDescriptionType>();
                 foreach (var data in desc.DataInputs) {
                     if (data.LiteralData != null) {
-                        if (data.LiteralData.AllowedValues != null && data.LiteralData.AllowedValues.Count == 0)
+                        if (data.LiteralData.AllowedValues != null && data.LiteralData.AllowedValues.Count == 0) {
                             data.LiteralData.AllowedValues = null;
+                        }
+                    }
+                    //case _T2Username, we hide the field
+                    if (data.Identifier != null) {
+                        switch (data.Identifier.Value) {
+                            case "_T2Username":
+                            case "_T2ApiKey":
+                                break;
+                            case "index":
+                            case "repoKey":
+                                if (data.LiteralData != null && data.LiteralData.DefaultValue != null && context.UserId != 0){
+                                    var user = UserTep.FromId(context, context.UserId);
+									data.LiteralData.DefaultValue = data.LiteralData.DefaultValue.Replace("${USERNAME}", user.Username);
+									data.LiteralData.DefaultValue = data.LiteralData.DefaultValue.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                                }
+                                newinputs.Add(data);
+                                break;
+                            default:
+                                newinputs.Add(data);
+                                break;
+                        }
                     }
                 }
+                desc.DataInputs = newinputs;
             }
             return input;
         }
+
+		public static bool DescribeProcessHasField(ProcessDescriptions input, string field) {
+			foreach (var desc in input.ProcessDescription) {
+				foreach (var data in desc.DataInputs) {
+                    if (data.Identifier != null && data.Identifier.Value == field) 
+                        return true;
+				}
+			}
+            return false;
+		}
 
         //****************************************************************************************
         // Execute

@@ -20,7 +20,7 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         
         public object Get(ServiceServiceTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             object result;
             context.Open();
             EntityList<Terradue.Portal.Service> services = new EntityList<Terradue.Portal.Service>(context);

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Web;
+using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
-using ServiceStack.ServiceInterface;
-using Terradue.OpenNebula;
+using Terradue.OpenSearch;
+using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch.Result;
+using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
-using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
@@ -23,7 +26,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetGroup request) {
             WebGroup result;
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/group/{{Id}} GET Id='{0}'", request.Id));
@@ -46,7 +49,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetGroups request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/group GET"));
@@ -69,7 +72,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         /// <returns>the group</returns>
         public object Put(UpdateGroup request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebGroup result;
             try {
                 context.Open();
@@ -94,7 +97,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(CreateGroup request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebGroup result;
             try{
                 context.Open();
@@ -102,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
 				grp = request.ToEntity(context, grp);
                 grp.Store();
                 result = new WebGroup(grp);
-                context.LogInfo(this,string.Format("/group POST Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/group POST Id='{0}'", grp.Id));
                 context.LogDebug(this,string.Format("Group {0} created by user {1}", grp.Name, User.FromId(context, context.UserId).Username));
                 context.Close ();
             }catch(Exception e) {
@@ -118,7 +121,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(DeleteGroup request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/group/{{Id}} DELETE Id='{0}'", request.Id));
@@ -141,15 +144,16 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Post(AddUserToGroup request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebGroup result;
             try{
                 context.Open();
                 context.LogInfo(this,string.Format("/group/{{grpId}}/user POST grpId='{0}'", request.GrpId));
-                context.AddUserToGroup(request.Id, request.GrpId);
 
                 User usr = User.FromId(context, request.Id);
                 Group grp = Group.FromId(context, request.GrpId);
+                grp.AssignUser (usr);
+
                 result = new WebGroup(grp);
                 context.LogDebug(this,string.Format("User {0} has been added to group {1}", usr.Username, grp.Name));
                 context.Close ();
@@ -167,7 +171,7 @@ namespace Terradue.Tep.WebServer.Services {
         /// <param name="request">Request.</param>
         public object Delete(RemoveUserFromGroup request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebGroup result;
             try{
                 context.Open();
@@ -188,7 +192,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Put(SaveExacltyUsersToGroup request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebGroup result = null;
             try{
                 context.Open();
@@ -211,7 +215,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetUsersFromGroup request)
         {
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<WebUser> result = new List<WebUser>();;
             try{
                 context.Open();
@@ -234,7 +238,7 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(UserGetGroupsRequestTep request) {
             List<WebGroup> result = new List<WebGroup>();
 
-            var context = TepWebContext.GetWebContext(PagePrivileges.DeveloperView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{usrId}}/group PUT usrId='{0}'", request.UsrId));
@@ -256,6 +260,49 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return result;
+        }
+
+        public object Get(GroupSearchRequest request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.Open();
+            context.LogInfo(this, string.Format("/user/search GET"));
+
+            EntityList<Group> groups = new EntityList<Group>(context);
+            groups.AddSort("Identifier", SortDirection.Ascending);
+
+            // Load the complete request
+            HttpRequest httpRequest = HttpContext.Current.Request;
+
+            OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            IOpenSearchResultCollection osr = ose.Query(groups, httpRequest.QueryString, responseType);
+
+            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(groups, osr);
+
+            context.Close();
+            return new HttpResult(osr.SerializeToString(), osr.ContentType);
+        }
+
+        public object Get(GroupDescriptionRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/description GET"));
+
+                EntityList<Group> groups = new EntityList<Group>(context);
+                groups.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
+
+                OpenSearchDescription osd = groups.GetOpenSearchDescription();
+
+                context.Close();
+
+                return new HttpResult(osd, "application/opensearchdescription+xml");
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
         }
 
     }

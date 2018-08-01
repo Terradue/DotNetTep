@@ -4,8 +4,9 @@ using System.Collections;
 using System.Collections.Specialized;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Schema;
+using Terradue.OpenSearch.Request;
 using Terradue.OpenSearch.Result;
-using System.Collections.Generic;
+using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
 
@@ -18,8 +19,8 @@ namespace Terradue.Tep {
     /// </description>
     /// \ingroup TepData
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation" 
-    [EntityTable(null, EntityTableConfiguration.Custom, HasPrivilegeManagement = true, Storage = EntityTableStorage.Above)]
-    public class Collection : Series, IProxiedOpenSearchable {
+    [EntityTable(null, EntityTableConfiguration.Custom, HasPermissionManagement = true, Storage = EntityTableStorage.Above)]
+    public class Collection : Series, IProxiedOpenSearchable, IAtomizable {
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.DataSeries"/> class.
@@ -82,7 +83,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c> if this instance is public; otherwise, <c>false</c>.</returns>
         public bool IsPublic(){
-            return HasGlobalPrivilege();
+            return DoesGrantGlobalPermission();
         }
 
         /// <summary>
@@ -90,9 +91,19 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="osr">IOpenSearchResult cotnaing the result of the a search</param>
         /// <param name="request">Request.</param>
-        public void ApplyResultFilters(Terradue.OpenSearch.Request.OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
+        public void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
             base.ApplyResultFilters(request, ref osr, finalContentType);
-            MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
+            //MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
+        }
+
+        public OpenSearchUrl GetSearchBaseUrl ()
+        {
+            return new OpenSearchUrl (string.Format ("{0}/data/collection/{1}/search", context.BaseUrl, this.Identifier));
+        }
+
+        public OpenSearchDescriptionUrl GetDescriptionBaseUrl (string mimeType)
+        {
+            return new OpenSearchDescriptionUrl(mimeType, string.Format ("{0}/data/collection/{1}/description", context.BaseUrl, this.Identifier), "search");
         }
 
         /// <summary>
@@ -145,6 +156,50 @@ namespace Terradue.Tep {
             return OSDD;
         }
 
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+			string identifier = this.Identifier;
+			string name = (this.Name != null ? this.Name : this.Identifier);
+			string text = (this.TextContent != null ? this.TextContent : name);
+
+			AtomItem atomEntry = null;
+			var entityType = EntityType.GetEntityType(typeof(Collection));
+			Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
+			try {
+				atomEntry = new AtomItem(name, text, null, id.ToString(), DateTime.UtcNow);
+			} catch (Exception e) {
+				atomEntry = new AtomItem();
+			}
+
+			atomEntry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+
+			atomEntry.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
+
+            //add description link
+            UriBuilder search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword +"/" + this.Identifier + "/description");
+            atomEntry.Links.Add(new SyndicationLink(search.Uri, "search", name, "application/atom+xml", 0));
+
+            //add search link
+            search = new UriBuilder(context.BaseUrl + "/" + entityType.Keyword + "/" + identifier + "/search");
+            atomEntry.Links.Add(new SyndicationLink(search.Uri, "public", name, "application/atom+xml", 0));
+
+            //add alternate link
+            search = new UriBuilder(this.CatalogueDescriptionUrl);
+            atomEntry.Links.Add(new SyndicationLink(search.Uri, "alternate", name, "application/atom+xml", 0));
+            			
+            //add via link
+			Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
+			atomEntry.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
+			atomEntry.ReferenceData = this;
+
+			var basepath = new UriBuilder(context.BaseUrl);
+			basepath.Path = "user";
+			
+			return atomEntry;
+        }
+
+        public NameValueCollection GetOpenSearchParameters() {
+            return OpenSearchFactory.GetBaseOpenSearchParameter();
+        }
     }
 }
 
