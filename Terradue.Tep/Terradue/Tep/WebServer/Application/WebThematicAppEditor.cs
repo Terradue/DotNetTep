@@ -223,13 +223,24 @@ namespace Terradue.Tep.WebServer {
                         break;
 					case "http://www.terradue.com/spec/owc/1.0/req/atom/geobrowserplugin":
 						this.GeobrowserPlugins = new List<WebThematicAppGeobrowserPlugins>();
+                        var gbPlugin = new WebThematicAppGeobrowserPlugins();
+                        gbPlugin.GeobrowserPluginsParameters = new List<WebKeyValue>();
                         foreach (var styleset in offering.StyleSets) {
-							this.GeobrowserPlugins.Add(new WebThematicAppGeobrowserPlugins {
-								GeobrowserPluginsName = styleset.Name,
-								GeobrowserPluginsContent = styleset.Content != null ? styleset.Content.Text : null,
-								GeobrowserPluginsType = styleset.Any[0].InnerText
-                            });
+                            var name = styleset.Name;
+                            var type = styleset.Any != null && styleset.Any.Length > 0 ? styleset.Any[0].InnerText : "";
+                            var content = styleset.Content != null ? styleset.Content.Text : null;
+                            switch(type){
+                                case "identifier":
+                                    gbPlugin.GeobrowserPluginId = content;
+                                    break;
+                                case "parameter":
+                                    gbPlugin.GeobrowserPluginsParameters.Add(new WebKeyValue(name, content));
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
+                        this.GeobrowserPlugins.Add(gbPlugin);
                         break;
                     case "http://www.opengis.net/spec/owc/1.0/req/atom/wps":
                         this.WpsServiceOfferingPresent = true;
@@ -501,24 +512,35 @@ namespace Terradue.Tep.WebServer {
 				});
 			}
 			if (this.GeobrowserPlugins != null && this.GeobrowserPlugins.Count > 0) {
-                var mfStylesets = new List<OwcStyleSet>();
 				foreach (var gbp in this.GeobrowserPlugins) {
+                    var mfStylesets = new List<OwcStyleSet>();
                     var any = new List<System.Xml.XmlElement>();
-					if (!string.IsNullOrEmpty(gbp.GeobrowserPluginsType)) {
-                        var type = doc.CreateElement("type", "http://www.terradue.com");
-						type.InnerText = gbp.GeobrowserPluginsType;
-                        any.Add(type);
-                    }
+					var type = doc.CreateElement("type", "http://www.terradue.com");
+					type.InnerText = "identifier";
+                    any.Add(type);
                     mfStylesets.Add(new OwcStyleSet {
-						Name = gbp.GeobrowserPluginsName,
+                        Name = "pluginId",
                         Any = any.ToArray(),
-						Content = new OwcContent { Text = gbp.GeobrowserPluginsContent }
+                        Content = new OwcContent { Text = gbp.GeobrowserPluginId }
+                    });
+                    if(gbp.GeobrowserPluginsParameters != null){
+                        foreach(var gbpparam in gbp.GeobrowserPluginsParameters){
+                            any = new List<System.Xml.XmlElement>();
+                            type = doc.CreateElement("type", "http://www.terradue.com");
+                            type.InnerText = "parameter";
+                            any.Add(type);
+                            mfStylesets.Add(new OwcStyleSet {
+                                Name = gbpparam.Key,
+                                Any = any.ToArray(),
+                                Content = new OwcContent { Text = gbpparam.Value }
+                            });
+                        }
+                    }
+                    offerings.Add(new OwcOffering {
+                        Code = "http://www.terradue.com/spec/owc/1.0/req/atom/geobrowserplugin",
+                        StyleSets = mfStylesets.ToArray()
                     });
                 }
-                offerings.Add(new OwcOffering {
-					Code = "http://www.terradue.com/spec/owc/1.0/req/atom/geobrowserplugin",
-                    StyleSets = mfStylesets.ToArray()
-                });
             }
             entry.Offerings = offerings;
 
@@ -586,14 +608,11 @@ namespace Terradue.Tep.WebServer {
 
 	public class WebThematicAppGeobrowserPlugins {
 
-		[ApiMember(Name = "GeobrowserPluginsType", Description = "GeobrowserPluginsType", ParameterType = "query", DataType = "string", IsRequired = true)]
-		public string GeobrowserPluginsType { get; set; }
+        [ApiMember(Name = "GeobrowserPluginId", Description = "GeobrowserPluginId", ParameterType = "query", DataType = "string", IsRequired = true)]
+		public string GeobrowserPluginId { get; set; }
 
-		[ApiMember(Name = "GeobrowserPluginsName", Description = "GeobrowserPluginsName", ParameterType = "query", DataType = "string", IsRequired = true)]
-		public string GeobrowserPluginsName { get; set; }
-
-		[ApiMember(Name = "GeobrowserPluginsContent", Description = "GeobrowserPluginsContent", ParameterType = "query", DataType = "string", IsRequired = true)]
-		public string GeobrowserPluginsContent { get; set; }
+        [ApiMember(Name = "GeobrowserPluginsParameters", Description = "GeobrowserPluginsParameters", ParameterType = "query", DataType = "List<WebKeyValue>", IsRequired = true)]
+        public List<WebKeyValue> GeobrowserPluginsParameters { get; set; }
               
 		public WebThematicAppGeobrowserPlugins() { }
 		
