@@ -222,9 +222,9 @@ namespace Terradue.Tep.WebServer {
                         }
                         break;
 					case "http://www.terradue.com/spec/owc/1.0/req/atom/geobrowserplugin":
-						this.GeobrowserPlugins = new List<WebThematicAppGeobrowserPlugins>();
+                        if (this.GeobrowserPlugins == null) this.GeobrowserPlugins = new List<WebThematicAppGeobrowserPlugins>();
                         var gbPlugin = new WebThematicAppGeobrowserPlugins();
-                        gbPlugin.GeobrowserPluginsParameters = new List<WebKeyValue>();
+                        gbPlugin.GeobrowserPluginParameters = new List<WebKeyValue>();
                         foreach (var styleset in offering.StyleSets) {
                             var name = styleset.Name;
                             var type = styleset.Any != null && styleset.Any.Length > 0 ? styleset.Any[0].InnerText : "";
@@ -234,7 +234,7 @@ namespace Terradue.Tep.WebServer {
                                     gbPlugin.GeobrowserPluginId = content;
                                     break;
                                 case "parameter":
-                                    gbPlugin.GeobrowserPluginsParameters.Add(new WebKeyValue(name, content));
+                                    gbPlugin.GeobrowserPluginParameters.Add(new WebKeyValue(name, content));
                                     break;
                                 default:
                                     break;
@@ -523,8 +523,8 @@ namespace Terradue.Tep.WebServer {
                         Any = any.ToArray(),
                         Content = new OwcContent { Text = gbp.GeobrowserPluginId }
                     });
-                    if(gbp.GeobrowserPluginsParameters != null){
-                        foreach(var gbpparam in gbp.GeobrowserPluginsParameters){
+                    if(gbp.GeobrowserPluginParameters != null){
+                        foreach(var gbpparam in gbp.GeobrowserPluginParameters){
                             any = new List<System.Xml.XmlElement>();
                             type = doc.CreateElement("type", "http://www.terradue.com");
                             type.InnerText = "parameter";
@@ -612,7 +612,7 @@ namespace Terradue.Tep.WebServer {
 		public string GeobrowserPluginId { get; set; }
 
         [ApiMember(Name = "GeobrowserPluginsParameters", Description = "GeobrowserPluginsParameters", ParameterType = "query", DataType = "List<WebKeyValue>", IsRequired = true)]
-        public List<WebKeyValue> GeobrowserPluginsParameters { get; set; }
+        public List<WebKeyValue> GeobrowserPluginParameters { get; set; }
               
 		public WebThematicAppGeobrowserPlugins() { }
 		
