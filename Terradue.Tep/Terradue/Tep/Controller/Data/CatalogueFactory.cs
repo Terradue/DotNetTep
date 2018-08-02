@@ -159,5 +159,16 @@ namespace Terradue.Tep {
             if (url.Contains("/search")) return true;
             return false;
         }
+
+        /// <summary>
+        /// Ises the URL list series.
+        /// </summary>
+        /// <returns><c>true</c>, if URL list series was ised, <c>false</c> otherwise.</returns>
+        /// <param name="url">URL.</param>
+        public static bool IsUrlListSeries(string url) {
+            if (string.IsNullOrEmpty(url)) return false;
+            if (url.StartsWith("file:///t2api") && url.Contains("/search")) return true;
+            return false;
+        }
 	}
 }

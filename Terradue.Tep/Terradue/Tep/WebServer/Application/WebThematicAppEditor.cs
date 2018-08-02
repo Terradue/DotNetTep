@@ -446,14 +446,33 @@ namespace Terradue.Tep.WebServer {
 						any.Add(defaultVisibleItems);
 					}
                     var isDescription = CatalogueFactory.IsUrlOpensearchDescription(dc.DataContextDescriptionUrl);
-                    var isSearch = CatalogueFactory.IsUrlOpensearchSearch(dc.DataContextDescriptionUrl);
-                    if (isDescription || isSearch) {
+                    if (isDescription){
                         osOperations.Add(new OwcOperation {
-                            Code = isDescription ? "DescribeDataset" : "SearchDataset",
-                            Type = isDescription ? "application/opensearchdescription+xml" : "application/atom+xml",
+                            Code = "DescribeDataset",
+                            Type = "application/opensearchdescription+xml",
                             Href = dc.DataContextDescriptionUrl,
-							Any = any.ToArray()
+                            Any = any.ToArray()
                         });
+                    } else {
+                        var isListSeries = CatalogueFactory.IsUrlListSeries(dc.DataContextDescriptionUrl);
+                        if (isListSeries) {
+                            osOperations.Add(new OwcOperation {
+                                Code = "ListSeries",
+                                Type = "application/json",
+                                Href = dc.DataContextDescriptionUrl,
+                                Any = any.ToArray()
+                            });
+                        } else {
+                            var isSearch = CatalogueFactory.IsUrlOpensearchSearch(dc.DataContextDescriptionUrl);
+                            if (isSearch) {
+                                osOperations.Add(new OwcOperation {
+                                    Code = "SearchDataset",
+                                    Type = "application/atom+xml",
+                                    Href = dc.DataContextDescriptionUrl,
+                                    Any = any.ToArray()
+                                });
+                            }
+                        }
                     }
                 }
                 offerings.Add(new OwcOffering{
