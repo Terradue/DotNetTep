@@ -208,14 +208,8 @@ namespace Terradue.Tep.WebServer.Services
 				context.Open();
                 context.LogInfo(this,string.Format("/data/collection/search GET"));
 
-				//MasterCatalogue cat = new MasterCatalogue(context);
-				//OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-				//ose.DefaultTimeOut = 60000;
-
-				//Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-				//result = ose.Query(cat, httpRequest.QueryString, type);		
-
                 EntityList<Collection> collections = new EntityList<Collection>(context);
+                collections.AddSort("Name",SortDirection.Ascending);
 				OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
 				Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
