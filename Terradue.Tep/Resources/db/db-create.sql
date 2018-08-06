@@ -1,4 +1,4 @@
--- VERSION 1.1.2.20
+-- VERSION 1.2
 
 USE $MAIN$;
 
@@ -348,4 +348,7 @@ INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `ena
 ALTER TABLE usrsession ADD COLUMN `log_end` DATETIME NULL AFTER `log_time`;
 -- RESULT
 
-
+-- up wpsjob table...\
+ALTER TABLE wpsjob 
+CHANGE COLUMN `name` `name` VARCHAR(120) NOT NULL;
+-- RESULT
