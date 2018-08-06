@@ -521,6 +521,43 @@ namespace Terradue.Tep.WebServer.Services {
             }
         }
 
+        public object Get(UserCsvListRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var csv = new System.Text.StringBuilder();
+            var filename = DateTime.UtcNow.ToString("yy-MM-dd");
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/csv GET"));
+                filename = context.GetConfigValue("SiteNameShort") + "-" + filename;
+
+                string sql = string.Format("SELECT usr.id,usr.username,usr.email,usr.firstname,usr.lastname,usr.level,usr.affiliation,usr.country,(SELECT log_time FROM usrsession WHERE id_usr=usr.id ORDER BY log_time ASC LIMIT 1) AS registration_date FROM usr;");
+                csv.Append("Id,Username,Email,FisrtName,LastName,Level,Affiliation,Country,Registration date" + Environment.NewLine);
+                System.Data.IDbConnection dbConnection = context.GetDbConnection();
+                System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+                while (reader.Read()) {
+                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}{9}", 
+                                             reader.GetValue(0) != DBNull.Value ? reader.GetString(0) : "",
+                                             reader.GetValue(1) != DBNull.Value ? reader.GetString(1) : "",
+                                             reader.GetValue(2) != DBNull.Value ? reader.GetString(2) : "",
+                                             reader.GetValue(3) != DBNull.Value ? reader.GetString(3) : "",
+                                             reader.GetValue(4) != DBNull.Value ? reader.GetString(4) : "",
+                                             reader.GetValue(5) != DBNull.Value ? reader.GetString(5) : "",
+                                             reader.GetValue(6) != DBNull.Value ? reader.GetString(6) : "",
+                                             reader.GetValue(7) != DBNull.Value ? reader.GetString(7) : "",
+                                             reader.GetValue(8) != DBNull.Value ? reader.GetString(8) : "",
+                                             Environment.NewLine));
+                }
+                context.CloseQueryResult(reader, dbConnection);
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            Response.AddHeader("Content-Disposition", string.Format("attachment;filename={0}.csv", filename));
+            return csv.ToString();
+        }
+
     }
 }
 
