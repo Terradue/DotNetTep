@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Terradue.Portal;
 
@@ -81,13 +82,13 @@ namespace Terradue.Tep {
         /// Gets or sets the total users.
         /// </summary>
         /// <value>The total users.</value>
-		public int TotalUsers { get; set; }
+		public NameValueCollection TotalUsers { get; set; }
 
         /// <summary>
         /// Gets or sets the active users.
         /// </summary>
         /// <value>The active users.</value>
-		public int ActiveUsers { get; set; }
+        public NameValueCollection ActiveUsers { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="T:Terradue.Tep.Analytics"/> analyse jobs.
@@ -126,7 +127,7 @@ namespace Terradue.Tep {
             this.AnalyseJobs = true;
             this.AnalyseDataPackages = true;
             this.AnalyseCollections = true;
-            this.SkipIds = new List<int>();
+            this.SkipIds = new List<int> { 0 };
         }
 
         /// <summary>
@@ -166,7 +167,7 @@ namespace Terradue.Tep {
 					var user = Entity as UserTep;
 					AddUserAnalytics(user);
 					IconUrl = user.GetAvatar();
-				} else if (Entity is Domain) {
+                } else if (Entity is Domain || Entity is ThematicCommunity) {
 					var domain = Entity as Domain;
 					//get all users of domain
 					var roles = new EntityList<Role>(Context);
@@ -184,6 +185,9 @@ namespace Terradue.Tep {
 							}
 						}
 					}
+                    var allowedIds = GetAllowedIds();
+                    ActiveUsers = GetActiveUsers(allowedIds);
+                    TotalUsers = GetNewUsers(allowedIds);
 					IconUrl = domain.IconUrl;
 				} else if (Entity is Group) {
 					var group = Entity as Group;
@@ -211,12 +215,9 @@ namespace Terradue.Tep {
 		private void AddGlobalAnalytics(){
 			AddUserAnalytics(null);
 
-			var skipdids = string.Join(",", SkipIds);
-			string sql = string.Format("SELECT COUNT(*) FROM usr WHERE id NOT IN ({0});", skipdids);
-			TotalUsers = Context.GetQueryIntegerValue(sql);
-
-			var activeusersIds = GetActiveUsers();
-			ActiveUsers = activeusersIds.Count;
+            var allowedIds = GetAllowedIds();
+            ActiveUsers = GetActiveUsers(allowedIds);
+            TotalUsers = GetNewUsers(allowedIds);
 		}
 
         private void AddUserAnalytics(UserTep user) {
@@ -337,20 +338,20 @@ namespace Terradue.Tep {
             WpsJobSubmittedCount = WpsJobSuccessCount + WpsJobFailedCount + WpsJobOngoingCount;
         }
 
-		public List<int> GetActiveUsers() {
-			var allowedIds = new List<int>();
+        public List<int> GetAllowedIds(){
+            var allowedIds = new List<int>();
             if (Entity != null) {
                 if (Entity is UserTep) {
                     var user = Entity as UserTep;
                     allowedIds.Add(user.Id);
-                } else if (Entity is Domain) {
+                } else if (Entity is Domain || Entity is ThematicCommunity) {
                     var domain = Entity as Domain;
                     //get all users of domain
                     var roles = new EntityList<Role>(Context);
                     roles.Load();
                     foreach (var role in roles) {
                         if (role.Identifier != RoleTep.PENDING) {
-                            allowedIds = role.GetUsers(domain.Id).ToList();
+                            allowedIds.AddRange(role.GetUsers(domain.Id).ToList());
                         }
                     }
                 } else if (Entity is Group) {
@@ -362,30 +363,81 @@ namespace Terradue.Tep {
                     allowedIds.Add(user.Id);
                 }
             }
+            return allowedIds;
+        }
 
+        /// <summary>
+        /// Gets the new users.
+        /// </summary>
+        /// <returns>The new users.</returns>
+        /// <param name="allowedIds">Allowed identifiers.</param>
+        public NameValueCollection GetNewUsers(List<int> allowedIds) {
             var allowedids = string.Join(",", allowedIds);         
 			var skipids = string.Join(",", SkipIds);
-
-			return GetActiveUsers(Context, StartDate, EndDate, skipids, allowedids);
+            return GetNewUsers(Context, StartDate, EndDate, skipids, allowedids);
 		}
+
+        /// <summary>
+        /// Gets the new users.
+        /// </summary>
+        /// <returns>The new users.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="startdate">Startdate.</param>
+        /// <param name="enddate">Enddate.</param>
+        /// <param name="skipids">Skipids.</param>
+        /// <param name="allowedids">Allowedids.</param>
+        public static NameValueCollection GetNewUsers(IfyContext context, string startdate, string enddate, string skipids, string allowedids) {
+            var ids = new NameValueCollection();
+
+            string sql = string.Format("SELECT DISTINCT usr.id,usr.level FROM usr {0}{1}{2};",
+                                       !string.IsNullOrEmpty(startdate) && !string.IsNullOrEmpty(enddate) ? " WHERE id NOT IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time < '" + startdate + "' ) AND id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time <= '" + enddate + "')" : "",
+                                       string.IsNullOrEmpty(skipids) ? "" : (string.IsNullOrEmpty(startdate) || string.IsNullOrEmpty(enddate) ? " WHERE " : " AND ") + "id NOT IN (" + skipids + ")",
+                                       string.IsNullOrEmpty(allowedids) ? "" : ((string.IsNullOrEmpty(startdate) || string.IsNullOrEmpty(enddate)) && string.IsNullOrEmpty(skipids) ? " WHERE " : " AND ") + " id IN (" + allowedids + ")");
+            System.Data.IDbConnection dbConnection = context.GetDbConnection();
+            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+            while (reader.Read()) {
+                if (reader.GetValue(0) != DBNull.Value) {
+                    var id = reader.GetInt32(0);
+                    var level = reader.GetInt32(1);
+                    ids.Set(id + "", level + "");
+                }
+            }
+            context.CloseQueryResult(reader, dbConnection);
+            return ids;
+        }
 
         /// <summary>
         /// Gets the active users.
         /// </summary>
         /// <returns>The active users.</returns>
-		public static List<int> GetActiveUsers(IfyContext context, string startdate, string enddate, string skipids, string allowedids) {
-            var ids = new List<int>();
-                     
-            string sql = string.Format("SELECT DISTINCT usr.id FROM usr WHERE " +
-			                           "id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time >= '{0}' AND usrsession.log_time <= '{1}'){2}{3};",
-			                           startdate, enddate, 
-			                           string.IsNullOrEmpty(skipids) ? "" : " AND id NOT IN (" + skipids + ")",
-			                           string.IsNullOrEmpty(allowedids) ? "" : " AND id IN (" + allowedids + ")");
+        /// <param name="allowedIds">Allowed identifiers.</param>
+        public NameValueCollection GetActiveUsers(List<int> allowedIds) {
+            var allowedids = string.Join(",", allowedIds);
+            var skipids = string.Join(",", SkipIds);
+            return GetActiveUsers(Context, StartDate, EndDate, skipids, allowedids);
+        }
+
+        /// <summary>
+        /// Gets the active users.
+        /// </summary>
+        /// <returns>The active users.</returns>
+        public static NameValueCollection GetActiveUsers(IfyContext context, string startdate, string enddate, string skipids, string allowedids) {
+            var ids = new NameValueCollection();
+
+            int activeThreshold = context.GetConfigIntegerValue("report-activeUsers-threshold");
+            string sql = string.Format("SELECT usr.id,usr.level FROM usr WHERE " + 
+                                       "id IN (SELECT id_usr FROM usrsession{0} GROUP BY id_usr HAVING COUNT(*) > {1}){2}{3};",
+                                        !string.IsNullOrEmpty(startdate) && !string.IsNullOrEmpty(enddate) ? " WHERE usrsession.log_time >= '"+startdate+"' AND usrsession.log_time <= '"+enddate+"'" : "",
+                                        activeThreshold,
+                                        string.IsNullOrEmpty(skipids) ? "" : " AND id NOT IN (" + skipids + ")",
+                                        string.IsNullOrEmpty(allowedids) ? "" : " AND id IN (" + allowedids + ")");
             System.Data.IDbConnection dbConnection = context.GetDbConnection();
 			System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
             while (reader.Read()) {
                 if (reader.GetValue(0) != DBNull.Value) {
-                    ids.Add(reader.GetInt32(0));
+                    var id = reader.GetInt32(0);
+                    var level = reader.GetInt32(1);
+                    ids.Set(id+"", level+"");
                 }
             }
             context.CloseQueryResult(reader, dbConnection);

@@ -42,19 +42,19 @@ namespace Terradue.Tep.WebServer.Services {
                 switch (request.Type) {
                     case "user":
                         analytics = new Analytics(context, UserTep.FromIdentifier(context, request.Identifier));
-                        analytics.Load();
+                        analytics.Load(request.startdate, request.enddate);
                         break;
                     case "community":
                         analytics = new Analytics(context, ThematicCommunity.FromIdentifier(context, request.Identifier));
-                        analytics.Load();
+                        analytics.Load(request.startdate, request.enddate);
                         break;
                     case "group":
                         analytics = new Analytics(context, Group.FromIdentifier(context, request.Identifier));
-                        analytics.Load();
+                        analytics.Load(request.startdate, request.enddate);
                         break;
     				case "all":
                         analytics = new Analytics(context);
-                        analytics.Load();
+                        analytics.Load(request.startdate, request.enddate);
                         break;
                     default:
                         break;

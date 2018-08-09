@@ -203,17 +203,17 @@ namespace Terradue.Tep.WebServer.Services {
             csv.Append(Environment.NewLine);
 
             //Active users         
-			ids = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
-            csv.Append(String.Format("Active users between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
+			var nvc = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
+            csv.Append(String.Format("Active users between {0} and {1},{2}{3}", startdate, enddate, nvc.AllKeys.Length, Environment.NewLine));
+            if (nvc.AllKeys.Length > 0) {
 				csv.Append("Username,Name,Affiliation,Nb of logins,Average session (min)" + Environment.NewLine);
                 var analytics = new List<ReportAnalytic>();
-                foreach (int id in ids) {
-                    var usr = UserTep.FromId(context, id);
+                foreach (string id in nvc.AllKeys) {
+                    var usr = UserTep.FromId(context, Int32.Parse(id));
                     var name = string.Format("{0},{1},{2}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"));
 
 					//get average session time
-					sql = string.Format("SELECT log_time,log_end FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}' AND log_end IS NOT NULL order by log_time desc;",id,startdate,enddate);
+                    sql = string.Format("SELECT log_time,log_end FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}' AND log_end IS NOT NULL order by log_time desc;",id,startdate,enddate);
 					System.Data.IDbConnection dbConnection = context.GetDbConnection();
                     System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
 					int totalsession = 0;
@@ -302,13 +302,13 @@ namespace Terradue.Tep.WebServer.Services {
             var analytics = new List<ReportAnalytic>();
 
             //Nb of wpsjobs per user         
-			List<int> idsUsr = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
-            if (idsUsr.Count > 0) {
+			var idsUsr = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
+            if (idsUsr.AllKeys.Length > 0) {
                 csv.Append(string.Format("Number of wpsjobs created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Total,Succeeded,Failed" + Environment.NewLine);
                 analytics = new List<ReportAnalytic>();
-                foreach (var id in idsUsr) {
-                    User usr = User.FromId(context, id);
+                foreach (string id in idsUsr.AllKeys) {
+                    User usr = User.FromId(context, Int32.Parse(id));
                     Analytics analytic = new Analytics(context, usr);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseDataPackages = false;
@@ -502,13 +502,13 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             //Nb of data packages per user
-			List<int> idsUsr = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
-            if (idsUsr.Count > 0) {
+			var idsUsr = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
+            if (idsUsr.AllKeys.Length > 0) {
                 csv.Append(string.Format("Number of Data package created/loaded per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
                 analytics = new List<ReportAnalytic>();
-                foreach (var id in idsUsr) {
-                    User usr = User.FromId(context, id);
+                foreach (string id in idsUsr.AllKeys) {
+                    User usr = User.FromId(context, Int32.Parse(id));
                     Analytics analytic = new Analytics(context, usr);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseJobs = false;
