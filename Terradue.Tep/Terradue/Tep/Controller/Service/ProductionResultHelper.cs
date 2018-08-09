@@ -110,18 +110,21 @@ namespace Terradue.Tep {
 								if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
 									var item = ((DataType)(output.Item)).Item as ComplexDataType;
 									var reference = item.Reference as OutputReferenceType;
-									reference.href = jobResultUrl;
-									reference.mimeType = "application/opensearchdescription+xml";
-									item.Reference = reference;
-									((DataType)(output.Item)).Item = item;
+                                    if (reference != null) {
+                                        reference.href = jobResultUrl;
+                                        reference.mimeType = "application/opensearchdescription+xml";
+                                        item.Reference = reference;
+                                        ((DataType)(output.Item)).Item = item;
+                                    }
 								} else if (output.Item is OutputReferenceType) {
 									context.LogDebug(wpsjob, string.Format("Case result_osd"));
 									var reference = output.Item as OutputReferenceType;
-									reference.href = jobResultUrl;
-									reference.mimeType = "application/opensearchdescription+xml";
-									output.Item = reference;
+                                    if (reference != null) {
+                                        reference.href = jobResultUrl;
+                                        reference.mimeType = "application/opensearchdescription+xml";
+                                        output.Item = reference;
+                                    }
 								}
-
 								output.Identifier = new CodeType { Value = "result_osd" };
 							} else {
 								if (output.Item is DataType && ((DataType)(output.Item)).Item != null) {
