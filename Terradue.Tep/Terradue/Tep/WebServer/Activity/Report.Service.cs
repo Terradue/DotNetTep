@@ -171,24 +171,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.CloseQueryResult(reader, dbConnection);
             return ids;
         }
-
-        private List<int> GetActiveUsers(IfyContext context, string startdate, string enddate, string skipedIds){
-            List<int> ids = new List<int>();
-
-            string sql = string.Format("SELECT DISTINCT usr.id FROM usr WHERE " +
-                               "id IN (SELECT id_usr FROM usrsession WHERE usrsession.log_time >= '{0}' AND usrsession.log_time <= '{1}'){2};",
-                                       startdate, enddate, string.IsNullOrEmpty(skipedIds) ? "" : " AND id NOT IN ("+skipedIds+")");
-            System.Data.IDbConnection dbConnection = context.GetDbConnection();
-            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
-            while (reader.Read()) {
-                if (reader.GetValue(0) != DBNull.Value) {
-                    ids.Add(reader.GetInt32(0));
-                }
-            }
-            context.CloseQueryResult(reader, dbConnection);
-            return ids;
-        }
-
+  
         /// <summary>
         /// Generates the csv users part.
         /// </summary>
@@ -219,18 +202,18 @@ namespace Terradue.Tep.WebServer.Services {
             }
             csv.Append(Environment.NewLine);
 
-            //Active users
-            ids = GetActiveUsers(context, startdate, enddate, skipedIds);
-            csv.Append(String.Format("Active users between {0} and {1},{2}{3}", startdate, enddate, ids.Count, Environment.NewLine));
-            if (ids.Count > 0) {
+            //Active users         
+			var nvc = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
+            csv.Append(String.Format("Active users between {0} and {1},{2}{3}", startdate, enddate, nvc.AllKeys.Length, Environment.NewLine));
+            if (nvc.AllKeys.Length > 0) {
 				csv.Append("Username,Name,Affiliation,Nb of logins,Average session (min)" + Environment.NewLine);
                 var analytics = new List<ReportAnalytic>();
-                foreach (int id in ids) {
-                    var usr = UserTep.FromId(context, id);
+                foreach (string id in nvc.AllKeys) {
+                    var usr = UserTep.FromId(context, Int32.Parse(id));
                     var name = string.Format("{0},{1},{2}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"));
 
 					//get average session time
-					sql = string.Format("SELECT log_time,log_end FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}' AND log_end IS NOT NULL order by log_time desc;",id,startdate,enddate);
+                    sql = string.Format("SELECT log_time,log_end FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}' AND log_end IS NOT NULL order by log_time desc;",id,startdate,enddate);
 					System.Data.IDbConnection dbConnection = context.GetDbConnection();
                     System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
 					int totalsession = 0;
@@ -318,14 +301,14 @@ namespace Terradue.Tep.WebServer.Services {
 
             var analytics = new List<ReportAnalytic>();
 
-            //Nb of wpsjobs per user
-            List<int> idsUsr = GetActiveUsers(context, startdate, enddate, skipedIds);
-            if (idsUsr.Count > 0) {
+            //Nb of wpsjobs per user         
+			var idsUsr = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
+            if (idsUsr.AllKeys.Length > 0) {
                 csv.Append(string.Format("Number of wpsjobs created per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Total,Succeeded,Failed" + Environment.NewLine);
                 analytics = new List<ReportAnalytic>();
-                foreach (var id in idsUsr) {
-                    User usr = User.FromId(context, id);
+                foreach (string id in idsUsr.AllKeys) {
+                    User usr = User.FromId(context, Int32.Parse(id));
                     Analytics analytic = new Analytics(context, usr);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseDataPackages = false;
@@ -519,13 +502,13 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             //Nb of data packages per user
-            List<int> idsUsr = GetActiveUsers(context, startdate, enddate, skipedIds);
-            if (idsUsr.Count > 0) {
+			var idsUsr = Analytics.GetActiveUsers(context, startdate, enddate, skipedIds, null);
+            if (idsUsr.AllKeys.Length > 0) {
                 csv.Append(string.Format("Number of Data package created/loaded per user between {0} and {1}{2}", startdate, enddate, Environment.NewLine));
                 csv.Append("Username,Data packages created,Data packages loaded,Item loaded" + Environment.NewLine);
                 analytics = new List<ReportAnalytic>();
-                foreach (var id in idsUsr) {
-                    User usr = User.FromId(context, id);
+                foreach (string id in idsUsr.AllKeys) {
+                    User usr = User.FromId(context, Int32.Parse(id));
                     Analytics analytic = new Analytics(context, usr);
                     analytic.AnalyseCollections = false;
                     analytic.AnalyseJobs = false;
