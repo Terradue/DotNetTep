@@ -470,15 +470,31 @@ namespace Terradue.Tep {
                     specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
 				}
                 try {
-                    IOpenSearchable entity;
+                    IOpenSearchable entity = null;
                     try {
                         entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location), "application/atom+xml");
                     }catch(Exception e){
-                        entity = null;
-                    }
-                    if(entity == null) entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
-
-				    osResources.Add(entity);
+						if (!res.Location.StartsWith(context.GetConfigValue("catalog-baseurl"))){
+							try {
+                                entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
+                            } catch (Exception ex) {
+								var feed = new AtomFeed();
+								feed.Id = "Exception";
+								feed.ElementExtensions.Add(
+									new SyndicationElementExtension("exception", "",new ExceptionMessage { Message = ex.Message,Source = res.Location,HelpLink = ex.HelpLink })
+								);
+								entity = new ExceptionOpensearchable(feed);
+                            }
+						} else {
+							var feed = new AtomFeed();
+                            feed.Id = "Exception";
+							feed.ElementExtensions.Add(
+								new SyndicationElementExtension("exception", "", new ExceptionMessage { Message = e.Message, Source = res.Location, HelpLink = e.HelpLink })
+                                );
+							entity = new ExceptionOpensearchable(feed);
+						}                  
+					}
+					if (entity != null) osResources.Add(entity);
 				}
 				catch (Exception e)
 				{
