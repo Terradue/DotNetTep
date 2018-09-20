@@ -550,6 +550,25 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool(true);
         }
 
+        public object Put(WpsJobUpdateNbResultsRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            int nbresults = 0;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/nbresults PUT identifier='{0}'", request.JobId));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+                job.UpdateResultCount();
+                nbresults = job.NbResults;
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return nbresults;
+        }
+
     }
 }
 

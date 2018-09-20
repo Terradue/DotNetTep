@@ -889,12 +889,19 @@ namespace Terradue.Tep {
             var entityType = EntityType.GetEntityType(typeof(WpsJob));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier + "&key=" + this.AccessKey);
 
-            WpsProvider provider = null;
             AtomItem result = new AtomItem();
             string statusloc = this.StatusLocation;
 
+            if (string.IsNullOrEmpty(parameters["basic"]) || parameters["basic"] != "true") {
+                result = GetFullWpsJobAtomItem();
+                if (result == null) {
+                    result = new AtomItem();
+                    ispublic = false;
+                }
+            }
+
             try {
-                provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
+                if (provider == null) provider = (WpsProvider)WpsProvider.FromIdentifier(context, this.WpsId);
                 result.Categories.Add(new SyndicationCategory("provider", null, provider.Name));
                 if (provider.Proxy) statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
 
@@ -903,12 +910,14 @@ namespace Terradue.Tep {
                 statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
             }
 
-            if (string.IsNullOrEmpty(parameters["basic"]) || parameters["basic"] != "true") {
-                result = GetFullWpsJobAtomItem();
-                if (result == null) {
-                    result = new AtomItem();
-                    ispublic = false;
-                }
+            try {
+                if (process == null) process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, this.ProcessId);
+                result.Categories.Add(new SyndicationCategory("process", null, process.Name));
+            } catch (Exception e) {
+            }
+
+            if (this.NbResults != -1){
+                result.Categories.Add(new SyndicationCategory("nbresults", null, "" + this.NbResults));
             }
 
             result.Id = id.ToString();
@@ -1122,7 +1131,6 @@ namespace Terradue.Tep {
 
             entry.Offerings = new List<OwcOffering> { offering };
             entry.Categories.Add(new SyndicationCategory("WpsOffering"));
-            entry.Categories.Add(new SyndicationCategory("process", null, process.Name));
             var contact = ExtractProviderContact(provider.Contact);
 
             if (!string.IsNullOrEmpty(contact)) {
