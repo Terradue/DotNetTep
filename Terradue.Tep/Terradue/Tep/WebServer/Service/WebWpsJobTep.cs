@@ -113,6 +113,12 @@ namespace Terradue.Tep.WebServer {
         public string Body { get; set; }
     }
 
+    [Route("/job/wps/{jobId}/nbresults", "PUT", Summary = "PUT nbresult of job", Notes = "")]
+    public class WpsJobUpdateNbResultsRequestTep : List<int>, IReturn<List<WebGroup>> {
+        [ApiMember(Name = "jobId", Description = "id of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+    }
+
     public class WebWpsJobTep : WebEntity {
         [ApiMember(Name="RemoteIdentifier", Description = "RemoteIdentifier of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string RemoteIdentifier { get; set; }

@@ -555,6 +555,9 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
                 ExecuteResponse execResponse = null;
 
+                //update nbresult if not set
+                //if (wpsjob.NbResults == -1) wpsjob.UpdateResultCount();
+
                 if (wpsjob.Status == WpsJobStatus.STAGED) {
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 } 
