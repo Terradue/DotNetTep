@@ -291,6 +291,8 @@
     <Compile Include="Terradue\Tep\Controller\Service\ProductionResultHelper.cs" />
     <Compile Include="Terradue\Tep\WebServer\Application\WebThematicAppEditor.cs" />
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplicationCached.cs" />
+    <Compile Include="Terradue\Tep\Controller\Support\JiraClient.cs" />
+    <Compile Include="Terradue\Tep\Controller\Support\JiraIssue.Request.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -368,5 +370,6 @@
     <Folder Include="Terradue\Tep\WebServer\Authorization\" />
     <Folder Include="Terradue\Tep\WebServer\Accounting\" />
     <Folder Include="Terradue\Tep\WebServer\Agent\" />
+    <Folder Include="Terradue\Tep\Controller\Support\" />
   </ItemGroup>
 </Project>
