@@ -177,6 +177,11 @@ namespace Terradue.Tep {
 				if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
 				else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 			}
+
+            if (wpsjob.Provider != null && !wpsjob.Provider.StageResults){
+                log.DebugFormat("GetWpsjobRecastResponse -- Provider does not allow staging");
+                return UpdateProcessOutputs(context, execResponse, wpsjob);
+            }
 			
 			if (execResponse.Status.Item is ProcessSucceededType) {
 				var resultUrl = WpsJob.GetResultUrl(execResponse);
