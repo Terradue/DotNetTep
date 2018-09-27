@@ -136,22 +136,25 @@ namespace Terradue.Tep.WebServer.Services {
                 EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering>(context);
                 services.Load();
 
-                //+ WPS from cloud
-                List<WpsProvider> wpss = new List<WpsProvider>();
-                try {
-                    CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
-                    wpss = wpsFinder.GetWPSFromVMs();
-                } catch (Exception e) {
-                    //we do nothing, we will return the list without any WPS from the cloud
-                }
-                foreach (WpsProvider wps in wpss) {
+                if (request.Cloud) {
+
+                    //+ WPS from cloud
+                    List<WpsProvider> wpss = new List<WpsProvider>();
                     try {
-                        foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
-                            process.UserId = 0;
-                            services.Include(process);
-                        }
+                        CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
+                        wpss = wpsFinder.GetWPSFromVMs();
                     } catch (Exception e) {
-                        //we do nothing, we just dont add the process
+                        //we do nothing, we will return the list without any WPS from the cloud
+                    }
+                    foreach (WpsProvider wps in wpss) {
+                        try {
+                            foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
+                                process.UserId = 0;
+                                services.Include(process);
+                            }
+                        } catch (Exception e) {
+                            //we do nothing, we just dont add the process
+                        }
                     }
                 }
 
