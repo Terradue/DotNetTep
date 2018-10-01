@@ -149,21 +149,26 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open ();
             context.LogInfo (this, string.Format ("/community/{{domain}}/apps/search GET domain='{0}'",request.Domain));
 
-			var domain = Domain.FromIdentifier(context, request.Domain);
+            var domain = ThematicCommunity.FromIdentifier(context, request.Domain);
 			IOpenSearchResultCollection result;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             HttpRequest httpRequest = HttpContext.Current.Request;         
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);         
 
 			if (request.cache) {
-                
-				EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);            
-				appsCached.SetFilter("DomainId", domain.Id);
-				appsCached.AddSort("LastUpdate", SortDirection.Descending);
 
-				result = ose.Query(appsCached, httpRequest.QueryString, responseType);
-				OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);
+                bool isjoined = domain.IsUserJoined(context.UserId);
 
+                    EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);
+                if (isjoined) {
+                    appsCached.SetFilter("DomainId", domain.Id.ToString());
+                } else {
+                    appsCached.SetFilter("DomainId", "-1");//if user is not joined we dont want him to see results
+                }
+                appsCached.AddSort("LastUpdate", SortDirection.Descending);
+                result = ose.Query(appsCached, httpRequest.QueryString, responseType);
+                OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);
+            
 			} else {
                 
 				var apps = new EntityList<DataPackage>(context);
