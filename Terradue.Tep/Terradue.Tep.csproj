@@ -158,7 +158,7 @@
       <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.Twitter">
-      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.5.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.6.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.News">
       <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
