@@ -36,10 +36,15 @@ namespace Terradue.Tep.WebServer.Services {
 
                 Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
 
-                List<TwitterFeed> twitters = TwitterNews.LoadTwitterFeeds(context);
+                List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+
+                try {
+                    var twitters = TwitterNews.LoadTwitterCollection(context);
+                    osentities.Add(twitters);
+                } catch (Exception) { }
 
                 var settings = MasterCatalogue.OpenSearchFactorySettings;
-                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(twitters.Cast<IOpenSearchable>().ToList(), settings, false);
+                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings);
                 result = ose.Query(multiOSE, httpRequest.QueryString, type);
 
                 context.Close ();
