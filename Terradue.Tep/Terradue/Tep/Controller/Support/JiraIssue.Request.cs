@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Terradue.Tep.Controller {
 
     [DataContract]
-    public class JiraIssueProject {
+    public class JiraIdProperty {
         [DataMember]
-        public string key { get; set; }
+        public string id { get; set; }
     }
 
     [DataContract]
-    public class JiraIssuetype {
+    public class JiraNameProperty {
         [DataMember]
         public string name { get; set; }
     }
@@ -18,13 +19,23 @@ namespace Terradue.Tep.Controller {
     [DataContract]
     public class JiraIssueFields {
         [DataMember]
-        public JiraIssueProject project { get; set; }
+        public JiraIdProperty project { get; set; }
         [DataMember]
         public string summary { get; set; }
         [DataMember]
         public string description { get; set; }
         [DataMember]
-        public JiraIssuetype issuetype { get; set; }
+        public JiraIdProperty issuetype { get; set; }
+        [DataMember]
+        public JiraNameProperty assignee { get; set; }
+        [DataMember]
+        public JiraNameProperty reporter { get; set; }
+        [DataMember]
+        public JiraIdProperty priority { get; set; }
+        [DataMember]
+        public List<string> labels { get; set; }
+        [DataMember]
+        public DateTime duedate { get; set; }
     }
 
     [DataContract]
@@ -33,4 +44,17 @@ namespace Terradue.Tep.Controller {
         public JiraIssueFields fields { get; set; }
     }
 
+    [DataContract]
+    public class JiraUserRequest {
+        [DataMember]
+        public string name { get; set; }
+        [DataMember]
+        public string password { get; set; }
+        [DataMember]
+        public string emailAddress { get; set; }
+        [DataMember]
+        public string displayName { get; set; }
+        [DataMember]
+        public List<string> applicationKeys { get; set; }
+    }
 }
