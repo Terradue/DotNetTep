@@ -499,6 +499,39 @@ namespace Terradue.Tep.WebServer.Services {
             return new WebResponseBool(result);
 		}
 
+        public object Post(LoadAppFromFile request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            WebThematicAppEditor result = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/app/editor/image POST"));
+
+                OwsContextAtomFeed feed = null;
+
+                if (this.RequestContext.Files.Length > 0) {
+                    var uploadedFile = this.RequestContext.Files[0];
+                    using (var stream = uploadedFile.InputStream) {
+                        stream.Seek(0, System.IO.SeekOrigin.Begin);
+                        feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                        if (feed != null) {
+                            if (feed.Items != null) {
+                                foreach (OwsContextAtomEntry item in feed.Items) {
+                                    if (result == null) result = new WebThematicAppEditor(item);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
     }
 }
 
