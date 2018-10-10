@@ -28,7 +28,12 @@ namespace Terradue.Tep.WebServer {
         public string Uid { get; set; }
     }
 
-	public class WebThematicAppEditor {
+    [Route("/app/editor/file", "POST", Summary = "POST App file")]
+    public class LoadAppFromFile : IRequiresRequestStream, IReturn<WebThematicAppEditor> {
+        public System.IO.Stream RequestStream { get; set; }
+    }
+
+    public class WebThematicAppEditor {
 
 		[ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string Identifier { get; set; }
