@@ -16,7 +16,10 @@ namespace Terradue.Tep.WebServer {
 	[Route("/app/editor", "POST", Summary = "POST a thematic app", Notes = "")]
 	public class ThematicAppEditorPostRequestTep : WebThematicAppEditor { }
 
-	[Route("/app/editor", "GET", Summary = "POST a thematic app", Notes = "")]
+    [Route("/app/editor/xml", "POST", Summary = "POST a thematic app to save as xml", Notes = "")]
+    public class ThematicAppEditorSaveAsFileRequestTep : WebThematicAppEditor { }
+
+    [Route("/app/editor", "GET", Summary = "POST a thematic app", Notes = "")]
 	public class ThematicAppEditorGetRequestTep : IReturn<WebThematicAppEditor> {
 		[ApiMember(Name = "Url", Description = "Url", ParameterType = "query", DataType = "string", IsRequired = false)]
 		public string Url { get; set; }
@@ -118,7 +121,7 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "UpdateCache", Description = "UpdateCache", ParameterType = "query", DataType = "bool", IsRequired = true)]
         public bool UpdateCache { get; set; }
 
-		public WebThematicAppEditor() { }
+        public WebThematicAppEditor() { }
 
         public WebThematicAppEditor(OwsContextAtomEntry entry) {
 
