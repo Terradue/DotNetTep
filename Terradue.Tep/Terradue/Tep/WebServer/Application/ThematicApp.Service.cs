@@ -438,22 +438,22 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.LogDebug(this, string.Format("/app/editor POST Identifier='{0}', Index='{1}'", request.Identifier, index));
                 if(string.IsNullOrEmpty(index)) throw new Exception("Unable to POST to empty index");
-				//post to catalogue
-				try {
-	                CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.TerradueCloudUsername, apikey);
-				} catch (Exception e) {
-					throw new Exception("Unable to POST to " + index + " - " + e.Message);
-				}
 
-				if(request.UpdateCache && !string.IsNullOrEmpty(request.UpdateCacheDomain)){
-					try{
-						var appFactory = new ThematicAppCachedFactory(context);
-						var community = ThematicCommunity.FromIdentifier(context, request.UpdateCacheDomain);
+                //post to catalogue
+                try {
+                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.TerradueCloudUsername, apikey);
+                } catch (Exception e) {
+                    throw new Exception("Unable to POST to " + index + " - " + e.Message);
+                }
+                if (request.UpdateCache && !string.IsNullOrEmpty(request.UpdateCacheDomain)) {
+                    try {
+                        var appFactory = new ThematicAppCachedFactory(context);
+                        var community = ThematicCommunity.FromIdentifier(context, request.UpdateCacheDomain);
                         appFactory.RefreshCachedAppsForCommunity(community);
-					}catch(Exception e){
-						context.LogError(this, string.Format("Unable to cache app -- " + e.Message));
-					}
-				}
+                    } catch (Exception e) {
+                        context.LogError(this, string.Format("Unable to cache app -- " + e.Message));
+                    }
+                }
 
 			    context.Close();
 			} catch (Exception e) {
@@ -464,7 +464,39 @@ namespace Terradue.Tep.WebServer.Services {
 			return new WebResponseBool(true);
 		}
 
-		public object Get(ThematicAppCacheRequestTep request) {
+        public object Post(ThematicAppEditorSaveAsFileRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            string result = null;
+            context.Open();
+            try {
+                context.LogInfo(this, string.Format("/app/editor/xml POST"));
+
+                var owsentry = request.ToOwsContextAtomEntry(context);
+                var feed = new OwsContextAtomFeed();
+                var entries = new List<OwsContextAtomEntry>();
+                entries.Add(owsentry);
+                feed.Items = entries;
+
+                var stream = new System.IO.MemoryStream();
+                var sw = XmlWriter.Create(stream, new XmlWriterSettings() { Indent = true, NamespaceHandling = NamespaceHandling.OmitDuplicates });
+                Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter(feed);
+                atomFormatter.WriteTo(sw);
+                sw.Flush();
+                sw.Close();
+                stream.Seek(0, System.IO.SeekOrigin.Begin);
+                var reader = new System.IO.StreamReader(stream);
+                result = reader.ReadToEnd();
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseString(result);
+        }   
+
+
+        public object Get(ThematicAppCacheRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             context.Open();
 			try {
