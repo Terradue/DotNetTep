@@ -201,9 +201,11 @@ namespace Terradue.Tep.WebServer.Services{
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             context.Open ();
-            context.LogInfo (this, string.Format ("/community/search GET"));
+            context.LogInfo (this, string.Format ("/community/search GET -- visibility={0}", request.Visibility));
 
             CommunityCollection domains = new CommunityCollection(context);
+
+            if (request.Visibility == "all") domains.LoadAll = true;
 
             if (!string.IsNullOrEmpty(request.ApiKey)) {
 				UserTep user = UserTep.FromApiKey(context, request.ApiKey);

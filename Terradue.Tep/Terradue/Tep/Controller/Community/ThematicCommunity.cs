@@ -755,6 +755,11 @@ namespace Terradue.Tep {
         /// <remarks>If the value is true, a call to <see cref="Load">Load</see> produces a list containing all domains in which the user has a role and domains that are public. The default is <c><false</c>, which means that the normal behaviour of EntityCollection applies.</remarks>
         public bool UseNormalSelection { get; set; }
 
+        /// <summary>Indicates or decides whether the query to load all domains is used for this domain collection.</summary>
+        /// <remarks>If the value is true, a call to <see cref="Load">Load</see> produces a list containing all domains Public or Privates. The default is <c><false</c>, which means that the normal behaviour of EntityCollection applies.</remarks>
+        /// <value><c>true</c> if load all; otherwise, <c>false</c>.</value>
+        public bool LoadAll { get; set; }
+
         public CommunityCollection(IfyContext context) : base(context) {
             this.entityType = GetEntityStructure();
             this.UseNormalSelection = false;
@@ -785,6 +790,8 @@ namespace Terradue.Tep {
                                              (int)DomainKind.Private,
                                              kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
             );
+
+            if( LoadAll) condition = String.Format("(t.kind IN ({0}))", String.Join(",", new int[]{(int)DomainKind.Public, (int)DomainKind.Private}));
 
             Clear();
 
