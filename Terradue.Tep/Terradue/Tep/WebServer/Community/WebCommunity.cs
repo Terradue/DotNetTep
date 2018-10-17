@@ -42,6 +42,8 @@ namespace Terradue.Tep
         public string Identifier { get; set; }
         [ApiMember (Name = "username", Description = "Username of the user (current user if null)", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Username { get; set; }
+        [ApiMember(Name = "reason", Description = "Reason why the user is removed", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Reason { get; set; }
     }
 
     [Route ("/community/{identifier}", "DELETE", Summary = "DELETE the current community", Notes = "")]
@@ -55,6 +57,9 @@ namespace Terradue.Tep
     public class CommunitySearchRequestTep : IReturn<HttpResult> {
 		[ApiMember(Name = "apikey", Description = "Api key of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
 		public string ApiKey { get; set; }
+
+        [ApiMember(Name = "visibility", Description = "show all apps or not", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Visibility { get; set; }
     }
 
     [Route("/community/description", "GET", Summary = "GET community as opensearch description", Notes = "")]
@@ -102,6 +107,9 @@ namespace Terradue.Tep
         [ApiMember(Name = "DefaultRole", Description = "Default role", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string DefaultRole { get; set; }
 
+        [ApiMember(Name = "EmailNotification", Description = "Email Notification requested for user requesting access", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool EmailNotification { get; set; }
+
         public WebCommunityTep() {}
 
         /// <summary>
@@ -113,6 +121,7 @@ namespace Terradue.Tep
             DiscussCategory = entity.DiscussCategory;
             Name = entity.Name ?? entity.Identifier;
             DefaultRole = entity.DefaultRoleName;
+            EmailNotification = entity.EmailNotification;
         }
 
         /// <summary>
@@ -130,6 +139,7 @@ namespace Terradue.Tep
             entity.Identifier = TepUtility.ValidateIdentifier(Identifier);
             entity.Name = Name;
             entity.Description = Description;
+            entity.EmailNotification = EmailNotification;
             entity.DefaultRoleName = DefaultRole;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
