@@ -107,7 +107,7 @@ namespace Terradue.Tep.Test {
                 //user not part of community
                 Assert.AreEqual(0, roles.Length);
 
-                community.JoinCurrentUser();
+                community.TryJoinCurrentUser();
                 roles = Role.GetUserRolesForDomain(context, usr1.Id, community.Id);
 
                 //user part of community
@@ -115,7 +115,7 @@ namespace Terradue.Tep.Test {
                 Assert.AreEqual(RoleTep.MEMBER, roles [0].Name);
 
                 //check user cannot joins twice
-                community.JoinCurrentUser();
+                community.TryJoinCurrentUser();
                 roles = Role.GetUserRolesForDomain(context, usr1.Id, community.Id);
                 Assert.AreEqual(1, roles.Length);
 
@@ -163,7 +163,7 @@ namespace Terradue.Tep.Test {
                 context.StartImpersonation(usr2.Id);
 
                 //add user in community
-                community.SetUserAsTemporaryMember(usr1, role.Id);
+                community.SetUserAsTemporaryMember(usr1);
                 Assert.True(community.IsUserPending(usr1.Id));
 
                 context.EndImpersonation();
@@ -194,7 +194,7 @@ namespace Terradue.Tep.Test {
                 Assert.False(ispublic);
 
                 //usr1 validates
-                community.JoinCurrentUser();
+                community.TryJoinCurrentUser();
                 Assert.False(community.IsUserPending(usr1.Id));
 
                 //check how many communities user can see
