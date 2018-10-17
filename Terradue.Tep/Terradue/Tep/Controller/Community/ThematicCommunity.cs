@@ -45,6 +45,9 @@ namespace Terradue.Tep {
         [EntityDataField("id_role_default")]
         public int DefaultRoleId { get; set; }
 
+        [EntityDataField("email_notification")]
+        public bool EmailNotification { get; set; }
+
         private Role defaultRole;
         public string DefaultRoleName { 
             get {
@@ -230,20 +233,35 @@ namespace Terradue.Tep {
         /// <summary>
         /// Joins the current user.
         /// </summary>
-        public void JoinCurrentUser() {
-            
+        public void TryJoinCurrentUser(User user = null) {
+
+            if (user == null) user = User.FromId(context, context.UserId);
+
             if (this.Kind == DomainKind.Public) {
                 //public community -> user can always join
                 context.LogInfo(this, string.Format("Joining user {0} to PUBLIC community {1}", context.Username, this.Identifier));
                 Role role = Role.FromIdentifier(context, this.DefaultRoleName);
                 role.GrantToUser(context.UserId, this.Id);
             } else {
-                //other communities, it means the user has been invited and must be on pending table
-                if (!IsUserPending(context.UserId)) throw new UnauthorizedAccessException("Current user not pending in Community");
-                context.LogInfo(this, string.Format("Joining user {0} to PRIVATE community {1}", context.Username, this.Identifier));
+                //private communities, we add user in pending table and request manager to add him
+                this.SetUserAsTemporaryMember(user);
 
-                SetUserAsDefinitiveMember(context.UserId);
+                if(this.EmailNotification){
+                    try {
+                        string emailFrom = user.Email;
+                        string subject = context.GetConfigValue("CommunityJoinEmailSubject");
+                        subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                        subject = subject.Replace("$(COMMUNITY)", this.Name);
+                        string body = context.GetConfigValue("CommunityJoinEmailBody");
+                        body = body.Replace("$(COMMUNITY)", this.Name);
+                        body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
+                        context.SendMail(emailFrom, user.Email, subject, body);
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
+                }
             }
+
         }
 
         /// <summary>
@@ -274,30 +292,13 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="user">User.</param>
         /// <param name="roleId">Role identifier.</param>
-        public void SetUserAsTemporaryMember(User user, int roleId) {
-            //only owner can do this
-            if (!CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
-
+        public void SetUserAsTemporaryMember(User user) {
+           
             //to set as temporary user we give a temporary pending role
             Role role = Role.FromIdentifier(context, RoleTep.PENDING);
             role.GrantToUser(user.Id, this.Id);
 
-            context.LogInfo(this, string.Format("User {0} set pending for community {1} with role {2}", user.Username, this.Identifier, role.Identifier));
-
-            //we now put to the role the manager wanted
-            role = Role.FromId(context, roleId);
-            role.GrantToUser(user.Id, this.Id);
-
-            try {
-                string emailFrom = context.GetConfigValue("MailSenderAddress");
-                string subject = context.GetConfigValue("CommunityJoinEmailSubject");
-                subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
-                subject = subject.Replace("$(COMMUNITY)", this.Name);
-                string body = context.GetConfigValue("CommunityJoinEmailBody");
-                body = body.Replace("$(COMMUNITY)", this.Name);
-                body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
-                context.SendMail(emailFrom, user.Email, subject, body);
-            } catch (Exception) { }
+            context.LogInfo(this, string.Format("User {0} set pending for community {1}", user.Username, this.Identifier));
         }
 
         /// <summary>
@@ -305,10 +306,10 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="grpId">Group identifier.</param>
         /// <param name="roleId">Role identifier.</param>
-        public void SetGroupAsTemporaryMember(int grpId, int roleId) {
+        public void SetGroupAsTemporaryMember(int grpId) {
             Group grp = Group.FromId(context, grpId);
             var users = grp.GetUsers();
-            foreach (var usr in users) SetUserAsTemporaryMember(usr, roleId);
+            foreach (var usr in users) SetUserAsTemporaryMember(usr);
         }
 
         /// <summary>
@@ -466,9 +467,9 @@ namespace Terradue.Tep {
             if (!string.IsNullOrEmpty(parameters["status"])) {
                 if (parameters["status"] == "joined" && !isJoined) return null;
                 else if (parameters["status"] == "pending" && !isPending) return null;
-                else if (parameters["status"] == "unjoined" && isJoined) return null;
+                else if (parameters["status"] == "unjoined" && (isJoined || isPending)) return null;
             }
-
+            bool searchAll = false;
             if (!string.IsNullOrEmpty(parameters["visibility"])) { 
                 switch(parameters["visibility"]){
                     case "public":
@@ -480,15 +481,17 @@ namespace Terradue.Tep {
                     case "owned":
                         if (!CanUserManage(context.UserId)) return null;
                         break;
+                    case "all":
+                        searchAll = true;
+                        break;
                 }
             }
 
-                
             if (isPending) {
                 result.Categories.Add(new SyndicationCategory("status", null, "pending"));
             } else if (isJoined) {
                 result.Categories.Add(new SyndicationCategory("status", null, "joined"));
-            } else if (!ispublic) return null;
+            } else if (!ispublic && !searchAll) return null;
 
             if (string.IsNullOrEmpty(this.Name)) this.Name = this.Identifier;
 
@@ -561,7 +564,7 @@ namespace Terradue.Tep {
                     if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
                     var usersCommunity = new List<UserRole>();
                     foreach (var role in roles) {
-                        if (role.Identifier != RoleTep.PENDING) {
+                        //if (role.Identifier != RoleTep.PENDING) {
                             var usersIds = role.GetUsers(this.Id).ToList();
                             if (usersIds.Count > 0) {
                                 foreach (var usrId in usersIds) {
@@ -577,7 +580,7 @@ namespace Terradue.Tep {
                                     });
                                 }
                             }
-                        }
+                        //}
                     }
                     result.ElementExtensions.Add("users", "https://standards.terradue.com", usersCommunity);
                 }
