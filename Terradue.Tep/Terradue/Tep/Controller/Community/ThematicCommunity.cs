@@ -455,11 +455,12 @@ namespace Terradue.Tep {
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
             bool ispublic = this.Kind == DomainKind.Public;
             bool isprivate = this.Kind == DomainKind.Private;
+            bool isrestricted = this.Kind == DomainKind.Restricted;
 
             AtomItem result = new AtomItem();
 
             //we only want thematic groups domains (public or private)
-            if (!ispublic && !isprivate) return null;
+            if (!ispublic && !isrestricted && !isprivate) return null;
 
             bool isJoined = IsUserJoined(context.UserId);
             bool isPending = IsUserPending(context.UserId);
@@ -474,6 +475,9 @@ namespace Terradue.Tep {
                 switch(parameters["visibility"]){
                     case "public":
                         if (this.Kind != DomainKind.Public) return null;
+                        break;
+                    case "restricted":
+                        if (this.Kind != DomainKind.Restricted) return null;
                         break;
                     case "private":
                         if (this.Kind != DomainKind.Private) return null;
@@ -491,7 +495,7 @@ namespace Terradue.Tep {
                 result.Categories.Add(new SyndicationCategory("status", null, "pending"));
             } else if (isJoined) {
                 result.Categories.Add(new SyndicationCategory("status", null, "joined"));
-            } else if (!ispublic && !searchAll) return null;
+            } else if (isprivate && !searchAll) return null;
 
             if (string.IsNullOrEmpty(this.Name)) this.Name = this.Identifier;
 
@@ -531,7 +535,7 @@ namespace Terradue.Tep {
                 result.Links.Add(new SyndicationLink(uri, "icon", "", base.GetImageMimeType(IconUrl), 0));
             }
 
-            result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : "private"));
+            result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (isrestricted ? "restricted" : "private")));
             result.Categories.Add(new SyndicationCategory("defaultRole", null, DefaultRoleName));
             result.Categories.Add(new SyndicationCategory("defaultRoleDescription", null, DefaultRoleDescription));
 
@@ -758,11 +762,6 @@ namespace Terradue.Tep {
         /// <remarks>If the value is true, a call to <see cref="Load">Load</see> produces a list containing all domains in which the user has a role and domains that are public. The default is <c><false</c>, which means that the normal behaviour of EntityCollection applies.</remarks>
         public bool UseNormalSelection { get; set; }
 
-        /// <summary>Indicates or decides whether the query to load all domains is used for this domain collection.</summary>
-        /// <remarks>If the value is true, a call to <see cref="Load">Load</see> produces a list containing all domains Public or Privates. The default is <c><false</c>, which means that the normal behaviour of EntityCollection applies.</remarks>
-        /// <value><c>true</c> if load all; otherwise, <c>false</c>.</value>
-        public bool LoadAll { get; set; }
-
         public CommunityCollection(IfyContext context) : base(context) {
             this.entityType = GetEntityStructure();
             this.UseNormalSelection = false;
@@ -779,7 +778,7 @@ namespace Terradue.Tep {
 
             int[] kindIds;
             if (includedKinds == null) {
-                kindIds = new int[] { (int)DomainKind.Public };
+                kindIds = new int[] { (int)DomainKind.Public, (int)DomainKind.Restricted };
             } else {
                 kindIds = new int[includedKinds.Length];
                 for (int i = 0; i < includedKinds.Length; i++) kindIds[i] = (int)includedKinds[i];
@@ -793,8 +792,6 @@ namespace Terradue.Tep {
                                              (int)DomainKind.Private,
                                              kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
             );
-
-            if( LoadAll) condition = String.Format("(t.kind IN ({0}))", String.Join(",", new int[]{(int)DomainKind.Public, (int)DomainKind.Private}));
 
             Clear();
 

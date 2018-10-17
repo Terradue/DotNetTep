@@ -329,7 +329,7 @@ namespace Terradue.Tep {
 			List<int> existingIds = new List<int>();
 			if (withUserPrivateApps || withCommunitiesApps) {
 				var domains = new EntityList<Domain>(context);
-                string kind = (withUserPrivateApps ? (int)DomainKind.User+"" : "") + (withCommunitiesApps ? (withUserPrivateApps ? "," : "") + (int)DomainKind.Public + "," + (int)DomainKind.Private : "");
+                string kind = (withUserPrivateApps ? (int)DomainKind.User + "" : "") + (withCommunitiesApps ? (withUserPrivateApps ? "," : "") + (int)DomainKind.Public + "," + (int)DomainKind.Restricted + "," + (int)DomainKind.Private : "");
 				domains.SetFilter("Kind", kind);
                 domains.Load();
 				foreach (var d in domains) existingIds.Add(d.Id);
@@ -359,7 +359,7 @@ namespace Terradue.Tep {
 			if (withCommunitiesApps) {
 				this.LogInfo(string.Format("RefreshCachedApps -- Get the apps from communities"));
 				var communities = new EntityList<ThematicCommunity>(context);
-				communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+                communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Restricted + "," + (int)DomainKind.Private);
 				communities.Load();
 				foreach (var community in communities.Items) {
 					var ids = CreateOrUpdateCachedAppsFromCommunity(community);

@@ -221,8 +221,6 @@ namespace Terradue.Tep.WebServer.Services{
 
             CommunityCollection domains = new CommunityCollection(context);
 
-            if (request.Visibility == "all") domains.LoadAll = true;
-
             if (!string.IsNullOrEmpty(request.ApiKey)) {
 				UserTep user = UserTep.FromApiKey(context, request.ApiKey);
 				domains.UserId = user.Id;
@@ -231,7 +229,7 @@ namespace Terradue.Tep.WebServer.Services{
 
             if (context.UserId == 0 && !string.IsNullOrEmpty(request.ApiKey)) domains.SetFilter("Kind", (int)DomainKind.Public + "");
             else {
-                domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+                domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Restricted + "," + (int)DomainKind.Private);
                 domains.AddSort("Kind", SortDirection.Ascending);
             }
 

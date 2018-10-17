@@ -885,7 +885,7 @@ namespace Terradue.Tep {
             //return domains.GetItemsAsList();
 
             EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity>(context);
-            domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private);
+            domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Restricted + "," + (int)DomainKind.Private);
             domains.Load();
             return domains.GetItemsAsList();
         }

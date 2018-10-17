@@ -141,7 +141,7 @@ namespace Terradue.Tep
             entity.Description = Description;
             entity.EmailNotification = EmailNotification;
             entity.DefaultRoleName = DefaultRole;
-            if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
+            if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Restricted || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
             return entity;
         }
 
