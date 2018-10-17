@@ -44,7 +44,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 if (string.IsNullOrEmpty(request.Username)) {
                     //case user auto Join 
-                    domain.JoinCurrentUser();
+                    domain.TryJoinCurrentUser();
                 } else {
                     //case owner add user with role
                     domain.SetUserRole(user, role);
@@ -181,11 +181,27 @@ namespace Terradue.Tep.WebServer.Services{
                 if (string.IsNullOrEmpty (request.Identifier)) throw new Exception ("Invalid request - missing community identifier");
 
                 User user = string.IsNullOrEmpty (request.Username) ? User.FromId (context, context.UserId) : User.FromUsername (context, request.Username);
-                context.LogInfo (this, string.Format ("/community/user DELETE Identifier='{0}', Username='{1}'", request.Identifier, request.Username));
+                context.LogInfo (this, string.Format ("/community/user DELETE Identifier='{0}', Username='{1}', Reason='{2}'", request.Identifier, request.Username, request.Reason));
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
                 domain.RemoveUser(user);
+
+                if(!string.IsNullOrEmpty(request.Reason)){
+                    try{
+                        string emailTo = user.Email;
+                        string emailFrom = context.GetConfigValue("MailSenderAddress");
+                        string subject = context.GetConfigValue("CommunityRemoveEmailSubject");
+                        subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                        subject = subject.Replace("$(COMMUNITY)", domain.Name);
+                        string body = context.GetConfigValue("CommunityRemoveEmailBody");
+                        body = body.Replace("$(COMMUNITY)", domain.Name);
+                        body = body.Replace("$(REASON)", request.Reason);
+                        context.SendMail(emailFrom, emailTo, subject, body);
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
+                }
 
                 context.Close ();
             } catch (Exception e) {
@@ -201,9 +217,11 @@ namespace Terradue.Tep.WebServer.Services{
         {
             var context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             context.Open ();
-            context.LogInfo (this, string.Format ("/community/search GET"));
+            context.LogInfo (this, string.Format ("/community/search GET -- visibility={0}", request.Visibility));
 
             CommunityCollection domains = new CommunityCollection(context);
+
+            if (request.Visibility == "all") domains.LoadAll = true;
 
             if (!string.IsNullOrEmpty(request.ApiKey)) {
 				UserTep user = UserTep.FromApiKey(context, request.ApiKey);
