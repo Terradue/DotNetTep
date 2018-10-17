@@ -494,7 +494,7 @@ namespace Terradue.Tep.Test {
                     Assert.Fail("Cannot share as non member");
                 } catch (Exception) { }
 
-                community.JoinCurrentUser();
+                community.TryJoinCurrentUser();
 
                 //share as owner and member of community
                 community.ShareEntity(wpsjob);
@@ -591,7 +591,7 @@ namespace Terradue.Tep.Test {
             context.StartImpersonation(usr1.Id);
 
             try {
-                community.JoinCurrentUser();
+                community.TryJoinCurrentUser();
 
                 //share as owner and member of community
                 community.ShareEntity(wpsjob);
