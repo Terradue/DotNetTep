@@ -248,14 +248,17 @@ namespace Terradue.Tep {
 
                 if(this.EmailNotification){
                     try {
-                        string emailFrom = user.Email;
-                        string subject = context.GetConfigValue("CommunityJoinEmailSubject");
-                        subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
-                        subject = subject.Replace("$(COMMUNITY)", this.Name);
-                        string body = context.GetConfigValue("CommunityJoinEmailBody");
-                        body = body.Replace("$(COMMUNITY)", this.Name);
-                        body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
-                        context.SendMail(emailFrom, user.Email, subject, body);
+                        var managers = GetOwners();
+                        foreach (var owner in managers) {
+                            string emailFrom = user.Email;
+                            string subject = context.GetConfigValue("CommunityJoinEmailSubject");
+                            subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                            subject = subject.Replace("$(COMMUNITY)", this.Name);
+                            string body = context.GetConfigValue("CommunityJoinEmailBody");
+                            body = body.Replace("$(COMMUNITY)", this.Name);
+                            body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
+                            context.SendMail(emailFrom, owner.Email, subject, body);
+                        }
                     } catch (Exception e) {
                         context.LogError(this, e.Message);
                     }
@@ -456,6 +459,7 @@ namespace Terradue.Tep {
             bool ispublic = this.Kind == DomainKind.Public;
             bool isprivate = this.Kind == DomainKind.Private;
             bool isrestricted = this.Kind == DomainKind.Restricted;
+            bool canusermanage = CanUserManage(context.UserId);
 
             AtomItem result = new AtomItem();
 
@@ -483,7 +487,7 @@ namespace Terradue.Tep {
                         if (this.Kind != DomainKind.Private) return null;
                         break;
                     case "owned":
-                        if (!CanUserManage(context.UserId)) return null;
+                        if (!canusermanage) return null;
                         break;
                     case "all":
                         searchAll = true;
@@ -538,13 +542,14 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (isrestricted ? "restricted" : "private")));
             result.Categories.Add(new SyndicationCategory("defaultRole", null, DefaultRoleName));
             result.Categories.Add(new SyndicationCategory("defaultRoleDescription", null, DefaultRoleDescription));
+            if (canusermanage) result.Categories.Add(new SyndicationCategory("emailNotification", null, EmailNotification ? "true" : "false"));
 
             //overview
             var roles = new EntityList<Role>(context);
             roles.Load();
             var rolesOverview = new List<RoleOverview>();
             foreach (var role in roles) {
-                if (CanUserManage(context.UserId) || role.Identifier != RoleTep.PENDING) {
+                if (canusermanage || role.Identifier != RoleTep.PENDING) {
                     var usersIds = role.GetUsers(this.Id).ToList();
                     if (usersIds.Count > 0) {
                         rolesOverview.Add(new RoleOverview { Count = usersIds.Count, Value = role.Identifier });
