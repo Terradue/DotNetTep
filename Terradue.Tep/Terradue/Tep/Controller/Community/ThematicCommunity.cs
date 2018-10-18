@@ -248,14 +248,17 @@ namespace Terradue.Tep {
 
                 if(this.EmailNotification){
                     try {
-                        string emailFrom = user.Email;
-                        string subject = context.GetConfigValue("CommunityJoinEmailSubject");
-                        subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
-                        subject = subject.Replace("$(COMMUNITY)", this.Name);
-                        string body = context.GetConfigValue("CommunityJoinEmailBody");
-                        body = body.Replace("$(COMMUNITY)", this.Name);
-                        body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
-                        context.SendMail(emailFrom, user.Email, subject, body);
+                        var managers = GetOwners();
+                        foreach (var owner in managers) {
+                            string emailFrom = user.Email;
+                            string subject = context.GetConfigValue("CommunityJoinEmailSubject");
+                            subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                            subject = subject.Replace("$(COMMUNITY)", this.Name);
+                            string body = context.GetConfigValue("CommunityJoinEmailBody");
+                            body = body.Replace("$(COMMUNITY)", this.Name);
+                            body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
+                            context.SendMail(emailFrom, owner.Email, subject, body);
+                        }
                     } catch (Exception e) {
                         context.LogError(this, e.Message);
                     }
