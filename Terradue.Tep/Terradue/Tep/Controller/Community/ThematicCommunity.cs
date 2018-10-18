@@ -544,7 +544,7 @@ namespace Terradue.Tep {
             roles.Load();
             var rolesOverview = new List<RoleOverview>();
             foreach (var role in roles) {
-                if (role.Identifier != RoleTep.PENDING) {
+                if (CanUserManage(context.UserId) || role.Identifier != RoleTep.PENDING) {
                     var usersIds = role.GetUsers(this.Id).ToList();
                     if (usersIds.Count > 0) {
                         rolesOverview.Add(new RoleOverview { Count = usersIds.Count, Value = role.Identifier });
