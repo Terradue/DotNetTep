@@ -76,8 +76,11 @@ namespace Terradue.Tep.WebServer {
 
 		[ApiMember(Name = "WpsServiceOfferingPresent", Description = "WpsServiceOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
 		public bool WpsServiceOfferingPresent { get; set; }
-        
-		[ApiMember(Name = "WpsServiceOfferingFilters", Description = "WpsServiceOfferingFilters", ParameterType = "query", DataType = "List<WebKeyValue>", IsRequired = true)]
+
+        [ApiMember(Name = "WpsServiceSearchPresent", Description = "WpsServiceSearchPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool WpsServiceSearchPresent { get; set; }
+
+        [ApiMember(Name = "WpsServiceOfferingFilters", Description = "WpsServiceOfferingFilters", ParameterType = "query", DataType = "List<WebKeyValue>", IsRequired = true)]
 		public List<WebKeyValue> WpsServiceOfferingFilters { get; set; }
 
 		[ApiMember(Name = "ChronogramOfferingPresent", Description = "ChronogramOfferingPresent", ParameterType = "query", DataType = "bool", IsRequired = true)]
@@ -253,6 +256,7 @@ namespace Terradue.Tep.WebServer {
                     case "http://www.opengis.net/spec/owc/1.0/req/atom/wps":
                         this.WpsServiceOfferingPresent = true;
                         if (offering.Operations != null && offering.Operations.Length > 0) {
+                            this.WpsServiceSearchPresent = true;
                             var href = offering.Operations[0].Href;
                             var uri = new Uri(href);
                             var nvc = HttpUtility.ParseQueryString(uri.Query);
@@ -392,21 +396,26 @@ namespace Terradue.Tep.WebServer {
 				});
 			}
             if (WpsServiceOfferingPresent) {
-				string query = "";
-				if(this.WpsServiceOfferingFilters != null){
-					foreach(var filter in this.WpsServiceOfferingFilters){
-						query += (query == "" ? "?" : "&") + filter.Key + "=" + filter.Value;
-					}
-				}
-				offerings.Add(new OwcOffering {
-					Code = "http://www.opengis.net/spec/owc/1.0/req/atom/wps",
-					Operations = new OwcOperation[]{
-						new OwcOperation{
-							Code = "ListProcess",
-							Type = "application/json",
+                OwcOperation[] operations = null;
+                if (WpsServiceSearchPresent) {
+                    string query = "";
+                    if (this.WpsServiceOfferingFilters != null) {
+                        foreach (var filter in this.WpsServiceOfferingFilters) {
+                            query += (query == "" ? "?" : "&") + filter.Key + "=" + filter.Value;
+                        }
+                    }
+                    operations = new OwcOperation[]{
+                        new OwcOperation{
+                            Code = "ListProcess",
+                            Type = "application/json",
                             Href = "file:///t2api/service/wps/search" + query
-						}
-					}
+                        }
+                    };
+                }
+
+                offerings.Add(new OwcOffering {
+					Code = "http://www.opengis.net/spec/owc/1.0/req/atom/wps",
+					Operations = operations
 				});
 			}
 			if (ChronogramOfferingPresent) {
