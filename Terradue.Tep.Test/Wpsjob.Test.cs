@@ -62,7 +62,7 @@ namespace Terradue.Tep.Test {
 
             Domain domain2 = new Domain(context);
             domain2.Identifier = "otherDomainTest";
-            domain2.Kind = DomainKind.Private;
+            domain2.Kind = DomainKind.Hidden;
             domain2.Store();
 
             Role role = new Role(context);

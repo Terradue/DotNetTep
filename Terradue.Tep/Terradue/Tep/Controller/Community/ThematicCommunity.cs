@@ -48,6 +48,13 @@ namespace Terradue.Tep {
         [EntityDataField("email_notification")]
         public bool EmailNotification { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="T:Terradue.Tep.ThematicCommunity"/> enable a user to request to join.
+        /// </summary>
+        /// <value><c>true</c> if enable user can request to join; otherwise, <c>false</c>.</value>
+        [EntityDataField("enable_join")]
+        public bool EnableJoinRequest { get; set; }
+
         private Role defaultRole;
         public string DefaultRoleName { 
             get {
@@ -457,14 +464,14 @@ namespace Terradue.Tep {
 
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
             bool ispublic = this.Kind == DomainKind.Public;
+            bool ishidden = this.Kind == DomainKind.Hidden;
             bool isprivate = this.Kind == DomainKind.Private;
-            bool isrestricted = this.Kind == DomainKind.Restricted;
             bool canusermanage = CanUserManage(context.UserId);
 
             AtomItem result = new AtomItem();
 
             //we only want thematic groups domains (public or private)
-            if (!ispublic && !isrestricted && !isprivate) return null;
+            if (!ispublic && !isprivate && !ishidden) return null;
 
             bool isJoined = IsUserJoined(context.UserId);
             bool isPending = IsUserPending(context.UserId);
@@ -480,11 +487,11 @@ namespace Terradue.Tep {
                     case "public":
                         if (this.Kind != DomainKind.Public) return null;
                         break;
-                    case "restricted":
-                        if (this.Kind != DomainKind.Restricted) return null;
-                        break;
                     case "private":
                         if (this.Kind != DomainKind.Private) return null;
+                        break;
+                    case "hidden":
+                        if (this.Kind != DomainKind.Hidden) return null;
                         break;
                     case "owned":
                         if (!canusermanage) return null;
@@ -499,7 +506,7 @@ namespace Terradue.Tep {
                 result.Categories.Add(new SyndicationCategory("status", null, "pending"));
             } else if (isJoined) {
                 result.Categories.Add(new SyndicationCategory("status", null, "joined"));
-            } else if (isprivate && !searchAll) return null;
+            } else if (ishidden && !searchAll) return null;
 
             if (string.IsNullOrEmpty(this.Name)) this.Name = this.Identifier;
 
@@ -539,10 +546,11 @@ namespace Terradue.Tep {
                 result.Links.Add(new SyndicationLink(uri, "icon", "", base.GetImageMimeType(IconUrl), 0));
             }
 
-            result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (isrestricted ? "restricted" : "private")));
+            result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (isprivate ? "private" : "hidden")));
             result.Categories.Add(new SyndicationCategory("defaultRole", null, DefaultRoleName));
             result.Categories.Add(new SyndicationCategory("defaultRoleDescription", null, DefaultRoleDescription));
             if (canusermanage) result.Categories.Add(new SyndicationCategory("emailNotification", null, EmailNotification ? "true" : "false"));
+            result.Categories.Add(new SyndicationCategory("enableJoinRequest", null, EnableJoinRequest ? "true" : "false"));
 
             //overview
             var roles = new EntityList<Role>(context);
@@ -783,7 +791,7 @@ namespace Terradue.Tep {
 
             int[] kindIds;
             if (includedKinds == null) {
-                kindIds = new int[] { (int)DomainKind.Public, (int)DomainKind.Restricted };
+                kindIds = new int[] { (int)DomainKind.Public, (int)DomainKind.Private };
             } else {
                 kindIds = new int[includedKinds.Length];
                 for (int i = 0; i < includedKinds.Length; i++) kindIds[i] = (int)includedKinds[i];
@@ -794,7 +802,7 @@ namespace Terradue.Tep {
             //we want private communities in which User has a role OR public communities
             string condition = String.Format("((t.id IN ({0}) AND t.kind IN ({1})) OR t.kind IN ({2}))",
                                              domainIds.Length == 0 ? "0" : String.Join(",", domainIds),
-                                             (int)DomainKind.Private,
+                                             (int)DomainKind.Hidden,
                                              kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
             );
 

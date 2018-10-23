@@ -110,6 +110,9 @@ namespace Terradue.Tep
         [ApiMember(Name = "EmailNotification", Description = "Email Notification requested for user requesting access", ParameterType = "query", DataType = "bool", IsRequired = false)]
         public bool EmailNotification { get; set; }
 
+        [ApiMember(Name = "EnableJoinRequest", Description = "Enable user join request", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool EnableJoinRequest { get; set; }
+
         public WebCommunityTep() {}
 
         /// <summary>
@@ -122,6 +125,8 @@ namespace Terradue.Tep
             Name = entity.Name ?? entity.Identifier;
             DefaultRole = entity.DefaultRoleName;
             EmailNotification = entity.EmailNotification;
+            EnableJoinRequest = entity.EnableJoinRequest;
+
         }
 
         /// <summary>
@@ -140,8 +145,9 @@ namespace Terradue.Tep
             entity.Name = Name;
             entity.Description = Description;
             entity.EmailNotification = EmailNotification;
+            entity.EnableJoinRequest = EnableJoinRequest;
             entity.DefaultRoleName = DefaultRole;
-            if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Restricted || Kind == (int)DomainKind.Private) entity.Kind = (DomainKind)Kind;
+            if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private || Kind == (int)DomainKind.Hidden) entity.Kind = (DomainKind)Kind;
             return entity;
         }
 
