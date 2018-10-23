@@ -48,7 +48,7 @@ namespace Terradue.Tep.WebServer.Services {
 			var communities = new EntityList<ThematicCommunity>(context);
             if (context.UserId == 0) communities.SetFilter("Kind", (int)DomainKind.Public + "");
             else {
-                communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Restricted);
+                communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Hidden + "," + (int)DomainKind.Private);
                 communities.AddSort("Kind", SortDirection.Ascending);
             }
             communities.Load();

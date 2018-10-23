@@ -194,14 +194,14 @@
       <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.45\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.46\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.45\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.46\lib\net45\Terradue.Portal.Agent.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.45\lib\net45\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.46\lib\net45\Terradue.Portal.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

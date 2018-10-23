@@ -229,7 +229,7 @@ namespace Terradue.Tep.WebServer.Services{
 
             if (context.UserId == 0 && !string.IsNullOrEmpty(request.ApiKey)) domains.SetFilter("Kind", (int)DomainKind.Public + "");
             else {
-                domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Restricted + "," + (int)DomainKind.Private);
+                domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
                 domains.AddSort("Kind", SortDirection.Ascending);
             }
 

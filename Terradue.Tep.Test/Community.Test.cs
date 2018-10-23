@@ -56,13 +56,13 @@ namespace Terradue.Tep.Test {
 
             ThematicCommunity community2 = new ThematicCommunity(context);
             community2.Identifier = "community-private-1";
-            community2.Kind = DomainKind.Private;
+            community2.Kind = DomainKind.Hidden;
             community2.Store();
             community2.SetOwner(usr2);
 
             ThematicCommunity community3 = new ThematicCommunity(context);
             community3.Identifier = "community-private-2";
-            community3.Kind = DomainKind.Private;
+            community3.Kind = DomainKind.Hidden;
             community3.Store();
             community3.SetOwner(usr2);
 
