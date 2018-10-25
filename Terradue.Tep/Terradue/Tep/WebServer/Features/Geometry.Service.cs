@@ -11,6 +11,7 @@ using SharpKml.Engine;
 using Terradue.Portal;
 using Terradue.WebService.Model;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -80,6 +81,20 @@ namespace Terradue.Tep.WebServer.Services {
                             using (var stream = new MemoryStream()) {
                                 this.RequestContext.Files[0].InputStream.CopyTo(stream);
                                 wkt = ExtractWKTFromKML(stream, points);
+                            }
+                            break;
+                        case ".kmz":
+                            using (var stream = new MemoryStream()) {
+                                this.RequestContext.Files[0].InputStream.CopyTo(stream);
+                                ZipArchive archive = new ZipArchive(stream);
+                                foreach (ZipArchiveEntry entry in archive.Entries) {
+                                    if (entry.FullName.EndsWith(".kml", StringComparison.OrdinalIgnoreCase)) {
+                                        using (var unzippedEntryStream = entry.Open()) {
+                                            wkt = ExtractWKTFromKML(unzippedEntryStream, points);
+                                            break;
+                                        }
+                                    }
+                                }
                             }
                             break;
                         case ".json":
@@ -231,8 +246,9 @@ namespace Terradue.Tep.WebServer.Services {
 
         private string ExtractWKTFromKML(Stream stream, int points) {
             IGeometry finalgeometry = null;
-            stream.Seek(0, SeekOrigin.Begin);
-
+            try {
+                stream.Seek(0, SeekOrigin.Begin);
+            }catch(Exception){}
             KmlFile file = KmlFile.Load(stream);
             Kml kml = file.Root as Kml;
 
@@ -243,7 +259,7 @@ namespace Terradue.Tep.WebServer.Services {
                     if (finalgeometry == null) finalgeometry = geometry;
                     else finalgeometry = finalgeometry.Union(geometry);
                 } catch (Exception e) {
-                    throw new Exception(string.Format("Error with placemark {0}", placemark.Name));
+                    //throw new Exception(string.Format("Error with placemark {0}", placemark.Name));
                 }
             }
             string wkt = null;
@@ -273,6 +289,20 @@ namespace Terradue.Tep.WebServer.Services {
                     coordinates[i++] = new Coordinate(coordinate.Longitude, coordinate.Latitude);
                 }
                 result = new NetTopologySuite.Geometries.Polygon(new NetTopologySuite.Geometries.LinearRing(coordinates));
+            } else if (geometry is SharpKml.Dom.MultipleGeometry){
+                var mgeometry = geometry as SharpKml.Dom.MultipleGeometry;
+                var polygons = new List<NetTopologySuite.Geometries.Polygon>();
+                foreach(var poly in mgeometry.Geometry){
+                    var kmlPolygon = poly as SharpKml.Dom.Polygon;
+                    if (kmlPolygon.OuterBoundary == null || kmlPolygon.OuterBoundary.LinearRing == null || kmlPolygon.OuterBoundary.LinearRing.Coordinates == null) throw new Exception("Polygon is null");
+                    var coordinates = new Coordinate[kmlPolygon.OuterBoundary.LinearRing.Coordinates.Count];
+                    int i = 0;
+                    foreach (var coordinate in kmlPolygon.OuterBoundary.LinearRing.Coordinates) {
+                        coordinates[i++] = new Coordinate(coordinate.Longitude, coordinate.Latitude);
+                    }
+                    polygons.Add(new NetTopologySuite.Geometries.Polygon(new NetTopologySuite.Geometries.LinearRing(coordinates)));
+                }
+                result = new NetTopologySuite.Geometries.MultiPolygon(polygons.ToArray());
             }
             return result;
         }
