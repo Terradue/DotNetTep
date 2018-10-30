@@ -451,8 +451,6 @@ namespace Terradue.Tep {
         public override bool IsPostFiltered(NameValueCollection parameters) {
             foreach (var key in parameters.AllKeys) {
                 switch (key) {
-                case "status":
-                    return true;
                 default:
                     break;
                 }
