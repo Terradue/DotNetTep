@@ -17,6 +17,11 @@ namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class ThematicCommunity : Domain {
 
+        public const string USERSTATUS_JOINED = "joined";
+        public const string USERSTATUS_UNJOINED = "unjoined";
+        public const string USERSTATUS_PENDING = "pending";
+        public const string USERSTATUS_ALL = "all";
+
         private List<string> appslinks;
         public List<string> AppsLinks { 
             get {
@@ -477,9 +482,9 @@ namespace Terradue.Tep {
             bool isPending = IsUserPending(context.UserId);
 
             if (!string.IsNullOrEmpty(parameters["status"])) {
-                if (parameters["status"] == "joined" && !isJoined) return null;
-                else if (parameters["status"] == "pending" && !isPending) return null;
-                else if (parameters["status"] == "unjoined" && (isJoined || isPending)) return null;
+                if (parameters["status"] == USERSTATUS_JOINED && !isJoined) return null;
+                else if (parameters["status"] == USERSTATUS_PENDING && !isPending) return null;
+                else if (parameters["status"] == USERSTATUS_UNJOINED && (isJoined || isPending)) return null;
             }
             bool searchAll = false;
             if (!string.IsNullOrEmpty(parameters["visibility"])) { 
@@ -503,9 +508,9 @@ namespace Terradue.Tep {
             }
 
             if (isPending) {
-                result.Categories.Add(new SyndicationCategory("status", null, "pending"));
+                result.Categories.Add(new SyndicationCategory("status", null, USERSTATUS_PENDING));
             } else if (isJoined) {
-                result.Categories.Add(new SyndicationCategory("status", null, "joined"));
+                result.Categories.Add(new SyndicationCategory("status", null, USERSTATUS_JOINED));
             } else if (ishidden && !searchAll) return null;
 
             if (string.IsNullOrEmpty(this.Name)) this.Name = this.Identifier;
@@ -592,7 +597,7 @@ namespace Terradue.Tep {
                                         Email = CanUserManage(context.UserId) ? user.Email : null,
                                         Role = role.Name ?? role.Identifier,
                                         RoleDescription = role.Description,
-                                        Status = IsUserPending(usrId) ? "pending" : "joined",
+                                        Status = IsUserPending(usrId) ? USERSTATUS_PENDING : USERSTATUS_JOINED,
                                         Avatar = user.GetAvatar()
                                     });
                                 }
@@ -775,6 +780,8 @@ namespace Terradue.Tep {
         /// <remarks>If the value is true, a call to <see cref="Load">Load</see> produces a list containing all domains in which the user has a role and domains that are public. The default is <c><false</c>, which means that the normal behaviour of EntityCollection applies.</remarks>
         public bool UseNormalSelection { get; set; }
 
+        public string UserStatus { get; set; }
+
         public CommunityCollection(IfyContext context) : base(context) {
             this.entityType = GetEntityStructure();
             this.UseNormalSelection = false;
@@ -789,22 +796,43 @@ namespace Terradue.Tep {
         /// <param name="includedKinds">The domain kinds of domains on which a user has no explicit role but should in any case be included in the collection.</param>
         public void LoadRestricted(DomainKind[] includedKinds = null) {
 
-            int[] kindIds;
-            if (includedKinds == null) {
-                kindIds = new int[] { (int)DomainKind.Public, (int)DomainKind.Private };
-            } else {
-                kindIds = new int[includedKinds.Length];
-                for (int i = 0; i < includedKinds.Length; i++) kindIds[i] = (int)includedKinds[i];
-            }
-
+            //get list of joined / pending domains ids
+            var pendingRole = Role.FromIdentifier(context, RoleTep.PENDING);
             int[] domainIds = Domain.GetGrantScope(context, UserId, null, null);
+            int[] pendingDomainIds = Domain.GetGrantScope(context, UserId, null, new int[] { pendingRole.Id });
+            List<int> joinedDomainIds = new List<int>();
+            //remove pendings from joined
+            if (pendingDomainIds.Length > 0) {
+                foreach (var did in domainIds) {
+                    if (!pendingDomainIds.Contains(did)) joinedDomainIds.Add(did);
+                }
+            } else joinedDomainIds = domainIds.ToList();
 
-            //we want private communities in which User has a role OR public communities
-            string condition = String.Format("((t.id IN ({0}) AND t.kind IN ({1})) OR t.kind IN ({2}))",
-                                             domainIds.Length == 0 ? "0" : String.Join(",", domainIds),
-                                             (int)DomainKind.Hidden,
-                                             kindIds.Length == 0 ? "-1" : String.Join(",", kindIds)
-            );
+            string condition = "";
+            switch(UserStatus){
+                case ThematicCommunity.USERSTATUS_JOINED:
+                    condition = string.Format("t.kind IN ({0}) AND t.id IN ({1})", 
+                                              (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden, //all kind of communities
+                                              joinedDomainIds.Count == 0 ? "0" : String.Join(",", joinedDomainIds)); //where user has a role (not pending)
+                    break;
+                case ThematicCommunity.USERSTATUS_UNJOINED:
+                    condition = string.Format("t.kind IN ({0}) AND t.id NOT IN ({1})",
+                                              (int)DomainKind.Public + "," + (int)DomainKind.Private, //all kind of communities except Hidden
+                                              joinedDomainIds.Count == 0 ? "0" : String.Join(",", joinedDomainIds)); //where user does not have a role
+                    break;
+                case ThematicCommunity.USERSTATUS_PENDING:
+                    condition = string.Format("t.kind IN ({0}) AND t.id IN ({1})",
+                                              (int)DomainKind.Private, //can be pending only in Private
+                                              pendingDomainIds.Length == 0 ? "0" : String.Join(",", pendingDomainIds)); //where user has a pending role
+                    break;
+                case ThematicCommunity.USERSTATUS_ALL:
+                default:
+                    condition = string.Format("(t.kind IN ({0}) AND t.id IN ({1})) OR t.kind IN ({2})",
+                                              (int)DomainKind.Hidden, //hidden
+                                              domainIds.Length == 0 ? "0" : String.Join(",", domainIds),//where user has a role
+                                              (int)DomainKind.Public + "," + (int)DomainKind.Private); //all kind of communities except Hidden
+                    break;
+            }
 
             Clear();
 
