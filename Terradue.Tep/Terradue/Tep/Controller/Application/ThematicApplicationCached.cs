@@ -228,9 +228,13 @@ namespace Terradue.Tep {
                         var feed = GetOwsContextAtomFeed(stream);
                         if (feed.Items != null) {
                             foreach (OwsContextAtomEntry item in feed.Items) {
-								var appcached = CreateOrUpdateCachedApp(item, domainId, index);
-								upIds.Add(appcached.Id);
-								this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));                        
+                                try {
+                                    var appcached = CreateOrUpdateCachedApp(item, domainId, index);
+                                    upIds.Add(appcached.Id);
+                                    this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
+                                }catch(Exception e){
+                                    this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
+                                }
                             }
                         }
                     }
@@ -441,5 +445,32 @@ namespace Terradue.Tep {
 
         }
 
-	}
+        public void RefreshCachedAppsForIndexes(List<string> indexes){
+            //Get all existing apps
+            EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
+
+            existingApps.SetFilter("Index", indexes);
+            existingApps.Load();
+
+            //will be filled with all updated ids
+            List<int> upIds = new List<int>();
+
+            foreach(var index in indexes){
+                var baseurl = context.GetConfigValue("catalog-baseurl");
+                var url = baseurl + "/" + index + "/search";
+                var ids = CreateOrUpdateCachedAppFromUrl(url, 0);
+                upIds.AddRange(ids);
+            }
+
+            //delete apps not updated
+            foreach (var app in existingApps) {
+                if (!upIds.Contains(app.Id)) {
+                    this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from index {1}", app.UId, app.Index));
+                    app.Delete();
+                }
+            }
+        }
+
+
+    }
 }
