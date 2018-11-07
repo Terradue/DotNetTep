@@ -2,7 +2,35 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Terradue.Tep.Controller {
+namespace Terradue.Tep {
+
+    /*********************/
+    /* JIRA SERVICE DESK */
+    /*********************/
+
+    [DataContract]
+    public class JiraServiceDeskIssueFields {
+        [DataMember]
+        public string summary { get; set; }
+        [DataMember]
+        public string description { get; set; }
+    }
+
+    [DataContract]
+    public class JiraServiceDeskIssueRequest {
+        [DataMember]
+        public string serviceDeskId { get; set; }
+        [DataMember]
+        public string requestTypeId { get; set; }
+        [DataMember]
+        public string raiseOnBehalfOf { get; set; }
+        [DataMember]
+        public JiraServiceDeskIssueFields requestFieldValues { get; set; }
+    }
+
+    /********/
+    /* JIRA */
+    /********/
 
     [DataContract]
     public class JiraIdProperty {

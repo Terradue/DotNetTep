@@ -539,7 +539,11 @@ namespace Terradue.Tep.WebServer.Services {
                 if (context.UserId != job.OwnerId) throw new Exception("Sorry, you must be the owner of the job to contact the support for job analysis.");
 
                 //send email from job's owner to mailto
-                context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
+                //context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
+
+                //create JIRA ticket
+                var jira = new JiraClient(context.GetConfigValue("jira-api-baseurl"), context.GetConfigValue("jira-api-username"), context.GetConfigValue("jira-api-password"));
+                //jira.CreateServiceDeskIssue();
 
                 context.Close();
             } catch (Exception e) {
