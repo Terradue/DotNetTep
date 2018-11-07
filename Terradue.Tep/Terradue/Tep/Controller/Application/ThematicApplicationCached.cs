@@ -230,7 +230,7 @@ namespace Terradue.Tep {
                             foreach (OwsContextAtomEntry item in feed.Items) {
                                 try {
                                     var appcached = CreateOrUpdateCachedApp(item, domainId, index);
-                                    upIds.Add(appcached.Id);
+                                    if(appcached != null) upIds.Add(appcached.Id);
                                     this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
                                 }catch(Exception e){
                                     this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
@@ -253,6 +253,10 @@ namespace Terradue.Tep {
         /// <param name="entry">Entry.</param>
         /// <param name="domainid">Domainid.</param>
         public ThematicApplicationCached CreateOrUpdateCachedApp(OwsContextAtomEntry entry, int domainid, string index = null) {
+
+            var appCategory = entry.Categories.FirstOrDefault(l => l.Label == "App");
+            if (appCategory == null) return null;
+
             var identifier = GetIdentifierFromFeed(entry);
             var appcached = new ThematicApplicationCached(context);
             appcached.UId = identifier;
@@ -449,7 +453,7 @@ namespace Terradue.Tep {
             //Get all existing apps
             EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
 
-            existingApps.SetFilter("Index", indexes);
+            existingApps.SetFilter("Index", string.Join(",", indexes));
             existingApps.Load();
 
             //will be filled with all updated ids
