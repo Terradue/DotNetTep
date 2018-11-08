@@ -17,8 +17,10 @@ namespace Terradue.Tep {
             this.APIPassword = apipassword;
         }
 
-        private string GetBasicAuthenticationSecret() {
-            return "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(this.APIUsername + ":" + this.APIPassword));
+        private string GetAuthorizationHeader() {
+            if (!string.IsNullOrEmpty(this.APIUsername))
+                return "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(this.APIUsername + ":" + this.APIPassword));
+            else return "Bearer " + this.APIPassword;
         }
 
         //public void CreateUser(){
@@ -65,7 +67,7 @@ namespace Terradue.Tep {
             request.Accept = "application/json";
             //request.Credentials = new NetworkCredential(this.APIUsername, this.APIPassword);
 
-            request.Headers.Add(HttpRequestHeader.Authorization, GetBasicAuthenticationSecret());
+            request.Headers.Add(HttpRequestHeader.Authorization, GetAuthorizationHeader());
 
             var issue = new JiraServiceDeskIssueRequest { 
                 serviceDeskId = serviceDeskId,
