@@ -14,6 +14,10 @@ namespace Terradue.Tep {
         public string summary { get; set; }
         [DataMember]
         public string description { get; set; }
+        [DataMember]
+        public List<JiraNameProperty> components { get; set; }
+        [DataMember]
+        public List<string> labels { get; set; }
     }
 
     [DataContract]
@@ -26,6 +30,8 @@ namespace Terradue.Tep {
         public string raiseOnBehalfOf { get; set; }
         [DataMember]
         public JiraServiceDeskIssueFields requestFieldValues { get; set; }
+        [DataMember]
+        public List<string> larequestParticipantsbels { get; set; }
     }
 
     /********/

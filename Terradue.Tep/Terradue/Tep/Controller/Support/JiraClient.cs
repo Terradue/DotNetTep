@@ -59,25 +59,13 @@ namespace Terradue.Tep {
         /// <param name="requestTypeId">Request type identifier.</param>
         /// <param name="title">Title.</param>
         /// <param name="description">Description.</param>
-        public void CreateServiceDeskIssue(string serviceDeskId, string requestTypeId, string title, string description, string raiseOnBehalfOf = null) {
+        public void CreateServiceDeskIssue(JiraServiceDeskIssueRequest issue) {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(this.APIBaseUrl + "/rest/servicedeskapi/request");
             request.Proxy = null;
             request.Method = "POST";
             request.ContentType = "application/json";
             request.Accept = "application/json";
-            //request.Credentials = new NetworkCredential(this.APIUsername, this.APIPassword);
-
             request.Headers.Add(HttpRequestHeader.Authorization, GetAuthorizationHeader());
-
-            var issue = new JiraServiceDeskIssueRequest { 
-                serviceDeskId = serviceDeskId,
-                requestTypeId = requestTypeId,
-                raiseOnBehalfOf = raiseOnBehalfOf,
-                requestFieldValues = new JiraServiceDeskIssueFields{
-                    summary = title,
-                    description = description
-                }
-            };
 
             string json = JsonSerializer.SerializeToString<JiraServiceDeskIssueRequest>(issue);
 

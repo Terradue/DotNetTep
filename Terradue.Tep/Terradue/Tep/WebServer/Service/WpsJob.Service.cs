@@ -542,8 +542,26 @@ namespace Terradue.Tep.WebServer.Services {
                 //context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
 
                 //create JIRA ticket
+                var componentsList = context.GetConfigValue("jira-helpdesk-components").Split(',');
+                var components = new List<JiraNameProperty>();
+                foreach(var component in componentsList){
+                    components.Add(new JiraNameProperty { name = component });
+                }
+                var issue = new JiraServiceDeskIssueRequest {
+                    serviceDeskId = context.GetConfigValue("jira-helpdesk-serviceDeskId"),
+                    requestTypeId = context.GetConfigValue("jira-helpdesk-requestTypeId"),
+                    raiseOnBehalfOf = job.Owner.Email,
+                    requestFieldValues = new JiraServiceDeskIssueFields {
+                        summary = request.Subject,
+                        description = request.Body,
+                        components = components
+                    }
+                };
                 var jira = new JiraClient(context.GetConfigValue("jira-api-baseurl"), context.GetConfigValue("jira-api-username"), context.GetConfigValue("jira-api-password"));
-                //jira.CreateServiceDeskIssue();
+                string projectID = "17";
+                string issueType = "157";
+                string onbehalf = job.Owner.Email;
+                jira.CreateServiceDeskIssue(projectID, issueType, request.Subject, request.Body, onbehalf);
 
                 context.Close();
             } catch (Exception e) {
