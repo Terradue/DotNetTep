@@ -57,7 +57,8 @@ namespace Terradue.Tep {
               
         public override string GetIdentifyingConditionSql() {
             if (this.UId == null) return null;
-            return String.Format("t.uid={0} AND t.id_domain{1}", StringUtils.EscapeSql(this.UId), DomainId == 0 ? " IS NULL" : "=" + DomainId);
+            if (!string.IsNullOrEmpty(this.Index)) return String.Format("t.uid={0} AND t.cat_index={1}", StringUtils.EscapeSql(this.UId), StringUtils.EscapeSql(this.Index));
+            else return String.Format("t.uid={0} AND t.id_domain{1}", StringUtils.EscapeSql(this.UId), DomainId == 0 ? " IS NULL" : "=" + DomainId);
         }
   
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
@@ -260,8 +261,10 @@ namespace Terradue.Tep {
             var identifier = GetIdentifierFromFeed(entry);
             var appcached = new ThematicApplicationCached(context);
             appcached.UId = identifier;
-            appcached.DomainId = domainid;
-            
+
+            if (index != null) appcached.Index = index;
+            else appcached.DomainId = domainid;
+
             try {
                 appcached.Load();
             } catch (Exception e) { }
@@ -474,7 +477,6 @@ namespace Terradue.Tep {
                 }
             }
         }
-
 
     }
 }
