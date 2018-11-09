@@ -11,5 +11,5 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('jira-helpdesk-components', 'string', 'jira-helpdesk-components', 'jira-helpdesk-components', 'GEP', '1');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('jira-helpdesk-labels', 'string', 'jira-helpdesk-labels', 'jira-helpdesk-labels', 'GEP', '1');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('jira-helpdesk-customfield-ProcessingServiceLabel', 'string', 'jira-helpdesk-customfield-ProcessingServiceLabel', 'jira-helpdesk-customfield-ProcessingServiceLabel', 'customfield_10237', '1');
-INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('jira-helpdesk-customfield-ThematicAppLabel', 'string', 'jira-helpdesk-customfield-ThematicAppLabel', 'jira-helpdesk-customfield-ThematicAppLabel', 'customfield_10236', '1');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('wpsjob-support-mode', 'string', 'wpsjob-support-mode', 'wpsjob-support-mode', 'jira', '1');
 -- RESULT
