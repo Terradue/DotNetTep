@@ -18,6 +18,10 @@ namespace Terradue.Tep {
         public List<JiraNameProperty> components { get; set; }
         [DataMember]
         public List<string> labels { get; set; }
+        [DataMember]
+        public List<string> thematicAppLabels { get; set; }
+        [DataMember]
+        public List<string> processingServicesLabels { get; set; }
     }
 
     [DataContract]

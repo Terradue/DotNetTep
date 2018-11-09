@@ -538,30 +538,42 @@ namespace Terradue.Tep.WebServer.Services {
                 //user must be the owner of the job
                 if (context.UserId != job.OwnerId) throw new Exception("Sorry, you must be the owner of the job to contact the support for job analysis.");
 
-                //send email from job's owner to mailto
-                //context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
-
                 //create JIRA ticket
-                var componentsList = context.GetConfigValue("jira-helpdesk-components").Split(',');
                 var components = new List<JiraNameProperty>();
-                foreach(var component in componentsList){
-                    components.Add(new JiraNameProperty { name = component });
+                var configComponents = context.GetConfigValue("jira-helpdesk-components");
+                if (!string.IsNullOrEmpty(configComponents)){
+                    var componentsList = configComponents.Split(',');
+                    foreach (var component in componentsList) {
+                        components.Add(new JiraNameProperty { name = component });
+                    }
+                }
+                var labels = new List<string>();
+                var configLabels = context.GetConfigValue("jira-helpdesk-labels");
+                if (!string.IsNullOrEmpty(configLabels)) {
+                    labels = configLabels.Split(',').ToList();
                 }
                 var issue = new JiraServiceDeskIssueRequest {
                     serviceDeskId = context.GetConfigValue("jira-helpdesk-serviceDeskId"),
                     requestTypeId = context.GetConfigValue("jira-helpdesk-requestTypeId"),
-                    raiseOnBehalfOf = job.Owner.Email,
+                    raiseOnBehalfOf = job.Owner.TerradueCloudUsername,
                     requestFieldValues = new JiraServiceDeskIssueFields {
                         summary = request.Subject,
                         description = request.Body,
-                        components = components
+                        components = components,
+                        labels = labels
                     }
                 };
-                var jira = new JiraClient(context.GetConfigValue("jira-api-baseurl"), context.GetConfigValue("jira-api-username"), context.GetConfigValue("jira-api-password"));
-                string projectID = "17";
-                string issueType = "157";
-                string onbehalf = job.Owner.Email;
-                jira.CreateServiceDeskIssue(projectID, issueType, request.Subject, request.Body, onbehalf);
+                if(!string.IsNullOrEmpty(context.GetConfigValue("jira-helpdesk-customfield-ThematicAppLabel"))){
+                    issue.requestFieldValues.thematicAppLabels = new List<string> { request.AppId };
+                }
+                if (!string.IsNullOrEmpty(context.GetConfigValue("jira-helpdesk-customfield-ProcessingServiceLabel"))) {
+                    if(job.Process != null && !string.IsNullOrEmpty(job.Process.Name)){
+                        var process = job.Process.Name.Replace(' ', '-');
+                        issue.requestFieldValues.processingServicesLabels = new List<string> { process };
+                    }
+                }
+                var jira = new JiraClient(context);
+                jira.CreateServiceDeskIssue(issue);
 
                 context.Close();
             } catch (Exception e) {
