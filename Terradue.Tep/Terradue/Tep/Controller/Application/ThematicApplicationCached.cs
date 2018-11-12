@@ -54,7 +54,15 @@ namespace Terradue.Tep {
 			app.Load();
 			return app;
 		}
-              
+
+        public static ThematicApplicationCached FromUidAndIndex(IfyContext context, string identifier, string index) {
+            var app = new ThematicApplicationCached(context);
+            app.UId = identifier;
+            app.Index = index;
+            app.Load();
+            return app;
+        }
+
         public override string GetIdentifyingConditionSql() {
             if (this.UId == null) return null;
             if (!string.IsNullOrEmpty(this.Index)) return String.Format("t.uid={0} AND t.cat_index={1}", StringUtils.EscapeSql(this.UId), StringUtils.EscapeSql(this.Index));
@@ -247,7 +255,7 @@ namespace Terradue.Tep {
 			return upIds;
 		}
 
-		/// <summary>
+        /// <summary>
         /// Creates or update the cached app
         /// </summary>
         /// <returns>The or update.</returns>
@@ -452,6 +460,10 @@ namespace Terradue.Tep {
 
         }
 
+        /// <summary>
+        /// Refreshs the cached apps for indexes.
+        /// </summary>
+        /// <param name="indexes">Indexes.</param>
         public void RefreshCachedAppsForIndexes(List<string> indexes){
             //Get all existing apps
             EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
@@ -478,5 +490,15 @@ namespace Terradue.Tep {
             }
         }
 
+        /// <summary>
+        /// Refreshs the cached apps.
+        /// </summary>
+        /// <param name="index">Index.</param>
+        /// <param name="uid">Uid.</param>
+        public void RefreshCachedApps(string index, string uid) {
+            var baseurl = context.GetConfigValue("catalog-baseurl");
+            var url = baseurl + "/" + index + "/search?uid=" + uid ;
+            CreateOrUpdateCachedAppFromUrl(url, 0);
+        }
     }
 }
