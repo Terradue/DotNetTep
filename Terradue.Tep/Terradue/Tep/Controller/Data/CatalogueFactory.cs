@@ -60,7 +60,7 @@ namespace Terradue.Tep {
             request.PreAuthenticate = true;
             request.Credentials = new NetworkCredential(username, apikey);
 
-            //using (var response = (HttpWebResponse)request.GetResponse()) {}
+            using (var response = (HttpWebResponse)request.GetResponse()) {}
 
             return true;
         }
