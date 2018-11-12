@@ -43,15 +43,27 @@ namespace Terradue.Tep {
             return true;
         }
 
-        //     public static bool PostAtomFeedToIndex(IfyContext context, AtomFeed feed, string index) {
-        //var username = context.GetConfigValue("catalog-admin-username");
-        //var apikey = context.GetConfigValue("catalog-admin-apikey");
-        //    using (var stream = new MemoryStream()) {
-        //        feed.SerializeToStream(stream);
-        //        stream.Seek(0, SeekOrigin.Begin);
-        //        return PostStreamToIndex(context, stream, index, username, apikey);
-        //    }
-        //}
+        /// <summary>
+        /// Deletes the entry from index (identified by the identifier).
+        /// </summary>
+        /// <returns><c>true</c>, if entry from index was deleted, <c>false</c> otherwise.</returns>
+        /// <param name="context">Context.</param>
+        /// <param name="index">Index.</param>
+        /// <param name="identifier">Identifier.</param>
+        public static bool DeleteEntryFromIndex(IfyContext context, string index, string identifier, string username, string apikey){
+            var baseurl = context.GetConfigValue("catalog-baseurl");
+            var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/query?uid=" + identifier;
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "DELETE";
+            request.Proxy = null;
+            request.UserAgent = "curl";
+            request.PreAuthenticate = true;
+            request.Credentials = new NetworkCredential(username, apikey);
+
+            using (var response = (HttpWebResponse)request.GetResponse()) {}
+
+            return true;
+        }
 
         /// <summary>
         /// Posts the index of the atom feed to.

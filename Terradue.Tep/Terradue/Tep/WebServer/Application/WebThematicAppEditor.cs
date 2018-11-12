@@ -16,6 +16,21 @@ namespace Terradue.Tep.WebServer {
 	[Route("/app/editor", "POST", Summary = "POST a thematic app", Notes = "")]
 	public class ThematicAppEditorPostRequestTep : WebThematicAppEditor { }
 
+    [Route("/app", "DELETE", Summary = "POST a thematic app", Notes = "")]
+    public class ThematicAppEditorDeleteRequestTep {
+        [ApiMember(Name = "Index", Description = "Index", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Index { get; set; }
+
+        [ApiMember(Name = "Uid", Description = "Uid", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Uid { get; set; }
+
+        [ApiMember(Name = "UpdateCacheDomain", Description = "Name of the domain to update the cache", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string UpdateCacheDomain { get; set; }
+
+        [ApiMember(Name = "UpdateCache", Description = "UpdateCache", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool UpdateCache { get; set; }
+    }
+
     [Route("/app/editor/xml", "POST", Summary = "POST a thematic app to save as xml", Notes = "")]
     public class ThematicAppEditorSaveAsFileRequestTep : WebThematicAppEditor { }
 
