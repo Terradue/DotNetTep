@@ -39,10 +39,10 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "Url", Description = "Url", ParameterType = "query", DataType = "string", IsRequired = false)]
 		public string Url { get; set; }
 
-		[ApiMember(Name = "Community", Description = "Community", ParameterType = "query", DataType = "string", IsRequired = false)]
-        public string Community { get; set; }
+        [ApiMember(Name = "Index", Description = "Index", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Index { get; set; }
 
-		[ApiMember(Name = "Uid", Description = "Uid", ParameterType = "query", DataType = "string", IsRequired = false)]
+        [ApiMember(Name = "Uid", Description = "Uid", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Uid { get; set; }
     }
 

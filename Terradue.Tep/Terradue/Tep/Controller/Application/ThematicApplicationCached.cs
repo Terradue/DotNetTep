@@ -54,10 +54,19 @@ namespace Terradue.Tep {
 			app.Load();
 			return app;
 		}
-              
+
+        public static ThematicApplicationCached FromUidAndIndex(IfyContext context, string identifier, string index) {
+            var app = new ThematicApplicationCached(context);
+            app.UId = identifier;
+            app.Index = index;
+            app.Load();
+            return app;
+        }
+
         public override string GetIdentifyingConditionSql() {
             if (this.UId == null) return null;
-            return String.Format("t.uid={0} AND t.id_domain{1}", StringUtils.EscapeSql(this.UId), DomainId == 0 ? " IS NULL" : "=" + DomainId);
+            if (!string.IsNullOrEmpty(this.Index)) return String.Format("t.uid={0} AND t.cat_index={1}", StringUtils.EscapeSql(this.UId), StringUtils.EscapeSql(this.Index));
+            else return String.Format("t.uid={0} AND t.id_domain{1}", StringUtils.EscapeSql(this.UId), DomainId == 0 ? " IS NULL" : "=" + DomainId);
         }
   
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
@@ -228,9 +237,13 @@ namespace Terradue.Tep {
                         var feed = GetOwsContextAtomFeed(stream);
                         if (feed.Items != null) {
                             foreach (OwsContextAtomEntry item in feed.Items) {
-								var appcached = CreateOrUpdateCachedApp(item, domainId, index);
-								upIds.Add(appcached.Id);
-								this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));                        
+                                try {
+                                    var appcached = CreateOrUpdateCachedApp(item, domainId, index);
+                                    if(appcached != null) upIds.Add(appcached.Id);
+                                    this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
+                                }catch(Exception e){
+                                    this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
+                                }
                             }
                         }
                     }
@@ -242,18 +255,24 @@ namespace Terradue.Tep {
 			return upIds;
 		}
 
-		/// <summary>
+        /// <summary>
         /// Creates or update the cached app
         /// </summary>
         /// <returns>The or update.</returns>
         /// <param name="entry">Entry.</param>
         /// <param name="domainid">Domainid.</param>
         public ThematicApplicationCached CreateOrUpdateCachedApp(OwsContextAtomEntry entry, int domainid, string index = null) {
+
+            var appCategory = entry.Categories.FirstOrDefault(l => l.Label == "App");
+            if (appCategory == null) return null;
+
             var identifier = GetIdentifierFromFeed(entry);
             var appcached = new ThematicApplicationCached(context);
             appcached.UId = identifier;
-            appcached.DomainId = domainid;
-            
+
+            if (index != null) appcached.Index = index;
+            else appcached.DomainId = domainid;
+
             try {
                 appcached.Load();
             } catch (Exception e) { }
@@ -441,5 +460,45 @@ namespace Terradue.Tep {
 
         }
 
-	}
+        /// <summary>
+        /// Refreshs the cached apps for indexes.
+        /// </summary>
+        /// <param name="indexes">Indexes.</param>
+        public void RefreshCachedAppsForIndexes(List<string> indexes){
+            //Get all existing apps
+            EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
+
+            existingApps.SetFilter("Index", string.Join(",", indexes));
+            existingApps.Load();
+
+            //will be filled with all updated ids
+            List<int> upIds = new List<int>();
+
+            foreach(var index in indexes){
+                var baseurl = context.GetConfigValue("catalog-baseurl");
+                var url = baseurl + "/" + index + "/search";
+                var ids = CreateOrUpdateCachedAppFromUrl(url, 0);
+                upIds.AddRange(ids);
+            }
+
+            //delete apps not updated
+            foreach (var app in existingApps) {
+                if (!upIds.Contains(app.Id)) {
+                    this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from index {1}", app.UId, app.Index));
+                    app.Delete();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Refreshs the cached apps.
+        /// </summary>
+        /// <param name="index">Index.</param>
+        /// <param name="uid">Uid.</param>
+        public void RefreshCachedApps(string index, string uid) {
+            var baseurl = context.GetConfigValue("catalog-baseurl");
+            var url = baseurl + "/" + index + "/search?uid=" + uid ;
+            CreateOrUpdateCachedAppFromUrl(url, 0);
+        }
+    }
 }
