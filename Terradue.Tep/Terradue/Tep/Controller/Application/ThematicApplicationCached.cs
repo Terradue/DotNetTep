@@ -284,6 +284,7 @@ namespace Terradue.Tep {
             appcached.Feed = feed;
             appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
             appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
+            if (appcached.DomainId == 0 && domainid > 0) appcached.DomainId = domainid;
             appcached.Store();
 
             return appcached;
@@ -440,7 +441,7 @@ namespace Terradue.Tep {
         /// Refreshs the cached apps for community.
         /// </summary>
         /// <param name="community">Community.</param>
-		public void RefreshCachedAppsForCommunity(ThematicCommunity community) {
+		public void RefreshCachedAppsForCommunity(ThematicCommunity community,bool deleteRemovedApp = true) {
             //Get all existing apps for the community
             EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);
 			List<int> existingIds = new List<int>();
@@ -453,8 +454,14 @@ namespace Terradue.Tep {
             //delete apps not updated
             foreach (var app in existingApps) {
                 if (!upIds.Contains(app.Id)) {
-                    this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
-                    app.Delete();
+                    if (deleteRemovedApp) {
+                        this.LogInfo(string.Format("RefreshThematicAppsCache -- Delete not updated app '{0}' from domain {1}", app.UId, app.DomainId));
+                        app.Delete();
+                    } else {
+                        this.LogInfo(string.Format("RefreshThematicAppsCache -- Remove domain {1} from app '{0}'", app.UId, app.DomainId));
+                        app.DomainId = 0;
+                        app.Store();
+                    }
                 }
             }
 

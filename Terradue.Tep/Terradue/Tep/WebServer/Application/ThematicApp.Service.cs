@@ -329,8 +329,18 @@ namespace Terradue.Tep.WebServer.Services {
 			try {
                 context.LogInfo(this, string.Format("/apps/cache GET"));
 				var appFactory = new ThematicAppCachedFactory(context);
-				//case TEP -- we don't want user privates apps to be cached
-				appFactory.RefreshCachedApps(false, true, true);
+                if (!string.IsNullOrEmpty(request.Username)) {
+                    //refresh only for private apps
+                    var user = UserTep.FromIdentifier(context, request.Username);
+                    if (user.Id == context.UserId) appFactory.RefreshCachedAppsForUser(user);
+                } else if (!string.IsNullOrEmpty(request.Community)) {
+                    //refresh only for community apps
+                    var community = ThematicCommunity.FromIdentifier(context, request.Community);
+                    if (community.CanUserManage(context.UserId)) appFactory.RefreshCachedAppsForCommunity(community);
+                } else {
+                    //case TEP -- we don't want user privates apps to be cached
+                    appFactory.RefreshCachedApps(false, true, true);
+                }
                 context.Close();
 			} catch (Exception e) {
                 context.LogError(this, e.Message);
