@@ -464,6 +464,47 @@ namespace Terradue.Tep.WebServer.Services {
 			return new WebResponseBool(true);
 		}
 
+        public object Delete(ThematicAppEditorDeleteRequestTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            context.Open();
+            try {
+                context.LogInfo(this, string.Format("/app?index={0}&uid={1} DELETE",request.Index, request.Uid));
+
+                var user = UserTep.FromId(context, context.UserId);
+                var index = string.IsNullOrEmpty(request.Index) ? user.TerradueCloudUsername : request.Index;
+                if (index != user.TerradueCloudUsername) throw new Exception("It is currently only possible to delete entries from your own index!");
+                if (string.IsNullOrEmpty(index)) throw new Exception("Unable to DELETE from empty index");
+                if (string.IsNullOrEmpty(request.Uid)) throw new Exception("Invalid entry identifier");
+                var apikey = user.GetSessionApiKey();
+
+                //delete entry from catalogue
+                try {
+                    CatalogueFactory.DeleteEntryFromIndex(context, index, request.Uid, user.Username, apikey);
+                } catch (Exception e) {
+                    throw new Exception("Unable to DELETE entry " + request.Uid + " from " + index + " - " + e.Message);
+                }
+
+                //update cache apps
+                request.UpdateCacheDomain = user.Username;//TEMPORARY, for now we only allow to delete in current user's index
+                if (request.UpdateCache && !string.IsNullOrEmpty(request.UpdateCacheDomain)) {
+                    try {
+                        var appFactory = new ThematicAppCachedFactory(context);
+                        var community = ThematicCommunity.FromIdentifier(context, request.UpdateCacheDomain);
+                        appFactory.RefreshCachedAppsForCommunity(community);
+                    } catch (Exception e) {
+                        context.LogError(this, string.Format("Unable to cache app -- " + e.Message));
+                    }
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
         public object Post(ThematicAppEditorSaveAsFileRequestTep request) {
             IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             string result = null;
