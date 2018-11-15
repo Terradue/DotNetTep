@@ -292,7 +292,6 @@
     <Compile Include="Terradue\Tep\WebServer\Config\WebDBConfig.cs" />
     <Compile Include="Terradue\Tep\WebServer\Features\Geometry.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\ProductionResultHelper.cs" />
-    <Compile Include="Terradue\Tep\WebServer\Application\WebThematicAppEditor.cs" />
     <Compile Include="Terradue\Tep\Controller\Application\ThematicApplicationCached.cs" />
     <Compile Include="Terradue\Tep\Controller\Support\JiraClient.cs" />
     <Compile Include="Terradue\Tep\Controller\Support\JiraIssue.Request.cs" />
