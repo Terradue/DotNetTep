@@ -498,6 +498,39 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Refreshs the cached app.
+        /// </summary>
+        /// <param name="feed">Feed.</param>
+        /// <param name="index">Index.</param>
+        /// <param name="uid">Uid.</param>
+        /// <param name="domainId">Domain identifier.</param>
+        public void RefreshCachedApp(OwsContextAtomFeed feed, string index, string uid, int domainId) {
+            var entry = feed.Items.First<OwsContextAtomEntry>();
+            var appCategory = entry.Categories.FirstOrDefault(l => l.Label == "App");
+            if (appCategory == null) return;
+
+            var appcached = new ThematicApplicationCached(context);
+            appcached.UId = uid;
+
+            if (index != null) appcached.Index = index;
+            else appcached.DomainId = domainId;
+
+            try {
+                appcached.Load();
+            } catch (Exception e) { }
+
+            appcached.Index = index;
+            appcached.Feed = feed;
+            appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
+            appcached.LastUpdate = entry.LastUpdatedTime.DateTime == DateTime.MinValue ? DateTime.UtcNow : entry.LastUpdatedTime.DateTime;
+            if (appcached.DomainId == 0 && domainId > 0) appcached.DomainId = domainId;
+            appcached.Store();
+
+            return;
+        }
+
+
+        /// <summary>
         /// Refreshs the cached apps.
         /// </summary>
         /// <param name="index">Index.</param>
