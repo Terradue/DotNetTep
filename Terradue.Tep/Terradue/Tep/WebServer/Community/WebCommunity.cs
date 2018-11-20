@@ -110,6 +110,12 @@ namespace Terradue.Tep
         [ApiMember(Name = "EnableJoinRequest", Description = "Enable user join request", ParameterType = "query", DataType = "bool", IsRequired = false)]
         public bool EnableJoinRequest { get; set; }
 
+        [ApiMember(Name = "Contributor", Description = "Contributor name", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Contributor { get; set; }
+
+        [ApiMember(Name = "ContributorIcon", Description = "Contributor icon", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string ContributorIcon { get; set; }
+
         public WebCommunityTep() {}
 
         /// <summary>
@@ -123,7 +129,8 @@ namespace Terradue.Tep
             DefaultRole = entity.DefaultRoleName;
             EmailNotification = entity.EmailNotification;
             EnableJoinRequest = entity.EnableJoinRequest;
-
+            Contributor = entity.Contributor;
+            ContributorIcon = entity.ContributorIcon;
         }
 
         /// <summary>
@@ -144,6 +151,8 @@ namespace Terradue.Tep
             entity.EmailNotification = EmailNotification;
             entity.EnableJoinRequest = EnableJoinRequest;
             entity.DefaultRoleName = DefaultRole;
+            entity.Contributor = Contributor;
+            entity.ContributorIcon = ContributorIcon;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private || Kind == (int)DomainKind.Hidden) entity.Kind = (DomainKind)Kind;
             return entity;
         }

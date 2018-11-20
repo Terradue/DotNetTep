@@ -60,6 +60,12 @@ namespace Terradue.Tep {
         [EntityDataField("enable_join")]
         public bool EnableJoinRequest { get; set; }
 
+        [EntityDataField("contributor")]
+        public string Contributor { get; set; }
+
+        [EntityDataField("contributor_icon_url")]
+        public string ContributorIcon { get; set; }
+
         private Role defaultRole;
         public string DefaultRoleName { 
             get {
@@ -547,6 +553,15 @@ namespace Terradue.Tep {
                 }
 
                 result.Links.Add(new SyndicationLink(uri, "icon", "", base.GetImageMimeType(IconUrl), 0));
+            }
+
+            if(!string.IsNullOrEmpty(Contributor) || !string.IsNullOrEmpty(ContributorIcon)){
+                var a = new ServiceModel.Syndication.SyndicationPerson {
+                    Name = Contributor,
+                };
+                if(!string.IsNullOrEmpty(ContributorIcon)) a.ElementExtensions.Add("icon", "http://www.terradue.com", ContributorIcon);
+                a.ElementExtensions.Add("contributor", "http://www.terradue.com", "true");
+                result.Authors.Add(a);
             }
 
             result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (isprivate ? "private" : "hidden")));
