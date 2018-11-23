@@ -78,17 +78,18 @@ namespace Terradue.Tep.WebServer.Services {
                 HttpContext.Current.Session["oauth-nonce"] = nonce;
 
                 var scope = context.GetConfigValue("sso-scopes").Replace(",", "%20");
-
-                redirect = string.Format("{0}?client_id={1}&response_type={2}&nonce={3}&state={4}&redirect_uri={5}&ajax={6}&scope={7}",
-                                                 context.GetConfigValue("oauth-authEndpoint"),
-                                                 context.GetConfigValue("sso-clientId"),
-                                                 "code",
-                                                 nonce,
-                                                 Guid.NewGuid().ToString(),
-                                                 context.GetConfigValue("sso-callback"),
-                                                 "false",
-                                                 scope
-                                                );
+                var oauthEndpoint = context.GetConfigValue("oauth-authEndpoint");
+                redirect = string.Format("{0}{1}client_id={2}&response_type={3}&nonce={4}&state={5}&redirect_uri={6}&ajax={7}&scope={8}",
+                                         oauthEndpoint, 
+                                         oauthEndpoint.Contains("?") ? "&" : "?",
+                                         context.GetConfigValue("sso-clientId"),
+                                         "code",
+                                         nonce,
+                                         Guid.NewGuid().ToString(),
+                                         context.GetConfigValue("sso-callback"),
+                                         "false",
+                                         scope
+                                        );
 
                 context.Close();
             } catch (Exception e) {
@@ -139,7 +140,6 @@ namespace Terradue.Tep.WebServer.Services {
                 if (user == null) throw new Exception("Unable to load user");
                 context.LogDebug(this, string.Format("Loaded user '{0}'", user.Username));
                 if (string.IsNullOrEmpty(user.Email)) throw new Exception("Invalid email");
-                user.Store();
 
                 context.StartSession(auth, user);
                 context.SetUserInformation(auth, user);

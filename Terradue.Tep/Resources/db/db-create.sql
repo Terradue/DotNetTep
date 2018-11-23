@@ -388,3 +388,7 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-configUrl', 'string', 'Terradue SSO Configuration url', 'Enter the value of the url of the Configuration of the Terradue SSO', "https://sso.terradue.com/c2id//.well-known/openid-configuration", '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-apiAccessToken', 'string', 'Terradue SSO API Access Token', 'Enter the value of the API Access token of the Terradue SSO', "TBD", '0');
 -- RESULT
+
+-- Update LDAP auth...\
+UPDATE auth SET type='Terradue.Tep.TepLdapAuthenticationType, Terradue.Tep', activation_rule='3' WHERE identifier='ldap';
+-- RESULT

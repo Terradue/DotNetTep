@@ -9,7 +9,7 @@ namespace Terradue.Tep {
         public TepLdapAuthenticationType(IfyContext context) : base(context) {}
 
         public override User GetUserProfile(IfyWebContext context, HttpRequest request = null, bool strict = false) {
-            User usr = null;
+            UserTep usr = null;
             AuthenticationType authType = IfyWebContext.GetAuthenticationType(typeof(TepLdapAuthenticationType));
 
             var tokenrefresh = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
@@ -44,27 +44,27 @@ namespace Terradue.Tep {
 
                 //user has ldap auth associated to his account
                 if (userHasAuthAssociated) {
-                    //User exists, we load it ; user is not yet logged in so we must use Admin access level
-                    EntityAccessLevel accessLevel = context.AccessLevel;
-                    context.AccessLevel = EntityAccessLevel.Administrator;
-                    usr = (UserTep)User.FromId(context, userId);
+                    //User exists, we load it
+                    usr = UserTep.FromId(context, userId);
                     return usr;
                 }
 
                 //user does not have ldap auth associated to his account
                 try {
                     //check if a user with the same email exists
-                    usr = User.FromEmail(context, usrInfo.email);
+                    usr = UserTep.FromEmail(context, usrInfo.email);
 
                     //user with the same email exists but not yet associated to ldap auth
                     usr.LinkToAuthenticationProvider(authType, usrInfo.sub);
 
                     return usr;
                     //TODO: what about if user Cloud username is different ? force to new one ?
-                } catch (Exception e) { }
+                } catch (Exception e) {
+                    context.LogError(this, e.Message);
+                }
 
                 //user with this email does not exist, we should create it
-                usr = User.GetOrCreate(context, usrInfo.sub, authType);
+                usr = (UserTep)User.GetOrCreate(context, usrInfo.sub, authType);
                 usr.Level = UserCreationDefaultLevel;
 
                 //update user infos

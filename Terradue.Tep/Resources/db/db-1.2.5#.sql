@@ -20,5 +20,5 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 -- RESULT
 
 -- Update LDAP auth...\
-UPDATE auth SET type='Terradue.Tep.TepLdapAuthenticationType, Terradue.Tep' WHERE identifier='ldap';
+UPDATE auth SET type='Terradue.Tep.TepLdapAuthenticationType, Terradue.Tep', activation_rule='3' WHERE identifier='ldap';
 -- RESULT

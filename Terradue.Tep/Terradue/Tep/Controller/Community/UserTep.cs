@@ -151,8 +151,8 @@ namespace Terradue.Tep {
         }
 
         public override string GetIdentifyingConditionSql() {
-            if (!string.IsNullOrEmpty(ApiKey))
-                return String.Format("t.apikey='{0}'", ApiKey);
+            if (!string.IsNullOrEmpty(ApiKey)) return String.Format("t.apikey='{0}'", ApiKey);
+            if (!string.IsNullOrEmpty(Email)) return String.Format("t.email='{0}'", Email);
             else return null;
         }
 
@@ -198,6 +198,13 @@ namespace Terradue.Tep {
         public new static UserTep FromIdentifier(IfyContext context, string identifier) {
             UserTep user = new UserTep(context);
             user.Identifier = identifier;
+            user.Load();
+            return user;
+        }
+
+        public static UserTep FromEmail(IfyContext context, string email) {
+            UserTep user = new UserTep(context);
+            user.Email = email;
             user.Load();
             return user;
         }
