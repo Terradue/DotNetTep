@@ -324,7 +324,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(ThematicAppCacheRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             context.Open();
 			try {
                 context.LogInfo(this, string.Format("/apps/cache GET"));
@@ -338,8 +338,11 @@ namespace Terradue.Tep.WebServer.Services {
                     var community = ThematicCommunity.FromIdentifier(context, request.Community);
                     if (community.CanUserManage(context.UserId)) appFactory.RefreshCachedAppsForCommunity(community);
                 } else {
-                    //case TEP -- we don't want user privates apps to be cached
-                    appFactory.RefreshCachedApps(false, true, true);
+                    //user should be admin
+                    if (context.UserLevel == UserLevel.Administrator) {
+                        //case TEP -- we don't want user privates apps to be cached
+                        appFactory.RefreshCachedApps(false, true, true);
+                    }
                 }
                 context.Close();
 			} catch (Exception e) {
