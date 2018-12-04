@@ -6,9 +6,15 @@ using Terradue.Portal;
 
 namespace Terradue.Tep {
     public class TepLdapAuthenticationType : LdapAuthenticationType {
+
+        protected bool NewUserCreated { get; set; }
+
         public TepLdapAuthenticationType(IfyContext context) : base(context) {}
 
         public override User GetUserProfile(IfyWebContext context, HttpRequest request = null, bool strict = false) {
+
+            NewUserCreated = false;
+
             UserTep usr = null;
             AuthenticationType authType = IfyWebContext.GetAuthenticationType(typeof(TepLdapAuthenticationType));
 
@@ -49,6 +55,8 @@ namespace Terradue.Tep {
                     return usr;
                 }
 
+                if (string.IsNullOrEmpty(usrInfo.email)) throw new Exception("Null email returned by the Oauth mechanism, please contact support.");
+
                 //user does not have ldap auth associated to his account
                 try {
                     //check if a user with the same email exists
@@ -81,6 +89,7 @@ namespace Terradue.Tep {
 
                 if (usr.Id == 0) {
                     usr.AccessLevel = EntityAccessLevel.Administrator;
+                    NewUserCreated = true;
                 }
                 usr.Store();
                 usr.LinkToAuthenticationProvider(authType, usrInfo.sub);
