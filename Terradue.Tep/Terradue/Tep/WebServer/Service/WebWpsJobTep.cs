@@ -135,6 +135,8 @@ namespace Terradue.Tep.WebServer {
         public String ProcessName { get; set; }
 		[ApiMember(Name = "Status", Description = "Status of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
 		public int Status { get; set; }
+        [ApiMember(Name = "WpsVersion", Description = "Version of the job wps service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string WpsVersion { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String StatusLocation { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
@@ -170,6 +172,7 @@ namespace Terradue.Tep.WebServer {
             this.EndTime = entity.EndTime;
             this.RemoteIdentifier = entity.RemoteIdentifier;
             this.Status = (int)entity.Status;
+            this.WpsVersion = entity.WpsVersion;
                        
         }
 
@@ -195,6 +198,7 @@ namespace Terradue.Tep.WebServer {
             entity.StatusLocation = this.StatusLocation;
             entity.CreatedTime = this.CreatedTime;
             entity.EndTime = this.EndTime;
+            entity.WpsVersion = this.WpsVersion;
             return entity;
         }
 

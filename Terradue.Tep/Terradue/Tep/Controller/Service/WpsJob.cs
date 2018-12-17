@@ -36,6 +36,9 @@ namespace Terradue.Tep {
         [EntityDataField("wps")]
         public string WpsId { get; set; }
 
+        [EntityDataField("wps_version")]
+        public string WpsVersion { get; set; }
+
         [EntityDataField("process")]
         public string ProcessId { get; set; }
 
@@ -248,6 +251,7 @@ namespace Terradue.Tep {
             newjob.ProcessId = job.ProcessId;
             newjob.RemoteIdentifier = job.RemoteIdentifier;
             newjob.WpsId = job.WpsId;
+            newjob.WpsVersion = job.WpsVersion;
             newjob.Store();
 
             newjob.CreatedTime = job.CreatedTime;
@@ -268,6 +272,7 @@ namespace Terradue.Tep {
                 this.CreatedTime = DateTime.UtcNow;
                 this.AccessKey = Guid.NewGuid().ToString();
                 this.NbResults = -1;
+                if (string.IsNullOrEmpty(this.WpsVersion) && this.Process != null) this.WpsVersion = this.Process.Version;//we set only at creation as service version may change with time
             }
             base.Store();
             if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {
@@ -375,6 +380,7 @@ namespace Terradue.Tep {
             wpsjob.Status = WpsJobStatus.NONE;
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
             wpsjob.Parameters = parameters;
+            wpsjob.WpsVersion = wps.Version;
 
             return wpsjob;
         }
@@ -970,7 +976,7 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
-
+            if (!string.IsNullOrEmpty(this.WpsVersion)) result.Categories.Add(new SyndicationCategory("service_version", null, "" + this.WpsVersion));
             return result;
         }
 

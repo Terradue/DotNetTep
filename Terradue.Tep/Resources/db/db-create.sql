@@ -1,4 +1,4 @@
--- VERSION 1.2.5
+-- VERSION 1.2.6
 
 USE $MAIN$;
 
@@ -391,4 +391,8 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 
 -- Update LDAP auth...\
 UPDATE auth SET type='Terradue.Tep.TepLdapAuthenticationType, Terradue.Tep', activation_rule='3' WHERE identifier='ldap';
+-- RESULT
+
+-- Add wps version in wpsjob...\
+ALTER TABLE wpsjob ADD COLUMN `wps_version` VARCHAR(30) NULL DEFAULT NULL;
 -- RESULT
