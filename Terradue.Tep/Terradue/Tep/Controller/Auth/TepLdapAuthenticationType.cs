@@ -92,7 +92,12 @@ namespace Terradue.Tep {
                     NewUserCreated = true;
                 }
                 usr.Store();
+
                 usr.LinkToAuthenticationProvider(authType, usrInfo.sub);
+
+                usr.TerradueCloudUsername = usrInfo.sub;
+                usr.StoreCloudUsername();
+
                 return usr;
             } else {
 
