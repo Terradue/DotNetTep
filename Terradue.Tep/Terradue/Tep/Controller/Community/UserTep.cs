@@ -304,40 +304,68 @@ namespace Terradue.Tep {
         public void LoadTerradueUserInfo(){
             context.LogDebug(this, "Loading Terradue info - " + this.Username);
 			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = "true";
-            try {
-                var payload = string.Format("username={0}&email={1}&originator={2}{3}",
-                    this.Username,
-                    this.Email,
-                    context.GetConfigValue("SiteNameShort"),
-                    this.Level == 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-starterPlan") : this.Level == 3 ? "&plan=" + context.GetConfigValue("t2portal-usr-explorerPlan") : "");
-                System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
-                byte[] payloadBytes = encoding.GetBytes(payload);
-                var sso = System.Convert.ToBase64String(payloadBytes);
-                var sig = TepUtility.HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
 
-                var url = string.Format("{0}?payload={1}&sig={2}", context.GetConfigValue("t2portal-usr-endpoint"), sso, sig);
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Proxy = null;
-                request.Method = "GET";
-                request.ContentType = "application/json";
-                request.Accept = "application/json";
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        var result = streamReader.ReadToEnd();
-                        var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
-                        if (this.TerradueCloudUsername != info.Username) {//we update only if it changed
-                            this.TerradueCloudUsername = info.Username;
-                            this.StoreCloudUsername();
+            try {
+                if (TerradueCloudUsername == null) {
+                    //no TerradueCloudUsername, we need to load it (+ apikey)
+                    var payload = string.Format("username={0}&email={1}&originator={2}{3}",
+                        this.Username,
+                        this.Email,
+                        context.GetConfigValue("SiteNameShort"),
+                        this.Level == 2 ? "&plan=" + context.GetConfigValue("t2portal-usr-starterPlan") : this.Level == 3 ? "&plan=" + context.GetConfigValue("t2portal-usr-explorerPlan") : "");
+                    System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+                    byte[] payloadBytes = encoding.GetBytes(payload);
+                    var sso = System.Convert.ToBase64String(payloadBytes);
+                    var sig = TepUtility.HashHMAC(context.GetConfigValue("sso-eosso-secret"), sso);
+
+                    var url = string.Format("{0}?payload={1}&sig={2}", context.GetConfigValue("t2portal-usr-endpoint"), sso, sig);
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                    request.Proxy = null;
+                    request.Method = "GET";
+                    request.ContentType = "application/json";
+                    request.Accept = "application/json";
+                    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                            var result = streamReader.ReadToEnd();
+                            var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
+                            if (this.TerradueCloudUsername != info.Username) {//we update only if it changed
+                                this.TerradueCloudUsername = info.Username;
+                                this.StoreCloudUsername();
+                            }
+                            context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                            SetSessionApikey(info.ApiKey);
+                            this.Store();
                         }
-                        context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
-                        SetSessionApikey(info.ApiKey);
-                        this.Store();
+                    }
+                } else {
+                    var apikey = GetSessionApiKey();
+                    if (apikey == null){
+                        //no TerradueAPIKey, we need to load it (we load only the apikey)
+                        var url = string.Format("{0}?token={1}&username={2}&request=apikey",
+                                        context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                        context.GetConfigValue("t2portal-safe-token"),
+                                        this.TerradueCloudUsername);
+
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                        request.Method = "GET";
+                        request.ContentType = "application/json";
+                        request.Accept = "application/json";
+                        request.Proxy = null;
+
+                        using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                                apikey = streamReader.ReadToEnd();
+                                apikey = apikey.Trim('"');
+                                SetSessionApikey(apikey);
+                                context.LogDebug(this, "Found Terradue API Key for user '" + this.TerradueCloudUsername + "'");
+                            }
+                        }
                     }
                 }
-            }catch(Exception e){
-				if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2profileError"] = e.Message;
+            } catch (Exception e) {
+                if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2profileError"] = e.Message;
             }
-			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = null;
+            if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = null;
         }
 
         /// <summary>
