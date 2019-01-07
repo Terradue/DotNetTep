@@ -50,7 +50,16 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "WpsJobOngoingCount", Description = "Wps Job Ongoing Count", ParameterType = "path", DataType = "int", IsRequired = false)]
 		public int WpsJobOngoingCount { get; set; }
 
-		[ApiMember(Name = "IconUrl", Description = "Icon Url", ParameterType = "path", DataType = "string", IsRequired = false)]
+        [ApiMember(Name = "WpsJobSharedPublicCount", Description = "Wps Job publicly shared Count", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int WpsJobSharedPublicCount { get; set; }
+
+        [ApiMember(Name = "WpsJobSharedRestrictedCount", Description = "Wps Job restrictedly shared Count", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int WpsJobSharedRestrictedCount { get; set; }
+
+        [ApiMember(Name = "WpsJobSharedPrivateCount", Description = "Wps Job not shared Count", ParameterType = "path", DataType = "int", IsRequired = false)]
+        public int WpsJobSharedPrivateCount { get; set; }
+
+        [ApiMember(Name = "IconUrl", Description = "Icon Url", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string IconUrl { get; set; }
 
         [ApiMember(Name = "TotalUsers", Description = "Total Users", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
@@ -58,6 +67,12 @@ namespace Terradue.Tep.WebServer {
 
         [ApiMember(Name = "ActiveUsers", Description = "Active Users", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
         public List<WebKeyValue> ActiveUsers { get; set; }
+
+        [ApiMember(Name = "TopServices", Description = "Top services used", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
+        public List<WebKeyValue> TopServices { get; set; }
+
+        [ApiMember(Name = "AvailableDataCollections", Description = "Available Data Collections", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
+        public List<WebKeyValue> AvailableDataCollections { get; set; }
 
         public WebAnalytics() {}
 
@@ -70,6 +85,9 @@ namespace Terradue.Tep.WebServer {
             this.WpsJobSuccessCount = entity.WpsJobSuccessCount;
             this.WpsJobFailedCount = entity.WpsJobFailedCount;
 			this.WpsJobOngoingCount = entity.WpsJobOngoingCount;
+            this.WpsJobSharedPublicCount = entity.WpsJobSharedPublicCount;
+            this.WpsJobSharedRestrictedCount = entity.WpsJobSharedRestrictedCount;
+            this.WpsJobSharedPrivateCount = entity.WpsJobSharedPrivateCount;
 			this.IconUrl = entity.IconUrl;
             this.ActiveUsers = new List<WebKeyValue>();
             var visitor = 0;
@@ -127,6 +145,18 @@ namespace Terradue.Tep.WebServer {
             this.TotalUsers.Add(new WebKeyValue("starter", starter.ToString()));
             this.TotalUsers.Add(new WebKeyValue("explorer", explorer.ToString()));
             this.TotalUsers.Add(new WebKeyValue("administrator", administrator.ToString()));
+            if (entity.TopServices != null) {
+                this.TopServices = new List<WebKeyValue>();
+                foreach (var kv in entity.TopServices) {
+                    this.TopServices.Insert(0, new WebKeyValue(kv.Key, kv.Value.ToString()));
+                }
+            }
+            if (entity.AvailableDataCollections != null) {
+                this.AvailableDataCollections = new List<WebKeyValue>();
+                foreach (var kv in entity.AvailableDataCollections) {
+                    this.AvailableDataCollections.Insert(0, new WebKeyValue(kv.Key, kv.Value));
+                }
+            }
         }
 
     }

@@ -31,13 +31,15 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(AnalyticsRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             WebAnalytics result = new WebAnalytics();
             try {
                 context.Open();
                 context.LogInfo(this, string.Format("/analytics GET - type='{0}', identifier='{1}'", request.Type, request.Identifier));
 
                 Analytics analytics = null;
+
+                if (context.UserId == 0) request.Type = "all";
 
                 switch (request.Type) {
                     case "user":

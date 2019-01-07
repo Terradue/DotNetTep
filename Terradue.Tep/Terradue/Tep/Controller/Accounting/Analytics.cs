@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.Caching;
 using Terradue.Portal;
 
 namespace Terradue.Tep {
@@ -61,6 +62,24 @@ namespace Terradue.Tep {
         public int WpsJobOngoingCount { get; set; }
 
         /// <summary>
+        /// Gets or sets the wps job shared public count.
+        /// </summary>
+        /// <value>The wps job shared public count.</value>
+        public int WpsJobSharedPublicCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the wps job shared restricted count.
+        /// </summary>
+        /// <value>The wps job shared restricted count.</value>
+        public int WpsJobSharedRestrictedCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the wps job shared private count.
+        /// </summary>
+        /// <value>The wps job shared private count.</value>
+        public int WpsJobSharedPrivateCount { get; set; }
+
+        /// <summary>
         /// Gets or sets the icon URL.
         /// </summary>
         /// <value>The icon URL.</value>
@@ -114,6 +133,18 @@ namespace Terradue.Tep {
         /// <value>The skip identifiers.</value>
         public List<int> SkipIds { get; set; }
 
+        /// <summary>
+        /// Gets or sets the top services.
+        /// </summary>
+        /// <value>The top services.</value>
+        public List<KeyValuePair<string,int>> TopServices { get; set; }
+
+        /// <summary>
+        /// Gets or sets the available data collections.
+        /// </summary>
+        /// <value>The available data collections.</value>
+        public List<KeyValuePair<string, string>> AvailableDataCollections { get; set; }
+
         /*-----------------------------------------------------------------------------------------------------------------------------------------*/
         /*-----------------------------------------------------------------------------------------------------------------------------------------*/
         /*-----------------------------------------------------------------------------------------------------------------------------------------*/
@@ -166,7 +197,8 @@ namespace Terradue.Tep {
 				if (Entity is UserTep) {
 					var user = Entity as UserTep;
 					AddUserAnalytics(user);
-					IconUrl = user.GetAvatar();
+                    TopServices = GetTopUsedServices(Context.GetConfigIntegerValue("analytics_nbtopusedservices"), new List<int>{user.Id});
+                    IconUrl = user.GetAvatar();
                 } else if (Entity is Domain || Entity is ThematicCommunity) {
 					var domain = Entity as Domain;
 					//get all users of domain
@@ -218,7 +250,9 @@ namespace Terradue.Tep {
             var allowedIds = GetAllowedIds();
             ActiveUsers = GetActiveUsers(allowedIds);
             TotalUsers = GetNewUsers(allowedIds);
-		}
+            TopServices = GetTopUsedServices(Context.GetConfigIntegerValue("analytics_nbtopusedservices"));
+            AvailableDataCollections = LoadAvailableDataCollections();
+        }
 
         private void AddUserAnalytics(UserTep user) {
 
@@ -248,6 +282,9 @@ namespace Terradue.Tep {
 				WpsJobFailedCount += GetTotalWpsJobsFailed(userId, StartDate, EndDate);
                 WpsJobOngoingCount += GetTotalWpsJobsOngoing(userId, StartDate, EndDate);
                 WpsJobSubmittedCount = WpsJobSuccessCount + WpsJobFailedCount + WpsJobOngoingCount;
+                WpsJobSharedPublicCount += GetWpsJobsSharedPublicForUser(userId, StartDate, EndDate);
+                WpsJobSharedRestrictedCount += GetWpsJobsSharedRestrictedForUser(userId, StartDate, EndDate);
+                WpsJobSharedPrivateCount = Math.Max(0,WpsJobSubmittedCount - WpsJobSharedPublicCount - WpsJobSharedRestrictedCount);
             }
         }
 
@@ -278,6 +315,21 @@ namespace Terradue.Tep {
             if (!string.IsNullOrEmpty(startdate)) result += " AND resourceset.creation_time > '" + startdate + "'";
             if (!string.IsNullOrEmpty(startdate)) result += " AND resourceset.creation_time < '" + enddate + "'";
             return result;
+        }
+
+        private int GetWpsJobsSharedPublicForUser(int usrId, string startdate = null, string enddate = null) {
+            string sql = string.Format("SELECT COUNT(DISTINCT id_wpsjob) FROM wpsjob_perm WHERE id_usr IS NULL AND id_grp IS NULL {0}{1};", 
+                                       usrId != 0 ? " AND id_wpsjob IN (SELECT id FROM wpsjob where id_usr=" + usrId + ")" : "",
+                                       GetWpsjobCreationDateCondition(startdate, enddate));
+            return Context.GetQueryIntegerValue(sql);
+        }
+
+        private int GetWpsJobsSharedRestrictedForUser(int usrId, string startdate = null, string enddate = null) {
+            string sql = string.Format("SELECT COUNT(DISTINCT id_wpsjob) FROM wpsjob_perm WHERE ((id_usr IS NOT NULL AND id_usr != (SELECT id_usr FROM wpsjob WHERE id=id_wpsjob)) OR id_grp IS NOT NULL) " +
+                                       "AND id_wpsjob NOT IN (SELECT id_wpsjob FROM wpsjob_perm WHERE id_usr IS NULL AND id_grp IS NULL){0}{1};",
+                                       usrId != 0 ? " AND id_wpsjob IN (SELECT id FROM wpsjob where id_usr=" + usrId + ")" : "",
+                                       GetWpsjobCreationDateCondition(startdate, enddate));
+            return Context.GetQueryIntegerValue(sql);
         }
 
         private int GetWpsJobsForUser(int usrId, string statusCondition, string startdate = null, string enddate = null) {
@@ -444,5 +496,107 @@ namespace Terradue.Tep {
             return ids;
         }
 
+        public List<KeyValuePair<string,int>> GetTopUsedServices(int count, List<int> userIds = null) {
+            List<KeyValuePair<string, int>> result = new List<KeyValuePair<string, int>>();
+            string sql = string.Format("SELECT r.sname,SUM(r.snb) as nb FROM " +
+                                       "(SELECT service.name as sname, count(wpsjob.process) as snb FROM wpsjob INNER JOIN service ON service.identifier = wpsjob.process {1}group by wpsjob.process order by snb desc) as r " +
+                                       "GROUP BY r.sname " +
+                                       "ORDER BY nb desc limit {0};", count, userIds != null ? "AND wpsjob.id_usr IN (" + string.Join(",", userIds) + ") " : "");
+            System.Data.IDbConnection dbConnection = Context.GetDbConnection();
+            System.Data.IDataReader reader = Context.GetQueryResult(sql, dbConnection);
+            while (reader.Read()) {
+                if (reader.GetValue(0) != DBNull.Value) {
+                    var service = reader.GetString(0);
+                    var nb = reader.GetInt32(1);
+                    result.Insert(0, new KeyValuePair<string, int>(service, nb));
+                }
+            }
+            Context.CloseQueryResult(reader, dbConnection);
+            return result;
+        }
+
+        public List<KeyValuePair<string, string>> LoadAvailableDataCollections() {
+            ObjectCache cache = MemoryCache.Default;
+
+            var availabledatacollections = cache["analytics_availabledatacollections"] as List<KeyValuePair<string, string>>;
+            if (availabledatacollections == null) {
+
+                availabledatacollections = GetDataCollectionsFromApps();
+
+                CacheItemPolicy policy = new CacheItemPolicy();
+                policy.SlidingExpiration = new TimeSpan(1, 0, 0, 0);
+                cache.Set("analytics_availabledatacollections", availabledatacollections, policy);
+            }
+
+            return availabledatacollections;
+        }
+
+        public List<KeyValuePair<string,string>> GetDataCollectionsFromApps(){
+            List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
+            var currentContextAccessLevel = Context.AccessLevel;
+            Context.AccessLevel = EntityAccessLevel.Administrator;
+            var eodata = new List<string>();
+            var eobasedproduct = new List<string>();
+            try {
+                EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(Context);
+                appsCached.Load();
+                foreach(var item in appsCached.Items){
+                    var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(item.TextFeed);
+                    if (feed.Items != null) {
+                        foreach (var entry in feed.Items) {
+                            var offering = entry.Offerings.First(p => p.Code == "http://www.terradue.com/spec/owc/1.0/req/atom/opensearch");
+                            if (offering.Operations != null) {
+                                foreach (var operation in offering.Operations) {
+                                    if (operation.Any != null && operation.Any.Length > 0) {
+                                        string datacontext = null;
+                                        foreach (var any in operation.Any) {
+                                            switch (any.Name) {
+                                                case "datacontext":
+                                                    var context = any.InnerText;
+                                                    var contextsplit = any.InnerText.Split('/');
+                                                    if (contextsplit.Length > 1) {
+                                                        var menu = contextsplit[0];
+                                                        menu = menu.ToLower();
+                                                        var collection = contextsplit[1];
+                                                        switch (menu){
+                                                            case "eo-data":
+                                                            case "eo data":
+                                                                if (!collection.Equals("*") && !eodata.Contains(collection)) eodata.Add(collection);
+                                                                break;
+                                                            case "eo-based products":
+                                                            case "eo based products":
+                                                                if (!eobasedproduct.Contains(collection)) eobasedproduct.Add(collection);
+                                                                break;
+                                                            default:
+                                                                break;
+                                                        }
+                                                    }
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            } catch (Exception e) {
+                Context.AccessLevel = currentContextAccessLevel;
+                throw e;
+            }
+            Context.AccessLevel = currentContextAccessLevel;
+            if (eodata.Count > 0) {
+                eodata.Sort();
+                result.Add(new KeyValuePair<string, string>("EO Data", string.Join(",", eodata)));
+            }
+            if (eobasedproduct.Count > 0){
+                eobasedproduct.Sort();
+                result.Add(new KeyValuePair<string, string>("EO-based products", string.Join(",", eobasedproduct)));
+            }
+            return result;
+        }
     }
 }
