@@ -1,4 +1,4 @@
--- VERSION 1.2.6
+-- VERSION 1.2.7
 
 USE $MAIN$;
 
@@ -395,4 +395,8 @@ UPDATE auth SET type='Terradue.Tep.TepLdapAuthenticationType, Terradue.Tep', act
 
 -- Add wps version in wpsjob...\
 ALTER TABLE wpsjob ADD COLUMN `wps_version` VARCHAR(30) NULL DEFAULT NULL;
+-- RESULT
+
+-- Add analytics config...\
+INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('analytics_nbtopusedservices', 'int', 'nb of top services to show in analytics', '', '5', '0');
 -- RESULT
