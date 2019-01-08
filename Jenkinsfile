@@ -11,7 +11,7 @@ pipeline {
       steps {
         sh 'rm -rf packges */bin build'
         sh 'mkdir -p build'
-        sh 'nuget restore'
+        sh 'nuget restore -MSBuildVersion 14'
         sh 'ls -la'
       }
     }
