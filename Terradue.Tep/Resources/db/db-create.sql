@@ -331,6 +331,7 @@ CREATE TABLE app_cache (
     cat_index varchar(50) NULL COMMENT 'index',
     id_domain int unsigned COMMENT 'FK: Owning domain',
     feed TEXT NOT NULL COMMENT 'app feed',
+    searchable TEXT NULL COMMENT 'app searchable text',
     last_update datetime COMMENT 'Last update time',
     CONSTRAINT pk_appcache PRIMARY KEY (id),
     CONSTRAINT fk_appcache_domain FOREIGN KEY (id_domain) REFERENCES domain(id) ON DELETE CASCADE,

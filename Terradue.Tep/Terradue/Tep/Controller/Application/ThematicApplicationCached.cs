@@ -17,7 +17,7 @@ namespace Terradue.Tep {
     [EntityTable("app_cache", EntityTableConfiguration.Custom, HasDomainReference = true, AllowsKeywordSearch = true)]
     public class ThematicApplicationCached : EntitySearchable {
 
-        [EntityDataField("feed", IsUsedInKeywordSearch = true)]
+        [EntityDataField("feed")]
         public string TextFeed { get; set; }
 
         [EntityDataField("uid", IsUsedInKeywordSearch = true)]
@@ -28,6 +28,9 @@ namespace Terradue.Tep {
 
 		[EntityDataField("last_update")]
 		public DateTime LastUpdate { get; set; }
+
+        [EntityDataField("searchable", IsUsedInKeywordSearch = true)]
+        public string Searchable { get; set; }
 
         public OwsContextAtomFeed Feed { get; set; }
 
@@ -185,7 +188,20 @@ namespace Terradue.Tep {
             return result;
         }
 
-		public static string GetIndexFromUrl(string url){
+        public static string GetSearchableTextFromAtomEntry(OwsContextAtomEntry entry){
+            string result = GetIdentifierFromFeed(entry);
+            result += entry.Title != null && !string.IsNullOrEmpty(entry.Title.Text) ? " | " + entry.Title.Text : "";
+            result += entry.Summary != null && !string.IsNullOrEmpty(entry.Summary.Text) ? " | " + entry.Summary.Text : "";
+            result += entry.Authors != null && entry.Authors.Count > 0 && !string.IsNullOrEmpty(entry.Authors[0].Name) ? " | " + entry.Authors[0].Name : "";
+            if(entry.Categories != null && entry.Categories.Count > 0){
+                foreach(var category in entry.Categories){
+                    if (category.Name == "keyword" && !string.IsNullOrEmpty(category.Label)) result += " | " + category.Label;
+                }
+            }
+            return result;
+        }
+
+        public static string GetIndexFromUrl(string url){
 			try {
 				var urib = new UriBuilder(url);
 				var path = urib.Uri.AbsolutePath;
@@ -283,6 +299,7 @@ namespace Terradue.Tep {
 			appcached.Index = index;
             appcached.Feed = feed;
             appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
+            appcached.Searchable = GetSearchableTextFromAtomEntry(entry);
             appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
             if (appcached.DomainId == 0 && domainid > 0) appcached.DomainId = domainid;
             appcached.Store();
@@ -522,6 +539,7 @@ namespace Terradue.Tep {
             appcached.Index = index;
             appcached.Feed = feed;
             appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
+            appcached.Searchable = GetSearchableTextFromAtomEntry(entry);
             appcached.LastUpdate = entry.LastUpdatedTime.DateTime == DateTime.MinValue ? DateTime.UtcNow : entry.LastUpdatedTime.DateTime;
             if (appcached.DomainId == 0 && domainId > 0) appcached.DomainId = domainId;
             appcached.Store();
