@@ -608,6 +608,8 @@ namespace Terradue.Tep {
                                         Username = user.Username,
                                         Name = user.FirstName + " " + user.LastName,
                                         Email = CanUserManage(context.UserId) ? user.Email : null,
+                                        Affiliation = IsUserJoined(context.UserId) ? user.Affiliation : null,
+                                        Country = IsUserJoined(context.UserId) ? user.Country : null,
                                         Role = role.Name ?? role.Identifier,
                                         RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? USERSTATUS_PENDING : USERSTATUS_JOINED,
@@ -732,6 +734,10 @@ namespace Terradue.Tep {
         public string Name { get; set; }
         [DataMember]
         public string Email { get; set; }
+        [DataMember]
+        public string Affiliation { get; set; }
+        [DataMember]
+        public string Country { get; set; }
         [DataMember]
         public string Role { get; set; }
         [DataMember]
