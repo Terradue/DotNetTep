@@ -76,6 +76,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
             wpsjobs.AddSort("Id", SortDirection.Descending);
+            wpsjobs.IncludeOwnerFieldsInSearch = true;
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
