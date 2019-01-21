@@ -576,6 +576,14 @@ namespace Terradue.Tep {
                 }
             }
 
+            if (Items == null) LoadItems();
+            var nbitems = Items == null ? 0 : Items.Count;
+            atomEntry.Categories.Add(new SyndicationCategory("nbItems", null, "" + nbitems));
+
+            if(Kind != KINDRESOURCESETNORMAL){
+                atomEntry.Categories.Add(new SyndicationCategory("kind", null, Kind == KINDRESOURCESETUSER ? "basket" : "app"));
+            }
+
             return atomEntry;
         }
 
@@ -595,6 +603,19 @@ namespace Terradue.Tep {
                         }
                     }
                     return new KeyValuePair<string, string>();
+                case "type":
+                    switch(value){
+                        case "basket":
+                            return new KeyValuePair<string, string>("Kind", KINDRESOURCESETUSER + "");
+                        case "datapackage":
+                            return new KeyValuePair<string, string>("Kind", KINDRESOURCESETNORMAL + "");
+                        case "app":
+                            return new KeyValuePair<string, string>("Kind", ThematicApplication.KINDRESOURCESETAPPS + "");
+                        case "all":
+                            return new KeyValuePair<string, string>("Kind", KINDRESOURCESETUSER + "," + KINDRESOURCESETNORMAL + "," + ThematicApplication.KINDRESOURCESETAPPS + "");
+                        default:
+                            return new KeyValuePair<string, string>();
+                    }
                 default:
                     return base.GetFilterForParameter(parameter, value);
             }
