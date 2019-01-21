@@ -282,7 +282,7 @@ namespace Terradue.Tep.WebServer.Services
 			WebDataPackageTep result;
 			try{
 				context.Open();
-                context.LogInfo(this,string.Format("/data/package PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/data/package PUT Id='{0}'", request.Id == 0 ? request.Identifier : request.Id.ToString()));
                 DataPackage tmp;
                 if(request.Id != 0) tmp = DataPackage.FromId(context, request.Id);
                 else if(!string.IsNullOrEmpty(request.Identifier)) tmp = DataPackage.FromIdentifier(context, request.Identifier);
