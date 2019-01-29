@@ -196,17 +196,6 @@
     <Reference Include="Terradue.OpenSearch.GeoJson">
       <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.21\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.51\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.51\lib\net45\Terradue.Portal.Agent.exe</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.51\lib\net45\Terradue.Portal.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Terradue.OpenSearch">
       <HintPath>..\packages\Terradue.OpenSearch.1.15.15\lib\net45\Terradue.OpenSearch.dll</HintPath>
     </Reference>
@@ -215,6 +204,17 @@
     </Reference>
     <Reference Include="Terradue.GeoJson">
       <HintPath>..\packages\Terradue.GeoJson.1.9.2\lib\net45\Terradue.GeoJson.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.7.52\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.7.52\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.7.52\lib\net45\Terradue.Portal.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -347,6 +347,39 @@
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.prj" />
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.dbf" />
     <None Include="modules\ldap\db\db-create.sql" />
+    <None Include="core\db\db-create.sql" />
+    <None Include="core\db\db-2.7.9#.sql" />
+    <None Include="core\db\db-2.7.8#.sql" />
+    <None Include="core\db\db-2.7.4#.sql" />
+    <None Include="core\db\db-2.7.3.2#.sql" />
+    <None Include="core\db\db-2.7.3.1#.sql" />
+    <None Include="core\db\db-2.7.3#.sql" />
+    <None Include="core\db\db-2.7.2#.sql" />
+    <None Include="core\db\db-2.7.15#.sql" />
+    <None Include="core\db\db-2.7.14#.sql" />
+    <None Include="core\db\db-2.7.13#.sql" />
+    <None Include="core\db\db-2.7.12#.sql" />
+    <None Include="core\db\db-2.7.11#.sql" />
+    <None Include="core\db\db-2.7.10#.sql" />
+    <None Include="core\db\db-2.7.1#.sql" />
+    <None Include="core\db\db-2.7#.sql" />
+    <None Include="core\db\db-2.6.66#.sql" />
+    <None Include="core\db\db-2.6.59#.sql" />
+    <None Include="core\db\db-2.6.58#.sql" />
+    <None Include="core\db\db-2.6.49#.sql" />
+    <None Include="core\db\db-2.6.43#.sql" />
+    <None Include="core\db\db-2.6.36#.sql" />
+    <None Include="core\db\db-2.6.35#.sql" />
+    <None Include="core\db\db-2.6.31#.sql" />
+    <None Include="core\db\db-2.6.30#.sql" />
+    <None Include="core\db\db-2.6.29#.sql" />
+    <None Include="core\db\db-2.6.22#.sql" />
+    <None Include="core\db\db-2.6.19#.sql" />
+    <None Include="core\db\db-2.6.18#.sql" />
+    <None Include="core\db\db-2.5c.sql" />
+    <None Include="core\db\db-2.5#.sql" />
+    <None Include="core\db\db-2.4c.sql" />
+    <None Include="core\db\db-2.4#.sql" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />

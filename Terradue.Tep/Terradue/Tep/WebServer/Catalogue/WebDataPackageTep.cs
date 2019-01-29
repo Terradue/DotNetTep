@@ -33,6 +33,12 @@ namespace Terradue.Tep.WebServer {
     {
     }
 
+    [Route("/data/package/{Identifier}", "GET", Summary = "GET datapackage", Notes = "datapackage is contained in the body")]
+    public class GetDataPackageTep : IReturn<WebDataPackage> {
+        [ApiMember(Name = "Identifier", Description = "DELETE datapackage", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
     [Route("/data/package/default/items", "POST", Summary = "POST item to default datapackage", Notes = "datapackage item is contained in the body")]
     public class DataPackageAddItemsToDefaultRequestTep : List<WebDataPackageItem>, IReturn<WebDataPackage>
     {
