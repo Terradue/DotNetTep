@@ -60,17 +60,21 @@ namespace Terradue.Tep.WebServer {
         public string Provider { get; set; }
         [ApiMember(Name = "Geometry", Description = "Geometry", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string Geometry { get; set; }
+        [ApiMember(Name = "Commercial", Description = "Commercial", ParameterType = "path", DataType = "bool", IsRequired = false)]
+        public bool Commercial { get; set; }
 
         public WebServiceTep() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebDataPackageTep"/> class.
+        /// Initializes a new instance of the <see cref="T:Terradue.Tep.WebServer.WebServiceTep"/> class.
         /// </summary>
+        /// <param name="context">Context.</param>
         /// <param name="entity">Entity.</param>
         public WebServiceTep(IfyContext context, Service entity) : base(entity) {
             this.IsPublic = entity.DoesGrantPermissionsToAll();
             this.OwnerId = entity.UserId;
             this.Geometry = entity.Geometry;
+            this.Commercial = entity.Commercial;
         }
 
         /// <summary>
@@ -82,6 +86,7 @@ namespace Terradue.Tep.WebServer {
 
             Service entity = base.ToEntity(context, input);
             entity.Geometry = this.Geometry;
+            entity.Commercial = this.Commercial;
             return entity;
         }
 
