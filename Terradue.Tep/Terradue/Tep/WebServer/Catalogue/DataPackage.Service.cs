@@ -57,20 +57,20 @@ namespace Terradue.Tep.WebServer.Services
 			return result;
 		}
 
-		/// <summary>
-		/// Get the specified request.
-		/// </summary>
-		/// <param name="request">Request.</param>
-		public object Get(GetDataPackage request)
+        /// <summary>
+        /// Get the specified request.
+        /// </summary>
+        /// <param name="request">Request.</param>
+        public object Get(GetDataPackageTep request)
 		{
 			//Get all requests from database
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
 			WebDataPackageTep result;
 			try{
 				context.Open();
-                context.LogInfo(this,string.Format("/data/package/{{Id}} GET Id='{0}", request.Id));
+                context.LogInfo(this,string.Format("/data/package/{{Identifier}} GET Id='{0}", request.Identifier));
 
-                DataPackage tmp = DataPackage.FromId(context,request.Id);
+                DataPackage tmp = DataPackage.FromIdentifier(context,request.Identifier);
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
@@ -519,7 +519,7 @@ namespace Terradue.Tep.WebServer.Services
 				context.Open();
                 context.LogInfo(this,string.Format("/data/package/{{Identifier}} DELETE Identifier='{0}'", request.Identifier));
                 DataPackage tmp = DataPackage.FromIdentifier(context,request.Identifier);
-                if(tmp.OwnerId != context.UserId) throw new UnauthorizedAccessException("You are not authorized to delete this data package.");
+                if(tmp.OwnerId != context.UserId && context.AccessLevel != EntityAccessLevel.Administrator) throw new UnauthorizedAccessException("You are not authorized to delete this data package.");
 				tmp.Delete();
 				context.Close ();
 			}catch(Exception e) {
