@@ -1137,10 +1137,12 @@ namespace Terradue.Tep {
 
             entry.Offerings = new List<OwcOffering> { offering };
             entry.Categories.Add(new SyndicationCategory("WpsOffering"));
-            var contact = ExtractProviderContact(provider.Contact);
+            if (process.Commercial) {
+                var contact = ExtractProviderContact(provider.Contact);
 
-            if (!string.IsNullOrEmpty(contact)) {
-                entry.Categories.Add(new SyndicationCategory("contact", null, contact));
+                if (!string.IsNullOrEmpty(contact)) {
+                    entry.Categories.Add(new SyndicationCategory("contact", null, contact));
+                }
             }
 
             entry.Content = new TextSyndicationContent("This job has been created using the service " + process.Name);
