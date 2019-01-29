@@ -547,6 +547,7 @@ namespace Terradue.Tep.WebServer.Services
                 RemoteResource tmp2 = new RemoteResource(context);
                 tmp2 = request.ToEntity(context, tmp2);
                 tmp.AddResourceItem(tmp2);
+                tmp.LoadItems();
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
