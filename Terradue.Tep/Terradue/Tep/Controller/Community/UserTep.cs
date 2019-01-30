@@ -623,6 +623,8 @@ namespace Terradue.Tep {
             dp.Identifier = identifier;
             dp.Name = name;
             dp.Domain = this.Domain;
+            dp.UserId = this.Id;
+            dp.OwnerId = this.Id;
             dp.Store();
 
             //save data package location
