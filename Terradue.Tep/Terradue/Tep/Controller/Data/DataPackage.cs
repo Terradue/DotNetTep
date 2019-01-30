@@ -276,7 +276,7 @@ namespace Terradue.Tep {
         /// </summary>
         public override void Store() {
             context.StartTransaction();
-            if (DomainId == 0) DomainId = Owner.Domain.Id;
+            if (DomainId == 0 && Owner != null) DomainId = Owner.Domain.Id;
             if (DomainId == -1) DomainId = 0;
             bool isNew = this.Id == 0;
             try {
