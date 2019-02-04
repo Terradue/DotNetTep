@@ -263,18 +263,7 @@ namespace Terradue.Tep {
         public void StoreCloudUsername(int providerId) {
             //In case user has no record in db for the cloud provider
             context.Execute(String.Format("INSERT IGNORE INTO usr_cloud (id, id_provider, username) VALUES ({0},{1},NULL);", this.Id, providerId));
-
-            Terradue.Cloud.CloudUser cusr;
-            try {
-                cusr = Terradue.Cloud.CloudUser.FromIdAndProvider(context, this.Id, providerId);
-            } catch (Exception e) {
-                //record does not exist in db
-                cusr = new Terradue.Cloud.CloudUser(context);
-                cusr.ProviderId = providerId;
-                cusr.UserId = this.Id;
-            }
-            cusr.CloudUsername = this.TerradueCloudUsername;
-            cusr.Store();
+            context.Execute(String.Format("UPDATE usr_cloud SET username='{0}' WHERE id={1} AND id_provider={2};", this.TerradueCloudUsername, this.Id, providerId));
 
             //update data packages (Terradue Cloud username may have change)
             GetPrivateDataPackageCatalogueIndex();

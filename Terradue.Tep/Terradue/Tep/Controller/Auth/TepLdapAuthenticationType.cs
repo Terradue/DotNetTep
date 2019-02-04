@@ -52,6 +52,14 @@ namespace Terradue.Tep {
                 if (userHasAuthAssociated) {
                     //User exists, we load it
                     usr = UserTep.FromId(context, userId);
+                    //test if TerradueCloudUsername was set
+                    if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) {
+                        usr.LoadCloudUsername();
+                        if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) {
+                            usr.TerradueCloudUsername = usrInfo.sub;
+                            usr.StoreCloudUsername();
+                        }
+                    }
                     return usr;
                 }
 
@@ -91,6 +99,7 @@ namespace Terradue.Tep {
                     usr.AccessLevel = EntityAccessLevel.Administrator;
                     NewUserCreated = true;
                 }
+
                 usr.Store();
 
                 usr.LinkToAuthenticationProvider(authType, usrInfo.sub);
