@@ -562,7 +562,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var issue = new JiraServiceDeskIssueRequest {
                         serviceDeskId = context.GetConfigValue("jira-helpdesk-serviceDeskId"),
                         requestTypeId = context.GetConfigValue("jira-helpdesk-requestTypeId"),
-                        raiseOnBehalfOf = job.Owner.Email,
+                        raiseOnBehalfOf = job.Owner.Username,
                         requestFieldValues = new JiraServiceDeskIssueFields {
                             summary = request.Subject,
                             description = request.Body,
@@ -580,7 +580,12 @@ namespace Terradue.Tep.WebServer.Services {
                         }
                     }
                     var jira = new JiraClient(context);
-                    jira.CreateServiceDeskIssue(issue);
+                    try {
+                        jira.CreateServiceDeskIssue(issue);
+                    }catch(Exception e){
+                        issue.raiseOnBehalfOf = job.Owner.Email;
+                        jira.CreateServiceDeskIssue(issue);
+                    }
                 }
 
                 context.Close();
