@@ -562,7 +562,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var issue = new JiraServiceDeskIssueRequest {
                         serviceDeskId = context.GetConfigValue("jira-helpdesk-serviceDeskId"),
                         requestTypeId = context.GetConfigValue("jira-helpdesk-requestTypeId"),
-                        raiseOnBehalfOf = job.Owner.TerradueCloudUsername,
+                        raiseOnBehalfOf = job.Owner.Email,
                         requestFieldValues = new JiraServiceDeskIssueFields {
                             summary = request.Subject,
                             description = request.Body,
