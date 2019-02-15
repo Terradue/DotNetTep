@@ -824,6 +824,30 @@ namespace Terradue.Tep {
             return false;
         }
 
+        public OwsContextAtomFeed GetAtomFeedFromJob(OwsContextAtomFeed feed = null){
+
+            OwsContextAtomEntry entry = null;
+            if (feed == null) {
+                feed = new OwsContextAtomFeed();
+                entry = new OwsContextAtomEntry();
+            } else {
+                entry = feed.Items.First();
+            }
+
+            entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            entry.Summary = new TextSyndicationContent(this.Name);
+
+            if (this.Owner != null) {
+                feed.Authors.Add(new SyndicationPerson {
+                    Name = this.Owner.FirstName + (!string.IsNullOrEmpty(this.Owner.FirstName) && !string.IsNullOrEmpty(this.Owner.LastName) ? " " : "") + this.Owner.LastName,
+                    Email = this.Owner.Email,
+                    Uri = context.BaseUrl + "/#!user/details/" + this.Owner.Identifier
+                });
+            }
+            feed.Items = new List<OwsContextAtomEntry> { entry };
+            return feed;
+        }
+
 
         #region IEntitySearchable implementation
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
