@@ -192,6 +192,7 @@ namespace Terradue.Tep {
                         switch (data.Identifier.Value) {
                             case "_T2Username":
                             case "_T2ApiKey":
+                            case "_T2JobInfoFeed":
                                 break;
                             case "index":
                             case "repoKey":

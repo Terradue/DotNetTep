@@ -393,7 +393,7 @@ namespace Terradue.Tep.WebServer.Services {
                     if (WpsFactory.DescribeProcessHasField(descResponse, "_T2JobInfoFeed")) {
                         var jobinfofeed = wpsjob.GetAtomFeedFromJob();
                         var jobinfo = ThematicAppCachedFactory.GetOwsContextAtomFeedAsString(jobinfofeed);
-                        var cdata = "<![CDATA[ " + jobinfo + " ]]>";
+                        var cdata = jobinfo;
                         var input = new InputType();
                         input.Identifier = new CodeType { Value = "_T2JobInfoFeed" };
                         input.Data = new DataType {
