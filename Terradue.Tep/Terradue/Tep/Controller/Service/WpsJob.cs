@@ -824,6 +824,14 @@ namespace Terradue.Tep {
             return false;
         }
 
+        public OwsContextAtomFeed GetOwsContextAtomFeed(){
+            if (this.Status == WpsJobStatus.STAGED){
+                //get feed from WPS production center
+            }
+            var feed = new OwsContextAtomFeed();
+            return feed;
+        }
+
 
         #region IEntitySearchable implementation
         public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
