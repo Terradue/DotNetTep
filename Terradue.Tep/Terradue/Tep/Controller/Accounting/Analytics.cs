@@ -318,17 +318,22 @@ namespace Terradue.Tep {
         }
 
         private int GetWpsJobsSharedPublicForUser(int usrId, string startdate = null, string enddate = null) {
-            string sql = string.Format("SELECT COUNT(DISTINCT id_wpsjob) FROM wpsjob_perm WHERE id_usr IS NULL AND id_grp IS NULL {0}{1};", 
-                                       usrId != 0 ? " AND id_wpsjob IN (SELECT id FROM wpsjob where id_usr=" + usrId + ")" : "",
-                                       GetWpsjobCreationDateCondition(startdate, enddate));
+            string sql = "SELECT COUNT(DISTINCT id_wpsjob) FROM wpsjob_perm WHERE id_usr IS NULL AND id_grp IS NULL";
+            string idjob_condition = "true";
+            if (usrId != 0) idjob_condition += " AND id_usr=" + usrId;
+            idjob_condition += GetWpsjobCreationDateCondition(startdate, enddate);
+            if (!string.IsNullOrEmpty(idjob_condition)) sql += string.Format(" AND id_wpsjob IN (SELECT id FROM wpsjob where {0})", idjob_condition);
+            sql += ";";
             return Context.GetQueryIntegerValue(sql);
         }
 
         private int GetWpsJobsSharedRestrictedForUser(int usrId, string startdate = null, string enddate = null) {
-            string sql = string.Format("SELECT COUNT(DISTINCT id_wpsjob) FROM wpsjob_perm WHERE ((id_usr IS NOT NULL AND id_usr != (SELECT id_usr FROM wpsjob WHERE id=id_wpsjob)) OR id_grp IS NOT NULL) " +
-                                       "AND id_wpsjob NOT IN (SELECT id_wpsjob FROM wpsjob_perm WHERE id_usr IS NULL AND id_grp IS NULL){0}{1};",
-                                       usrId != 0 ? " AND id_wpsjob IN (SELECT id FROM wpsjob where id_usr=" + usrId + ")" : "",
-                                       GetWpsjobCreationDateCondition(startdate, enddate));
+            string sql = "SELECT COUNT(DISTINCT id_wpsjob) FROM wpsjob_perm WHERE ((id_usr IS NOT NULL AND id_usr != (SELECT id_usr FROM wpsjob WHERE id=id_wpsjob)) OR id_grp IS NOT NULL) AND id_wpsjob NOT IN (SELECT id_wpsjob FROM wpsjob_perm WHERE id_usr IS NULL AND id_grp IS NULL)";
+            string idjob_condition = "true";
+            if (usrId != 0) idjob_condition += " AND id_usr=" + usrId;
+            idjob_condition += GetWpsjobCreationDateCondition(startdate, enddate);
+            if (!string.IsNullOrEmpty(idjob_condition)) sql += string.Format(" AND id_wpsjob IN (SELECT id FROM wpsjob where {0})", idjob_condition);
+            sql += ";";
             return Context.GetQueryIntegerValue(sql);
         }
 
