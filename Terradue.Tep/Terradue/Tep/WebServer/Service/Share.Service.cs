@@ -137,9 +137,15 @@ namespace Terradue.Tep.WebServer.Services {
                         //publish on community index
                         if (request.publish) {
                             try {
-                                var feed = job.GetOwsContextAtomFeed();
-                                var index = context.GetConfigValue("catalog-communityIndex");
-                                CatalogueFactory.PostAtomFeedToIndex(context, feed, index);
+                                var feed = job.GetRemoteOwsContextAtomFeed();
+                                if (feed != null) {
+                                    var index = context.GetConfigValue("catalog-communityIndex");
+                                    var username = context.GetConfigValue("catalog-admin-username");
+                                    var apikey = context.GetConfigValue("catalog-admin-apikey");
+                                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, username, apikey);
+                                } else {
+                                    context.LogError(this, "Unable to publish on catalog community index : feed is empty");
+                                }
                             } catch (Exception e) {
                                 context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
                             }

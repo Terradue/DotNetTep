@@ -710,6 +710,25 @@ namespace Terradue.Tep {
             return url;
         }
 
+        public static string GetJobOwsUrl(ExecuteResponse execResponse) {
+            // Search for an Opensearch Description Document ouput url
+            var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("job_ows"));
+            if (result_osd.Count() > 0) {
+                var po = result_osd.First();
+                //Get result Url
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
+                    var reference = item.Reference as OutputReferenceType;
+                    return reference.href;
+                } else if (po.Item is OutputReferenceType) {
+                    var reference = po.Item as OutputReferenceType;
+                    return reference.href;
+                }
+                throw new ImpossibleSearchException("Ouput job_ows found but no Url set");
+            }
+            return null;
+        }
+
 
         /// <summary>
         /// Gets the result URL from execute response.
@@ -824,11 +843,37 @@ namespace Terradue.Tep {
             return false;
         }
 
-        public OwsContextAtomFeed GetOwsContextAtomFeed(){
-            if (this.Status == WpsJobStatus.STAGED){
-                //get feed from WPS production center
-            }
+        public OwsContextAtomFeed GetRemoteOwsContextAtomFeed(){
             var feed = new OwsContextAtomFeed();
+            OwsContextAtomEntry entry = null;
+
+            //get feed from WPS production center
+            var content = GetStatusLocationContent();
+            if (!(content is ExecuteResponse)) return null;
+
+            ExecuteResponse execResponse = content as ExecuteResponse;
+            var owsurl = GetJobOwsUrl(execResponse);
+
+            if (string.IsNullOrEmpty(owsurl)) return null;
+
+            try {
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(owsurl);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+                        feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                        entry = feed.Items.First();
+                    }
+                }
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                return null;
+            }
+            if (entry == null) return null;
+
+            //update title, as it may have change
+            entry.Summary = new TextSyndicationContent(this.Name);
+
+            feed.Items = new List<OwsContextAtomEntry> { entry };
             return feed;
         }
 
