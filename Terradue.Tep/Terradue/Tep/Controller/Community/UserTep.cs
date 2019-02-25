@@ -177,8 +177,10 @@ namespace Terradue.Tep {
                 //create github profile
                 GithubProfile github = new GithubProfile(context, this.Id);
                 github.Store();
-
+                //create private domain
                 CreatePrivateDomain();
+                //send registration email to support
+                SendRegistrationEmailToSupport();
             }
         }
 
@@ -195,14 +197,14 @@ namespace Terradue.Tep {
             return user;
         }
 
-        public new static UserTep FromIdentifier(IfyContext context, string identifier) {
+        public static UserTep FromIdentifier(IfyContext context, string identifier) {
             UserTep user = new UserTep(context);
             user.Identifier = identifier;
             user.Load();
             return user;
         }
 
-        public static UserTep FromEmail(IfyContext context, string email) {
+        public new static UserTep FromEmail(IfyContext context, string email) {
             UserTep user = new UserTep(context);
             user.Email = email;
             user.Load();
@@ -214,6 +216,17 @@ namespace Terradue.Tep {
             user.ApiKey = key;
             user.Load();
             return user;
+        }
+
+        private void SendRegistrationEmailToSupport(){
+            try{
+                var portalname = string.Format("{0} Portal", context.GetConfigValue("SiteNameShort"));
+                var subject = string.Format("[{0}] - User registration on {0} from T2 IdP", portalname);
+                var body = string.Format("This is an automatic email to notify that an account has been automatically created on {2} with the username {0} ({1}).\nThe request was performed from a first sign-in session on {2}.", this.Username, this.Email, portalname);
+                context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
+            } catch(Exception e){
+                context.LogError(this,e.Message + " - " + e.StackTrace);
+            }
         }
 
         /// <summary>
