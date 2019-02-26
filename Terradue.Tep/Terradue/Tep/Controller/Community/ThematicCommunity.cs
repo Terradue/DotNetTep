@@ -626,11 +626,11 @@ namespace Terradue.Tep {
             if (appsLinks != null) {
                 foreach (var appslink in appsLinks) {
                     result.Links.Add(new SyndicationLink(new Uri(appslink), "related", "apps", "application/atom+xml", 0));
+                    try {
+                        var settings = MasterCatalogue.OpenSearchFactorySettings;
+                        var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
+                        foreach (IOpenSearchResultItem item in apps.Items) {
 
-                    var settings = MasterCatalogue.OpenSearchFactorySettings;
-                    var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
-                    foreach (IOpenSearchResultItem item in apps.Items) {
-                        try {
                             var appUid = item.Identifier.Trim();
                             var appTitle = item.Title != null ? item.Title.Text.Trim() : appUid;
                             var appIconLink = item.Links.FirstOrDefault(l => l.RelationshipType == "icon");
@@ -645,12 +645,11 @@ namespace Terradue.Tep {
 
                             //get wps services
                             var wpsOffering = offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
-                            var wpsOverviews = GetWpsServiceOverview(wpsOffering, appUid, appTitle, appIcon); 
+                            var wpsOverviews = GetWpsServiceOverview(wpsOffering, appUid, appTitle, appIcon);
                             wpssOverviews.AddRange(wpsOverviews);
-
-                        } catch (Exception e) {
-                            context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + this.Name);
                         }
+                    } catch (Exception e) {
+                        context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + this.Name);
                     }
                 }
             }
