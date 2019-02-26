@@ -721,13 +721,29 @@ namespace Terradue.Tep {
                 if (offering.Operations != null) {
                     foreach (var ops in offering.Operations) {
                         if (ops.Code == "ListProcess") {
-                            EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering>(context);
-                            Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                             var uri = new Uri(ops.Href.Replace("file://", context.BaseUrl));
                             var nvc = HttpUtility.ParseQueryString(uri.Query);
                             nvc.Set("count", "100");
-                            var resultWps = ose.Query(services, nvc);
-                            foreach (var itemWps in resultWps.Items) {
+                            Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                            var responseType = ose.GetExtensionByExtensionName("atom").GetTransformType();
+                            EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+                            wpsProcesses.SetFilter("Available", "true");
+                            wpsProcesses.OpenSearchEngine = ose;
+                            wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);
+
+                            CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+                            wpsOneProcesses.OpenSearchEngine = ose;
+
+                            wpsProcesses.Identifier = "service/wps";
+                            var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
+                            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
+                            IOpenSearchResultCollection osr = ose.Query(multiOSE, nvc, responseType);
+
+                            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
+
+                            foreach (var itemWps in osr.Items) {
                                 string uid = "";
                                 var identifiers = itemWps.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
                                 if (identifiers.Count > 0) uid = identifiers[0];
