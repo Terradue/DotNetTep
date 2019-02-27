@@ -838,7 +838,7 @@ namespace Terradue.Tep {
             entry.Summary = new TextSyndicationContent(this.Name);
 
             if (this.Owner != null) {
-                feed.Authors.Add(new SyndicationPerson {
+                entry.Authors.Add(new SyndicationPerson {
                     Name = this.Owner.FirstName + (!string.IsNullOrEmpty(this.Owner.FirstName) && !string.IsNullOrEmpty(this.Owner.LastName) ? " " : "") + this.Owner.LastName,
                     Email = this.Owner.Email,
                     Uri = context.BaseUrl + "/#!user/details/" + this.Owner.Identifier
