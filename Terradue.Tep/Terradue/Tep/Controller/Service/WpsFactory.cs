@@ -181,13 +181,27 @@ namespace Terradue.Tep {
         public static ProcessDescriptions DescribeProcessCleanup(IfyContext context, ProcessDescriptions input){
 			foreach (var desc in input.ProcessDescription) {
                 var newinputs = new List<InputDescriptionType>();
+
+                //add inputs
+                var newinput = new InputDescriptionType();
+                newinput.Identifier = new CodeType { Value = "_T2InternalJobTitle" };
+                newinput.Title = new LanguageStringType { Value = "Job title" };
+                newinput.Abstract = new LanguageStringType { Value = "Wps job title" };
+                newinput.minOccurs = "1";
+                newinput.maxOccurs = "1";
+                newinput.LiteralData = new LiteralInputType {
+                    DataType = new DomainMetadataType { Value = "string " },
+                    DefaultValue = desc.Title != null ? desc.Title.Value : ""
+                };
+                newinputs.Add(newinput);
+
                 foreach (var data in desc.DataInputs) {
                     if (data.LiteralData != null) {
                         if (data.LiteralData.AllowedValues != null && data.LiteralData.AllowedValues.Count == 0) {
                             data.LiteralData.AllowedValues = null;
                         }
                     }
-                    //case _T2Username, we hide the field
+                    //remove inputs
                     if (data.Identifier != null) {
                         switch (data.Identifier.Value) {
                             case "_T2Username":
@@ -209,6 +223,7 @@ namespace Terradue.Tep {
                         }
                     }
                 }
+
                 desc.DataInputs = newinputs;
             }
             return input;

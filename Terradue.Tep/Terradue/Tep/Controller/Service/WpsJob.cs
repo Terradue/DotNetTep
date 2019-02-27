@@ -382,6 +382,23 @@ namespace Terradue.Tep {
             wpsjob.Parameters = parameters;
             wpsjob.WpsVersion = wps.Version;
 
+            if (executeInput != null && executeInput.DataInputs != null) {
+                var tmpInputs = new List<InputType>();
+                foreach (var input in executeInput.DataInputs) {
+                    var item = input.Data.Item;
+                    switch (input.Identifier.Value) {
+                        case "_T2InternalJobTitle":
+                            var ld = item as LiteralDataType;
+                            if (ld != null && !string.IsNullOrEmpty(ld.Value)) wpsjob.Name = ld.Value;
+                            break;
+                        default:
+                            tmpInputs.Add(input);
+                            break;
+                    }
+                }
+                executeInput.DataInputs = tmpInputs;
+            }
+
             return wpsjob;
         }
 

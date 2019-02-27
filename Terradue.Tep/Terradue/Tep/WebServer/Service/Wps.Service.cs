@@ -366,6 +366,21 @@ namespace Terradue.Tep.WebServer.Services {
 
                 wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
 
+                //Check if we need to remove special fields
+                if (executeInput != null && executeInput.DataInputs != null) {
+                    var tmpInputs = new List<InputType>();
+                    foreach (var input in executeInput.DataInputs) {
+                        switch(input.Identifier.Value){
+                            case "_T2InternalJobTitle":
+                                break;
+                            default:
+                                tmpInputs.Add(input);
+                                break;
+                        }
+                    }
+                    executeInput.DataInputs = tmpInputs;
+                }
+
                 //Check if it need to add back hidden field
                 var describeResponse = wps.DescribeProcess();
 				if (describeResponse is ProcessDescriptions) {
