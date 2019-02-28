@@ -111,6 +111,11 @@ namespace Terradue.Tep.Test {
             process.Url = provider.BaseUrl;
             process.Version = "1.0.0";
             process.Provider = provider;
+            try {
+                process.Store();
+            } catch (Exception e) {
+                throw e;
+            }
             return process;
         }
 
@@ -623,12 +628,13 @@ namespace Terradue.Tep.Test {
             try{
                 var job = WpsJob.FromIdentifier(context, "private-job-usr4");
                 job.Status = WpsJobStatus.STAGED;
-                job.StatusLocation = "https://recast.terradue.com/t2api/describe/truongvananhhunre/_results/workflows/hydrology_tep_dcs_small_water_body_mapping_small_water_bodies_2_0_8/run/0000204-170920182652224-oozie-oozi-W/456a390e-b542-11e7-97b3-0242ac110002";
+                job.StatusLocation = "https://recast.terradue.com/t2api/describe/fpacini/_results/workflows/geohazards_tep_dcs_rss_band_combination_band_combination_1_30_0/run/16641c36-f94f-11e8-bd04-0242ac110019/0003839-180627100334574-oozie-oozi-W";
                 job.Store();
 
                 Assert.AreEqual(job.NbResults, -1);
                 Actions.RefreshWpsjobResultNb(context);
-                Assert.AreEqual(job.NbResults,0);
+                job = WpsJob.FromIdentifier(context, "private-job-usr4");
+                Assert.AreEqual(job.NbResults,4);
             } catch (Exception e) {
                 Assert.Fail(e.Message);
             } finally {
