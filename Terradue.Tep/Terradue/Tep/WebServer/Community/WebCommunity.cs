@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
@@ -55,8 +55,6 @@ namespace Terradue.Tep
 
     [Route ("/community/search", "GET", Summary = "GET community as opensearch", Notes = "")]
     public class CommunitySearchRequestTep : IReturn<HttpResult> {
-		[ApiMember(Name = "apikey", Description = "Api key of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
-		public string ApiKey { get; set; }
     }
 
     [Route("/community/description", "GET", Summary = "GET community as opensearch description", Notes = "")]

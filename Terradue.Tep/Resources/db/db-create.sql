@@ -357,8 +357,14 @@ CHANGE COLUMN `name` `name` VARCHAR(120) NOT NULL;
 -- up doman table...\
 ALTER TABLE domain 
 ADD COLUMN `email_notification` TINYINT(1) UNSIGNED NULL DEFAULT '0';
+ALTER TABLE domain 
+ADD COLUMN `enable_join` TINYINT(1) UNSIGNED NULL DEFAULT '0';
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('CommunityRemoveEmailBody', 'string', 'Email template to notify user has been removed in community', 'Email template to notify user has been removed in community', 'Dear user,\n\nyou have requested to join the community $(COMMUNITY).\nUnfortunately we cannot proceed for the following reason:\n ($(REASON)).\n\nWith our deepest apologies.\nBest Regards', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('CommunityRemoveEmailSubject', 'string', 'Email subject to notify user has been removed in community', 'Email subject to notify user has been removed in community', '[$(SITENAME)] - Join community $(COMMUNITY)', '0');
+ALTER TABLE domain 
+ADD COLUMN `contributor` VARCHAR(100) NULL DEFAULT NULL;
+ALTER TABLE domain 
+ADD COLUMN `contributor_icon_url` VARCHAR(200) NULL DEFAULT NULL;
 -- RESULT
 
 -- Adding JIRA config...\
