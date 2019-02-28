@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Web;
@@ -221,18 +221,8 @@ namespace Terradue.Tep.WebServer.Services{
 
             CommunityCollection domains = new CommunityCollection(context);
             domains.UserStatus = Request.QueryString != null ? Request.QueryString["status"] : null;
-
-            if (!string.IsNullOrEmpty(request.ApiKey)) {
-				UserTep user = UserTep.FromApiKey(context, request.ApiKey);
-				domains.UserId = user.Id;
-				context.AccessLevel = EntityAccessLevel.Privilege;
-			}
-
-            if (context.UserId == 0 && !string.IsNullOrEmpty(request.ApiKey)) domains.SetFilter("Kind", (int)DomainKind.Public + "");
-            else {
-                domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
-                domains.AddSort("Kind", SortDirection.Ascending);
-            }
+            domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
+            domains.AddSort("Kind", SortDirection.Ascending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
