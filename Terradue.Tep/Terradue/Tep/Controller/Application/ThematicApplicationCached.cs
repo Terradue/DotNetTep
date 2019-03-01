@@ -240,33 +240,50 @@ namespace Terradue.Tep {
 			var random = new Random();
 			query.Set("random", random.Next()+"");
 
-			var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-            urib.Query = string.Join("&", queryString);
-            url = urib.Uri.AbsoluteUri;
+            int count = 100;
+            query.Set("count", count.ToString());
+            int startIndex = 1;
+            int nbresults = count;
+            int i = 0;//safeguard for not looping indefinitively
 
-			var index = GetIndexFromUrl(url);
-                                    
-            try {
-                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
-                using (var resp = httpRequest.GetResponse()) {
-                    using (var stream = resp.GetResponseStream()) {
-                        var feed = GetOwsContextAtomFeed(stream);
-                        if (feed.Items != null) {
-                            foreach (OwsContextAtomEntry item in feed.Items) {
-                                try {
-                                    var appcached = CreateOrUpdateCachedApp(item, domainId, index);
-                                    if(appcached != null) upIds.Add(appcached.Id);
-                                    this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
-                                }catch(Exception e){
-                                    this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
+            while(nbresults == count && i < 10){
+                query.Set("startIndex", startIndex.ToString());
+
+                var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                urib.Query = string.Join("&", queryString);
+                url = urib.Uri.AbsoluteUri;
+                var index = GetIndexFromUrl(url);
+
+                nbresults = 0;
+
+                try {
+                    HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
+                    using (var resp = httpRequest.GetResponse()) {
+                        using (var stream = resp.GetResponseStream()) {
+                            var feed = GetOwsContextAtomFeed(stream);
+                            if (feed.Items != null) {
+                                foreach (OwsContextAtomEntry item in feed.Items) {
+                                    nbresults++;
+                                    try {
+                                        var appcached = CreateOrUpdateCachedApp(item, domainId, index);
+                                        if (appcached != null) {
+                                            upIds.Add(appcached.Id);
+                                            this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
+                                        }
+                                    } catch (Exception e) {
+                                        this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
+                                    }
                                 }
                             }
                         }
                     }
+                } catch (Exception e) {
+                    this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}", e.Message, e.StackTrace));
                 }
-            } catch (Exception e) {
-				this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}", e.Message, e.StackTrace));
-            }
+
+                startIndex += nbresults;
+                i++;
+            }			
 
 			return upIds;
 		}
