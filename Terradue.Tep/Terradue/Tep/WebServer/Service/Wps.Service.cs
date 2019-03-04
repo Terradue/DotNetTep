@@ -1136,7 +1136,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            return result;
+            return new WebResponseBool(true);
         }
     }
 
