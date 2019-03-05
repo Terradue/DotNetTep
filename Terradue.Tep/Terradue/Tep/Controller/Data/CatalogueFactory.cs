@@ -97,8 +97,9 @@ namespace Terradue.Tep {
         /// <param name="apikey">Apikey.</param>
         public static bool PostStreamToIndex(IfyContext context, Stream stream, string index, string username, string apikey) {
             var baseurl = context.GetConfigValue("catalog-baseurl");
-            var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/";
-            var request = (HttpWebRequest)WebRequest.Create(url);
+            if (string.IsNullOrEmpty(index)) throw new Exception("invalid index");
+            var url = new UriBuilder(index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/");
+            var request = (HttpWebRequest)WebRequest.Create(url.Uri.AbsoluteUri);
             request.Method = "POST";
             request.ContentType = "application/atom+xml";
             request.Accept = "application/xml";
