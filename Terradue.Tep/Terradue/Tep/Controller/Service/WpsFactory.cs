@@ -207,6 +207,7 @@ namespace Terradue.Tep {
                             case "_T2Username":
                             case "_T2ApiKey":
                             case "_T2JobInfoFeed":
+                            case "_T2ResultsAnalysis":
                                 break;
                             case "index":
                             case "repoKey":

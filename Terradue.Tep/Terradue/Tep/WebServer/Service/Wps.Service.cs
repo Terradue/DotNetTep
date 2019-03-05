@@ -418,6 +418,19 @@ namespace Terradue.Tep.WebServer.Services {
                         };
                         executeInput.DataInputs.Add(input);
                     }
+                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ResultsAnalysis")) {
+                        var jobinfofeed = wpsjob.GetJobAtomFeed();
+                        var analysis = context.GetConfigValue("wpsDefaultValue_T2ResultsAnalysis");
+                        if (string.IsNullOrEmpty(analysis)) analysis = "none";
+                        var input = new InputType();
+                        input.Identifier = new CodeType { Value = "_T2ResultsAnalysis" };
+                        input.Data = new DataType {
+                            Item = new LiteralDataType {
+                                Value = analysis
+                            }
+                        };
+                        executeInput.DataInputs.Add(input);
+                    }
                 } else {
 					return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
 				}
