@@ -137,7 +137,7 @@ namespace Terradue.Tep.WebServer.Services {
                         //publish on community index
                         if (request.publish) {
                             try {
-                                var feed = job.GetRemoteOwsContextAtomFeed();
+                                var feed = job.GetJobAtomFeedFromOwsUrl();
                                 if (feed != null) {
                                     var index = context.GetConfigValue("catalog-communityIndex");
                                     var username = context.GetConfigValue("catalog-admin-username");

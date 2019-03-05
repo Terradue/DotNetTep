@@ -382,6 +382,23 @@ namespace Terradue.Tep {
             wpsjob.Parameters = parameters;
             wpsjob.WpsVersion = wps.Version;
 
+            if (executeInput != null && executeInput.DataInputs != null) {
+                var tmpInputs = new List<InputType>();
+                foreach (var input in executeInput.DataInputs) {
+                    var item = input.Data.Item;
+                    switch (input.Identifier.Value) {
+                        case "_T2InternalJobTitle":
+                            var ld = item as LiteralDataType;
+                            if (ld != null && !string.IsNullOrEmpty(ld.Value)) wpsjob.Name = ld.Value;
+                            break;
+                        default:
+                            tmpInputs.Add(input);
+                            break;
+                    }
+                }
+                executeInput.DataInputs = tmpInputs;
+            }
+
             return wpsjob;
         }
 
@@ -843,19 +860,48 @@ namespace Terradue.Tep {
             return false;
         }
 
-        public OwsContextAtomFeed GetRemoteOwsContextAtomFeed(){
+        /// <summary>
+        /// Gets the job atom feed.
+        /// </summary>
+        /// <returns>The job atom feed.</returns>
+        /// <param name="feed">Feed.</param>
+        public OwsContextAtomFeed GetJobAtomFeed(){
+
+            OwsContextAtomFeed feed = new OwsContextAtomFeed();
+            OwsContextAtomEntry entry = new OwsContextAtomEntry();
+
+            entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            entry.Summary = new TextSyndicationContent(this.Name);
+
+            if (this.Owner != null) {
+                entry.Authors.Add(new SyndicationPerson {
+                    Name = this.Owner.FirstName + (!string.IsNullOrEmpty(this.Owner.FirstName) && !string.IsNullOrEmpty(this.Owner.LastName) ? " " : "") + this.Owner.LastName,
+                    Email = this.Owner.Email,
+                    Uri = context.BaseUrl + "/#!user/details/" + this.Owner.Identifier
+                });
+            }
+
+            feed.Items = new List<OwsContextAtomEntry> { entry };
+            return feed;
+        }
+
+        /// <summary>
+        /// Gets the job atom feed from ows URL.
+        /// </summary>
+        /// <returns>The job atom feed from ows URL.</returns>
+        public OwsContextAtomFeed GetJobAtomFeedFromOwsUrl(){
             var feed = new OwsContextAtomFeed();
             OwsContextAtomEntry entry = null;
-
+            
             //get feed from WPS production center
             var content = GetStatusLocationContent();
             if (!(content is ExecuteResponse)) return null;
-
+            
             ExecuteResponse execResponse = content as ExecuteResponse;
             var owsurl = GetJobOwsUrl(execResponse);
-
+            
             if (string.IsNullOrEmpty(owsurl)) return null;
-
+            
             try {
                 HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(owsurl);
                 using (var resp = httpRequest.GetResponse()) {
@@ -869,10 +915,10 @@ namespace Terradue.Tep {
                 return null;
             }
             if (entry == null) return null;
-
+            
             //update title, as it may have change
             entry.Summary = new TextSyndicationContent(this.Name);
-
+            
             feed.Items = new List<OwsContextAtomEntry> { entry };
             return feed;
         }
