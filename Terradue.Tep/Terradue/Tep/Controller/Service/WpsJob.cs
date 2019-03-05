@@ -46,6 +46,9 @@ namespace Terradue.Tep {
         [EntityDataField("status_url")]
         public string StatusLocation { get; set; }
 
+        [EntityDataField("ows_url")]
+        public string OwsUrl { get; set; }
+
         [EntityDataField("status")]
         public WpsJobStatus Status { get; set; }
 
@@ -892,18 +895,13 @@ namespace Terradue.Tep {
         public OwsContextAtomFeed GetJobAtomFeedFromOwsUrl(){
             var feed = new OwsContextAtomFeed();
             OwsContextAtomEntry entry = null;
-            
-            //get feed from WPS production center
-            var content = GetStatusLocationContent();
-            if (!(content is ExecuteResponse)) return null;
-            
-            ExecuteResponse execResponse = content as ExecuteResponse;
-            var owsurl = GetJobOwsUrl(execResponse);
-            
-            if (string.IsNullOrEmpty(owsurl)) return null;
+
+            if (string.IsNullOrEmpty(OwsUrl)) return null;
             
             try {
-                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(owsurl);
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(OwsUrl);
+                var user = UserTep.FromId(context, context.UserId);
+                httpRequest.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
                 using (var resp = httpRequest.GetResponse()) {
                     using (var stream = resp.GetResponseStream()) {
                         feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
@@ -1047,6 +1045,7 @@ namespace Terradue.Tep {
             Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(OwsUrl))result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             Uri sharedUrlUsr = null, sharedUrlCommunity = null;
 

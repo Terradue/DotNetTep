@@ -641,8 +641,21 @@ namespace Terradue.Tep.WebServer.Services {
 
                     execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
-					//get job recast response
-					try {
+                    //get job ows url
+                    if (wpsjob.Status == WpsJobStatus.SUCCEEDED) {
+                        try {
+                            var ows_url = WpsJob.GetJobOwsUrl(execResponse);
+                            if (!string.IsNullOrEmpty(ows_url)) {
+                                wpsjob.OwsUrl = ows_url;
+                                wpsjob.Store();
+                            }
+                        } catch (Exception e) {
+                            context.LogError(this, e.Message);
+                        }
+                    }
+
+                    //get job recast response
+                    try {
 						var recastResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
 						execResponse = recastResponse;
 					}catch(Exception e){
