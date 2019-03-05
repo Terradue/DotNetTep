@@ -183,7 +183,7 @@ namespace Terradue.Tep.Test {
                     if (item.Title.Text == "community-private-1") {
                         foreach (var cat in item.Categories) {
                             if (cat.Name == "visibility") {
-                                if (cat.Label == "private") isprivate = true;
+                                if (cat.Label == "hidden") isprivate = true;
                                 else if (cat.Label == "public") ispublic = true;
                             } else if (cat.Name == "status" && cat.Label == "pending") isVisibilityPending = true;
                         }
@@ -247,12 +247,16 @@ namespace Terradue.Tep.Test {
 
             context.AccessLevel = EntityAccessLevel.Privilege;
             var usr1 = User.FromUsername(context, "testusr1");
-            context.StartImpersonation(usr1.Id);
+            var usr2 = User.FromUsername(context, "testusr2");
+            var usr3 = User.FromUsername(context, "testusr3");
 
             try {
+                context.StartImpersonation(usr1.Id);
+
                 var communities = new CommunityCollection(context);
                 communities.Identifier = "community";
                 communities.OpenSearchEngine = ose;
+                //communities.UserId = usr1.Id;
                 var osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
 
@@ -264,18 +268,48 @@ namespace Terradue.Tep.Test {
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
 
-                parameters.Set("q","*");
+                parameters.Set("q", "*");
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC, osr.TotalResults);
 
-            } catch (Exception e) {
-                Assert.Fail(e.Message);
-            } finally {
+                parameters.Remove("q");
+                parameters.Set("status", "joined");
+                communities.UserStatus = ThematicCommunity.USERSTATUS_JOINED;
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(0, osr.TotalResults);
+
                 context.EndImpersonation();
+
+                context.StartImpersonation(usr2.Id);
+                communities.UserId = usr2.Id;
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(4, osr.TotalResults);
+                context.EndImpersonation();
+
+                context.StartImpersonation(usr3.Id);
+                ThematicCommunity community = ThematicCommunity.FromIdentifier(context, "community-public-1");
+                community.TryJoinCurrentUser();
+                var roles = Role.GetUserRolesForDomain(context, usr3.Id, community.Id);
+
+                //user part of community
+                Assert.AreEqual(1, roles.Length);
+                Assert.AreEqual(RoleTep.MEMBER, roles[0].Name);
+
+                communities.UserId = usr3.Id;
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(1, osr.TotalResults);
+
+                context.EndImpersonation();
+                communities.UserId = usr3.Id;
+                osr = ose.Query(communities, parameters);
+                Assert.AreEqual(1, osr.TotalResults);
+
+            } catch (Exception e) {
+                context.EndImpersonation();
+                Assert.Fail(e.Message);
             }
+
         }
-
-
     }
 }
 

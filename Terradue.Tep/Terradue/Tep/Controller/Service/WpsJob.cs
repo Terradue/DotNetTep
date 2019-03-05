@@ -275,7 +275,11 @@ namespace Terradue.Tep {
                 this.CreatedTime = DateTime.UtcNow;
                 this.AccessKey = Guid.NewGuid().ToString();
                 this.NbResults = -1;
-                if (string.IsNullOrEmpty(this.WpsVersion) && this.Process != null) this.WpsVersion = this.Process.Version;//we set only at creation as service version may change with time
+                try {
+                    if (string.IsNullOrEmpty(this.WpsVersion) && this.Process != null) this.WpsVersion = this.Process.Version;//we set only at creation as service version may change with time
+                }catch(Exception e){
+                    //if error while getting Process, we skip the version
+                }
             }
             base.Store();
             if (newjob && context.AccessLevel == EntityAccessLevel.Administrator) {

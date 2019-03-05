@@ -1158,6 +1158,41 @@ namespace Terradue.Tep.WebServer.Services {
 			}
 			return result;
         }
+
+        public object Get(CurrentUserWpsServiceSyncRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/current/service/wps/sync GET"));
+
+                var user = UserTep.FromId(context, context.UserId);
+                var domain = user.GetPrivateDomain();
+
+                EntityList<WpsProvider> providers = new EntityList<WpsProvider>(context);
+                providers.SetFilter("DomainId", domain.Id);
+                providers.SetFilter("AutoSync", true);
+                providers.Load();
+
+                foreach(var provider in providers){
+                    if (provider.AutoSync && provider.DomainId == domain.Id) {
+                        try {
+                            provider.CanCache = false;
+                            provider.UpdateProcessOfferings(true, user, true);
+                            context.WriteInfo(string.Format("CurrentUserWpsServiceSyncRequestTep -- synchro done for WPS {0}", provider.Name));
+                        } catch (Exception e) {
+                            context.WriteError(string.Format("CurrentUserWpsServiceSyncRequestTep -- {0} - {1}", e.Message, e.StackTrace));
+                        }
+                    }
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
     }
 
 }
