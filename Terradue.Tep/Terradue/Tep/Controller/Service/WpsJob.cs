@@ -879,6 +879,7 @@ namespace Terradue.Tep {
 
             entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
             entry.Summary = new TextSyndicationContent(this.Name);
+            entry.Title = new TextSyndicationContent(this.Name);
 
             if (this.Owner != null) {
                 entry.Authors.Add(new SyndicationPerson {
@@ -901,11 +902,15 @@ namespace Terradue.Tep {
             OwsContextAtomEntry entry = null;
 
             if (string.IsNullOrEmpty(OwsUrl)) return null;
-            
+
+            var urlb = new UriBuilder(OwsUrl);
+            var user = UserTep.FromId(context, context.UserId);
+            NameValueCollection query = HttpUtility.ParseQueryString(urlb.Query);
+            query.Set("apikey", user.GetSessionApiKey());
+            string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urlb.Query = string.Join("&", queryString);
             try {
-                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(OwsUrl);
-                var user = UserTep.FromId(context, context.UserId);
-                httpRequest.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urlb.Uri.AbsoluteUri);
                 using (var resp = httpRequest.GetResponse()) {
                     using (var stream = resp.GetResponseStream()) {
                         feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
@@ -917,12 +922,36 @@ namespace Terradue.Tep {
                 return null;
             }
             if (entry == null) return null;
-            
+
             //update title, as it may have change
-            entry.Summary = new TextSyndicationContent(this.Name);
+            entry.Title = new TextSyndicationContent(this.Name);
+            entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry));
             
             feed.Items = new List<OwsContextAtomEntry> { entry };
             return feed;
+        }
+
+        private string BuildOwsSummaryFromFeed(OwsContextAtomEntry entry){
+            try {
+                var title = this.Name;
+                var author = entry.Authors != null && entry.Authors[0] != null ? entry.Authors[0].Name : "";
+                var creators = entry.ElementExtensions.ReadElementExtensions<string>("creator", "http://purl.org/dc/elements/1.1/");
+                var creator = creators.Count > 0 ? creators[0] : "";
+                var startDate = entry.Date.StartDate.ToUniversalTime().ToString("o");
+                var endDate = entry.Date.EndDate.ToUniversalTime().ToString("o");
+
+                var html = string.Format("<table>" +
+                                         "<tr><td>title</td><td>{0}</td></tr>" +
+                                         "<tr><td>author</td><td>{1}</td></tr>" +
+                                         "<tr><td>generator</td><td>{2}</td></tr>" +
+                                         "<tr><td>submission</td><td>{3}</td></tr>" +
+                                         "<tr><td>completion</td><td>{4}</td></tr>" +
+                                         "</table>", title, author, creator, startDate, endDate);
+                return html;
+            }catch(Exception e){
+                context.LogError(this, e.Message);
+                return this.Name;
+            }
         }
 
 

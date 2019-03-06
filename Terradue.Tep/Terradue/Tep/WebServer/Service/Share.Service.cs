@@ -82,9 +82,10 @@ namespace Terradue.Tep.WebServer.Services {
                         try {
                             if (string.IsNullOrEmpty(item.Identifier)) throw new Exception("Invalid job identifier");
                             var index = context.GetConfigValue("catalog-communityIndex");
-                            var username = context.GetConfigValue("catalog-admin-username");
-                            var apikey = context.GetConfigValue("catalog-admin-apikey");
-                            CatalogueFactory.DeleteEntryFromIndex(context, index, item.Identifier, username, apikey);
+                            //var username = context.GetConfigValue("catalog-admin-username");
+                            //var apikey = context.GetConfigValue("catalog-admin-apikey");
+                            var user = UserTep.FromId(context, context.UserId);
+                            CatalogueFactory.DeleteEntryFromIndex(context, index, item.Identifier, user.Username, user.GetSessionApiKey());
                         } catch (Exception e) {
                             context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
                         }
@@ -140,9 +141,10 @@ namespace Terradue.Tep.WebServer.Services {
                                 var feed = job.GetJobAtomFeedFromOwsUrl();
                                 if (feed != null) {
                                     var index = context.GetConfigValue("catalog-communityIndex");
-                                    var username = context.GetConfigValue("catalog-admin-username");
-                                    var apikey = context.GetConfigValue("catalog-admin-apikey");
-                                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, username, apikey);
+                                    //var username = context.GetConfigValue("catalog-admin-username");
+                                    //var apikey = context.GetConfigValue("catalog-admin-apikey");
+                                    var user = UserTep.FromId(context, context.UserId);
+                                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.Username, user.GetSessionApiKey());
                                 } else {
                                     context.LogError(this, "Unable to publish on catalog community index : feed is empty");
                                 }
