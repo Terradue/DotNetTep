@@ -104,6 +104,8 @@ namespace Terradue.Tep.WebServer.Services
                     foreach(var res in tmp.Resources){
                         res.Delete();
                     }
+                    tmp.Items = new EntityList<RemoteResource>(context);
+
                 } else {
                     tmp = (DataPackage)request.ToEntity(context, tmp);
                     //tmp.Identifier = identifier;
