@@ -50,6 +50,9 @@ namespace Terradue.Tep.WebServer {
         public int Id { get; set; }
     }
 
+    [Route("/user/current/service/wps/sync", "GET", Summary = "GET refresh current user wps service", Notes = "")]
+    public class CurrentUserWpsServiceSyncRequestTep: IReturn<WebResponseBool> { }
+
     public class WebServiceTep : Terradue.WebService.Model.WebService {
 
         [ApiMember(Name = "IsPublic", Description = "IsPublic", ParameterType = "path", DataType = "bool", IsRequired = false)]

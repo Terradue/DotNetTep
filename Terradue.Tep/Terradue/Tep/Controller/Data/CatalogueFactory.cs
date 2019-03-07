@@ -18,6 +18,7 @@ namespace Terradue.Tep {
         /// <param name="index">Index.</param>
         public static bool PostAtomFeedToIndex(IfyContext context, AtomFeed feed, string index) {
             var baseurl = context.GetConfigValue("catalog-baseurl");
+            if (string.IsNullOrEmpty(index)) throw new Exception("invalid index");
             var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/";
             var username = context.GetConfigValue("catalog-admin-username");
             var apikey = context.GetConfigValue("catalog-admin-apikey");
@@ -52,6 +53,7 @@ namespace Terradue.Tep {
         /// <param name="identifier">Identifier.</param>
         public static bool DeleteEntryFromIndex(IfyContext context, string index, string identifier, string username, string apikey){
             var baseurl = context.GetConfigValue("catalog-baseurl");
+            if (string.IsNullOrEmpty(index)) throw new Exception("invalid index");
             var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/query?uid=" + identifier;
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "DELETE";
@@ -60,7 +62,12 @@ namespace Terradue.Tep {
             request.PreAuthenticate = true;
             request.Credentials = new NetworkCredential(username, apikey);
 
-            using (var response = (HttpWebResponse)request.GetResponse()) {}
+            using (var response = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(response.GetResponseStream())) {
+                    string result = streamReader.ReadToEnd();
+                    context.LogDebug(context, "DeleteEntryFromIndex -- " + result);
+                }
+            }
 
             return true;
         }
@@ -97,8 +104,9 @@ namespace Terradue.Tep {
         /// <param name="apikey">Apikey.</param>
         public static bool PostStreamToIndex(IfyContext context, Stream stream, string index, string username, string apikey) {
             var baseurl = context.GetConfigValue("catalog-baseurl");
-            var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/";
-            var request = (HttpWebRequest)WebRequest.Create(url);
+            if (string.IsNullOrEmpty(index)) throw new Exception("invalid index");
+            var url = new UriBuilder(index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/");
+            var request = (HttpWebRequest)WebRequest.Create(url.Uri.AbsoluteUri);
             request.Method = "POST";
             request.ContentType = "application/atom+xml";
             request.Accept = "application/xml";
@@ -129,7 +137,8 @@ namespace Terradue.Tep {
         /// <param name="apikey">Apikey.</param>
 		public static bool CheckIdentifierExists(IfyContext context, string index, string identifier, string apikey){
 			var baseurl = context.GetConfigValue("catalog-baseurl");
-			var url = (index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index) + "/search?uid=" + identifier + "&apikey=" + apikey;
+            if (string.IsNullOrEmpty(index)) throw new Exception("invalid index");
+            var url = (index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index) + "/search?uid=" + identifier + "&apikey=" + apikey;
             
 			bool result = false;
 			try {

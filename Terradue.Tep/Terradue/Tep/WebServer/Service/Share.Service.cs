@@ -24,6 +24,9 @@ namespace Terradue.Tep.WebServer.Services {
 
         [ApiMember(Name="id", Description = "thematic application id", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string id { get; set; }
+
+        [ApiMember(Name = "publish", Description = "publish or not the shared item to community index (if applicable)", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool publish { get; set; }
     }
 
     [Route("/share", "DELETE", Summary = "share an entity", Notes = "")]
@@ -74,6 +77,17 @@ namespace Terradue.Tep.WebServer.Services {
                         }catch(Exception e){
                             context.LogError(this, "Unable to share on STORE : " + e.Message);
                         }
+
+                        //unpublish on community index
+                        try {
+                            if (string.IsNullOrEmpty(item.Identifier)) throw new Exception("Invalid job identifier");
+                            var index = context.GetConfigValue("catalog-communityIndex");
+                            if (string.IsNullOrEmpty(index)) throw new Exception("Catalog community index not set");
+                            var user = UserTep.FromId(context, context.UserId);
+                            CatalogueFactory.DeleteEntryFromIndex(context, index, item.Identifier, user.Username, user.GetSessionApiKey());
+                        } catch (Exception e) {
+                            context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
+                        }
                     }
                 }
             } else if (entitySelf is EntityList<DataPackage>) {
@@ -119,6 +133,23 @@ namespace Terradue.Tep.WebServer.Services {
 						} catch (Exception e) {
 							context.LogError(this, "Unable to share on STORE : " + e.Message);
 						}
+
+                        //publish on community index
+                        if (request.publish) {
+                            try {
+                                var feed = job.GetJobAtomFeedFromOwsUrl();
+                                if (feed != null) {
+                                    var index = context.GetConfigValue("catalog-communityIndex");
+                                    if (string.IsNullOrEmpty(index)) throw new Exception("Catalog community index not set");
+                                    var user = UserTep.FromId(context, context.UserId);
+                                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.Username, user.GetSessionApiKey());
+                                } else {
+                                    context.LogError(this, "Unable to publish on catalog community index : feed is empty");
+                                }
+                            } catch (Exception e) {
+                                context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
+                            }
+                        }
 
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
                         activity.Store();
@@ -187,6 +218,17 @@ namespace Terradue.Tep.WebServer.Services {
 						} catch (Exception e) {
 							context.LogError(this, "Unable to share on STORE : " + e.Message);
 						}
+
+                        //unpublish on community index
+                        try {
+                            if (string.IsNullOrEmpty(job.Identifier)) throw new Exception("Invalid job identifier");
+                            var index = context.GetConfigValue("catalog-communityIndex");
+                            var username = context.GetConfigValue("catalog-admin-username");
+                            var apikey = context.GetConfigValue("catalog-admin-apikey");
+                            CatalogueFactory.DeleteEntryFromIndex(context, index, job.Identifier, username, apikey);
+                        } catch (Exception e) {
+                            context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
+                        }
                     }
                 }
             }

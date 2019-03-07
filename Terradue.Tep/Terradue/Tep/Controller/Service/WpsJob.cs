@@ -46,6 +46,9 @@ namespace Terradue.Tep {
         [EntityDataField("status_url")]
         public string StatusLocation { get; set; }
 
+        [EntityDataField("ows_url")]
+        public string OwsUrl { get; set; }
+
         [EntityDataField("status")]
         public WpsJobStatus Status { get; set; }
 
@@ -386,6 +389,23 @@ namespace Terradue.Tep {
             wpsjob.Parameters = parameters;
             wpsjob.WpsVersion = wps.Version;
 
+            if (executeInput != null && executeInput.DataInputs != null) {
+                var tmpInputs = new List<InputType>();
+                foreach (var input in executeInput.DataInputs) {
+                    var item = input.Data.Item;
+                    switch (input.Identifier.Value) {
+                        case "_T2InternalJobTitle":
+                            var ld = item as LiteralDataType;
+                            if (ld != null && !string.IsNullOrEmpty(ld.Value)) wpsjob.Name = ld.Value;
+                            break;
+                        default:
+                            tmpInputs.Add(input);
+                            break;
+                    }
+                }
+                executeInput.DataInputs = tmpInputs;
+            }
+
             return wpsjob;
         }
 
@@ -714,6 +734,25 @@ namespace Terradue.Tep {
             return url;
         }
 
+        public static string GetJobOwsUrl(ExecuteResponse execResponse) {
+            // Search for an Opensearch Description Document ouput url
+            var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("job_ows"));
+            if (result_osd.Count() > 0) {
+                var po = result_osd.First();
+                //Get result Url
+                if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
+                    var item = ((DataType)(po.Item)).Item as ComplexDataType;
+                    var reference = item.Reference as OutputReferenceType;
+                    return reference.href;
+                } else if (po.Item is OutputReferenceType) {
+                    var reference = po.Item as OutputReferenceType;
+                    return reference.href;
+                }
+                throw new ImpossibleSearchException("Ouput job_ows found but no Url set");
+            }
+            return null;
+        }
+
 
         /// <summary>
         /// Gets the result URL from execute response.
@@ -826,6 +865,93 @@ namespace Terradue.Tep {
                 if (coordinatorsIds.Count() > 0) return true;
             } catch (Exception) { }
             return false;
+        }
+
+        /// <summary>
+        /// Gets the job atom feed.
+        /// </summary>
+        /// <returns>The job atom feed.</returns>
+        /// <param name="feed">Feed.</param>
+        public OwsContextAtomFeed GetJobAtomFeed(){
+
+            OwsContextAtomFeed feed = new OwsContextAtomFeed();
+            OwsContextAtomEntry entry = new OwsContextAtomEntry();
+
+            entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
+            entry.Summary = new TextSyndicationContent(this.Name);
+            entry.Title = new TextSyndicationContent(this.Name);
+
+            if (this.Owner != null) {
+                entry.Authors.Add(new SyndicationPerson {
+                    Name = this.Owner.FirstName + (!string.IsNullOrEmpty(this.Owner.FirstName) && !string.IsNullOrEmpty(this.Owner.LastName) ? " " : "") + this.Owner.LastName,
+                    Email = this.Owner.Email,
+                    Uri = context.BaseUrl + "/#!user/details/" + this.Owner.Identifier
+                });
+            }
+
+            feed.Items = new List<OwsContextAtomEntry> { entry };
+            return feed;
+        }
+
+        /// <summary>
+        /// Gets the job atom feed from ows URL.
+        /// </summary>
+        /// <returns>The job atom feed from ows URL.</returns>
+        public OwsContextAtomFeed GetJobAtomFeedFromOwsUrl(){
+            var feed = new OwsContextAtomFeed();
+            OwsContextAtomEntry entry = null;
+
+            if (string.IsNullOrEmpty(OwsUrl)) return null;
+
+            var urlb = new UriBuilder(OwsUrl);
+            var user = UserTep.FromId(context, context.UserId);
+            NameValueCollection query = HttpUtility.ParseQueryString(urlb.Query);
+            query.Set("apikey", user.GetSessionApiKey());
+            string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+            urlb.Query = string.Join("&", queryString);
+            try {
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urlb.Uri.AbsoluteUri);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+                        feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                        entry = feed.Items.First();
+                    }
+                }
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                return null;
+            }
+            if (entry == null) return null;
+
+            //update title, as it may have change
+            entry.Title = new TextSyndicationContent(this.Name);
+            entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry));
+            
+            feed.Items = new List<OwsContextAtomEntry> { entry };
+            return feed;
+        }
+
+        private string BuildOwsSummaryFromFeed(OwsContextAtomEntry entry){
+            try {
+                var title = this.Name;
+                var author = entry.Authors != null && entry.Authors[0] != null ? entry.Authors[0].Name : "";
+                var creators = entry.ElementExtensions.ReadElementExtensions<string>("creator", "http://purl.org/dc/elements/1.1/");
+                var creator = creators.Count > 0 ? creators[0] : "";
+                var startDate = entry.Date.StartDate.ToUniversalTime().ToString("o");
+                var endDate = entry.Date.EndDate.ToUniversalTime().ToString("o");
+
+                var html = string.Format("<table>" +
+                                         "<tr><td>title</td><td>{0}</td></tr>" +
+                                         "<tr><td>author</td><td>{1}</td></tr>" +
+                                         "<tr><td>generator</td><td>{2}</td></tr>" +
+                                         "<tr><td>submission</td><td>{3}</td></tr>" +
+                                         "<tr><td>completion</td><td>{4}</td></tr>" +
+                                         "</table>", title, author, creator, startDate, endDate);
+                return html;
+            }catch(Exception e){
+                context.LogError(this, e.Message);
+                return this.Name;
+            }
         }
 
 
@@ -952,6 +1078,7 @@ namespace Terradue.Tep {
             Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(OwsUrl))result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             Uri sharedUrlUsr = null, sharedUrlCommunity = null;
 

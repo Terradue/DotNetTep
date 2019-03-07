@@ -1,4 +1,4 @@
--- VERSION 1.2.8
+-- VERSION 1.2.9
 
 USE $MAIN$;
 
@@ -406,4 +406,13 @@ ALTER TABLE wpsjob ADD COLUMN `wps_version` VARCHAR(30) NULL DEFAULT NULL;
 
 -- Add analytics config...\
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('analytics_nbtopusedservices', 'int', 'nb of top services to show in analytics', '', '5', '0');
+-- RESULT
+
+-- Add wps config...\
+INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('wpsDefaultValue_T2ResultsAnalysis', 'string', 'default value for wps input _T2ResultsAnalysis', '', 'extended', '0');
+INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-communityIndex', 'string', 'catalog public community Index', '', '', '0');
+-- RESULT
+
+-- Add wpsjob ows_url
+ALTER TABLE wpsjob ADD COLUMN `ows_url` VARCHAR(400) NULL DEFAULT NULL AFTER `status_url`;
 -- RESULT
