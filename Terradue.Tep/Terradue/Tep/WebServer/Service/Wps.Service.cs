@@ -732,7 +732,7 @@ namespace Terradue.Tep.WebServer.Services {
                 //Make it public, the authorizations will then be done on the services
                 wpsProvider.GrantPermissionsToAll();
 
-                wpsProvider.StoreProcessOfferings();
+                wpsProvider.StoreProcessOfferings(wpsProvider.AutoSync);
 
                 result = new WebWpsProvider(wpsProvider);
 
