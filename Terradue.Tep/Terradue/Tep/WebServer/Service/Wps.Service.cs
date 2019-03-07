@@ -364,6 +364,23 @@ namespace Terradue.Tep.WebServer.Services {
                 bool isQuotable = false;
                 string cachekey = wps.Identifier;
 
+                wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
+
+                //Check if we need to remove special fields
+                if (executeInput != null && executeInput.DataInputs != null) {
+                    var tmpInputs = new List<InputType>();
+                    foreach (var input in executeInput.DataInputs) {
+                        switch(input.Identifier.Value){
+                            case "_T2InternalJobTitle":
+                                break;
+                            default:
+                                tmpInputs.Add(input);
+                                break;
+                        }
+                    }
+                    executeInput.DataInputs = tmpInputs;
+                }
+
                 //Check if it need to add back hidden field
                 var describeResponse = wps.DescribeProcess();
 				if (describeResponse is ProcessDescriptions) {
@@ -388,10 +405,34 @@ namespace Terradue.Tep.WebServer.Services {
 						};
 						executeInput.DataInputs.Add(input);
 					}
-				} else {
+                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2JobInfoFeed")) {
+                        var jobinfofeed = wpsjob.GetJobAtomFeed();
+                        var jobinfo = ThematicAppCachedFactory.GetOwsContextAtomFeedAsString(jobinfofeed);
+                        var cdata = jobinfo;
+                        var input = new InputType();
+                        input.Identifier = new CodeType { Value = "_T2JobInfoFeed" };
+                        input.Data = new DataType {
+                            Item = new LiteralDataType {
+                                Value = cdata
+                            }
+                        };
+                        executeInput.DataInputs.Add(input);
+                    }
+                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ResultsAnalysis")) {
+                        var analysis = context.GetConfigValue("wpsDefaultValue_T2ResultsAnalysis");
+                        if (string.IsNullOrEmpty(analysis)) analysis = "none";
+                        var input = new InputType();
+                        input.Identifier = new CodeType { Value = "_T2ResultsAnalysis" };
+                        input.Data = new DataType {
+                            Item = new LiteralDataType {
+                                Value = analysis
+                            }
+                        };
+                        executeInput.DataInputs.Add(input);
+                    }
+                } else {
 					return new HttpError("Unknown error during the DescribeProcess", HttpStatusCode.BadRequest, "NoApplicableCode", "");
 				}
-
 
                 if (accountingEnabled) {
                     //check if the service is quotable (=has quotation parameter)
@@ -446,7 +487,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         var balance = user.GetAccountingBalance();
                         if (double.Parse(quotation) > balance) throw new Exception("User credit insufficiant for this request.");
-                        wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
+                        //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
                         if (!(executeResponse is ExecuteResponse) 
@@ -469,7 +510,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 } else { 
                     //case is not quotable
-                    wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
+                    //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                     executeResponse = wps.Execute(executeInput);
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
@@ -599,8 +640,21 @@ namespace Terradue.Tep.WebServer.Services {
 
                     execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
-					//get job recast response
-					try {
+                    //get job ows url
+                    if (wpsjob.Status == WpsJobStatus.SUCCEEDED) {
+                        try {
+                            var ows_url = WpsJob.GetJobOwsUrl(execResponse);
+                            if (!string.IsNullOrEmpty(ows_url)) {
+                                wpsjob.OwsUrl = ows_url;
+                                wpsjob.Store();
+                            }
+                        } catch (Exception e) {
+                            context.LogError(this, e.Message);
+                        }
+                    }
+
+                    //get job recast response
+                    try {
 						var recastResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
 						execResponse = recastResponse;
 					}catch(Exception e){
@@ -678,7 +732,7 @@ namespace Terradue.Tep.WebServer.Services {
                 //Make it public, the authorizations will then be done on the services
                 wpsProvider.GrantPermissionsToAll();
 
-                wpsProvider.StoreProcessOfferings();
+                wpsProvider.StoreProcessOfferings(wpsProvider.AutoSync);
 
                 result = new WebWpsProvider(wpsProvider);
 
