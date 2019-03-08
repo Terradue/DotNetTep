@@ -883,9 +883,9 @@ namespace Terradue.Tep {
 
             if (this.Owner != null) {
                 entry.Authors.Add(new SyndicationPerson {
-                    Name = this.Owner.FirstName + (!string.IsNullOrEmpty(this.Owner.FirstName) && !string.IsNullOrEmpty(this.Owner.LastName) ? " " : "") + this.Owner.LastName,
+                    Name = this.Owner.Caption,
                     Email = this.Owner.Email,
-                    Uri = context.BaseUrl + "/#!user/details/" + this.Owner.Identifier
+                    Uri = context.GetConfigValue("BaseUrl") + "/#!user/details/" + this.Owner.Identifier
                 });
             }
 
