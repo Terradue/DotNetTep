@@ -79,15 +79,7 @@ namespace Terradue.Tep.WebServer.Services {
                         }
 
                         //unpublish on community index
-                        try {
-                            if (string.IsNullOrEmpty(item.Identifier)) throw new Exception("Invalid job identifier");
-                            var index = context.GetConfigValue("catalog-communityIndex");
-                            if (string.IsNullOrEmpty(index)) throw new Exception("Catalog community index not set");
-                            var user = UserTep.FromId(context, context.UserId);
-                            CatalogueFactory.DeleteEntryFromIndex(context, index, item.Identifier, user.Username, user.GetSessionApiKey());
-                        } catch (Exception e) {
-                            context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
-                        }
+                        item.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"));
                     }
                 }
             } else if (entitySelf is EntityList<DataPackage>) {
@@ -136,19 +128,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         //publish on community index
                         if (request.publish) {
-                            try {
-                                var feed = job.GetJobAtomFeedFromOwsUrl();
-                                if (feed != null) {
-                                    var index = context.GetConfigValue("catalog-communityIndex");
-                                    if (string.IsNullOrEmpty(index)) throw new Exception("Catalog community index not set");
-                                    var user = UserTep.FromId(context, context.UserId);
-                                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.Username, user.GetSessionApiKey());
-                                } else {
-                                    context.LogError(this, "Unable to publish on catalog community index : feed is empty");
-                                }
-                            } catch (Exception e) {
-                                context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
-                            }
+                            job.PublishToIndex(context.GetConfigValue("catalog-communityIndex"));
                         }
 
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
@@ -166,6 +146,9 @@ namespace Terradue.Tep.WebServer.Services {
                             job.DomainId = job.Owner.DomainId;
                             job.Store();
                         }
+
+                        //unpublish on community index
+                        job.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"));
 
                         var sharedUsers = new List<string>();
                         var sharedCommunities = new List<ThematicCommunity>();

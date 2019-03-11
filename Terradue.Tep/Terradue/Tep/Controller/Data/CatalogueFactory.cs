@@ -53,7 +53,10 @@ namespace Terradue.Tep {
         /// <param name="identifier">Identifier.</param>
         public static bool DeleteEntryFromIndex(IfyContext context, string index, string identifier, string username, string apikey){
             var baseurl = context.GetConfigValue("catalog-baseurl");
+
             if (string.IsNullOrEmpty(index)) throw new Exception("invalid index");
+            if (string.IsNullOrEmpty(identifier)) throw new Exception("invalid identifier");
+
             var url = index.StartsWith("http://") || index.StartsWith("https://") ? index : baseurl + "/" + index + "/query?uid=" + identifier;
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "DELETE";
