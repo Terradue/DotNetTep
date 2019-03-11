@@ -220,7 +220,7 @@ namespace Terradue.Tep {
                             try {
                                 item.Categories.Add(new SyndicationCategory("jobresult", "http://www.terradue.com/api/type", "jobresult"));
                                 item.Categories.Add(new SyndicationCategory(this.Identifier.Replace("-", ""), "http://www.terradue.com/api/jobid", this.Identifier));
-                                item.Links.Add(new SyndicationLink(parentSelfB.Uri, "via", "Job self link", "application/atom+xml", 0));
+                                item.Links.Add(new SyndicationLink(parentSelfB.Uri, "via", "Originator job", "application/atom+xml", 0));
                                 updatedResultItems.Add(item);
                             }catch(Exception e){
                                 context.LogError(this, "Unable to publish job result on catalog index : " + e.Message);
