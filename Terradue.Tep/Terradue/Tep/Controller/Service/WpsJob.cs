@@ -196,6 +196,83 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Publishs the job to the catalogue index.
+        /// </summary>
+        /// <param name="index">Index.</param>
+        public void PublishToIndex(string index) {
+            try {
+                if (string.IsNullOrEmpty(index)) throw new Exception("Catalog index not set");
+                var feed = GetJobAtomFeedFromOwsUrl();
+                if (feed != null) {
+                    var user = UserTep.FromId(context, context.UserId);
+
+                    //publish job feed as entry
+                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.Username, user.GetSessionApiKey());
+
+                    //publish job results as entries
+                    var entry = feed.Items.First();
+                    var resultLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "results");
+                    if (resultLink != null){
+                        var resultFeed = GetJobResultsAtomFeedFromLink(resultLink);
+                        var updatedResultItems = new List<OwsContextAtomEntry>();
+                        var parentSelfB = new UriBuilder(string.Format("{0}/{1}/search?uid={2}", context.GetConfigValue("catalog-baseurl"), index, this.Identifier));
+                        foreach (var item in resultFeed.Items){
+                            try {
+                                item.Categories.Add(new SyndicationCategory("jobresult", "http://www.terradue.com/api/type", "jobresult"));
+                                item.Categories.Add(new SyndicationCategory(this.Identifier.Replace("-", ""), "http://www.terradue.com/api/jobid", this.Identifier));
+                                item.Links.Add(new SyndicationLink(parentSelfB.Uri, "via", "Job self link", "application/atom+xml", 0));
+                                updatedResultItems.Add(item);
+                            }catch(Exception e){
+                                context.LogError(this, "Unable to publish job result on catalog index : " + e.Message);
+                            }
+                        }
+                        resultFeed.Items = updatedResultItems;
+                        CatalogueFactory.PostAtomFeedToIndex(context, resultFeed, index, user.Username, user.GetSessionApiKey());
+                    } else {
+                        context.LogError(this, "Unable to publish job results on catalog index : no results link");
+                    }
+                } else {
+                    context.LogError(this, "Unable to publish on catalog index : feed is empty");
+                }
+            } catch (Exception e) {
+                context.LogError(this, "Unable to publish on catalog index : " + e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Unpublish job from the index of the catalogue.
+        /// </summary>
+        /// <param name="index">Index.</param>
+        public void UnPublishFromIndex(string index) {
+            var identifier = this.Identifier;
+            try {
+                var user = UserTep.FromId(context, context.UserId);
+
+                //remove entry from catalogue index
+                CatalogueFactory.DeleteEntryFromIndex(context, index, this.Identifier, user.Username, user.GetSessionApiKey());
+
+                //remove associated results
+                identifier = null;
+                var urlb = new UriBuilder(string.Format("{0}/{1}/search?cat={2}", context.GetConfigValue("catalog-baseurl"), index, this.Identifier.Replace("-", "")));
+                OwsContextAtomFeed feed = null;
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urlb.Uri.AbsoluteUri);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+                        feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                    }
+                }
+                if (feed != null) {
+                    foreach (var item in feed.Items) {
+                        identifier = ThematicAppCachedFactory.GetIdentifierFromFeed(item);
+                        CatalogueFactory.DeleteEntryFromIndex(context, index, identifier, user.Username, user.GetSessionApiKey());
+                    }
+                }
+            } catch (Exception e) {
+                context.LogError(this, "Unable to unpublish from catalog community index (" + identifier + ") : " + e.Message);
+            }
+        }
+
+        /// <summary>
         /// Gets a value indicating whether this <see cref="T:Terradue.Tep.WpsJob"/> can cache.
         /// </summary>
         /// <value><c>true</c> if can cache; otherwise, <c>false</c>.</value>
@@ -928,6 +1005,20 @@ namespace Terradue.Tep {
             entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry));
             
             feed.Items = new List<OwsContextAtomEntry> { entry };
+            return feed;
+        }
+
+        public OwsContextAtomFeed GetJobResultsAtomFeedFromLink(SyndicationLink link) {
+            var feed = new OwsContextAtomFeed();
+
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+            var os = OpenSearchFactory.FindOpenSearchable(settings, link.Uri);
+            var osr = MasterCatalogue.OpenSearchEngine.Query(os, new NameValueCollection());
+
+            Stream stream = new MemoryStream();
+            osr.SerializeToStream(stream);
+            stream.Seek(0, SeekOrigin.Begin);
+            feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
             return feed;
         }
 
