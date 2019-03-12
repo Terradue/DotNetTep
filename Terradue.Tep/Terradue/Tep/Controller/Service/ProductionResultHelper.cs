@@ -341,7 +341,23 @@ namespace Terradue.Tep {
 				}
 			});
 
-			return response;
+            if (!string.IsNullOrEmpty(wpsjob.OwsUrl)){
+                response.ProcessOutputs.Add(new OutputDataType {
+                    Identifier = new CodeType { Value = "job_ows" },
+                    Item = new DataType {
+                        Item = new ComplexDataType {
+                            mimeType = "application/xml",
+                            Reference = new OutputReferenceType {
+                                href = wpsjob.OwsUrl,
+                                mimeType = "application/xml"
+                            }
+                        }
+                    }
+                });
+
+            }
+
+            return response;
         }
 
         /// <summary>
