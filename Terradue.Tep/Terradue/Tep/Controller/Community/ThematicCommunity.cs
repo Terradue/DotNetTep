@@ -601,9 +601,9 @@ namespace Terradue.Tep {
                                     usersCommunity.Add(new UserRole {
                                         Username = user.Username,
                                         Name = user.FirstName + " " + user.LastName,
-                                        Email = CanUserManage(context.UserId) ? user.Email : "",
-                                        Affiliation = IsUserJoined(context.UserId) ? user.Affiliation : "",
-                                        Country = IsUserJoined(context.UserId) ? user.Country : "",
+                                        Email = CanUserManage(context.UserId) ? (!string.IsNullOrEmpty(user.Email) ? user.Email : "") : "",
+                                        Affiliation = IsUserJoined(context.UserId) ? (!string.IsNullOrEmpty(user.Affiliation) ? user.Affiliation : "") : "",
+                                        Country = IsUserJoined(context.UserId) ? (!string.IsNullOrEmpty(user.Country) ? user.Country : "") : "",
                                         Role = role.Name ?? role.Identifier,
                                         RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? USERSTATUS_PENDING : USERSTATUS_JOINED,
