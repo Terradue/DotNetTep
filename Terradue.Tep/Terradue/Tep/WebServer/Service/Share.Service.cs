@@ -128,7 +128,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         //publish on community index
                         if (request.publish) {
-                            job.PublishToIndex(context.GetConfigValue("catalog-communityIndex"));
+                            job.PublishToIndex(context.GetConfigValue("catalog-communityIndex"), request.id);
                         }
 
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
