@@ -28,7 +28,6 @@ namespace Terradue.Tep {
     /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
     public class WpsJob : EntitySearchable, IComparable<WpsJob> {
 
-
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         [EntityDataField("remote_identifier")]
         public string RemoteIdentifier { get; set; }
@@ -199,19 +198,21 @@ namespace Terradue.Tep {
         /// Publishs the job to the catalogue index.
         /// </summary>
         /// <param name="index">Index.</param>
-        public void PublishToIndex(string index) {
+        public void PublishToIndex(string index, string appId) {
             try {
                 if (string.IsNullOrEmpty(index)) throw new Exception("Catalog index not set");
-                var feed = GetJobAtomFeedFromOwsUrl();
+                var feed = GetJobAtomFeedFromOwsUrl(appId);
+
                 if (feed != null) {
+                    var entry = feed.Items.First();
+                    var resultLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "results");
+                    feed = UpdateResultLinksForPublish(feed, index);
                     var user = UserTep.FromId(context, context.UserId);
 
                     //publish job feed as entry
                     CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.Username, user.GetSessionApiKey());
 
                     //publish job results as entries
-                    var entry = feed.Items.First();
-                    var resultLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "results");
                     if (resultLink != null){
                         var resultFeed = GetJobResultsAtomFeedFromLink(resultLink);
                         var updatedResultItems = new List<OwsContextAtomEntry>();
@@ -976,7 +977,7 @@ namespace Terradue.Tep {
         /// Gets the job atom feed from ows URL.
         /// </summary>
         /// <returns>The job atom feed from ows URL.</returns>
-        public OwsContextAtomFeed GetJobAtomFeedFromOwsUrl(){
+        public OwsContextAtomFeed GetJobAtomFeedFromOwsUrl(string appId){
             var feed = new OwsContextAtomFeed();
             OwsContextAtomEntry entry = null;
 
@@ -1004,10 +1005,33 @@ namespace Terradue.Tep {
 
             //update title, as it may have change
             entry.Title = new TextSyndicationContent(this.Name);
-            entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry));
-            
+            entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry, appId));
+
+
             feed.Items = new List<OwsContextAtomEntry> { entry };
             return feed;
+        }
+
+        public OwsContextAtomFeed UpdateResultLinksForPublish(OwsContextAtomFeed feed, string index){
+            var selfResultUri = new Uri(string.Format("{0}/{1}/search?cat={2}", context.GetConfigValue("catalog-baseurl"), index, this.Identifier.Replace("-", "")));
+            var entry = feed.Items.FirstOrDefault<OwsContextAtomEntry>();
+            var matchLinks = entry.Links.Where(l => l.RelationshipType == "results").ToArray();
+            string self = null;
+            foreach (var link in matchLinks) {
+                if (link.Title == "Job results") {
+                    self = link.Uri.AbsoluteUri;
+                    entry.Links.Remove(link);
+                }
+            }
+            if (self != null) {
+                var link = new SyndicationLink(selfResultUri, "results", "Job results", "application/atom+xml", 0);
+                link.AttributeExtensions.Add(new System.Xml.XmlQualifiedName("level"), "info");
+                entry.Links.Add(link);
+            }
+
+            entry.Links.Add(new SyndicationLink(selfResultUri, "related", "Job results (correlated)", "application/atom+xml", 0));
+
+            return new OwsContextAtomFeed { Items = new List<OwsContextAtomEntry> { entry } };
         }
 
         public OwsContextAtomFeed GetJobResultsAtomFeedFromLink(SyndicationLink link) {
@@ -1024,7 +1048,7 @@ namespace Terradue.Tep {
             return feed;
         }
 
-        private string BuildOwsSummaryFromFeed(OwsContextAtomEntry entry){
+        private string BuildOwsSummaryFromFeed(OwsContextAtomEntry entry, string appId = null){
             try {
                 var title = this.Name;
                 var author = entry.Authors != null && entry.Authors[0] != null ? entry.Authors[0].Name : "";
@@ -1033,18 +1057,43 @@ namespace Terradue.Tep {
                 var startDate = entry.Date.StartDate.ToUniversalTime().ToString("o");
                 var endDate = entry.Date.EndDate.ToUniversalTime().ToString("o");
 
+                var shareUri = GetJobShareUri(appId);
+
                 var html = string.Format("<table>" +
                                          "<tr><td>title</td><td>{0}</td></tr>" +
                                          "<tr><td>author</td><td>{1}</td></tr>" +
                                          "<tr><td>generator</td><td>{2}</td></tr>" +
                                          "<tr><td>submission</td><td>{3}</td></tr>" +
                                          "<tr><td>completion</td><td>{4}</td></tr>" +
-                                         "</table>", title, author, creator, startDate, endDate);
+                                         "</table><a target='_blank' href='{5}'><i class='fa fa-arrow-right'></i> Go to job</a>", title, author, creator, startDate, endDate, shareUri.AbsoluteUri);
+
+
                 return html;
             }catch(Exception e){
                 context.LogError(this, e.Message);
                 return this.Name;
             }
+        }
+
+        /// <summary>
+        /// Gets the job self URI.
+        /// </summary>
+        /// <returns>The job self URI.</returns>
+        public Uri GetJobSelfUri(){
+            var entityType = EntityType.GetEntityType(typeof(WpsJob));
+            var selfUrlB = new UriBuilder(string.Format("{0}/{1}/search?id={2}&key={3}", context.BaseUrl, entityType.Keyword, this.Identifier, this.AccessKey));
+            return selfUrlB.Uri;
+        }
+
+        /// <summary>
+        /// Gets the job share URI.
+        /// </summary>
+        /// <returns>The job share URI.</returns>
+        /// <param name="appId">App identifier.</param>
+        public Uri GetJobShareUri(string appId = null){
+            var selfUri = GetJobSelfUri();
+            var shareUrlB = new UriBuilder(string.Format("{0}/share?url={1}{2}", context.BaseUrl, selfUri.AbsoluteUri, !string.IsNullOrEmpty(appId) ? "&id=" + appId : ""));
+            return shareUrlB.Uri;
         }
 
 
@@ -1168,7 +1217,7 @@ namespace Terradue.Tep {
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Owner.Username));
             result.Authors.Add(author);
             result.Links.Add(new SyndicationLink(id, "self", name, "application/atom+xml", 0));
-            Uri share = new Uri(context.BaseUrl + "/share?url=" + id.AbsoluteUri);
+            Uri share = GetJobShareUri();
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             if (!string.IsNullOrEmpty(OwsUrl))result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
