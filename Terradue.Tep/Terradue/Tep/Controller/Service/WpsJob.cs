@@ -1059,13 +1059,15 @@ namespace Terradue.Tep {
 
                 var shareUri = GetJobShareUri(appId);
 
+                var warningText = "restricted to users with access to service used to generate the job";
+
                 var html = string.Format("<table>" +
                                          "<tr><td>title</td><td>{0}</td></tr>" +
                                          "<tr><td>author</td><td>{1}</td></tr>" +
                                          "<tr><td>generator</td><td>{2}</td></tr>" +
                                          "<tr><td>submission</td><td>{3}</td></tr>" +
                                          "<tr><td>completion</td><td>{4}</td></tr>" +
-                                         "</table><a target='_blank' href='{5}'><i class='fa fa-arrow-right'></i> Go to job</a>", title, author, creator, startDate, endDate, shareUri.AbsoluteUri);
+                                         "</table><a target='_blank' href='{5}'><i class='fa fa-arrow-right'></i> Go to job</a> <small><a href='javascript://' title='{6}'><i class='fa fa-warning'></i></a></small>", title, author, creator, startDate, endDate, shareUri.AbsoluteUri, warningText);
 
 
                 return html;
