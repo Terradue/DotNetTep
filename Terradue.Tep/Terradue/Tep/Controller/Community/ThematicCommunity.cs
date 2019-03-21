@@ -44,6 +44,24 @@ namespace Terradue.Tep {
             }
         }
 
+        private List<RemoteResource> links;
+        public List<RemoteResource> Links { 
+            get {
+                if (links == null) {
+                    links = new List<RemoteResource>();
+                    var link = GetDomainLinks();
+                    if (link != null) {
+                        link.LoadItems();
+                        links.AddRange(link.Items);
+                    }
+                }
+                return links;
+            }
+            set {
+                links = value;
+            }
+        }
+
         [EntityDataField("discuss")]
         public string DiscussCategory { get; set; }
 
@@ -436,6 +454,26 @@ namespace Terradue.Tep {
             return string.Empty;
         }
 
+        public DomainLinks GetDomainLinks(){
+            var links = new EntityList<DomainLinks>(context);
+            links.SetFilter("Kind", DomainLinks.KINDRESOURCESETLINKS.ToString());
+            links.SetFilter("DomainId", Id.ToString());
+            links.Load();
+
+            var items = links.GetItemsAsList();
+            if (items != null && items.Count > 0) {
+                return items[0];
+            }
+
+            //the Thematic Application does not exists, we create it
+            DomainLinks link = new DomainLinks(context);
+            link.Kind = DomainLinks.KINDRESOURCESETLINKS;
+            link.Identifier = Guid.NewGuid().ToString();
+            link.DomainId = this.Id;
+            link.Store();
+            return link;
+        }
+
         /// <summary>
         /// Shares the entity to the community.
         /// </summary>
@@ -553,6 +591,14 @@ namespace Terradue.Tep {
                 }
 
                 result.Links.Add(new SyndicationLink(uri, "icon", "", base.GetImageMimeType(IconUrl), 0));
+            }
+
+            //DomainLinks
+            if (Links != null && Links.Count > 0){
+                foreach(var link in Links){
+                    var uri = new Uri(link.Location);
+                    result.Links.Add(new SyndicationLink(uri, "via", link.Name, "application/html", 0));
+                }
             }
 
             if(!string.IsNullOrEmpty(Contributor) || !string.IsNullOrEmpty(ContributorIcon)){
