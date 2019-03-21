@@ -124,6 +124,26 @@ namespace Terradue.Tep.WebServer.Services{
                     app.AddResourceItem(res);
                 }
 
+                //store links
+                var domainLinks = domain.GetDomainLinks();
+                //delete old links
+                domainLinks.LoadItems();
+                foreach (var resource in domainLinks.Items) {
+                    resource.Delete();
+                }
+                domainLinks.LoadItems();
+                //add new links
+                if (request.Links != null) {
+                    foreach (WebDataPackageItem item in request.Links) {
+                        try {
+                            RemoteResource res = (item.Id == 0) ? new RemoteResource(context) : RemoteResource.FromId(context, item.Id);
+                            res = item.ToEntity(context, res);
+                            new Uri(res.Location);//to validate the location
+                            domainLinks.AddResourceItem(res);
+                        }catch(Exception){}
+                    }
+                }
+
                 context.Close ();
             } catch (Exception e) {
                 context.LogError (this, e.Message);

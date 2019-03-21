@@ -309,6 +309,7 @@
     <Compile Include="Terradue\Tep\Controller\Support\JiraIssue.Request.cs" />
     <Compile Include="Terradue\Tep\WebServer\Auth\OAuth.Terradue.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Auth\TepLdapAuthenticationType.cs" />
+    <Compile Include="Terradue\Tep\Controller\Community\DomainLinks.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

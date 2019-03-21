@@ -114,6 +114,9 @@ namespace Terradue.Tep
         [ApiMember(Name = "ContributorIcon", Description = "Contributor icon", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string ContributorIcon { get; set; }
 
+        [ApiMember(Name = "Links", Description = "Domain Links", ParameterType = "query", DataType = "List<WebDataPackageItem>", IsRequired = false)]
+        public List<WebDataPackageItem> Links { get; set; }
+
         public WebCommunityTep() {}
 
         /// <summary>
@@ -129,6 +132,12 @@ namespace Terradue.Tep
             EnableJoinRequest = entity.EnableJoinRequest;
             Contributor = entity.Contributor;
             ContributorIcon = entity.ContributorIcon;
+            var domainLinks = entity.GetDomainLinks();
+            domainLinks.LoadItems();
+            if (domainLinks.Items != null && domainLinks.Items.Count > 0) {
+                Links = new List<WebDataPackageItem>();
+                foreach (RemoteResource item in domainLinks.Items) Links.Add(new WebDataPackageItem(item));
+            }
         }
 
         /// <summary>
@@ -152,6 +161,13 @@ namespace Terradue.Tep
             entity.Contributor = Contributor;
             entity.ContributorIcon = ContributorIcon;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private || Kind == (int)DomainKind.Hidden) entity.Kind = (DomainKind)Kind;
+            if (Links != null && Links.Count > 0) {
+                foreach (WebDataPackageItem item in Links) {
+                    RemoteResource res = (item.Id == 0) ? new RemoteResource(context) : RemoteResource.FromId(context, item.Id);
+                    res = item.ToEntity(context, res);
+                    entity.Links.Add(res);
+                }
+            }
             return entity;
         }
 
