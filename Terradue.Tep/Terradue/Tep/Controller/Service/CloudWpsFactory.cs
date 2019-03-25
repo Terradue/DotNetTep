@@ -167,7 +167,7 @@ namespace Terradue.Tep {
             wps.Description = vm.NAME + " by " + vm.UNAME + " from laboratory " + vm.GNAME;
             wps.Proxy = true;
             wps.IsSandbox = true;
-            wps.Tags = new List<string>();
+            wps.Tags = "";
 
             try {
                 var user = UserTep.FromId(context, context.UserId);
@@ -193,7 +193,12 @@ namespace Terradue.Tep {
                     break;
                     case "TAGS":
                     context.LogDebug(wps, string.Format("Tags found : {0} - {1} : {2}", vm.ID, vm.GNAME, nodeUT.InnerText));
-                    wps.Tags = nodeUT.InnerText.Split(',').ToList();
+                    var tags = nodeUT.InnerText.Split(',').ToList();
+                    if (tags != null) {
+                        foreach (var tag in tags) {
+                            wps.AddTag(tag);
+                        }
+                    }
                     break;
                     case "LOGO":
                     context.LogDebug(wps, string.Format("Logo found : {0} - {1} : {2}", vm.ID, vm.GNAME, nodeUT.InnerText));
