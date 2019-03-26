@@ -472,9 +472,9 @@ namespace Terradue.Tep {
             if (executeInput != null && executeInput.DataInputs != null) {
                 var tmpInputs = new List<InputType>();
                 foreach (var input in executeInput.DataInputs) {
-                    var item = input.Data.Item;
                     switch (input.Identifier.Value) {
                         case "_T2InternalJobTitle":
+                            var item = input.Data.Item;
                             var ld = item as LiteralDataType;
                             if (ld != null && !string.IsNullOrEmpty(ld.Value)) wpsjob.Name = ld.Value;
                             break;
