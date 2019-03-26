@@ -195,10 +195,13 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Publishs the job to the catalogue index.
+        /// Publish the job to the catalogue index
         /// </summary>
         /// <param name="index">Index.</param>
-        public void PublishToIndex(string index, string appId) {
+        /// <param name="username">Username used to publish into the catalogue index</param>
+        /// <param name="apikey">Apikey used to publish into the catalogue index</param>
+        /// <param name="appId">App identifier.</param>
+        public void PublishToIndex(string index, string username, string apikey, string appId) {
             try {
                 if (string.IsNullOrEmpty(index)) throw new Exception("Catalog index not set");
                 var feed = GetJobAtomFeedFromOwsUrl(appId);
@@ -210,7 +213,7 @@ namespace Terradue.Tep {
                     var user = UserTep.FromId(context, context.UserId);
 
                     //publish job feed as entry
-                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, user.Username, user.GetSessionApiKey());
+                    CatalogueFactory.PostAtomFeedToIndex(context, feed, index, username, apikey);
 
                     //publish job results as entries
                     if (resultLink != null){
@@ -230,7 +233,7 @@ namespace Terradue.Tep {
                             }
                         }
                         resultFeed.Items = updatedResultItems;
-                        CatalogueFactory.PostAtomFeedToIndex(context, resultFeed, index, user.Username, user.GetSessionApiKey());
+                        CatalogueFactory.PostAtomFeedToIndex(context, resultFeed, index, username, apikey);
                     } else {
                         context.LogError(this, "Unable to publish job results on catalog index : no results link");
                     }
@@ -246,13 +249,13 @@ namespace Terradue.Tep {
         /// Unpublish job from the index of the catalogue.
         /// </summary>
         /// <param name="index">Index.</param>
-        public void UnPublishFromIndex(string index) {
+        public void UnPublishFromIndex(string index, string username, string apikey) {
             var identifier = this.Identifier;
             try {
                 var user = UserTep.FromId(context, context.UserId);
 
                 //remove entry from catalogue index
-                CatalogueFactory.DeleteEntryFromIndex(context, index, this.Identifier, user.Username, user.GetSessionApiKey());
+                CatalogueFactory.DeleteEntryFromIndex(context, index, this.Identifier, username, apikey);
 
                 //remove associated results
                 identifier = null;
@@ -267,7 +270,7 @@ namespace Terradue.Tep {
                 if (feed != null) {
                     foreach (var item in feed.Items) {
                         identifier = ThematicAppCachedFactory.GetIdentifierFromFeed(item);
-                        CatalogueFactory.DeleteEntryFromIndex(context, index, identifier, user.Username, user.GetSessionApiKey());
+                        CatalogueFactory.DeleteEntryFromIndex(context, index, identifier, username, apikey);
                     }
                 }
             } catch (Exception e) {

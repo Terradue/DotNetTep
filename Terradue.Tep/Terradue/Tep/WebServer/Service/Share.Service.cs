@@ -79,7 +79,7 @@ namespace Terradue.Tep.WebServer.Services {
                         }
 
                         //unpublish on community index
-                        item.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"));
+                        item.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"), context.GetConfigValue("catalog-communityUsername"), context.GetConfigValue("catalog-communityApikey"));
                     }
                 }
             } else if (entitySelf is EntityList<DataPackage>) {
@@ -128,7 +128,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                         //publish on community index
                         if (request.publish) {
-                            job.PublishToIndex(context.GetConfigValue("catalog-communityIndex"), request.id);
+                            job.PublishToIndex(context.GetConfigValue("catalog-communityIndex"), context.GetConfigValue("catalog-communityUsername"), context.GetConfigValue("catalog-communityApikey"), request.id);
                         }
 
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
@@ -148,7 +148,7 @@ namespace Terradue.Tep.WebServer.Services {
                         }
 
                         //unpublish on community index
-                        job.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"));
+                        job.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"), context.GetConfigValue("catalog-communityUsername"), context.GetConfigValue("catalog-communityApikey"));
 
                         var sharedUsers = new List<string>();
                         var sharedCommunities = new List<ThematicCommunity>();

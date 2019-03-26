@@ -1,4 +1,4 @@
--- VERSION 1.2.9
+-- VERSION 1.2.10
 
 USE $MAIN$;
 
@@ -411,6 +411,10 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 -- Add wps config...\
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('wpsDefaultValue_T2ResultsAnalysis', 'string', 'default value for wps input _T2ResultsAnalysis', '', 'extended', '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-communityIndex', 'string', 'catalog public community Index', '', '', '0');
+INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-communityUsername', 'string', 'catalog public community username', '', '', '0');
+INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-communityApikey', 'string', 'catalog public community apikey', '', '', '0');
+-- RESULT
+
 -- RESULT
 
 -- Add wpsjob ows_url
