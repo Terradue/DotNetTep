@@ -559,10 +559,13 @@ namespace Terradue.Tep.WebServer.Services {
                     if (!string.IsNullOrEmpty(configLabels)) {
                         labels = configLabels.Split(',').ToList();
                     }
+                    var owner = job.Owner;
+                    if (string.IsNullOrEmpty(owner.TerradueCloudUsername)) owner.LoadCloudUsername();
+                    var raiseOnBehalfOf = owner.TerradueCloudUsername;
                     var issue = new JiraServiceDeskIssueRequest {
                         serviceDeskId = context.GetConfigValue("jira-helpdesk-serviceDeskId"),
                         requestTypeId = context.GetConfigValue("jira-helpdesk-requestTypeId"),
-                        raiseOnBehalfOf = job.Owner.Username,
+                        raiseOnBehalfOf = raiseOnBehalfOf,
                         requestFieldValues = new JiraServiceDeskIssueFields {
                             summary = request.Subject,
                             description = request.Body,

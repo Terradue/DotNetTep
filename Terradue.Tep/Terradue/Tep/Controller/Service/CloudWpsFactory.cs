@@ -130,7 +130,12 @@ namespace Terradue.Tep {
                         if(vm.USER_TEMPLATE == null) continue;
                         try{
                             var wps = CreateWpsProviderForOne (context, vm, parameters);
-                            if(wps != null) result.Add (wps);
+                            if (wps != null) {
+                                if (parameters != null && (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"]))){
+                                    var uid = !string.IsNullOrEmpty(parameters["uid"]) ? parameters["uid"] : parameters["id"];
+                                    if (uid == wps.Identifier) result.Add(wps);
+                                } else result.Add(wps);
+                            }
                         }catch(Exception e){
 
                         }
