@@ -465,6 +465,10 @@ namespace Terradue.Tep {
                 return items[0];
             }
 
+            return null;
+        }
+
+        public DomainLinks CreateDomainLinks(){
             //the Thematic Application does not exists, we create it
             DomainLinks link = new DomainLinks(context);
             link.Kind = DomainLinks.KINDRESOURCESETLINKS;

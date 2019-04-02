@@ -133,10 +133,12 @@ namespace Terradue.Tep
             Contributor = entity.Contributor;
             ContributorIcon = entity.ContributorIcon;
             var domainLinks = entity.GetDomainLinks();
-            domainLinks.LoadItems();
-            if (domainLinks.Items != null && domainLinks.Items.Count > 0) {
-                Links = new List<WebDataPackageItem>();
-                foreach (RemoteResource item in domainLinks.Items) Links.Add(new WebDataPackageItem(item));
+            if (domainLinks != null) {
+                domainLinks.LoadItems();
+                if (domainLinks.Items != null && domainLinks.Items.Count > 0) {
+                    Links = new List<WebDataPackageItem>();
+                    foreach (RemoteResource item in domainLinks.Items) Links.Add(new WebDataPackageItem(item));
+                }
             }
         }
 
