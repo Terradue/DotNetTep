@@ -771,7 +771,17 @@ namespace Terradue.Tep {
                 if (offering.Operations != null) {
                     foreach (var ops in offering.Operations) {
                         if (ops.Code == "ListProcess") {
-                            var uri = new Uri(ops.Href.Replace("file://", context.BaseUrl));
+                            var href = ops.Href;
+                            //replace usernames in apps
+                            try {
+                                var user = UserTep.FromId(context, context.UserId);
+                                href = href.Replace("${USERNAME}", user.Username);
+                                href = href.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                                href = href.Replace("${T2APIKEY}", user.GetSessionApiKey());
+                            } catch (Exception e) {
+                                context.LogError(this, e.Message);
+                            }
+                            var uri = new Uri(href.Replace("file://", context.BaseUrl));
                             var nvc = HttpUtility.ParseQueryString(uri.Query);
                             nvc.Set("count", "100");
                             Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
