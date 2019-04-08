@@ -163,6 +163,7 @@ namespace Terradue.Tep
             entity.Contributor = Contributor;
             entity.ContributorIcon = ContributorIcon;
             if (Kind == (int)DomainKind.Public || Kind == (int)DomainKind.Private || Kind == (int)DomainKind.Hidden) entity.Kind = (DomainKind)Kind;
+            entity.Links = new List<RemoteResource>();
             if (Links != null && Links.Count > 0) {
                 foreach (WebDataPackageItem item in Links) {
                     RemoteResource res = (item.Id == 0) ? new RemoteResource(context) : RemoteResource.FromId(context, item.Id);

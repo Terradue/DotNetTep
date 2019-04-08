@@ -109,44 +109,8 @@ namespace Terradue.Tep.WebServer.Services{
                 domain = request.ToEntity(context, domain);
                 domain.Store ();
 
-                //store appslinks
-                var app = domain.GetThematicApplication();
-                //delete old links
-                app.LoadItems();
-                foreach (var resource in app.Items) {
-                    resource.Delete();
-                }
-                app.LoadItems();
-                //add new links
-                foreach (var link in request.Apps) {                    
-                    var res = new RemoteResource(context);
-                    res.Location = link;
-                    app.AddResourceItem(res);
-                }
-
-                //store links
-                var domainLinks = domain.GetDomainLinks();
-                if (domainLinks != null) {
-                    //delete old links
-                    domainLinks.LoadItems();
-                    foreach (var resource in domainLinks.Items) {
-                        resource.Delete();
-                    }
-                    domainLinks.LoadItems();
-                }
-
-                //add new links
-                if (request.Links != null) {
-                    if (domainLinks == null) domainLinks = domain.CreateDomainLinks();
-                    foreach (WebDataPackageItem item in request.Links) {
-                        try {
-                            RemoteResource res = (item.Id == 0) ? new RemoteResource(context) : RemoteResource.FromId(context, item.Id);
-                            res = item.ToEntity(context, res);
-                            new Uri(res.Location);//to validate the location
-                            domainLinks.AddResourceItem(res);
-                        }catch(Exception){}
-                    }
-                }
+                domain.UpdateAppsLinks(request.Apps);
+                domain.UpdateDomainsLinks(domain.Links);
 
                 context.Close ();
             } catch (Exception e) {
@@ -175,16 +139,7 @@ namespace Terradue.Tep.WebServer.Services{
                 User usr = User.FromId(context, context.UserId);
                 manager.GrantToUser(usr, domain);
 
-                //store appslinks
-                var app = domain.GetThematicApplication();
-                //add new links
-                if (request.Apps != null) {
-                    foreach (var link in request.Apps) {
-                        var res = new RemoteResource(context);
-                        res.Location = link;
-                        app.AddResourceItem(res);
-                    }
-                }
+                domain.UpdateAppsLinks(request.Apps);
 
                 context.Close();
             } catch (Exception e) {
@@ -209,23 +164,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 ThematicCommunity domain = ThematicCommunity.FromIdentifier (context, request.Identifier);
 
-                domain.RemoveUser(user);
-
-                if(!string.IsNullOrEmpty(request.Reason)){
-                    try{
-                        string emailTo = user.Email;
-                        string emailFrom = context.GetConfigValue("MailSenderAddress");
-                        string subject = context.GetConfigValue("CommunityRemoveEmailSubject");
-                        subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
-                        subject = subject.Replace("$(COMMUNITY)", domain.Name);
-                        string body = context.GetConfigValue("CommunityRemoveEmailBody");
-                        body = body.Replace("$(COMMUNITY)", domain.Name);
-                        body = body.Replace("$(REASON)", request.Reason);
-                        context.SendMail(emailFrom, emailTo, subject, body);
-                    } catch (Exception e) {
-                        context.LogError(this, e.Message);
-                    }
-                }
+                domain.RemoveUser(user, request.Reason);
 
                 context.Close ();
             } catch (Exception e) {

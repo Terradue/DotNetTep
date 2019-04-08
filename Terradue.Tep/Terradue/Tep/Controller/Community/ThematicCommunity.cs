@@ -165,6 +165,50 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Updates the apps links.
+        /// </summary>
+        /// <param name="apps">Apps.</param>
+        public void UpdateAppsLinks(List<string> apps) {
+            var app = this.GetThematicApplication();
+            //delete old links
+            app.LoadItems();
+            foreach (var resource in app.Items) {
+                resource.Delete();
+            }
+            app.LoadItems();
+            //add new links
+            foreach (var link in apps) {
+                var res = new RemoteResource(context);
+                res.Location = link;
+                app.AddResourceItem(res);
+            }
+        }
+
+        public void UpdateDomainsLinks(List<RemoteResource> links) {
+            //store links
+            var domainLinks = this.GetDomainLinks();
+            if (domainLinks != null) {
+                //delete old links
+                domainLinks.LoadItems();
+                foreach (var resource in domainLinks.Items) {
+                    resource.Delete();
+                }
+                domainLinks.LoadItems();
+            }
+
+            //add new links
+            if (links != null) {
+                if (domainLinks == null) domainLinks = this.CreateDomainLinks();
+                foreach (RemoteResource res in links) {
+                    try {
+                        new Uri(res.Location);//to validate the location
+                        domainLinks.AddResourceItem(res);
+                    } catch (Exception) { }
+                }
+            }
+        }
+
+        /// <summary>
         /// Is the user owner.
         /// </summary>
         /// <returns><c>true</c>, if user is owner of the community, <c>false</c> otherwise.</returns>
@@ -377,7 +421,8 @@ namespace Terradue.Tep {
         /// Removes the user.
         /// </summary>
         /// <param name="user">User.</param>
-        public void RemoveUser(User user) {
+        /// /// <param name="reason">Reason why the user is removed.</param>
+        public void RemoveUser(User user, string reason = null) {
             if (context.UserId != user.Id && !CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can remove users");
 
             //delete previous role(s)
@@ -385,6 +430,22 @@ namespace Terradue.Tep {
             foreach (var r in uroles) r.RevokeFromUser(user, this);
 
             context.LogInfo(this, string.Format("User {0} removed from community {1} (all roles revoked)", user.Username, this.Identifier));
+
+            if (!string.IsNullOrEmpty(reason)) {
+                try {
+                    string emailTo = user.Email;
+                    string emailFrom = context.GetConfigValue("MailSenderAddress");
+                    string subject = context.GetConfigValue("CommunityRemoveEmailSubject");
+                    subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                    subject = subject.Replace("$(COMMUNITY)", this.Name);
+                    string body = context.GetConfigValue("CommunityRemoveEmailBody");
+                    body = body.Replace("$(COMMUNITY)", this.Name);
+                    body = body.Replace("$(REASON)", reason);
+                    context.SendMail(emailFrom, emailTo, subject, body);
+                } catch (Exception e) {
+                    context.LogError(this, e.Message);
+                }
+            }
 
         }
 
