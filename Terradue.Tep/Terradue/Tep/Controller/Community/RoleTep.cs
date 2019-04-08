@@ -23,13 +23,15 @@ namespace Terradue.Tep {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public static readonly string OWNER = "owner";
-        public static readonly string MANAGER = "manager";
-        public static readonly string MEMBER = "member";
-        public static readonly string PENDING = "pending";
-        public static readonly string VISITOR = "visitor";
-        public static readonly string STARTER = "starter";
-        public static readonly string EXPLORER = "explorer";
+        public const string OWNER = "owner";
+        public const string MANAGER = "manager";
+        public const string MEMBER = "member";
+        public const string PENDING = "pending";
+        public const string VISITOR = "visitor";
+        public const string STARTER = "starter";
+        public const string EXPLORER = "explorer";
+        public const string ENDUSER = "enduser";
+        public const string EXPERT = "expert";
 
         public RoleTep() : base(null) {
         }
