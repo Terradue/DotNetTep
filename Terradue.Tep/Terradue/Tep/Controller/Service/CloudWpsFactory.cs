@@ -348,6 +348,10 @@ namespace Terradue.Tep {
             osd.Developer = "Terradue OpenSearch Development Team";
             osd.Attribution = context.GetConfigValue("CompanyName");
 
+            osd.ExtraNamespace.Add("geo", "http://a9.com/-/opensearch/extensions/geo/1.0/");
+            osd.ExtraNamespace.Add("time", "http://a9.com/-/opensearch/extensions/time/1.0/");
+            osd.ExtraNamespace.Add("dct", "http://purl.org/dc/terms/");
+
             List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
 
             UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
