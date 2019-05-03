@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.Tep", "Terradue.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.Tep.Test", "Terradue.Tep.Test\Terradue.Tep.Test.csproj", "{1B0ADA25-20DE-416E-A6E1-A27880165708}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terradue.JFrog.Artifactory", "..\DotNetJFrogArtifactory\Terradue.JFrog.Artifactory\Terradue.JFrog.Artifactory.csproj", "{D72373BC-A70F-4600-A155-C6A44A949711}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,5 +21,9 @@ Global
 		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B0ADA25-20DE-416E-A6E1-A27880165708}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D72373BC-A70F-4600-A155-C6A44A949711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D72373BC-A70F-4600-A155-C6A44A949711}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D72373BC-A70F-4600-A155-C6A44A949711}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D72373BC-A70F-4600-A155-C6A44A949711}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

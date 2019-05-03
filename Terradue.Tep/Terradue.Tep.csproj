@@ -152,7 +152,7 @@
       <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\..\platforms\tep-geohazards\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Authentication.Umsso">
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.14\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
@@ -215,6 +215,12 @@
     </Reference>
     <Reference Include="Terradue.WebService.Model">
       <HintPath>..\packages\Terradue.WebService.Model.1.1.27\lib\net45\Terradue.WebService.Model.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl">
+      <HintPath>..\..\..\..\platforms\tep-geohazards\packages\Flurl.2.8.2\lib\net40\Flurl.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl.Http">
+      <HintPath>..\..\..\..\platforms\tep-geohazards\packages\Flurl.Http.2.4.2\lib\net45\Flurl.Http.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +316,8 @@
     <Compile Include="Terradue\Tep\WebServer\Auth\OAuth.Terradue.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Auth\TepLdapAuthenticationType.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\DomainLinks.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Storage\Storage.Service.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\StoreFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -398,5 +406,12 @@
     <Folder Include="Terradue\Tep\Controller\Support\" />
     <Folder Include="Terradue\Tep\WebServer\Auth\" />
     <Folder Include="Terradue\Tep\Controller\Auth\" />
+    <Folder Include="Terradue\Tep\WebServer\Storage\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\DotNetJFrogArtifactory\Terradue.JFrog.Artifactory\Terradue.JFrog.Artifactory.csproj">
+      <Project>{D72373BC-A70F-4600-A155-C6A44A949711}</Project>
+      <Name>Terradue.JFrog.Artifactory</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
