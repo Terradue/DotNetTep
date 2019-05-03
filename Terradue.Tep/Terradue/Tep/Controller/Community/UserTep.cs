@@ -307,6 +307,8 @@ namespace Terradue.Tep {
             context.LogDebug(this, "Loading Terradue info - " + this.Username);
 			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = "true";
 
+            HttpContext.Current.Session["t2profileError"] = null;
+
             try {
                 if (TerradueCloudUsername == null) {
                     //no TerradueCloudUsername, we need to load it (+ apikey)

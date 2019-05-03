@@ -153,6 +153,7 @@
     <Compile Include="BaseTest.cs" />
     <Compile Include="Wpsjob.Test.cs" />
     <Compile Include="Community.Test.cs" />
+    <Compile Include="DataPackage.Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
