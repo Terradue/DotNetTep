@@ -6,6 +6,7 @@ using Terradue.Portal;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Flurl.Http.Configuration;
+using System.IO;
 
 namespace Terradue.Tep {
     public class StoreFactory {
@@ -269,8 +270,9 @@ namespace Terradue.Tep {
             ArtifactoryBaseUrl.Storage().DeleteItem(repoKey, path);
         }
 
-        public void UploadFile(string repoKey, string path) {
-            ArtifactoryBaseUrl.Deploy();
+        public void UploadFile(string repoKey, string path, string filename) {
+            TextReader reader = File.OpenText(filename);
+            ArtifactoryBaseUrl.Deploy(repoKey, path, reader);
         }
 
         #endregion
