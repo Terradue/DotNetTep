@@ -266,6 +266,11 @@ namespace Terradue.Tep {
             return ArtifactoryBaseUrl.Storage().FolderInfo(repoKey, path);
         }
 
+        public List<FolderInfo> GetRepositoriesToDeploy() {
+            var repos = ArtifactoryBaseUrl.Repositories().GetRepositoriesToDeploy();
+            return null;
+        }
+
         public void DeleteFile(string repoKey, string path) {
             ArtifactoryBaseUrl.Storage().DeleteItem(repoKey, path);
         }
@@ -273,6 +278,10 @@ namespace Terradue.Tep {
         public void UploadFile(string repoKey, string path, string filename) {
             TextReader reader = File.OpenText(filename);
             ArtifactoryBaseUrl.Deploy(repoKey, path, reader);
+        }
+
+        public FolderInfo CreateFolder(string repoKey, string path) {
+            return ArtifactoryBaseUrl.Storage().CreateFolder(repoKey, path);
         }
 
         #endregion
