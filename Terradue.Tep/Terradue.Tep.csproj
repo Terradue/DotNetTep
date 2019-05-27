@@ -152,7 +152,7 @@
       <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\platforms\tep-geohazards\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Authentication.Umsso">
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.14\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
@@ -217,10 +217,10 @@
       <HintPath>..\packages\Terradue.WebService.Model.1.1.27\lib\net45\Terradue.WebService.Model.dll</HintPath>
     </Reference>
     <Reference Include="Flurl">
-      <HintPath>..\..\..\..\platforms\tep-geohazards\packages\Flurl.2.8.2\lib\net40\Flurl.dll</HintPath>
+      <HintPath>..\packages\Flurl.2.8.2\lib\net40\Flurl.dll</HintPath>
     </Reference>
     <Reference Include="Flurl.Http">
-      <HintPath>..\..\..\..\platforms\tep-geohazards\packages\Flurl.Http.2.4.2\lib\net45\Flurl.Http.dll</HintPath>
+      <HintPath>..\packages\Flurl.Http.2.4.2\lib\net45\Flurl.Http.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
