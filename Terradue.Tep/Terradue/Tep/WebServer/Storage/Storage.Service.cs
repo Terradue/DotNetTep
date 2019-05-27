@@ -109,7 +109,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/store GET"));
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 RepositoryInfoList repos = factory.GetRepositoriesToDeploy();
                 var children = new List<FileInfoChildren>();
@@ -149,7 +149,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/store/{0}/{1} GET",request.repoKey, request.path));
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 FolderInfo info = factory.GetFolderInfo(request.repoKey, request.path);
                 info.Uri = System.Web.HttpContext.Current.Request.Url.AbsoluteUri;
@@ -174,7 +174,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/store/download/{0}/{1} GET", request.repoKey, request.path));
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 result = factory.DownloadItem(request.repoKey, request.path);
 
@@ -200,7 +200,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/store/{0}/{1} PUT", request.repoKey, request.path));
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 var info = factory.CreateFolder(request.repoKey, request.path);
                 result = factory.Serializer.Serialize(info);
@@ -224,7 +224,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/store/move/{0}/{1}?to={2}&dry={3} PUT", request.srcRepoKey, request.srcPath, request.to, request.dry));
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 var to = request.to.Trim('/');
                 var toRepo = to.Substring(0, to.IndexOf('/'));
@@ -251,7 +251,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/store/{0}/{1} DELETE", request.repoKey, request.path));
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 factory.DeleteFile(request.repoKey, request.path);
 
@@ -285,7 +285,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
 
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
-                var factory = new StoreFactory(apikey);
+                var factory = new StoreFactory(context, apikey);
 
                 var filename = path + "/" + request.path.Substring(request.path.LastIndexOf("/") + 1);
                 using (var stream = new MemoryStream()) {

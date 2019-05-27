@@ -26,7 +26,8 @@ namespace Terradue.Tep {
 
         public NewtonsoftJsonSerializer Serializer { get; protected set; }
 
-        public StoreFactory(string userApikey) {
+        public StoreFactory(IfyContext context, string userApikey) {
+            this.Context = context;
             ArtifactoryBaseUrl = new ArtifactoryBaseUrl(storeBaseUrl, userApikey);
             Serializer = ArtifactoryBaseUrl.Serializer;
         }
@@ -263,6 +264,7 @@ namespace Terradue.Tep {
         /// <param name="repoKey">Repo key.</param>
         /// <param name="path">Path.</param>
         public FolderInfo GetFolderInfo(string repoKey, string path) {
+            if (Context.GetConfigBooleanValue("artifactory_repo_restriction_deploy")) CheckRepoRestriction(repoKey);
             return ArtifactoryBaseUrl.Storage().FolderInfo(repoKey, path);
         }
 
@@ -289,6 +291,17 @@ namespace Terradue.Tep {
 
         public Stream DownloadItem(string repoKey, string path) {
             return ArtifactoryBaseUrl.Download(repoKey, path);
+        }
+
+        private void CheckRepoRestriction(string repoKey) {
+            RepositoryInfoList repos = GetRepositoriesToDeploy();
+            bool canAccessRepo = false;
+            if (repos != null && repos.RepoTypesList != null) {
+                foreach (var repo in repos.RepoTypesList) {
+                    if (repoKey == repo.RepoKey) canAccessRepo = true;
+                }
+            }
+            if (!canAccessRepo) throw new Exception("The requested path is not valid");
         }
 
         #endregion
