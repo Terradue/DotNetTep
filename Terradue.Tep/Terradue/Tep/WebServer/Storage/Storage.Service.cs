@@ -137,7 +137,7 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
 
-            return new HttpResult(result);
+            return new HttpResult(result, Request.ContentType);
         }
 
         public object Get(GetStorageFilesRequestTep request) {
@@ -162,7 +162,7 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
 
-            return new HttpResult(result);
+            return new HttpResult(result, Request.ContentType);
         }
 
         public object Get(GetDownloadStorageFileRequestTep request) {
@@ -212,7 +212,7 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
 
-            return new HttpResult(result);
+            return new HttpResult(result, Request.ContentType);
         }
 
         public object Put(PutMoveStorageItemRequestTep request) {
@@ -240,7 +240,7 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
 
-            return new HttpResult(result);
+            return new HttpResult(result, Request.ContentType);
         }
 
         public object Delete(DeleteStorageFileRequestTep request) {
