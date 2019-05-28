@@ -81,10 +81,10 @@
       <HintPath>..\packages\Terradue.OpenNebula.1.0.2\lib\net40\Terradue.OpenNebula.dll</HintPath>
     </Reference>
 	<Reference Include="NuGet4Mono">
-      <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.exe</HintPath>
+      <HintPath>..\packages\NuGet4Mono.0.7.0\lib\net45\NuGet4Mono.exe</HintPath>
     </Reference>
     <Reference Include="NuGet4Mono.Extensions">
-      <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.Extensions.dll</HintPath>
+      <HintPath>..\packages\NuGet4Mono.Extensions.0.7.0\lib\net45\NuGet4Mono.Extensions.dll</HintPath>
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
     <Reference Include="GeoAPI">
@@ -170,7 +170,7 @@
       <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.5.6\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Syndication">
-      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.7\lib\net45\Terradue.ServiceModel.Syndication.dll</HintPath>
     </Reference>
     <Reference Include="SharpKml.Core">
       <HintPath>..\packages\SharpKml.Core.4.0.0\lib\net45\SharpKml.Core.dll</HintPath>
@@ -221,6 +221,9 @@
     </Reference>
     <Reference Include="Flurl.Http">
       <HintPath>..\packages\Flurl.Http.2.4.2\lib\net45\Flurl.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.JFrog.Artifactory">
+      <HintPath>..\packages\Terradue.JFrog.Artifactory.2.0.0\lib\net45\Terradue.JFrog.Artifactory.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -407,11 +410,5 @@
     <Folder Include="Terradue\Tep\WebServer\Auth\" />
     <Folder Include="Terradue\Tep\Controller\Auth\" />
     <Folder Include="Terradue\Tep\WebServer\Storage\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\DotNetJFrogArtifactory\Terradue.JFrog.Artifactory\Terradue.JFrog.Artifactory.csproj">
-      <Project>{D72373BC-A70F-4600-A155-C6A44A949711}</Project>
-      <Name>Terradue.JFrog.Artifactory</Name>
-    </ProjectReference>
   </ItemGroup>
 </Project>
