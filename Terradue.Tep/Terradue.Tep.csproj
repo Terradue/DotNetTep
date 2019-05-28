@@ -81,10 +81,10 @@
       <HintPath>..\packages\Terradue.OpenNebula.1.0.2\lib\net40\Terradue.OpenNebula.dll</HintPath>
     </Reference>
 	<Reference Include="NuGet4Mono">
-      <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.exe</HintPath>
+      <HintPath>..\packages\NuGet4Mono.0.7.0\lib\net45\NuGet4Mono.exe</HintPath>
     </Reference>
     <Reference Include="NuGet4Mono.Extensions">
-      <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.Extensions.dll</HintPath>
+      <HintPath>..\packages\NuGet4Mono.Extensions.0.7.0\lib\net45\NuGet4Mono.Extensions.dll</HintPath>
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
     <Reference Include="GeoAPI">
@@ -152,7 +152,7 @@
       <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Authentication.Umsso">
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.14\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
@@ -170,7 +170,7 @@
       <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.5.6\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Syndication">
-      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.7\lib\net45\Terradue.ServiceModel.Syndication.dll</HintPath>
     </Reference>
     <Reference Include="SharpKml.Core">
       <HintPath>..\packages\SharpKml.Core.4.0.0\lib\net45\SharpKml.Core.dll</HintPath>
@@ -215,6 +215,15 @@
     </Reference>
     <Reference Include="Terradue.WebService.Model">
       <HintPath>..\packages\Terradue.WebService.Model.1.1.27\lib\net45\Terradue.WebService.Model.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl">
+      <HintPath>..\packages\Flurl.2.8.2\lib\net40\Flurl.dll</HintPath>
+    </Reference>
+    <Reference Include="Flurl.Http">
+      <HintPath>..\packages\Flurl.Http.2.4.2\lib\net45\Flurl.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="Terradue.JFrog.Artifactory">
+      <HintPath>..\packages\Terradue.JFrog.Artifactory.2.0.0\lib\net45\Terradue.JFrog.Artifactory.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +319,8 @@
     <Compile Include="Terradue\Tep\WebServer\Auth\OAuth.Terradue.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Auth\TepLdapAuthenticationType.cs" />
     <Compile Include="Terradue\Tep\Controller\Community\DomainLinks.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Storage\Storage.Service.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\StoreFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -398,5 +409,6 @@
     <Folder Include="Terradue\Tep\Controller\Support\" />
     <Folder Include="Terradue\Tep\WebServer\Auth\" />
     <Folder Include="Terradue\Tep\Controller\Auth\" />
+    <Folder Include="Terradue\Tep\WebServer\Storage\" />
   </ItemGroup>
 </Project>
