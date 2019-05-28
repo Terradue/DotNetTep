@@ -439,15 +439,14 @@ namespace Terradue.Tep.WebServer.Services {
                 Dictionary<string, int> dictionary = new Dictionary<string, int>();
                 foreach (WpsJob job in jobs) {
                     foreach(var parameter in job.Parameters){
-                        if(!string.IsNullOrEmpty(parameter.Value) && parameter.Value.StartsWith("http")){
-                            foreach(var url in parameter.Value.Split(',')){
-                                totalDataProcessed++;
-                                var urib = new UriBuilder(url);
-                                urib.Path = urib.Path.Trim('/');
-                                var url2 = urib.Uri.AbsoluteUri;
-                                if (dictionary.ContainsKey(url2)) dictionary[url2]++;
-                                else dictionary.Add(url2, 1);
-                            }
+                        if(!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))){
+                            var url = parameter.Value;
+                            totalDataProcessed++;
+                            var urib = new UriBuilder(url);
+                            urib.Path = urib.Path.Trim('/');
+                            var url2 = urib.Uri.AbsoluteUri;
+                            if (dictionary.ContainsKey(url2)) dictionary[url2]++;
+                            else dictionary.Add(url2, 1);
                         }
                     }
                 }
@@ -456,7 +455,7 @@ namespace Terradue.Tep.WebServer.Services {
                 csv.Append(String.Format("Data processed by Wps jobs created between {0} and {1},{2}{3}", startdate, enddate, totalDataProcessed, Environment.NewLine));
                 csv.Append("Catalog URL,Number" + Environment.NewLine);
                 foreach(var key in dic.Keys){
-                    csv.Append(String.Format(" {0},{1}{2}", key, dic[key] , Environment.NewLine));
+                    csv.Append(String.Format(" {0},{1}{2}", key.Replace(",", "\\,"), dic[key], Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
             }
