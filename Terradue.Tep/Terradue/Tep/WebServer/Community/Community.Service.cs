@@ -185,7 +185,6 @@ namespace Terradue.Tep.WebServer.Services{
             CommunityCollection domains = new CommunityCollection(context);
             domains.UserStatus = Request.QueryString != null ? Request.QueryString["status"] : null;
             domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
-            domains.AddSort("Kind", SortDirection.Ascending);
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;

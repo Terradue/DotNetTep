@@ -1123,6 +1123,14 @@ namespace Terradue.Tep {
                     break;
             }
 
+            var sortexpression = string.Format("CASE WHEN t.id IN ({0}) THEN 0 WHEN t.id IN ({1}) THEN 1 ELSE 2 END",
+                    joinedDomainIds.Count == 0 ? "0" : String.Join(",", joinedDomainIds),
+                    pendingDomainIds.Length == 0 ? "0" : String.Join(",", pendingDomainIds));
+
+            this.AddSortExpression(sortexpression, SortDirection.Ascending);
+            this.AddSort("Kind", SortDirection.Descending);
+            this.AddSort("EnableJoinRequest", SortDirection.Descending);
+
             Clear();
 
             object[] queryParts = entityType.GetListQueryParts(context, this, UserId, null, condition);
