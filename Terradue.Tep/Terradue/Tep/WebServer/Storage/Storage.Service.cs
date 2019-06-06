@@ -9,6 +9,252 @@ using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
 
+    /*
+     swagger: "2.0"
+info:
+  description: "Terradue store API"
+  version: "1.0.0"
+  title: "T2 store API"
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "info@terradue.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "ellip.terradue.com"
+basePath: "/v2"
+tags:
+- name: "store"
+  description: "All requests to handle items on the Terradue storage"
+  externalDocs:
+    description: "Find out more"
+    url: "http://swagger.io"
+schemes:
+- "https"
+paths:
+  /store/{path*}:
+    get:
+      tags:
+      - "store"
+      summary: "List all folder and items under {repo}/{path}"
+      description: ""
+      operationId: "GetStorageFilesRequestTep"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "path*"
+        description: "Path to store item"
+        required: true
+        type: string
+        x-example: path/to/item
+      - in: "query"
+        name: "apikey"
+        description: "User apikey (if not set, user must be logged in)"
+        required: false
+        type: string
+        x-example: Akcdfghjflgnljxfgnlkjfnbmlknlnmk
+      responses:
+        200:
+          description: "Repositories info"
+          schema:
+            $ref: "#/definitions/FolderInfo"
+        500:
+          description: "Invalid input"
+    post:
+      tags:
+      - "store"
+      summary: "Upload item"
+      description: "Note: the file name should be included into path"
+      operationId: "PostStorageFilesRequestTep"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "path*"
+        description: "Path to store item"
+        required: true
+        type: string
+        x-example: path/to/item
+      - in: "query"
+        name: "apikey"
+        description: "User apikey (if not set, user must be logged in)"
+        required: false
+        type: string
+        x-example: Akcdfghjflgnljxfgnlkjfnbmlknlnmk
+      responses:
+        200:
+          description: "Upload succeeded"
+          schema:
+            $ref: "#/definitions/ResponseBool"
+        405:
+          description: "Invalid input"
+    delete:
+      tags:
+      - "store"
+      summary: "Delete item or folder"
+      description: ""
+      operationId: "DeleteStorageFileRequestTep"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "path*"
+        description: "Path to store item"
+        required: true
+        type: string
+        x-example: path/to/item
+      - in: "query"
+        name: "apikey"
+        description: "User apikey (if not set, user must be logged in)"
+        required: false
+        type: string
+        x-example: Akcdfghjflgnljxfgnlkjfnbmlknlnmk
+      responses:
+        200:
+          description: "Delete succeeded"
+          schema:
+            $ref: "#/definitions/ResponseBool"
+        405:
+          description: "Invalid input"
+  /store/download/{path*}:
+    get:
+      tags:
+      - "store"
+      summary: "Download item"
+      description: ""
+      operationId: "GetDownloadStorageFileRequestTep"
+      produces:
+      - "application/octet+stream"
+      parameters:
+      - in: "path"
+        name: "path*"
+        description: "Path to store item"
+        required: true
+        type: string
+        x-example: path/to/item
+      - in: "query"
+        name: "apikey"
+        description: "User apikey (if not set, user must be logged in)"
+        required: false
+        type: string
+        x-example: Akcdfghjflgnljxfgnlkjfnbmlknlnmk
+      responses:
+        200:
+          description: "Item as octet stream"
+        500:
+          description: "Invalid input"
+  /store/move/{path*}:
+    put:
+      tags:
+      - "store"
+      summary: "Move item"
+      description: ""
+      operationId: "PutMoveStorageItemRequestTep"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "path*"
+        description: "Path to store item"
+        required: true
+        type: string
+        x-example: path/to/item
+      - in: "query"
+        name: "to"
+        description: "Path where to move the item"
+        required: false
+        type: string
+        x-example: path/to/new/item
+      - in: "query"
+        name: "dry"
+        description: "Dry run -> 1 (the action is not performed, but an error is return if not possible)"
+        required: false
+        type: integer
+        x-example: 1
+      - in: "query"
+        name: "apikey"
+        description: "User apikey (if not set, user must be logged in)"
+        required: false
+        type: string
+        x-example: Akcdfghjflgnljxfgnlkjfnbmlknlnmk
+      responses:
+        200:
+          description: "Move succeeded"
+          schema:
+            $ref: "#/definitions/MessageContainer"
+        500:
+          description: "Invalid input"
+definitions:
+  FolderInfo:
+    type: "object"
+    properties:
+      uri:
+        type: "string"
+      repo:
+        type: "string"
+      path:
+        type: "string"
+      relativePath:
+        type: "string"
+      lastModified:
+        type: "string"
+        format: "date-time"
+      createdBy:
+        type: "string"
+      modifiedBy:
+        type: "string"
+      created:
+        type: "string"
+        format: "date-time"
+      lastUpdated:
+        type: "string"
+        format: "date-time"
+      Children:
+        type: array
+        items:
+          $ref: "#/definitions/FileInfoChildren"
+  FileInfoChildren:
+    type: "object"
+    properties:
+      folder:
+        type: "boolean"
+      size:
+        type: "number"
+      lastModified:
+        type: "string"
+      sha1:
+        type: "string"
+  MessageContainer:
+    type: "object"
+    properties:
+      messages:
+        type: array
+        items:
+          $ref: "#/definitions/Message"
+      errors:
+        type: array
+        items:
+          $ref: "#/definitions/Message"
+  Message:
+    type: "object"
+    properties:
+      level:
+        type: "string"
+      status:
+        type: "string"
+      message:
+        type: "string"
+  ResponseBool:
+    type: "object"
+    properties:
+      Response:
+        type: "string"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"   
+    */
+
     [Route("/store", "GET", Summary = "GET root folder", Notes = "")]
     public class GetStorageRepoRequestTep : IReturn<HttpResult> {
         [ApiMember(Name = "apikey", Description = "api key", ParameterType = "quert", DataType = "string", IsRequired = false)]
@@ -151,7 +397,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
                 var factory = new StoreFactory(context, apikey);
 
-                FolderInfo info = factory.GetFolderInfo(request.repoKey, request.path);
+                Artifactory.Response.FileInfo info = factory.GetItemInfo(request.repoKey, request.path);
                 info.Uri = System.Web.HttpContext.Current.Request.Url.AbsoluteUri;
                 result = factory.Serializer.Serialize(info);
 

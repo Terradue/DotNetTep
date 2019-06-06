@@ -258,14 +258,14 @@ namespace Terradue.Tep {
         #region STORAGE
 
         /// <summary>
-        /// Gets the folder info.
+        /// Gets the item info.
         /// </summary>
-        /// <returns>The folder info.</returns>
+        /// <returns>The item (folder or file) info.</returns>
         /// <param name="repoKey">Repo key.</param>
         /// <param name="path">Path.</param>
-        public FolderInfo GetFolderInfo(string repoKey, string path) {
+        public Artifactory.Response.FileInfo GetItemInfo(string repoKey, string path) {
             if (Context.GetConfigBooleanValue("artifactory_repo_restriction_deploy")) CheckRepoRestriction(repoKey);
-            return ArtifactoryBaseUrl.Storage().FolderInfo(repoKey, path);
+            return ArtifactoryBaseUrl.Storage().FileInfo(repoKey, path);
         }
 
         public RepositoryInfoList GetRepositoriesToDeploy() {
