@@ -1,4 +1,4 @@
--- VERSION 1.2.11
+-- VERSION 1.2.12
 
 USE $MAIN$;
 
@@ -91,6 +91,8 @@ CREATE TABLE wpsjob (
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
     status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
     status_url varchar(400) NOT NULL COMMENT 'Wps job status url',
+    ows_url varchar(400) NOT NULL COMMENT 'Wps job ows url',
+    app_identifier varchar(50) NOT NULL COMMENT 'Wps job app identifier',
     created_time datetime NOT NULL COMMENT 'Wps created date',
     access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
     CONSTRAINT pk_wpsjob PRIMARY KEY (id),
@@ -415,8 +417,3 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-communityApikey', 'string', 'catalog public community apikey', '', '', '0');
 -- RESULT
 
--- RESULT
-
--- Add wpsjob ows_url
-ALTER TABLE wpsjob ADD COLUMN `ows_url` VARCHAR(400) NULL DEFAULT NULL AFTER `status_url`;
--- RESULT
