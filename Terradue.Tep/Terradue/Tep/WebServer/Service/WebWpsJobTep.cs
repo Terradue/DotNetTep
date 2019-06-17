@@ -130,17 +130,19 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name="Username", Description = "Name of the owner of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Username { get; set; }
         [ApiMember(Name="ProcessId", Description = "Process ID attached to the job", ParameterType = "query", DataType = "String", IsRequired = true)]
-        public String ProcessId { get; set; }
+        public string ProcessId { get; set; }
         [ApiMember(Name="ProcessName", Description = "Process name attached to the job", ParameterType = "query", DataType = "String", IsRequired = true)]
-        public String ProcessName { get; set; }
+        public string ProcessName { get; set; }
 		[ApiMember(Name = "Status", Description = "Status of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
 		public int Status { get; set; }
         [ApiMember(Name = "WpsVersion", Description = "Version of the job wps service", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsVersion { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
-        public String StatusLocation { get; set; }
+        public string StatusLocation { get; set; }
         [ApiMember(Name = "OwsUrl", Description = "Ows url of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
-        public String OwsUrl { get; set; }
+        public string OwsUrl { get; set; }
+        [ApiMember(Name = "AppIdentifier", Description = "App Identifier of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public string AppIdentifier { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
         public DateTime CreatedTime { get; set; }
         [ApiMember(Name = "EndTime", Description = "End time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
@@ -176,6 +178,7 @@ namespace Terradue.Tep.WebServer {
             this.Status = (int)entity.Status;
             this.WpsVersion = entity.WpsVersion;
             this.OwsUrl = entity.OwsUrl;
+            this.AppIdentifier = entity.AppIdentifier;
         }
 
         /// <summary>
@@ -202,6 +205,7 @@ namespace Terradue.Tep.WebServer {
             entity.EndTime = this.EndTime;
             entity.WpsVersion = this.WpsVersion;
             entity.OwsUrl = this.OwsUrl;
+            entity.AppIdentifier = this.AppIdentifier;
             return entity;
         }
 
