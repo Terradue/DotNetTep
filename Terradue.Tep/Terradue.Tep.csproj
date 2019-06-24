@@ -321,6 +321,7 @@
     <Compile Include="Terradue\Tep\Controller\Community\DomainLinks.cs" />
     <Compile Include="Terradue\Tep\WebServer\Storage\Storage.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\StoreFactory.cs" />
+    <Compile Include="Terradue\Tep\Controller\Service\WpsProcessOfferingTep.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

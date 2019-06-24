@@ -417,3 +417,8 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('catalog-communityApikey', 'string', 'catalog public community apikey', '', '', '0');
 -- RESULT
 
+-- Update wps process offering custom class
+UPDATE type SET custom_class='Terradue.Tep.WpsProcessOfferingTep, Terradue.Tep' WHERE class='Terradue.Portal.WpsProcessOffering, Terradue.Portal';
+-- RESULT
+
+

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Web;
 using ServiceStack.Common.Web;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer {
@@ -62,29 +65,95 @@ namespace Terradue.Tep.WebServer {
         public string AppUrl { get; set; }
     }
 
-    public class WebThematicAppTep : WebDataPackageTep {
-        
+    public class WebThematicAppTep {
+
+        [ApiMember(Name = "id", Description = "id of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public int Id { get; set; }
+
+        [ApiMember(Name = "identifier", Description = "identifier of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+
+        [ApiMember(Name = "title", Description = "title of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Title { get; set; }
+
+        [ApiMember(Name = "summary", Description = "Summary of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Summary { get; set; }
+
+        [ApiMember(Name = "icon", Description = "icon url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Icon { get; set; }
+
+        [ApiMember(Name = "wpsServiceDomain", Description = "wpsServiceDomain of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string WpsServiceDomain { get; set; }
+
+        [ApiMember(Name = "wpsServiceTags", Description = "wpsServiceTags of the app", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> WpsServiceTags { get; set; }
+
         public WebThematicAppTep() : base() {}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebThematicAppTep"/> class.
         /// </summary>
         /// <param name="entity">Entity.</param>
-        public WebThematicAppTep(ThematicApplication entity) : base(entity) {
+        public WebThematicAppTep(ThematicApplicationCached app, IfyContext context) {
+
+            Id = app.Id;
+
+            var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+            if (feed != null) {
+                var entry = feed.Items.First();
+                if (entry.Title != null) Title = entry.Title.Text;
+                if (entry.Summary != null) Summary = entry.Summary.Text;
+                var identifiers = entry.ElementExtensions.ReadElementExtensions<string>("identifier", OwcNamespaces.Dc);
+                if (identifiers.Count() > 0) this.Identifier = identifiers.First();
+
+                var icon = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+                if (icon != null) this.Icon = icon.Uri.AbsoluteUri;
+
+                foreach (var offering in entry.Offerings) {
+                    switch (offering.Code) {
+                        case "http://www.opengis.net/spec/owc/1.0/req/atom/wps":
+                            if (offering.Operations != null && offering.Operations.Length > 0) {
+                                foreach (var operation in offering.Operations) {
+                                    var href = operation.Href;
+                                    switch (operation.Code) {
+                                        case "ListProcess":
+                                            var uri = new Uri(href);
+                                            var nvc = HttpUtility.ParseQueryString(uri.Query);
+                                            foreach (var key in nvc.AllKeys) {
+                                                switch (key) {
+                                                    case "domain":
+                                                        if(nvc[key] != null) {
+                                                            if (nvc[key].Contains("${USERNAME}")) {
+                                                                var user = UserTep.FromId(context, context.UserId);
+                                                                user.LoadCloudUsername();
+                                                                this.WpsServiceDomain = nvc[key].Replace("${USERNAME}", user.TerradueCloudUsername);
+                                                            } else this.WpsServiceDomain = nvc[key];
+                                                        }
+                                                        break;
+                                                    case "tag":
+                                                        if (!string.IsNullOrEmpty(nvc[key]))
+                                                            this.WpsServiceTags = nvc[key].Split(",".ToCharArray()).ToList();
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            
         }
-
-        /// <summary>
-        /// Tos the entity.
-        /// </summary>
-        /// <returns>The entity.</returns>
-        /// <param name="context">Context.</param>
-        /// <param name="input">Input.</param>
-        public ThematicApplication ToEntity(IfyContext context, ThematicApplication input){
-            ThematicApplication entity = (ThematicApplication)base.ToEntity (context, input);
-
-            return entity;
-        }
-
+        
     }
 }
 
