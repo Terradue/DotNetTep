@@ -82,6 +82,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "icon", Description = "icon url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Icon { get; set; }
 
+        [ApiMember(Name = "selfUrl", Description = "self search url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string SelfUrl { get; set; }
+
         [ApiMember(Name = "wpsServiceDomain", Description = "wpsServiceDomain of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsServiceDomain { get; set; }
 
@@ -108,6 +111,8 @@ namespace Terradue.Tep.WebServer {
 
                 var icon = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
                 if (icon != null) this.Icon = icon.Uri.AbsoluteUri;
+
+                SelfUrl = context.BaseUrl + "/apps/search?cache=true&uid=" + this.Identifier;
 
                 foreach (var offering in entry.Offerings) {
                     switch (offering.Code) {

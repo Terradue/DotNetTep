@@ -26,6 +26,12 @@ namespace Terradue.Tep.WebServer {
 
     }
 
+    [Route("/service/wps/tags", "GET", Summary = "GET all existing services tags", Notes = "")]
+    public class WpsServiceAllTagsRequestTep : List<string> {}
+
+    [Route("/service/wps/versions", "GET", Summary = "GET all existing service versions", Notes = "")]
+    public class WpsServiceAllVersionsRequestTep : List<Version> { }
+
     [Route("/service/wps/tags", "PUT", Summary = "PUT update service tags", Notes = "")]
     public class WpsServiceUpdateTagsRequestTep : WebServiceTep { }
 

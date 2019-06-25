@@ -12,7 +12,6 @@ namespace Terradue.Tep {
         }
 
         public override object GetFilterForParameter(string parameter, string value) {
-            var result = new List<KeyValuePair<string, string>>();
             switch (parameter) {
                 case "correlatedTo":
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
@@ -33,6 +32,7 @@ namespace Terradue.Tep {
                                                     var href = operation.Href;
                                                     switch (operation.Code) {
                                                         case "ListProcess":
+                                                            var result = new List<KeyValuePair<string, string>>();
                                                             var uri = new Uri(href);
                                                             var nvc = HttpUtility.ParseQueryString(uri.Query);
                                                             foreach (var key in nvc.AllKeys) {
@@ -64,7 +64,7 @@ namespace Terradue.Tep {
                                                                         break;
                                                                 }
                                                             }
-                                                            break;
+                                                            return result;
                                                         default:
                                                             break;
                                                     }
@@ -78,7 +78,7 @@ namespace Terradue.Tep {
                             }
                         }
                     }
-                    return result;
+                    return new KeyValuePair<string, string>("DomainId", "-1");//we don't want any result to be returned, as no service is returned to the app (no wps search link)
                 default:
                     return base.GetFilterForParameter(parameter, value);
             }

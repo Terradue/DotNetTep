@@ -978,9 +978,11 @@ namespace Terradue.Tep.WebServer.Services {
             WebServiceTep result = null;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/service/wps PUT Identifier='{0}'", request.Identifier));
 
-                WpsProcessOffering wps = (request.Id == 0 ? null : (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id));
+                WpsProcessOffering wps = (request.Id != 0 ?
+                       (WpsProcessOffering)Service.FromId(context, request.Id) :
+                        (!string.IsNullOrEmpty(request.Identifier) ? (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier) : null));
 
                 if(request.Access != null){
                     switch(request.Access){
@@ -1432,6 +1434,56 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return new WebResponseBool(true);
+        }
+
+        public object Get(WpsServiceAllTagsRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<string> tags = new List<string>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/tags GET"));
+
+                var alltags = context.GetQueryStringValues("SELECT tags FROM service;");
+
+                foreach(var tag in alltags) {
+                    var stags = tag.Split(",".ToCharArray());
+                    foreach(var st in stags) {
+                        if (!tags.Contains(st)) tags.Add(st);
+                    }
+                }
+                tags.Sort();
+                
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return tags;
+        }
+
+        public object Get(WpsServiceAllVersionsRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<string> versions = new List<string>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/versions GET"));
+
+                var allversions = context.GetQueryStringValues("SELECT version FROM service;");
+
+                foreach (var version in allversions) {
+                    if (!versions.Contains(version))
+                        versions.Add(version);
+                }
+                versions.Sort();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return versions;
         }
     }
 
