@@ -35,6 +35,12 @@ namespace Terradue.Tep.WebServer {
     [Route("/service/wps/tags", "PUT", Summary = "PUT update service tags", Notes = "")]
     public class WpsServiceUpdateTagsRequestTep : WebServiceTep { }
 
+    [Route("/service/wps/{identifier}/available", "PUT", Summary = "PUT update service availability", Notes = "")]
+    public class WpsServiceUpdateAvailabilityRequestTep {
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
     [Route("/service/wps/{wpsId}/group", "GET", Summary = "GET list of groups that can access a service", Notes = "")]
     public class WPSServiceGetGroupsRequestTep : IReturn<List<WebGroup>> {
         [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]

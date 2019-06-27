@@ -1048,26 +1048,17 @@ namespace Terradue.Tep.WebServer.Services {
                 WpsProcessOffering wpsOld = (WpsProcessOffering)Service.FromIdentifier(context, request.OldIdentifier);
                 WpsProcessOffering wpsNew = (WpsProcessOffering)request.ToEntity(context, new WpsProcessOffering(context));
                 wpsNew.Provider = wpsOld.Provider;
-                wpsNew.RemoteIdentifier = wpsNew.Identifier;
-                wpsNew.Identifier = Guid.NewGuid().ToString();
-
-                var url = wpsNew.Provider.BaseUrl;
-                if (!url.ToLower().Contains("describeprocess")) {
-                    var urib = new UriBuilder(url);
-                    var query = "Service=WPS&Request=DescribeProcess&Version=" + wpsNew.Provider.WPSVersion ?? "1.0.0";
-
-                    query += "&Identifier=" + wpsNew.RemoteIdentifier;
-                    urib.Query = query;
-                    url = urib.Uri.AbsoluteUri;
-                }
-                wpsNew.Url = url;
-
                 wpsNew.DomainId = wpsOld.DomainId;
                 wpsNew.Tags = wpsOld.Tags;
                 wpsNew.IconUrl = wpsOld.IconUrl;
+                wpsNew.Available = true;
+                wpsNew.Commercial = wpsOld.Commercial;
+                wpsNew.Geometry = wpsOld.Geometry;
+                wpsNew.Store();
 
-                wpsNew.Store();                
-                
+                wpsOld.Available = false;
+                wpsOld.Store();
+
                 result = new WebWpsService(wpsNew);
 
                 context.Close();
@@ -1485,6 +1476,26 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return versions;
         }
+
+        public object Put(WpsServiceUpdateAvailabilityRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/available GET, identifier='{0}'", request.Identifier));
+
+                var wps = Service.FromIdentifier(context, request.Identifier);
+                wps.Available = !wps.Available;
+                wps.Store();
+                
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+                
     }
 
 }
