@@ -852,12 +852,11 @@ namespace Terradue.Tep.WebServer.Services {
             bool result = false;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps DELETE Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/service/wps DELETE {0}='{1}'", request.Id == 0 ? "Identifier" : "Id", request.Id == 0 ? request.Identifier : request.Id.ToString()));
 
                 WpsProcessOffering wps = null;
-                bool exists = false;
                 try {
-                    wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id);
+                    wps = request.Id == 0 ? (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, request.Identifier) : (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id);
                     wps.Delete();
                 } catch (Exception e) {
                     throw e;
@@ -1056,8 +1055,12 @@ namespace Terradue.Tep.WebServer.Services {
                 wpsNew.Geometry = wpsOld.Geometry;
                 wpsNew.Store();
 
-                wpsOld.Available = false;
-                wpsOld.Store();
+                if (request.DeleteOld)
+                    wpsOld.Delete();
+                else {
+                    wpsOld.Available = false;
+                    wpsOld.Store();
+                }
 
                 result = new WebWpsService(wpsNew);
 

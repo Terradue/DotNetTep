@@ -84,6 +84,9 @@ namespace Terradue.Tep.WebServer {
     public class ReplaceWPSService : WebServiceTep, IReturn<WebServiceTep> {
         [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string OldIdentifier { get; set; }
+
+        [ApiMember(Name = "deleteold", Description = "Indicates if old WPS service should be removed", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool DeleteOld { get; set; }
     }
 
     [Route("/cr/wps/{Identifier}/devusers", "GET", Summary = "GET a WPS provider dev users", Notes = "")]
