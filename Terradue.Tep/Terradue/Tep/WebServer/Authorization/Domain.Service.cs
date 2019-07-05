@@ -56,6 +56,8 @@ namespace Terradue.Tep.WebServer.Services
                 context.Open();
                 context.LogInfo(this,string.Format("/domain GET"));
                 EntityList<Domain> domains = new EntityList<Domain>(context);
+                domains.AddSort("Kind", SortDirection.Descending);
+                domains.AddSort("Name", SortDirection.Ascending);
                 domains.Load();
 
                 foreach (var domain in domains) result.Add (new WebDomain (domain));

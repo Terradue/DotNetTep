@@ -12,10 +12,10 @@ namespace Terradue.Tep.WebServer {
         public System.IO.Stream RequestStream { get; set; }
     }
 
-    [Route("/service/wps/{Id}", "GET", Summary = "GET a WPS service", Notes = "")]
+    [Route("/service/wps/{Identifier}", "GET", Summary = "GET a WPS service", Notes = "")]
     public class WpsServiceGetRequestTep : IReturn<WebServiceTep> {
-        [ApiMember(Name = "Id", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int Id { get; set; }
+        [ApiMember(Name = "Identifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string Identifier { get; set; }
     }
 
     [Route("/service/wps", "PUT", Summary = "PUT update service", Notes = "")]
@@ -26,34 +26,106 @@ namespace Terradue.Tep.WebServer {
 
     }
 
+    [Route("/service/wps/tags", "GET", Summary = "GET all existing services tags", Notes = "")]
+    public class WpsServiceAllTagsRequestTep : List<string> {}
+
+    [Route("/service/wps/versions", "GET", Summary = "GET all existing service versions", Notes = "")]
+    public class WpsServiceAllVersionsRequestTep : List<Version> { }
+
     [Route("/service/wps/tags", "PUT", Summary = "PUT update service tags", Notes = "")]
     public class WpsServiceUpdateTagsRequestTep : WebServiceTep { }
 
-    [Route("/service/wps/{wpsId}/group", "GET", Summary = "GET list of groups that can access a service", Notes = "")]
+    [Route("/service/wps/{identifier}/available", "PUT", Summary = "PUT update service availability", Notes = "")]
+    public class WpsServiceUpdateAvailabilityRequestTep {
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/service/wps/{wpsIdentifier}/group", "GET", Summary = "GET list of groups that can access a service", Notes = "")]
     public class WPSServiceGetGroupsRequestTep : IReturn<List<WebGroup>> {
-        [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int WpsId { get; set; }
+        [ApiMember(Name = "wpsIdentifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{wpsId}/group", "POST", Summary = "POST group to service", Notes = "")]
+    [Route("/service/wps/{wpsIdentifier}/group", "POST", Summary = "POST group to service", Notes = "")]
     public class WpsServiceAddGroupRequestTep : WebGroup, IReturn<List<WebGroup>> {
-        [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int WpsId { get; set; }
+        [ApiMember(Name = "wpsIdentifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{wpsId}/group/{Id}", "DELETE", Summary = "DELETE group to service", Notes = "")]
+    [Route("/service/wps/{wpsIdentifier}/group/{Id}", "DELETE", Summary = "DELETE group to service", Notes = "")]
     public class WpsServiceDeleteGroupRequestTep : IReturn<List<WebGroup>> {
-        [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int WpsId { get; set; }
+        [ApiMember(Name = "wpsIdentifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
 
         [ApiMember(Name = "Id", Description = "id of the group", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Id { get; set; }
     }
 
+    [Route("/cr/wps/{Identifier}/services", "GET", Summary = "GET a list of WPS services", Notes = "")]
+    public class GetWPSProvidersServices : IReturn<List<WebServiceTep>> {
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/cr/wps/{CrIdentifier}/services", "POST", Summary = "POST a WPS service", Notes = "")]
+    public class CreateWPSProvidersService : WebServiceTep, IReturn<List<WebServiceTep>> {
+        [ApiMember(Name = "CrIdentifier", Description = "Computing resource Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string CrIdentifier { get; set; }
+    }
+
+    [Route("/service/wps/{Identifier}/versions", "GET", Summary = "GET a list of WPS services", Notes = "")]
+    public class GetWPSServicesVersions : IReturn<List<WebServiceTep>> {
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/service/wps/{OldIdentifier}/replace", "PUT", Summary = "PUT a WPS services in place of another", Notes = "")]
+    public class ReplaceWPSService : WebServiceTep, IReturn<WebServiceTep> {
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string OldIdentifier { get; set; }
+
+        [ApiMember(Name = "deleteold", Description = "Indicates if old WPS service should be removed", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool DeleteOld { get; set; }
+    }
+
+    [Route("/cr/wps/{Identifier}/devusers", "GET", Summary = "GET a WPS provider dev users", Notes = "")]
+    public class GetWpsProviderDevUsers : IReturn<List<WebUser>> {
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/cr/wps/{Identifier}/devusers", "PUT", Summary = "PUT a WPS provider dev user", Notes = "")]
+    public class AddWpsProviderDevUsers : IReturn<WebUser> {
+        [ApiMember(Name = "Username", Description = "Dev users usernames", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public string Username { get; set; }
+
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/cr/wps/{Identifier}/devusers/{Username}", "DELETE", Summary = "PUT a WPS provider dev user", Notes = "")]
+    public class RemoveWpsProviderDevUsers : IReturn<WebUser> {
+        [ApiMember(Name = "Username", Description = "Dev users usernames", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public string Username { get; set; }
+
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
+    [Route("/cr/wps/{Identifier}/sync", "GET", Summary = "GET refresh wps provider", Notes = "")]
+    public class WpsProviderSyncForUserRequestTep : IReturn<WebResponseBool> {
+        [ApiMember(Name = "Username", Description = "Dev users usernames", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public string Username { get; set; }
+
+        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+    }
+
     [Route("/user/current/service/wps/sync", "GET", Summary = "GET refresh current user wps service", Notes = "")]
     public class CurrentUserWpsServiceSyncRequestTep: IReturn<WebResponseBool> { }
 
-    public class WebServiceTep : Terradue.WebService.Model.WebService {
+    public class WebServiceTep : Terradue.WebService.Model.WebWpsService {
 
         [ApiMember(Name = "IsPublic", Description = "IsPublic", ParameterType = "path", DataType = "bool", IsRequired = false)]
         public bool IsPublic { get; set; }
@@ -73,7 +145,7 @@ namespace Terradue.Tep.WebServer {
         /// </summary>
         /// <param name="context">Context.</param>
         /// <param name="entity">Entity.</param>
-        public WebServiceTep(IfyContext context, Service entity) : base(entity) {
+        public WebServiceTep(IfyContext context, WpsProcessOffering entity) : base(entity) {
             this.IsPublic = entity.DoesGrantPermissionsToAll();
             this.OwnerId = entity.UserId;
             this.Geometry = entity.Geometry;
@@ -85,9 +157,9 @@ namespace Terradue.Tep.WebServer {
         /// </summary>
         /// <returns>The entity.</returns>
         /// <param name="context">Context.</param>
-        public new Service ToEntity(IfyContext context, Service input) {
+        public new WpsProcessOffering ToEntity(IfyContext context, WpsProcessOffering input) {
 
-            Service entity = base.ToEntity(context, input);
+            WpsProcessOffering entity = base.ToEntity(context, input);
             entity.Geometry = this.Geometry;
             entity.Commercial = this.Commercial;
             return entity;

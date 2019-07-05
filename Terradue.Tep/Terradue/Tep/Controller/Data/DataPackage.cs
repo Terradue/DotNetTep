@@ -590,7 +590,7 @@ namespace Terradue.Tep {
         #endregion
 
         #region IEntitySearchable implementation
-        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+        public override object GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
                     var settings = MasterCatalogue.OpenSearchFactorySettings;

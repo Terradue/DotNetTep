@@ -79,7 +79,6 @@ namespace Terradue.Tep.WebServer.Services {
 
             //Create EntityList from DB
             EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
-            wpsProcesses.SetFilter("Available", "true");
             wpsProcesses.OpenSearchEngine = ose;
             wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);
 
@@ -704,6 +703,27 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get(GetWPSProvider request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            context.AccessLevel = EntityAccessLevel.Administrator;
+            WebWpsProvider result = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/cr/wps/{{Id}} GET, Id='{0}'", request.Id));
+
+                WpsProvider wps = (WpsProvider)ComputingResource.FromId(context, request.Id);
+                result = new WebWpsProvider(wps);                
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
         public object Post(CreateWPSProvider request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebWpsProvider result = null;
@@ -732,7 +752,7 @@ namespace Terradue.Tep.WebServer.Services {
                 //Make it public, the authorizations will then be done on the services
                 wpsProvider.GrantPermissionsToAll();
 
-                wpsProvider.StoreProcessOfferings(wpsProvider.AutoSync);
+                //wpsProvider.StoreProcessOfferings(wpsProvider.AutoSync);
 
                 result = new WebWpsProvider(wpsProvider);
 
@@ -792,17 +812,51 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Post(CreateWPSProvidersService request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebWpsService result = null;
+            try {
+                context.Open();
+
+                WpsProvider wpsProvider = (WpsProvider)ComputingResource.FromIdentifier(context, request.CrIdentifier);
+                WpsProcessOffering wps = (WpsProcessOffering)request.ToEntity(context, new WpsProcessOffering(context));
+                wps.Provider = wpsProvider;
+
+                var url = wpsProvider.BaseUrl;
+                if (!url.ToLower().Contains("describeprocess")) {
+                    var urib = new UriBuilder(url);
+                    var query = "Service=WPS&Request=DescribeProcess&Version=" + wpsProvider.WPSVersion ?? "1.0.0";
+
+                    query += "&Identifier=" + wps.RemoteIdentifier;
+                    urib.Query = query;
+                    url = urib.Uri.AbsoluteUri;
+                }
+                wps.Url = url;
+                wps.Store();
+                
+                context.LogInfo(this, string.Format("/cr/wps/{{CrIdentifier}}/services POST CrIdentifier='{0}', Id='{1}'", request.CrIdentifier, wps.Id));
+
+                result = new WebWpsService(wps);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
         public object Delete(DeleteWPSService request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             bool result = false;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps DELETE Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/service/wps DELETE Identifier='{0}'", request.Identifier));
 
                 WpsProcessOffering wps = null;
-                bool exists = false;
                 try {
-                    wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id);
+                    wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
                     wps.Delete();
                 } catch (Exception e) {
                     throw e;
@@ -893,14 +947,39 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get(GetWPSProvidersServices request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            
+            List<Terradue.WebService.Model.WebWpsService> result = new List<Terradue.WebService.Model.WebWpsService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/cr/wps/{{Identifier}}/services GET, Identifier='{0}'", request.Identifier));
+
+                WpsProvider provider = (Terradue.Portal.WpsProvider)ComputingResource.FromIdentifier(context, request.Identifier);
+                var services = provider.GetWpsProcessOfferingsFromRemote(true, null);
+
+                foreach (WpsProcessOffering wps in services) {
+                    result.Add(new Terradue.WebService.Model.WebWpsService(wps));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
         public object Put(WpsServiceUpdateRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             WebServiceTep result = null;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps PUT Id='{0}'", request.Id));
+                context.LogInfo(this,string.Format("/service/wps PUT Identifier='{0}'", request.Identifier));
 
-                WpsProcessOffering wps = (request.Id == 0 ? null : (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id));
+                WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
 
                 if(request.Access != null){
                     switch(request.Access){
@@ -919,6 +998,135 @@ namespace Terradue.Tep.WebServer.Services {
                 }
 
                 result = new WebServiceTep(context, wps);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Get(GetWPSServicesVersions request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<WebServiceTep> result = new List<WebServiceTep>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{Identifier}}/versions GET Identifier='{0}'", request.Identifier));
+
+                WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
+                var version = string.IsNullOrEmpty(wps.Version) ? "" : wps.Version.Replace("-","_").Replace(".","_");
+                var identifierNoVersion = wps.Identifier.Replace(version, "");
+                var services = wps.Provider.GetWpsProcessOfferingsFromRemote(true, null);
+
+                foreach (WpsProcessOffering service in services) {
+                    var identifierNoVersion2 = service.Identifier.Replace(version, "");
+                    if(identifierNoVersion == identifierNoVersion2) result.Add(new WebServiceTep(context, service));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(ReplaceWPSService request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+
+            WebWpsService result = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{Identifier}}/replace PUT Identifier='{0}', ReplaceIdentifier='{1}'", request.OldIdentifier, request.Identifier));
+
+                WpsProcessOffering wpsOld = (WpsProcessOffering)Service.FromIdentifier(context, request.OldIdentifier);
+                WpsProcessOffering wpsNew = (WpsProcessOffering)request.ToEntity(context, new WpsProcessOffering(context));
+                wpsNew.Provider = wpsOld.Provider;
+                wpsNew.DomainId = wpsOld.DomainId;
+                wpsNew.Tags = wpsOld.Tags;
+                wpsNew.IconUrl = wpsOld.IconUrl;
+                wpsNew.Available = true;
+                wpsNew.Commercial = wpsOld.Commercial;
+                wpsNew.Geometry = wpsOld.Geometry;
+                wpsNew.Store();
+
+                if (request.DeleteOld)
+                    wpsOld.Delete();
+                else {
+                    wpsOld.Available = false;
+                    wpsOld.Store();
+                }
+
+                result = new WebWpsService(wpsNew);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(AddWpsProviderDevUsers request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+
+            WebUser result = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{Identifier}}/devusers PUT Identifier='{0}', Username='{1}'", request.Identifier, request.Username));
+
+                WpsProvider provider = (Terradue.Portal.WpsProvider)ComputingResource.FromIdentifier(context, request.Identifier);
+                provider.AddDevUser(request.Username);
+
+                result = new WebUser(UserTep.FromIdentifier(context, request.Username));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Delete(RemoveWpsProviderDevUsers request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+
+            WebUser result = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{Identifier}}/devusers PUT Identifier='{0}', Username='{1}'", request.Identifier, request.Username));
+
+                WpsProvider provider = (Terradue.Portal.WpsProvider)ComputingResource.FromIdentifier(context, request.Identifier);
+                provider.RemoveDevUser(request.Username);
+
+                result = new WebUser(UserTep.FromIdentifier(context, request.Username));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Get(GetWpsProviderDevUsers request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+
+            List<WebUser> result = new List<WebUser>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{Identifier}}/devusers GET Identifier='{0}'", request.Identifier));
+
+                WpsProvider provider = (Terradue.Portal.WpsProvider)ComputingResource.FromIdentifier(context, request.Identifier);
+                
+                var users = provider.GetDevUsers();
+                foreach (var u in users) result.Add(new WebUser(u));
 
                 context.Close();
             } catch (Exception e) {
@@ -1027,9 +1235,9 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group GET WpsId='{0}'", request.WpsId));
+                context.LogInfo(this,string.Format("/service/wps/{{wpsIdentifier}}/group GET WpsIdentifier='{0}'", request.WpsIdentifier));
 
-                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
+                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, request.WpsIdentifier);
 
                 var gids = wps.GetAuthorizedGroupIds();
                 List<int> ids = gids != null ? gids.ToList() : new List<int>();
@@ -1059,8 +1267,8 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group POST WpsId='{0}'", request.WpsId));
-                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
+                context.LogInfo(this,string.Format("/service/wps/{{WpsIdentifier}}/group POST WpsIdentifier='{0}'", request.WpsIdentifier));
+                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, request.WpsIdentifier);
 
                 var gids = wps.GetAuthorizedGroupIds();
                 List<int> ids = gids != null ? gids.ToList() : new List<int>();
@@ -1093,11 +1301,10 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group/{{Id}} DELETE WpsId='{0}',Id='{1}'", request.WpsId, request.Id));
+                context.LogInfo(this,string.Format("/service/wps/{{WpsIdentifier}}/group/{{Id}} DELETE WpsIdentifier='{0}',Id='{1}'", request.WpsIdentifier, request.Id));
 
-                //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM service_perm WHERE id_service={0} AND id_grp={1};",request.WpsId, request.Id);
-                context.Execute(sql);
+                var service = (WpsProcessOffering)Service.FromIdentifier(context, request.WpsIdentifier);
+                service.RevokePermissionsFromGroup(request.Id);
 
                 context.Close();
             } catch (Exception e) {
@@ -1118,9 +1325,11 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{Id}} GET Id='{0}'", request.Id));
-                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id);
+                context.LogInfo(this, string.Format("/service/wps GET Identifier='{0}'", request.Identifier));
+
+                WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
                 result = new WebServiceTep(context, wps);
+
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
@@ -1168,15 +1377,13 @@ namespace Terradue.Tep.WebServer.Services {
                 var domain = user.GetPrivateDomain();
 
                 EntityList<WpsProvider> providers = new EntityList<WpsProvider>(context);
-                providers.SetFilter("DomainId", domain.Id);
-                providers.SetFilter("AutoSync", true);
                 providers.Load();
 
                 foreach(var provider in providers){
-                    if (provider.AutoSync && provider.DomainId == domain.Id) {
+                    if (provider.IsUserDeveloper(user.Id)) {
                         try {
                             provider.CanCache = false;
-                            provider.UpdateProcessOfferings(true, user, true);
+                            provider.UpdateProcessOfferings(true, user, domain, true);
                             context.WriteInfo(string.Format("CurrentUserWpsServiceSyncRequestTep -- synchro done for WPS {0}", provider.Name));
                         } catch (Exception e) {
                             context.WriteError(string.Format("CurrentUserWpsServiceSyncRequestTep -- {0} - {1}", e.Message, e.StackTrace));
@@ -1192,6 +1399,105 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return new WebResponseBool(true);
         }
+
+        public object Get(WpsProviderSyncForUserRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/cr/wps/{{Identifier}}/sync GET, Identifier='{1}', Username='{0}'", request.Username, request.Identifier));
+
+                var provider = (Terradue.Portal.WpsProvider)ComputingResource.FromIdentifier(context, request.Identifier);
+                var user = UserTep.FromIdentifier(context, request.Username);
+                var domain = user.GetPrivateDomain();
+
+                if (!provider.IsUserDeveloper(user.Id)) throw new Exception("User is not set as developer for the provider " + provider.Name);
+
+                try {
+                    provider.CanCache = false;
+                    provider.UpdateProcessOfferings(true, user, domain, true);
+                    context.WriteInfo(string.Format("WpsProviderSyncForUserRequestTep -- synchro done for WPS {0} and user {1}", provider.Name, request.Username));
+                } catch (Exception e) {
+                    context.WriteError(string.Format("WpsProviderSyncForUserRequestTep -- {0} - {1}", e.Message, e.StackTrace));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        public object Get(WpsServiceAllTagsRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<string> tags = new List<string>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/tags GET"));
+
+                var alltags = context.GetQueryStringValues("SELECT tags FROM service;");
+
+                foreach(var tag in alltags) {
+                    var stags = tag.Split(",".ToCharArray());
+                    foreach(var st in stags) {
+                        if (!tags.Contains(st)) tags.Add(st);
+                    }
+                }
+                tags.Sort();
+                
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return tags;
+        }
+
+        public object Get(WpsServiceAllVersionsRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<string> versions = new List<string>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/versions GET"));
+
+                var allversions = context.GetQueryStringValues("SELECT version FROM service;");
+
+                foreach (var version in allversions) {
+                    if (!versions.Contains(version))
+                        versions.Add(version);
+                }
+                versions.Sort();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return versions;
+        }
+
+        public object Put(WpsServiceUpdateAvailabilityRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/available GET, identifier='{0}'", request.Identifier));
+
+                var wps = Service.FromIdentifier(context, request.Identifier);
+                wps.Available = !wps.Available;
+                wps.Store();
+                
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+                
     }
 
 }

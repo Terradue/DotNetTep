@@ -31,7 +31,7 @@ namespace Terradue.Tep {
                                 }
                             }
                             provider.CanCache = false;
-                            provider.UpdateProcessOfferings(true, user, true);
+                            provider.UpdateProcessOfferings(true, user, null, true);
                             context.WriteInfo(string.Format("UpdateWpsProviders -- Auto synchro done for WPS {0}", provider.Name));
                         } catch (Exception e) {
                             context.WriteError(string.Format("UpdateWpsProviders -- {0} - {1}", e.Message, e.StackTrace));

@@ -63,6 +63,9 @@ namespace Terradue.Tep {
         [EntityDataField("params")]
         public string parameters { get; protected set; }
 
+        [EntityDataField("app_identifier")]
+        public string AppIdentifier { get; set; }
+
         [EntityDataField("access_key")]
         public string accesskey { get; protected set; }
         public string AccessKey {
@@ -330,6 +333,8 @@ namespace Terradue.Tep {
             newjob.UserId = context.UserId;
             newjob.Identifier = Guid.NewGuid().ToString();
             newjob.StatusLocation = job.StatusLocation;
+            newjob.OwsUrl = job.OwsUrl;
+            newjob.AppIdentifier = job.AppIdentifier;
             newjob.Status = job.Status;
             newjob.Parameters = job.Parameters;
             newjob.EndTime = job.EndTime;
@@ -1103,7 +1108,7 @@ namespace Terradue.Tep {
 
 
         #region IEntitySearchable implementation
-        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+        public override object GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
@@ -1134,6 +1139,8 @@ namespace Terradue.Tep {
                         }
                     }
                     return new KeyValuePair<string, string>();
+                case "appId":
+                    return new KeyValuePair<string, string>("AppIdentifier", value);
                 default:
                     return base.GetFilterForParameter(parameter, value);
             }
@@ -1145,9 +1152,10 @@ namespace Terradue.Tep {
 
         #region IAtomizable implementation
 
-        public new NameValueCollection GetOpenSearchParameters() {
+        public override NameValueCollection GetOpenSearchParameters() {
             NameValueCollection nvc = base.GetOpenSearchParameters();
             nvc.Add("basic", "{t2:basic?}");
+            nvc.Add("appId", "{t2:appId?}");
             return nvc;
         }
 
