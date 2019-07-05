@@ -12,10 +12,10 @@ namespace Terradue.Tep.WebServer {
         public System.IO.Stream RequestStream { get; set; }
     }
 
-    [Route("/service/wps/{Id}", "GET", Summary = "GET a WPS service", Notes = "")]
+    [Route("/service/wps/{Identifier}", "GET", Summary = "GET a WPS service", Notes = "")]
     public class WpsServiceGetRequestTep : IReturn<WebServiceTep> {
-        [ApiMember(Name = "Id", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int Id { get; set; }
+        [ApiMember(Name = "Identifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string Identifier { get; set; }
     }
 
     [Route("/service/wps", "PUT", Summary = "PUT update service", Notes = "")]
@@ -41,22 +41,22 @@ namespace Terradue.Tep.WebServer {
         public string Identifier { get; set; }
     }
 
-    [Route("/service/wps/{wpsId}/group", "GET", Summary = "GET list of groups that can access a service", Notes = "")]
+    [Route("/service/wps/{wpsIdentifier}/group", "GET", Summary = "GET list of groups that can access a service", Notes = "")]
     public class WPSServiceGetGroupsRequestTep : IReturn<List<WebGroup>> {
-        [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int WpsId { get; set; }
+        [ApiMember(Name = "wpsIdentifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{wpsId}/group", "POST", Summary = "POST group to service", Notes = "")]
+    [Route("/service/wps/{wpsIdentifier}/group", "POST", Summary = "POST group to service", Notes = "")]
     public class WpsServiceAddGroupRequestTep : WebGroup, IReturn<List<WebGroup>> {
-        [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int WpsId { get; set; }
+        [ApiMember(Name = "wpsIdentifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
     }
 
-    [Route("/service/wps/{wpsId}/group/{Id}", "DELETE", Summary = "DELETE group to service", Notes = "")]
+    [Route("/service/wps/{wpsIdentifier}/group/{Id}", "DELETE", Summary = "DELETE group to service", Notes = "")]
     public class WpsServiceDeleteGroupRequestTep : IReturn<List<WebGroup>> {
-        [ApiMember(Name = "wpsId", Description = "id of the service", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int WpsId { get; set; }
+        [ApiMember(Name = "wpsIdentifier", Description = "Service id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
 
         [ApiMember(Name = "Id", Description = "id of the group", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Id { get; set; }

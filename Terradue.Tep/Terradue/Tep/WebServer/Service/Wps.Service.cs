@@ -852,11 +852,11 @@ namespace Terradue.Tep.WebServer.Services {
             bool result = false;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps DELETE {0}='{1}'", request.Id == 0 ? "Identifier" : "Id", request.Id == 0 ? request.Identifier : request.Id.ToString()));
+                context.LogInfo(this,string.Format("/service/wps DELETE Identifier='{0}'", request.Identifier));
 
                 WpsProcessOffering wps = null;
                 try {
-                    wps = request.Id == 0 ? (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, request.Identifier) : (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id);
+                    wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
                     wps.Delete();
                 } catch (Exception e) {
                     throw e;
@@ -979,9 +979,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/service/wps PUT Identifier='{0}'", request.Identifier));
 
-                WpsProcessOffering wps = (request.Id != 0 ?
-                       (WpsProcessOffering)Service.FromId(context, request.Id) :
-                        (!string.IsNullOrEmpty(request.Identifier) ? (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier) : null));
+                WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
 
                 if(request.Access != null){
                     switch(request.Access){
@@ -1237,9 +1235,9 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group GET WpsId='{0}'", request.WpsId));
+                context.LogInfo(this,string.Format("/service/wps/{{wpsIdentifier}}/group GET WpsIdentifier='{0}'", request.WpsIdentifier));
 
-                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
+                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, request.WpsIdentifier);
 
                 var gids = wps.GetAuthorizedGroupIds();
                 List<int> ids = gids != null ? gids.ToList() : new List<int>();
@@ -1269,8 +1267,8 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group POST WpsId='{0}'", request.WpsId));
-                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.WpsId);
+                context.LogInfo(this,string.Format("/service/wps/{{WpsIdentifier}}/group POST WpsIdentifier='{0}'", request.WpsIdentifier));
+                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, request.WpsIdentifier);
 
                 var gids = wps.GetAuthorizedGroupIds();
                 List<int> ids = gids != null ? gids.ToList() : new List<int>();
@@ -1303,11 +1301,10 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{wpsId}}/group/{{Id}} DELETE WpsId='{0}',Id='{1}'", request.WpsId, request.Id));
+                context.LogInfo(this,string.Format("/service/wps/{{WpsIdentifier}}/group/{{Id}} DELETE WpsIdentifier='{0}',Id='{1}'", request.WpsIdentifier, request.Id));
 
-                //TODO: replace once http://project.terradue.com/issues/13954 is resolved
-                string sql = String.Format("DELETE FROM service_perm WHERE id_service={0} AND id_grp={1};",request.WpsId, request.Id);
-                context.Execute(sql);
+                var service = (WpsProcessOffering)Service.FromIdentifier(context, request.WpsIdentifier);
+                service.RevokePermissionsFromGroup(request.Id);
 
                 context.Close();
             } catch (Exception e) {
@@ -1328,9 +1325,11 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/service/wps/{{Id}} GET Id='{0}'", request.Id));
-                WpsProcessOffering wps = (WpsProcessOffering)WpsProcessOffering.FromId(context, request.Id);
+                context.LogInfo(this, string.Format("/service/wps GET Identifier='{0}'", request.Identifier));
+
+                WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
                 result = new WebServiceTep(context, wps);
+
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message);
