@@ -88,7 +88,7 @@ namespace Terradue.Tep {
         }
 
         #region IEntitySearchable implementation
-        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+        public override object GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "uid":
                     if (!string.IsNullOrEmpty(value))

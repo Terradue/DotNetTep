@@ -133,7 +133,7 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public override KeyValuePair<string, string> GetFilterForParameter(string parameter, string value) {
+        public override object GetFilterForParameter(string parameter, string value) {
             switch (parameter) {
                 case "correlatedTo":
                     var settings = MasterCatalogue.OpenSearchFactorySettings;

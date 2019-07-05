@@ -109,6 +109,12 @@ namespace Terradue.Tep {
                                 entity = list;
                             }
 
+                            if (match.Groups[1].Value == "/apps") {
+                                EntityList<ThematicApplicationCached> list = new EntityList<ThematicApplicationCached>(context);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+                                entity = list;
+                            }
+
                         }
 
                     }
