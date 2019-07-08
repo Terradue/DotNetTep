@@ -75,7 +75,9 @@ namespace Terradue.Tep.WebServer.Services {
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            var qs = new NameValueCollection(httpRequest.QueryString);
+            if(string.IsNullOrEmpty(qs["available"])) qs.Set("available","true");
+			Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
 
             //Create EntityList from DB
             EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
@@ -89,12 +91,12 @@ namespace Terradue.Tep.WebServer.Services {
             wpsProcesses.Identifier = "service/wps";
             var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
-            if (!string.IsNullOrEmpty(httpRequest.QueryString["cache"]) && httpRequest.QueryString["cache"] == "false")
+            if (!string.IsNullOrEmpty(qs["cache"]) && qs["cache"] == "false")
                 MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
 
             var settings = MasterCatalogue.OpenSearchFactorySettings;
             MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
-            IOpenSearchResultCollection osr = ose.Query(multiOSE, httpRequest.QueryString, responseType);
+            IOpenSearchResultCollection osr = ose.Query(multiOSE, qs, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
 
