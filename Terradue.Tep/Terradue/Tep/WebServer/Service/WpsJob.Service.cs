@@ -272,6 +272,7 @@ namespace Terradue.Tep.WebServer.Services {
             }catch(DuplicateEntityIdentifierException){
                 job = WpsJob.FromIdentifier(context, request.Identifier);
                 job.Name = request.Name;
+                job.AppIdentifier = request.AppIdentifier;
                 job.Store();
             }catch(Exception e){
                 throw e;
