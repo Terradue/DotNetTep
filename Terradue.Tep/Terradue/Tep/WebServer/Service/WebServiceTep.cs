@@ -82,13 +82,16 @@ namespace Terradue.Tep.WebServer {
 
     [Route("/service/wps/{OldIdentifier}/replace", "PUT", Summary = "PUT a WPS services in place of another", Notes = "")]
     public class ReplaceWPSService : WebServiceTep, IReturn<WebServiceTep> {
-        [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        [ApiMember(Name = "OldIdentifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string OldIdentifier { get; set; }
+
+        [ApiMember(Name = "WpsIdentifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
 
         [ApiMember(Name = "deleteold", Description = "Indicates if old WPS service should be removed", ParameterType = "query", DataType = "bool", IsRequired = true)]
         public bool DeleteOld { get; set; }
     }
-
+    
     [Route("/cr/wps/{Identifier}/devusers", "GET", Summary = "GET a WPS provider dev users", Notes = "")]
     public class GetWpsProviderDevUsers : IReturn<List<WebUser>> {
         [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
