@@ -1046,7 +1046,12 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsProcessOffering wpsOld = (WpsProcessOffering)Service.FromIdentifier(context, request.OldIdentifier);
                 WpsProcessOffering wpsNew = (WpsProcessOffering)request.ToEntity(context, new WpsProcessOffering(context));
-                wpsNew.Provider = wpsOld.Provider;
+                if (!string.IsNullOrEmpty(request.WpsIdentifier)) {
+                    var provider = (WpsProvider)ComputingResource.FromIdentifier(context, request.WpsIdentifier);
+                    wpsNew.Provider = provider;
+                } else {
+                    wpsNew.Provider = wpsOld.Provider;
+                }
                 wpsNew.DomainId = wpsOld.DomainId;
                 wpsNew.Tags = wpsOld.Tags;
                 wpsNew.IconUrl = wpsOld.IconUrl;
