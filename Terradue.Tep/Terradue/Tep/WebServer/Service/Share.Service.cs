@@ -202,16 +202,6 @@ namespace Terradue.Tep.WebServer.Services {
 							context.LogError(this, "Unable to share on STORE : " + e.Message);
 						}
 
-                        //unpublish on community index
-                        try {
-                            if (string.IsNullOrEmpty(job.Identifier)) throw new Exception("Invalid job identifier");
-                            var index = context.GetConfigValue("catalog-communityIndex");
-                            var username = context.GetConfigValue("catalog-admin-username");
-                            var apikey = context.GetConfigValue("catalog-admin-apikey");
-                            CatalogueFactory.DeleteEntryFromIndex(context, index, job.Identifier, username, apikey);
-                        } catch (Exception e) {
-                            context.LogError(this, "Unable to publish on catalog community index : " + e.Message);
-                        }
                     }
                 }
             }
