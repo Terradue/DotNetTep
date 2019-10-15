@@ -382,7 +382,43 @@ namespace Terradue.Tep.WebServer.Services {
                 apps.Load();
 
                 foreach(var item in apps.GetItemsAsList()) {
-                    result.Add(new WebThematicAppTep(item, context));
+                    var app = new WebThematicAppTep(item, context);
+                    if (request.services && app.HasServices) {
+                        EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering>(context);
+                        if (!string.IsNullOrEmpty(app.WpsServiceDomain)) {
+                            try {
+                                var dm = Domain.FromIdentifier(context, app.WpsServiceDomain);
+                                services.SetFilter("DomainId", dm.Id.ToString());
+                            }catch(Exception e) {
+                                services.SetFilter("DomainId", "0");
+                            }
+                        }
+                        if (app.WpsServiceTags != null && app.WpsServiceTags.Count > 0) {
+                            IEnumerable<IEnumerable<string>> permutations = WpsProcessOfferingTep.GetPermutations(app.WpsServiceTags, app.WpsServiceTags.Count());
+                            var r1 = permutations.Select(subset => string.Join("*", subset.Select(t => t).ToArray())).ToArray();
+                            var tagsresult = string.Join(",", r1.Select(t => "*" + t + "*"));
+                            services.SetFilter("Tags", tagsresult);
+                        }
+                        services.SetFilter("Available", true);
+                        services.Load();
+                        var appServices = new List<WpsServiceOverview>();
+                        foreach (var s in services.GetItemsAsList()) {
+                            appServices.Add(new WpsServiceOverview {
+                                Identifier = s.Identifier,
+                                App = new AppOverview {
+                                    Icon = app.Icon ?? "",
+                                    Title = app.Title,
+                                    Uid = app.Identifier
+                                },
+                                Name = s.Name,
+                                Description = s.Description,
+                                Version = s.Version,
+                                Icon = s.IconUrl
+                            });
+                        }
+                        app.Services = appServices;
+                    }
+                    result.Add(app);
                 }
 
                 context.Close();

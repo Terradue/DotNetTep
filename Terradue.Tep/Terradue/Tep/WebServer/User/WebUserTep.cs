@@ -136,9 +136,9 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "RegistrationDate", Description = "User registration date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
 		public DateTime RegistrationDate { get; set; }
         
-        [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<List<string>>", IsRequired = false)]
+        [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<WebCommunityRoles>", IsRequired = false)]
         public List<WebCommunityRoles> Roles { get; set; }
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
         /// </summary>

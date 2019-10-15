@@ -11,7 +11,10 @@ using Terradue.WebService.Model;
 namespace Terradue.Tep.WebServer {
 
     [Route("/apps", "GET", Summary = "GET a list of thematic apps", Notes = "")]
-    public class ThematicAppGetRequestTep : IReturn<List<WebThematicAppTep>>{}
+    public class ThematicAppGetRequestTep : IReturn<List<WebThematicAppTep>>{
+        [ApiMember(Name = "services", Description = "add services in the response", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public bool services { get; set; }
+    }
 
     [Route("/apps/description", "GET", Summary = "GET OSDD of thematic apps", Notes = "")]
     public class ThematicAppDescriptionRequestTep : IReturn<List<HttpResult>>{
@@ -85,11 +88,20 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "selfUrl", Description = "self search url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string SelfUrl { get; set; }
 
+        [ApiMember(Name = "Domain", Description = "Domain of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Domain { get; set; }
+
+        [ApiMember(Name = "HasServices", Description = "does the app have services", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool HasServices { get; set; }
+
         [ApiMember(Name = "wpsServiceDomain", Description = "wpsServiceDomain of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsServiceDomain { get; set; }
 
         [ApiMember(Name = "wpsServiceTags", Description = "wpsServiceTags of the app", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
         public List<string> WpsServiceTags { get; set; }
+
+        [ApiMember(Name = "Services", Description = "Services of the app", ParameterType = "query", DataType = "List<WpsServiceOverview>", IsRequired = true)]
+        public List<WpsServiceOverview> Services { get; set; }
 
         public WebThematicAppTep() : base() {}
 
@@ -100,6 +112,8 @@ namespace Terradue.Tep.WebServer {
         public WebThematicAppTep(ThematicApplicationCached app, IfyContext context) {
 
             Id = app.Id;
+
+            if (app.Domain != null) Domain = app.Domain.Identifier;
 
             var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
             if (feed != null) {
@@ -114,6 +128,8 @@ namespace Terradue.Tep.WebServer {
 
                 SelfUrl = context.BaseUrl + "/apps/search?cache=true&uid=" + this.Identifier;
 
+                HasServices = false;
+
                 foreach (var offering in entry.Offerings) {
                     switch (offering.Code) {
                         case "http://www.opengis.net/spec/owc/1.0/req/atom/wps":
@@ -122,6 +138,7 @@ namespace Terradue.Tep.WebServer {
                                     var href = operation.Href;
                                     switch (operation.Code) {
                                         case "ListProcess":
+                                            HasServices = true;
                                             var uri = new Uri(href);
                                             var nvc = HttpUtility.ParseQueryString(uri.Query);
                                             foreach (var key in nvc.AllKeys) {
