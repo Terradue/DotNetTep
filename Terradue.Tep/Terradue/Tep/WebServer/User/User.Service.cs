@@ -99,8 +99,8 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/sso/{{Id}} GET Id='{0}'", request.Id));
-                UserTep user = UserTep.FromId(context, request.Id);
+                context.LogInfo(this,string.Format("/user/sso/{{Id}} GET Id='{0}'", request.Identifier));
+                UserTep user = UserTep.FromIdentifier(context, request.Identifier);
                 //user.FindTerradueCloudUsername();
                 result = new WebUserTep(context, user);
                 context.Close();
@@ -117,8 +117,8 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/sso PUT Id='{0}',T2Username='{1}'", request.Id, request.T2Username));
-                UserTep user = UserTep.FromId(context, request.Id);
+                context.LogInfo(this,string.Format("/user/sso PUT Identifier='{0}',T2Username='{1}'", request.Identifier, request.T2Username));
+                UserTep user = UserTep.FromIdentifier(context, request.Identifier);
                 user.TerradueCloudUsername = request.T2Username;
                 user.StoreCloudUsername();
                 result = new WebUserTep(context, user);
@@ -254,10 +254,12 @@ namespace Terradue.Tep.WebServer.Services {
             WebUserTep result;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user PUT Id='{0}'", request.Id));
-				UserTep user = (request.Id == 0 ? null : UserTep.FromId(context, request.Id));
-
+                context.LogInfo(this,string.Format("/user PUT Id='{0}'", request.Id > 0 ? request.Id + "" : request.Identifier));
+				UserTep user = (request.Id == 0 ? (!string.IsNullOrEmpty(request.Identifier) ? UserTep.FromIdentifier(context, request.Identifier) : null) : UserTep.FromId(context, request.Id));
+                if (context.UserId != user.Id && context.AccessLevel != EntityAccessLevel.Administrator) throw new Exception("Action not allowed");
+                var level = user.Level;
                 user = request.ToEntity(context, user);
+                user.Level = level;//we can only change the level from the dedicated request (admin only)
                 user.Store();
                 context.LogDebug(this,string.Format("User '{0}' has been updated", user.Username));
                 result = new WebUserTep(context, user);
@@ -275,12 +277,33 @@ namespace Terradue.Tep.WebServer.Services {
             WebUserTep result;
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/level PUT Id='{0}',Level='{1}'", request.Id, request.Level));
-                UserTep user = (request.Id == 0 ? null : UserTep.FromId(context, request.Id));
+                context.LogInfo(this,string.Format("/user/level PUT Id='{0}',Level='{1}'", request.Id > 0 ? request.Id + "" : request.Identifier, request.Level));
+                UserTep user = (request.Id == 0 ? (!string.IsNullOrEmpty(request.Identifier) ? UserTep.FromIdentifier(context, request.Identifier) : null) : UserTep.FromId(context, request.Id));
 
                 user.Level = request.Level;
                 user.Store();
                 context.LogDebug(this,string.Format("Level of user '{0}' has been updated to Level {1}", user.Username, request.Level));
+                result = new WebUserTep(context, user);
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(UserUpdateStatusRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebUserTep result;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/status PUT Id='{0}',Status='{1}'", request.Id > 0 ? request.Id + "" : request.Identifier, request.AccountStatus));
+                UserTep user = (request.Id == 0 ? (!string.IsNullOrEmpty(request.Identifier) ? UserTep.FromIdentifier(context, request.Identifier) : null) : UserTep.FromId(context, request.Id));
+
+                user.AccountStatus = request.AccountStatus;
+                user.Store();
+                context.LogDebug(this, string.Format("Status of user '{0}' has been updated to {1}", user.Username, request.AccountStatus));
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {
@@ -436,7 +459,8 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{id}}/usage GET id='{0}'", request.Id));
-                UserUsage usu = new UserUsage(context, request.Id);
+                var user = (request.Id != 0 ? User.FromId(context, request.Id) : User.FromUsername(context, request.Identifier));
+                UserUsage usu = new UserUsage(context, user.Id);
 
                 //global usage
                 result.Add(new KeyValuePair<string, string>("overall","" + usu.GetScore()));

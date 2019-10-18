@@ -59,8 +59,8 @@ namespace Terradue.Tep.WebServer {
     [Route("/data/package/default/{userId}", "DELETE", Summary = "DELETE item to default datapackage", Notes = "datapackage item is contained in the body")]
     public class DataPackageClearDefaultRequestTep : IReturn<WebDataPackage>
     {
-        [ApiMember(Name = "userId", Description = "user id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int userId { get; set; }
+        [ApiMember(Name = "userId", Description = "user id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string userId { get; set; }
     }
 
     [Route("/data/package/default/item", "DELETE", Summary = "DELETE item to default datapackage", Notes = "datapackage item is contained in the body")]

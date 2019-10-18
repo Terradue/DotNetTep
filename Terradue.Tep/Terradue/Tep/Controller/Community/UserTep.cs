@@ -885,12 +885,44 @@ namespace Terradue.Tep {
             string usrUri = basepath.Uri.AbsoluteUri;
             string usrName = (!String.IsNullOrEmpty(FirstName) && !String.IsNullOrEmpty(LastName) ? FirstName + " " + LastName : Username);
             SyndicationPerson author = new SyndicationPerson(context.UserLevel == UserLevel.Administrator ? Email : null, usrName, usrUri);
+            var icon = this.GetAvatar();
+            if (!string.IsNullOrEmpty(icon)) author.ElementExtensions.Add(new SyndicationElementExtension("icon", "http://purl.org/dc/elements/1.1/", icon));
+            if (!string.IsNullOrEmpty(FirstName)) author.ElementExtensions.Add(new SyndicationElementExtension("firstname", "http://purl.org/dc/elements/1.1/", FirstName));
+            if (!string.IsNullOrEmpty(LastName)) author.ElementExtensions.Add(new SyndicationElementExtension("lastname", "http://purl.org/dc/elements/1.1/", LastName));
             author.ElementExtensions.Add(new SyndicationElementExtension("identifier", "http://purl.org/dc/elements/1.1/", Username));
-
             result.Authors.Add(author);
 
             if (context.AccessLevel == EntityAccessLevel.Administrator || context.UserId == this.Id) {
                 result.Categories.Add(new SyndicationCategory("balance", null, GetAccountingBalance().ToString()));
+                result.ElementExtensions.Add("level", "https://www.terradue.com", this.Level);
+                result.ElementExtensions.Add("status", "https://www.terradue.com", this.AccountStatus);
+                if (string.IsNullOrEmpty(this.TerradueCloudUsername)) LoadCloudUsername();
+                if (!string.IsNullOrEmpty(this.TerradueCloudUsername)) result.ElementExtensions.Add("t2username", "https://www.terradue.com", this.TerradueCloudUsername);
+
+                var dpdefault = DataPackage.GetTemporaryForUser(context, this);
+                var defaultDPItems = dpdefault.Items.Count;
+                result.ElementExtensions.Add("defaultDPItems", "https://www.terradue.com", defaultDPItems);
+
+                var communitiesRoles = new List<WebCommunityRoles>();
+                var communities = this.GetUserCommunities();
+                foreach (var community in communities) {
+                    try {
+                        var roles = this.GetUserRoles(community);
+                        if (roles.Count > 0) {
+                            var rolesS = new List<WebUserRole>();
+                            foreach (var r in roles) rolesS.Add(new WebUserRole { Name = r.Name, Description = r.Description });
+                            communitiesRoles.Add(new WebCommunityRoles {
+                                Community = community.Name,
+                                CommunityIdentifier = community.Identifier,
+                                Link = string.Format("/#!communities/details/{0}", community.Identifier),
+                                Roles = rolesS
+                            });
+                        }
+                    } catch (Exception e) {
+                        context.LogError(this, e.Message);
+                    }
+                }
+                result.ElementExtensions.Add("roles", "https://www.terradue.com", communitiesRoles);
             }
 
             result.Links.Add(new SyndicationLink(id, "self", this.Identifier, "application/atom+xml", 0));
@@ -987,6 +1019,30 @@ namespace Terradue.Tep {
         public string Username { get; set; }
         [DataMember]
         public string ApiKey { get; set; }
+    }
+
+    [DataContract]
+    public class WebCommunityRoles {
+        [DataMember]
+        public string Community { get; set; }
+
+        [DataMember]
+        public string CommunityIdentifier { get; set; }
+
+        [DataMember]
+        public string Link { get; set; }
+
+        [DataMember]
+        public List<WebUserRole> Roles { get; set; }
+    }
+
+    [DataContract]
+    public class WebUserRole {
+        [DataMember]
+        public string Name { get; set; }
+
+        [DataMember]
+        public string Description { get; set; }
     }
 }
 
