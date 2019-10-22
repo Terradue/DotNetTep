@@ -43,14 +43,14 @@ namespace Terradue.Tep.WebServer {
 
     [Route("/user/sso/{id}", "GET", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserGetSSORequestTep : IReturn<WebUserTep> {
-        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int Id { get; set; }
+        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
     }
 
     [Route("/user/sso", "PUT", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserUpdateSSORequestTep : IReturn<WebUserTep> {
-        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int Id { get; set; }
+        [ApiMember(Name = "identifier", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public string Identifier { get; set; }
 
         [ApiMember(Name = "T2Username", Description = "Username", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string T2Username { get; set; }
@@ -62,17 +62,21 @@ namespace Terradue.Tep.WebServer {
         public string Password { get; set; }
     }
 
-//    [Route("/user/current/sso", "POST", Summary = "GET the current user", Notes = "User is the current user")]
-//    public class UserPostCurrentSSORequestTep : IReturn<WebUserTep> {
-//        [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
-//        public string T2Username { get; set; }
-//    }
+    //    [Route("/user/current/sso", "POST", Summary = "GET the current user", Notes = "User is the current user")]
+    //    public class UserPostCurrentSSORequestTep : IReturn<WebUserTep> {
+    //        [ApiMember(Name = "t2username", Description = "User name in T2 portal", ParameterType = "query", DataType = "string", IsRequired = false)]
+    //        public string T2Username { get; set; }
+    //    }
 
 
-    [Route("/user/{id}/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
+    [Route("/user/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
+    [Route("/user/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
     public class UserGetUsageRequestTep : IReturn<List<KeyValuePair<string, string>>> {
         [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Id { get; set; }
+
+        [ApiMember(Name = "identifier", Description = "User identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
     }
 
     [Route("/user", "PUT", Summary = "Update user", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
@@ -80,6 +84,9 @@ namespace Terradue.Tep.WebServer {
 
     [Route("/user/level", "PUT", Summary = "Update user level", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
     public class UserUpdateLevelRequestTep : WebUserTep, IReturn<WebUserTep> {}
+
+    [Route("/user/status", "PUT", Summary = "Update user status", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
+    public class UserUpdateStatusRequestTep : WebUserTep, IReturn<WebUserTep> { }
 
     [Route("/user", "POST", Summary = "Create a new user", Notes = "User is contained in the POST data.")]
     public class UserCreateRequestTep : WebUserTep, IReturn<WebUserTep> {}
@@ -96,8 +103,8 @@ namespace Terradue.Tep.WebServer {
     [Route("/user/{usrId}/group", "GET", Summary = "GET list of groups associated to a user", Notes = "")]
     public class UserGetGroupsRequestTep : IReturn<List<WebGroup>>
     {
-        [ApiMember(Name = "usrId", Description = "id of the user", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int UsrId { get; set; }
+        [ApiMember(Name = "usrId", Description = "id of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string UsrId { get; set; }
     }
 
     [Route("/user/csv", "GET", Summary = "GET user list as csv", Notes = "")]
@@ -136,9 +143,9 @@ namespace Terradue.Tep.WebServer {
 		[ApiMember(Name = "RegistrationDate", Description = "User registration date", ParameterType = "query", DataType = "DateTime", IsRequired = false)]
 		public DateTime RegistrationDate { get; set; }
         
-        [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<List<string>>", IsRequired = false)]
+        [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<WebCommunityRoles>", IsRequired = false)]
         public List<WebCommunityRoles> Roles { get; set; }
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
         /// </summary>

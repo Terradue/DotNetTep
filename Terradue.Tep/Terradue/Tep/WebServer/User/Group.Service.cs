@@ -243,7 +243,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/{{usrId}}/group PUT usrId='{0}'", request.UsrId));
 
-                UserTep user = UserTep.FromId(context, request.UsrId);
+                UserTep user = UserTep.FromIdentifier(context, request.UsrId);
                 List<int> ids = user.GetGroups();
 
                 List<Group> groups = new List<Group>();

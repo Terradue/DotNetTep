@@ -54,7 +54,11 @@ namespace Terradue.Tep.WebServer.Services {
                         analytics = new Analytics(context, Group.FromIdentifier(context, request.Identifier));
                         analytics.Load(request.startdate, request.enddate);
                         break;
-    				case "all":
+                    case "service":
+                        analytics = new Analytics(context, Service.FromIdentifier(context, request.Identifier));
+                        analytics.Load(request.startdate, request.enddate);
+                        break;
+                    case "all":
                         analytics = new Analytics(context);
                         analytics.Load(request.startdate, request.enddate);
                         break;
