@@ -304,10 +304,27 @@ namespace Terradue.Tep {
 
             //delete previous roles
             var roles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
-            foreach (var r in roles) r.RevokeFromUser(user, this);
+            bool ispending = false;
+            foreach (var r in roles) {
+                if (r.Identifier == RoleTep.PENDING) ispending = true;
+                r.RevokeFromUser(user, this);
+            }
 
             //add new role
             role.GrantToUser(user, this);
+
+            if (ispending) {
+                string emailTo = user.Email;
+                string emailFrom = context.GetConfigValue("MailSenderAddress");
+                string subject = context.GetConfigValue("CommunityJoinConfirmationEmailSubject");
+                subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                subject = subject.Replace("$(COMMUNITY)", this.Name);
+                string body = context.GetConfigValue("CommunityJoinConfirmationEmailBody");
+                body = body.Replace("$(COMMUNITY)", this.Name);
+                body = body.Replace("$(USERNAME)", user.Username);
+                body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
+                context.SendMail(emailFrom, emailTo, subject, body);
+            }
         }
 
         /// <summary>
