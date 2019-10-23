@@ -681,7 +681,7 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("visibility", null, ispublic ? "public" : (isprivate ? "private" : "hidden")));
             result.Categories.Add(new SyndicationCategory("defaultRole", null, DefaultRoleName));
             result.Categories.Add(new SyndicationCategory("defaultRoleDescription", null, DefaultRoleDescription));
-            if (canusermanage) result.Categories.Add(new SyndicationCategory("emailNotification", null, EmailNotification ? "true" : "false"));
+            result.Categories.Add(new SyndicationCategory("emailNotification", null, EmailNotification ? "true" : "false"));
             result.Categories.Add(new SyndicationCategory("enableJoinRequest", null, EnableJoinRequest ? "true" : "false"));
 
             //overview
