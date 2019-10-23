@@ -16,6 +16,8 @@ namespace Terradue.Tep
         public string Username { get; set; }
         [ApiMember (Name = "role", Description = "Role of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Role { get; set; }
+        [ApiMember(Name = "objectives", Description = "Objectives of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Objectives { get; set; }
     }
 
     [Route ("/community/user", "PUT", Summary = "PUT the user into the community", Notes = "")]
