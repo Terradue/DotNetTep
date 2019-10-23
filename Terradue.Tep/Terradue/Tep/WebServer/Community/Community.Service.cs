@@ -44,7 +44,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 if (string.IsNullOrEmpty(request.Username)) {
                     //case user auto Join 
-                    domain.TryJoinCurrentUser();
+                    domain.TryJoinCurrentUser(request.Objectives);
                 } else {
                     //case owner add user with role
                     domain.SetUserRole(user, role);

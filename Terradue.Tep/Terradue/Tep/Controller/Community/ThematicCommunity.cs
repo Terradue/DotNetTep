@@ -313,9 +313,9 @@ namespace Terradue.Tep {
         /// <summary>
         /// Joins the current user.
         /// </summary>
-        public void TryJoinCurrentUser(User user = null) {
+        public void TryJoinCurrentUser(string objectives = "") {
 
-            if (user == null) user = User.FromId(context, context.UserId);
+            var user = User.FromId(context, context.UserId);
 
             if (this.Kind == DomainKind.Public) {
                 //public community -> user can always join
@@ -336,7 +336,10 @@ namespace Terradue.Tep {
                             subject = subject.Replace("$(COMMUNITY)", this.Name);
                             string body = context.GetConfigValue("CommunityJoinEmailBody");
                             body = body.Replace("$(COMMUNITY)", this.Name);
-                            body = body.Replace("$(LINK)", context.GetConfigValue("CommunityPageUrl"));
+                            body = body.Replace("$(USERNAME)", user.Username);
+                            body = body.Replace("$(USERMAIL)", user.Email);
+                            body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
+                            body = body.Replace("$(USER_REQUEST)", objectives);
                             context.SendMail(emailFrom, owner.Email, subject, body);
                         }
                     } catch (Exception e) {
