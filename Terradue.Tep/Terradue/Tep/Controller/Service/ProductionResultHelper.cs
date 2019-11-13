@@ -242,7 +242,7 @@ namespace Terradue.Tep {
                                     var dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>>(AppSettings["DataGatewaySubstitutions"]);
                                     if (dataGatewaySubstitutions != null) {
                                         foreach (var sub in dataGatewaySubstitutions) {
-                                            if (url.Host.Equals(sub.host)) {
+                                            if (url.Host.Equals(sub.host) && url.AbsolutePath.Contains(sub.oldvalue)) {
                                                 var path = url.AbsolutePath;
                                                 path = path.Replace(sub.oldvalue, sub.substitute);
                                                 //we assume that result url is pointing to a metadata file
