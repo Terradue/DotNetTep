@@ -176,7 +176,7 @@ namespace Terradue.Tep
 
             List<DataGatewaySubstitution> dataGatewaySubstitutions = JsonSerializer.DeserializeFromString<List<DataGatewaySubstitution>> (AppSettings ["DataGatewaySubstitutions"]);
             foreach (var sub in dataGatewaySubstitutions) {
-                if (uri.Host.Equals (sub.host)) {
+                if (uri.Host.Equals(sub.host) && path.Contains(sub.oldvalue)) {
                     return path.Replace (sub.oldvalue, sub.substitute);
                 }
             }
