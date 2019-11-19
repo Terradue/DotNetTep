@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Web;
 using ServiceStack.ServiceHost;
 using Terradue.OpenSearch;
 using Terradue.Portal;
@@ -16,17 +19,17 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetDiscourseTopicsPerCategory request){
             log.InfoFormat("/discourse/c/{{catId}} GET catId='{0}',page='{1}',order='{2}'", request.category, request.page, request.order);
-            return GetDiscourseRequest(string.Format("c/{0}.json?page={1}&order={2}", request.category, request.page, request.order ?? "activity")); 
+            return GetDiscourseRequest(string.Format("c/{0}.json", request.category), request.page, request.order); 
         }
 
         public object Get(GetDiscourseLatestTopicsPerCategory request){
-            log.InfoFormat("/discourse/c/{{catId}}/l/latest GET catId='{0}'", request.category);
-            return GetDiscourseRequest(string.Format("c/{0}/l/latest.json", request.category));
+            log.InfoFormat("/discourse/c/{{catId}}/l/latest GET catId='{0}',page='{1}',order='{2}'", request.category, request.page, request.order);
+            return GetDiscourseRequest(string.Format("c/{0}/l/latest.json", request.category), request.page, request.order);
         }
 
         public object Get(GetDiscourseTopTopicsPerCategory request) {
-            log.InfoFormat("/discourse/c/{{catId}}/l/top GET catId='{0}'", request.category);
-            return GetDiscourseRequest(string.Format("c/{0}/l/top.json", request.category));
+            log.InfoFormat("/discourse/c/{{catId}}/l/top GET catId='{0}',page='{1}',order='{2}'", request.category, request.page, request.order);
+            return GetDiscourseRequest(string.Format("c/{0}/l/top.json", request.category), request.page, request.order);
         }
 
         public object Get(GetDiscourseTopic request){
@@ -39,7 +42,7 @@ namespace Terradue.Tep.WebServer.Services {
             return GetDiscourseRequest(string.Format("search.json?q={0}%20category%3A{1}", request.q, request.category));
         }
             
-        private object GetDiscourseRequest(string query){
+        private object GetDiscourseRequest(string jsonPath, string page = null, string order = null){
 
             ServicePointManager.ServerCertificateValidationCallback = delegate(
                 Object obj, System.Security.Cryptography.X509Certificates.X509Certificate certificate, System.Security.Cryptography.X509Certificates.X509Chain chain, 
@@ -52,7 +55,12 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             var discourseBaseUrl = context.GetConfigValue("discussBaseUrl");
             context.Close();
-            var discourseUrl = string.Format("{0}/{1}", discourseBaseUrl, query);
+            var urib = new UriBuilder(string.Format("{0}/{1}", discourseBaseUrl, jsonPath));
+            var nvc = new NameValueCollection();
+            nvc.Set("page", page);
+            nvc.Set("order", order);
+            urib.Query = string.Join("&", nvc.AllKeys.Where(key => !string.IsNullOrWhiteSpace(nvc[key])).Select(key => string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(nvc[key]))));
+            var discourseUrl = urib.Uri.AbsoluteUri;
             log.DebugFormat("Discourse url : {0}",discourseUrl);
             HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(discourseUrl);
             httprequest.Proxy = null;
@@ -126,12 +134,24 @@ namespace Terradue.Tep.WebServer.Services {
     public class GetDiscourseLatestTopicsPerCategory {
         [ApiMember(Name="category", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string category{ get; set; }
+
+        [ApiMember(Name="page", Description = "request", ParameterType = "query", DataType = "int", IsRequired = false)]
+        public string page { get; set; }
+
+        [ApiMember(Name="order", Description = "request", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string order{ get; set; }
     }
 
     [Route("/discourse/c/top", "GET", Summary = "", Notes = "")]
     public class GetDiscourseTopTopicsPerCategory {
         [ApiMember(Name = "category", Description = "request", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string category { get; set; }
+
+        [ApiMember(Name="page", Description = "request", ParameterType = "query", DataType = "int", IsRequired = false)]
+        public string page { get; set; }
+
+        [ApiMember(Name="order", Description = "request", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string order{ get; set; }
     }
 
     [Route("/discourse/c/search", "GET", Summary = "", Notes = "")]
@@ -149,7 +169,7 @@ namespace Terradue.Tep.WebServer.Services {
         public string category{ get; set; }
 
         [ApiMember(Name="page", Description = "request", ParameterType = "query", DataType = "int", IsRequired = false)]
-        public int page{ get; set; }
+        public string page { get; set; }
 
         [ApiMember(Name="order", Description = "request", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string order{ get; set; }
