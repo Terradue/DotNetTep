@@ -81,10 +81,10 @@
       <HintPath>..\packages\Terradue.OpenNebula.1.0.2\lib\net40\Terradue.OpenNebula.dll</HintPath>
     </Reference>
 	<Reference Include="NuGet4Mono">
-      <HintPath>..\packages\NuGet4Mono.0.7.0\lib\net45\NuGet4Mono.exe</HintPath>
+      <HintPath>..\packages\NuGet4Mono.0.8.0\lib\net45\NuGet4Mono.exe</HintPath>
     </Reference>
     <Reference Include="NuGet4Mono.Extensions">
-      <HintPath>..\packages\NuGet4Mono.Extensions.0.7.0\lib\net45\NuGet4Mono.Extensions.dll</HintPath>
+      <HintPath>..\packages\NuGet4Mono.Extensions.0.8.0\lib\net45\NuGet4Mono.Extensions.dll</HintPath>
     </Reference>
 	<Reference Include="System.Runtime.Serialization" />
     <Reference Include="GeoAPI">
@@ -118,7 +118,7 @@
       <HintPath>..\packages\NuGet.Core.2.14.0\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Ogc.OwsContext">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.1.2\lib\net45\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.2.0\lib\net45\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http.Extensions">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net45\System.Net.Http.Extensions.dll</HintPath>
@@ -143,10 +143,10 @@
       <HintPath>..\packages\Terradue.Github.1.1.0\lib\net45\Terradue.Github.dll</HintPath>
     </Reference>
     <Reference Include="HtmlAgilityPack">
-      <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
+      <HintPath>..\packages\HtmlAgilityPack.1.11.12\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.Twitter">
-      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.6.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.7.1\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.News">
       <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
@@ -158,19 +158,19 @@
       <HintPath>..\packages\Terradue.Authentication.Umsso.1.2.14\lib\net45\Terradue.Authentication.Umsso.dll</HintPath>
     </Reference>
     <Reference Include="MathNet.Numerics">
-      <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\packages\MathNet.Numerics.3.20.2\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Options">
       <HintPath>..\packages\Mono.Options.5.3.0.1\lib\net4-client\Mono.Options.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Ogc">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.2.1.1\lib\net45\Terradue.ServiceModel.Ogc.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.2.1.3\lib\net45\Terradue.ServiceModel.Ogc.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Metadata.EarthObservation">
-      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.5.6\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
+      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.6.3\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Syndication">
-      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.7\lib\net45\Terradue.ServiceModel.Syndication.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.1.0\lib\net45\Terradue.ServiceModel.Syndication.dll</HintPath>
     </Reference>
     <Reference Include="SharpKml.Core">
       <HintPath>..\packages\SharpKml.Core.4.0.0\lib\net45\SharpKml.Core.dll</HintPath>
@@ -188,29 +188,29 @@
       <HintPath>..\packages\Terradue.Authentication.Ldap.1.3.0\lib\net45\Terradue.Authentication.Ldap.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.RdfEO">
-      <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.4.2\lib\net45\Terradue.OpenSearch.RdfEO.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.RdfEO.1.4.3\lib\net45\Terradue.OpenSearch.RdfEO.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.GeoJson">
-      <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.3.21\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.GeoJson.1.4.1\lib\net45\Terradue.OpenSearch.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.15.15\lib\net45\Terradue.OpenSearch.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.1.17.2\lib\net45\Terradue.OpenSearch.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Ldap">
       <HintPath>..\packages\Terradue.Ldap.1.2.3\lib\net40\Terradue.Ldap.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
-      <HintPath>..\packages\Terradue.GeoJson.1.9.2\lib\net45\Terradue.GeoJson.dll</HintPath>
+      <HintPath>..\packages\Terradue.GeoJson.1.10.0\lib\net45\Terradue.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.60\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.60\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.Agent.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.60\lib\net45\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.WebService.Model">
@@ -225,6 +225,10 @@
     <Reference Include="Terradue.JFrog.Artifactory">
       <HintPath>..\packages\Terradue.JFrog.Artifactory.2.1.0\lib\net45\Terradue.JFrog.Artifactory.dll</HintPath>
     </Reference>
+    <Reference Include="mscorlib" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="Microsoft.VisualBasic" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -351,10 +355,6 @@
     <None Include="modules\umsso\db\db-create.sql" />
     <None Include="modules\umsso\db\db-1.4#.sql" />
     <None Include="modules\umsso\db\db-1.3#.sql" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.shx" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.dbf" />
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.shx" />
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.shp" />
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.prj" />

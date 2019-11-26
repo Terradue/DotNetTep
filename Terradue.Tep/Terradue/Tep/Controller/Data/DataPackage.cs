@@ -418,7 +418,7 @@ namespace Terradue.Tep {
 
             List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
             UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
-            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self");
+            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self", osd.ExtraNamespace);
             urls.Add(url);
 
             NameValueCollection query = HttpUtility.ParseQueryString(urlb.Query);
@@ -434,7 +434,7 @@ namespace Terradue.Tep {
                 query.Set("format", osee.Identifier);
                 string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
                 urlb.Query = string.Join("&", queryString);
-                url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search");
+                url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search", osd.ExtraNamespace);
                 urls.Add(url);
             }
 

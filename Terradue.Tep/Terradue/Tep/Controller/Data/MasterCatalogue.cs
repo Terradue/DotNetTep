@@ -71,6 +71,10 @@ namespace Terradue.Tep {
             OSDD.InputEncoding = "UTF-8";
             OSDD.Description = "This Search Service performs queries in the available data packages of Tep catalogue. There are several URL templates that return the results in different formats (RDF, ATOM or KML). This search service is in accordance with the OGC 10-032r3 specification.";
 
+            OSDD.ExtraNamespace.Add("geo", "http://a9.com/-/opensearch/extensions/geo/1.0/");
+            OSDD.ExtraNamespace.Add("time", "http://a9.com/-/opensearch/extensions/time/1.0/");
+            OSDD.ExtraNamespace.Add("dct", "http://purl.org/dc/terms/");
+
             // The new URL template list 
             Hashtable newUrls = new Hashtable();
             UriBuilder urib;
@@ -84,17 +88,17 @@ namespace Terradue.Tep {
             query.Set("format", "atom");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
             urib.Query = string.Join("&", queryString);
-            newUrls.Add("application/atom+xml", new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search"));
+            newUrls.Add("application/atom+xml", new OpenSearchDescriptionUrl("application/atom+xml", urib.ToString(), "search", OSDD.ExtraNamespace));
 
             query.Set("format", "json");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
             urib.Query = string.Join("&", queryString);
-            newUrls.Add("application/json", new OpenSearchDescriptionUrl("application/json", urib.ToString(), "search"));
+            newUrls.Add("application/json", new OpenSearchDescriptionUrl("application/json", urib.ToString(), "search", OSDD.ExtraNamespace));
 
             query.Set("format", "html");
             queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
             urib.Query = string.Join("&", queryString);
-            newUrls.Add("text/html", new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search"));
+            newUrls.Add("text/html", new OpenSearchDescriptionUrl("application/html", urib.ToString(), "search", OSDD.ExtraNamespace));
 
             OSDD.Url = new OpenSearchDescriptionUrl[newUrls.Count];
 
@@ -123,7 +127,7 @@ namespace Terradue.Tep {
 
             UriBuilder urlb = new UriBuilder(GetDescriptionBaseUrl());
 
-            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self");
+            OpenSearchDescriptionUrl url = new OpenSearchDescriptionUrl("application/opensearchdescription+xml", urlb.ToString(), "self", osd.ExtraNamespace);
             urls.Add(url);
 
             urlb = new UriBuilder(GetSearchBaseUrl("application/atom+xml"));
@@ -139,7 +143,7 @@ namespace Terradue.Tep {
 
                 string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
                 urlb.Query = string.Join("&", queryString);
-                url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search");
+                url = new OpenSearchDescriptionUrl(osee.DiscoveryContentType, urlb.ToString(), "search", osd.ExtraNamespace);
                 urls.Add(url);
             }
 

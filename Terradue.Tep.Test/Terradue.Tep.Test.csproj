@@ -48,10 +48,10 @@
       <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="NuGet4Mono">
-      <HintPath>..\packages\NuGet4Mono.0.3.0\lib\net40\NuGet4Mono.exe</HintPath>
+      <HintPath>..\packages\NuGet4Mono.0.8.0\lib\net45\NuGet4Mono.exe</HintPath>
     </Reference>
     <Reference Include="NuGet4Mono.Extensions">
-      <HintPath>..\packages\NuGet4Mono.Extensions.0.3.0\lib\net40\NuGet4Mono.Extensions.dll</HintPath>
+      <HintPath>..\packages\NuGet4Mono.Extensions.0.8.0\lib\net45\NuGet4Mono.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
@@ -60,7 +60,7 @@
       <HintPath>..\packages\Terradue.Metadata.1.4.0\lib\net40\Terradue.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Syndication">
-      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.0.2\lib\net40\Terradue.ServiceModel.Syndication.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Syndication.1.1.0\lib\net45\Terradue.ServiceModel.Syndication.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Util">
       <HintPath>..\packages\Terradue.Util.1.4.0\lib\net40\Terradue.Util.dll</HintPath>
@@ -99,11 +99,11 @@
       <HintPath>..\packages\NetTopologySuite.IO.1.14.0.1\lib\net45\NetTopologySuite.IO.ShapeFile.Extended.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
-      <HintPath>..\packages\Terradue.GeoJson.1.8.6250\lib\net45\Terradue.GeoJson.dll</HintPath>
+      <HintPath>..\packages\Terradue.GeoJson.1.10.1\lib\net45\Terradue.GeoJson.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Ogc.OwsContext">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.1.2\lib\net45\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.OwsContext.1.2.0\lib\net45\Terradue.ServiceModel.Ogc.OwsContext.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
@@ -118,36 +118,56 @@
       <HintPath>..\packages\NuGet.Core.2.14.0\lib\net40-Client\NuGet.Core.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.ServiceModel.Ogc">
-      <HintPath>..\packages\Terradue.ServiceModel.Ogc.2.1.0\lib\net45\Terradue.ServiceModel.Ogc.dll</HintPath>
+      <HintPath>..\packages\Terradue.ServiceModel.Ogc.2.1.3\lib\net45\Terradue.ServiceModel.Ogc.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.Twitter">
-      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.6.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.7.1\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
     </Reference>
     <Reference Include="MathNet.Numerics">
-      <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\packages\MathNet.Numerics.3.20.2\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Options">
       <HintPath>..\packages\Mono.Options.5.3.0.1\lib\net4-client\Mono.Options.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.Metadata.EarthObservation">
-      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.5.1\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
+      <HintPath>..\packages\Terradue.Metadata.EarthObservation.1.6.3\lib\net45\Terradue.Metadata.EarthObservation.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch">
-      <HintPath>..\packages\Terradue.OpenSearch.1.15.15\lib\net45\Terradue.OpenSearch.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.1.17.2\lib\net45\Terradue.OpenSearch.dll</HintPath>
     </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Xml" />
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.53\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.53\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.Agent.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.53\lib\net45\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
+    <Reference Include="mscorlib" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Caching" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Net.Http.Extensions">
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net45\System.Net.Http.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Primitives">
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net45\System.Net.Http.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.WebRequest" />
+    <Reference Include="ProjNet">
+      <HintPath>..\packages\ProjNet.1.2\lib\net20\ProjNet.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseTest.cs" />
@@ -159,10 +179,6 @@
     <None Include="packages.config" />
     <None Include="app.config" />
     <None Include="modules\news\db\db-create.sql" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.shx" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.shp" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.prj" />
-    <None Include="Resources\ne_110m_land\ne_110m_land.dbf" />
     <None Include="Resources\ExecuteResponseFailed.xml" />
     <None Include="core\db\db-create.sql" />
     <None Include="core\db\db-2.7.9#.sql" />
@@ -172,6 +188,9 @@
     <None Include="core\db\db-2.7.3.1#.sql" />
     <None Include="core\db\db-2.7.3#.sql" />
     <None Include="core\db\db-2.7.2#.sql" />
+    <None Include="core\db\db-2.7.17#.sql" />
+    <None Include="core\db\db-2.7.16#.sql" />
+    <None Include="core\db\db-2.7.15#.sql" />
     <None Include="core\db\db-2.7.14#.sql" />
     <None Include="core\db\db-2.7.13#.sql" />
     <None Include="core\db\db-2.7.12#.sql" />
@@ -196,7 +215,6 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
-    <None Include="core\db\db-2.7.15#.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Terradue.Tep\Terradue.Tep.csproj">
