@@ -121,7 +121,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var response = discussClient.PostTopic(catId, request.subject, request.body);                                                                 
                 result = string.Format("{0}/t/{1}/{2}", discussClient.Host, response.topic_slug, response.topic_id);
             } catch (Exception e) {
-                context.LogError (this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }

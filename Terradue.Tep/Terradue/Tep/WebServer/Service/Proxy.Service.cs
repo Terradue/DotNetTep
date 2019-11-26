@@ -136,7 +136,7 @@ namespace Terradue.Tep.WebServer.Services
                     execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (stream);
                 context.LogDebug (this, string.Format ("Wps proxy - exec response OK"));
             } catch (Exception e) {
-                context.LogError (this, string.Format (e.Message));
+                context.LogError (this, e.Message, e);
             }
             if (execResponse == null) throw new Exception ("Unable to get execute response from proxied job");
 
@@ -287,7 +287,7 @@ namespace Terradue.Tep.WebServer.Services
                             }
                         }
                     } catch (Exception e) {
-                        context.LogError (this, e.Message);
+                        context.LogError(this, e.Message, e);
                         throw e;
                     }
                     return new AtomFeed (atomFormatter.Feed);

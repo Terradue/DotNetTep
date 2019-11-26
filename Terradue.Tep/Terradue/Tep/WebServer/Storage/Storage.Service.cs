@@ -378,7 +378,7 @@ externalDocs:
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -403,7 +403,7 @@ externalDocs:
 
                 context.Close();
             }catch(Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -426,7 +426,7 @@ externalDocs:
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -453,7 +453,7 @@ externalDocs:
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -481,7 +481,7 @@ externalDocs:
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -503,7 +503,7 @@ externalDocs:
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -546,7 +546,7 @@ externalDocs:
                     factory.UploadFile(request.repoKey, request.path, filename);
                 }
             } catch (Exception e) {
-                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }

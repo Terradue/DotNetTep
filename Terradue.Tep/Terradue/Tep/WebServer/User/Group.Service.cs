@@ -35,7 +35,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -59,7 +59,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -84,7 +84,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebGroup(grp);
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -109,7 +109,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Group {0} created by user {1}", grp.Name, User.FromId(context, context.UserId).Username));
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -131,7 +131,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("Group {0} deleted by user {1}", grp.Name, User.FromId(context, context.UserId).Username));
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -158,7 +158,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("User {0} has been added to group {1}", usr.Username, grp.Name));
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -183,7 +183,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this,string.Format("User {0} has been removed from group {1}", usr.Username, grp.Name));
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -206,7 +206,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach(WebUser usr in request) context.LogDebug(this,string.Format("User {0} has been added to group {1}", usr.Username, grp.Name));
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -224,7 +224,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach(User u in grp.GetUsers()) result.Add(new WebUser(u));
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -255,7 +255,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -299,7 +299,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 return new HttpResult(osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }

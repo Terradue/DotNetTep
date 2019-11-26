@@ -49,7 +49,7 @@ namespace Terradue.Tep.WebServer.Services
                     result.Add(new WebDataPackageTep(a, context));
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
 			}
@@ -74,7 +74,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
 			}
@@ -134,7 +134,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -159,7 +159,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -185,7 +185,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -217,7 +217,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -266,7 +266,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.LogInfo(this,string.Format("/data/package POST Id='{0}'", tmp.Id));
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
 			}
@@ -311,7 +311,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
 			}
@@ -348,7 +348,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -390,7 +390,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(def);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -413,7 +413,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -438,7 +438,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -475,7 +475,7 @@ namespace Terradue.Tep.WebServer.Services
                 context.Close();
 
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -502,7 +502,7 @@ namespace Terradue.Tep.WebServer.Services
                 return new HttpResult(osd,"application/opensearchdescription+xml");
 
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -525,7 +525,7 @@ namespace Terradue.Tep.WebServer.Services
 				tmp.Delete();
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
 			}
@@ -553,7 +553,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(tmp);
                 context.Close ();
             }catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -578,7 +578,7 @@ namespace Terradue.Tep.WebServer.Services
                 result = new WebDataPackageTep(dp);
 				context.Close ();
 			}catch(Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
 			}
@@ -611,7 +611,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -644,7 +644,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -670,7 +670,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -696,7 +696,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -722,7 +722,7 @@ namespace Terradue.Tep.WebServer.Services
 
 				context.Close();
 			} catch (Exception e) {
-				context.LogError(this, e.Message);
+				context.LogError(this, e.Message, e);
 				context.Close();
 				throw e;
 			}

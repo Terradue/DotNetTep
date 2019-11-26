@@ -53,7 +53,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -78,7 +78,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -117,7 +117,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
 
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -408,7 +408,7 @@ namespace Terradue.Tep.WebServer.Services {
                     try {
                         service = Service.FromIdentifier(context, serviceId);
                     }catch(Exception e){
-                        context.LogError(this, e.Message);
+                        context.LogError(this, e.Message, e);
                         service = new WpsProcessOffering(context);
                         service.Identifier = serviceId;
                     }

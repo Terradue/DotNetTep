@@ -53,7 +53,7 @@ namespace Terradue.Tep.WebServer.Services {
                             Type = reader.GetString(2)
                         });
                     } catch (Exception e) {
-                        context.LogError(this, e.Message);
+                        context.LogError(this, e.Message, e);
                     }
                 }
                 context.CloseQueryResult(reader, dbConnection);

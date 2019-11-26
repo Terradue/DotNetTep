@@ -73,10 +73,10 @@ namespace Terradue.Tep.WebServer.Services {
                         body = body.Replace("$(EMAIL)", umssoUser.Email);
                         context.SendMail(emailFrom, emailFrom, subject, body);
                     } catch (Exception e1) { 
-                        context.LogError(this, e1.Message);
+                        context.LogError(this, e1.Message, e1);
                     }
                 } else {
-                    context.LogError(this, e.Message);
+                    context.LogError(this, e.Message, e);
                     throw e;
                 }
             }

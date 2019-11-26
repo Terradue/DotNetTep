@@ -52,7 +52,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.Close ();
             } catch (Exception e) {
-                context.LogError (this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -84,7 +84,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.Close ();
             } catch (Exception e) {
-                context.LogError (this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -114,7 +114,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.Close ();
             } catch (Exception e) {
-                context.LogError (this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -143,7 +143,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -168,7 +168,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 context.Close ();
             } catch (Exception e) {
-                context.LogError (this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -220,7 +220,7 @@ namespace Terradue.Tep.WebServer.Services{
 
                 return new HttpResult(osd, "application/opensearchdescription+xml");
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -241,7 +241,7 @@ namespace Terradue.Tep.WebServer.Services{
                 context.LogDebug(this,string.Format("Community {0} deleted by user {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -268,7 +268,7 @@ namespace Terradue.Tep.WebServer.Services{
 				context.LogDebug(this, string.Format("Collection removed from Community {0}, put in owner's domain {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
 				context.Close();
 			} catch (Exception e) {
-				context.LogError(this, e.Message);
+				context.LogError(this, e.Message, e);
 				context.Close();
 				throw e;
 			}
@@ -295,7 +295,7 @@ namespace Terradue.Tep.WebServer.Services{
 				context.LogDebug(this, string.Format("Collection added to Community {0}", domain.Identifier));
 				context.Close();
 			} catch (Exception e) {
-				context.LogError(this, e.Message);
+				context.LogError(this, e.Message, e);
 				context.Close();
 				throw e;
 			}
@@ -322,7 +322,7 @@ namespace Terradue.Tep.WebServer.Services{
 				context.LogDebug(this, string.Format("Wps service removed from Community {0}, put in owner's domain {1}", domain.Identifier, User.FromId(context, context.UserId).Username));
 				context.Close();
 			} catch (Exception e) {
-				context.LogError(this, e.Message);
+				context.LogError(this, e.Message, e);
 				context.Close();
 				throw e;
 			}
@@ -349,7 +349,7 @@ namespace Terradue.Tep.WebServer.Services{
 				context.LogDebug(this, string.Format("Wps service added to Community {0}", domain.Identifier));
 				context.Close();
 			} catch (Exception e) {
-				context.LogError(this, e.Message);
+				context.LogError(this, e.Message, e);
 				context.Close();
 				throw e;
 			}

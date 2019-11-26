@@ -1,4 +1,4 @@
-﻿﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -95,7 +95,7 @@ namespace Terradue.Tep.WebServer.Services {
 										osentities.Add(ios);
 										context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
 									} catch (Exception e) {
-										context.LogError(this, e.Message);
+										context.LogError(this, e.Message, e);
 									}
 								}
 							}
@@ -117,7 +117,7 @@ namespace Terradue.Tep.WebServer.Services {
 								osentities.Add(ios);
 								context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
 							} catch (Exception e) {
-								context.LogError(this, e.Message);
+								context.LogError(this, e.Message, e);
 							}
 						}
 					}
@@ -136,7 +136,7 @@ namespace Terradue.Tep.WebServer.Services {
                 sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
                 sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
             }
             
 			context.Close ();         
@@ -204,7 +204,7 @@ namespace Terradue.Tep.WebServer.Services {
                 sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
                 sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
             }
             
             context.Close ();         
@@ -265,7 +265,7 @@ namespace Terradue.Tep.WebServer.Services {
 									osentities.Add(sgOs);
 									context.LogDebug(this, string.Format("Apps search -- Add '{0}'", item.Location));
 								} catch (Exception e) {
-									context.LogError(this, e.Message);
+									context.LogError(this, e.Message, e);
 								}
 							}
 						}
@@ -286,7 +286,7 @@ namespace Terradue.Tep.WebServer.Services {
 					sresult = sresult.Replace("${T2USERNAME}", user.TerradueCloudUsername);
 					sresult = sresult.Replace("${T2APIKEY}", user.GetSessionApiKey());
 				} catch (Exception e) {
-					context.LogError(this, e.Message);
+					context.LogError(this, e.Message, e);
 				}
 			}
 
@@ -315,7 +315,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close ();
             } catch (Exception e) {
-                context.LogError (this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close ();
                 throw e;
             }
@@ -346,7 +346,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 context.Close();
 			} catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -364,7 +364,7 @@ namespace Terradue.Tep.WebServer.Services {
 				result = !CatalogueFactory.CheckIdentifierExists(context, request.Index, request.Uid, apikey);
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -423,7 +423,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
