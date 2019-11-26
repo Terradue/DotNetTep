@@ -131,6 +131,8 @@ namespace Terradue.Tep.Test {
                 Assert.AreEqual(1, roles.Length);
                 Assert.AreEqual(RoleTep.STARTER, roles [0].Name);
 
+                community.RemoveUser(usr1);
+
             } catch (Exception e) {
                 Assert.Fail(e.Message);
             } finally {
@@ -195,7 +197,7 @@ namespace Terradue.Tep.Test {
 
                 //usr1 validates
                 community.TryJoinCurrentUser();
-                Assert.False(community.IsUserPending(usr1.Id));
+                Assert.True(community.IsUserPending(usr1.Id));
 
                 //check how many communities user can see
                 communities = new CommunityCollection(context);
@@ -203,25 +205,6 @@ namespace Terradue.Tep.Test {
                 communities.OpenSearchEngine = ose;
                 osr = ose.Query(communities, parameters);
                 Assert.AreEqual(NBCOMMUNITY_PUBLIC + 1, osr.TotalResults);
-
-                //check visibility is private only
-                items = osr.Items;
-                isprivate = false;
-                isVisibilityPending = false;
-                ispublic = false;
-                foreach (var item in items) {
-                    if (item.Title.Text == "community-private-1") {
-                        foreach (var cat in item.Categories) {
-                            if (cat.Name == "visibility") {
-                                if (cat.Label == "private") isprivate = true;
-                                else if (cat.Label == "public") ispublic = true;
-                            } else if (cat.Name == "status" && cat.Label == "pending") isVisibilityPending = true;
-                        }
-                    }
-                }
-                Assert.True(isprivate);
-                Assert.False(isVisibilityPending);
-                Assert.False(ispublic);
 
                 //remove from community
                 community.RemoveUser(usr1);
