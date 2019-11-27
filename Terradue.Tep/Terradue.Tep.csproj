@@ -322,6 +322,8 @@
     <Compile Include="Terradue\Tep\WebServer\Storage\Storage.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\StoreFactory.cs" />
     <Compile Include="Terradue\Tep\Controller\Service\WpsProcessOfferingTep.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Geoserver\Geoserver.Service.cs" />
+    <Compile Include="Terradue\Tep\Controller\Geoserver\GeoserverFactory.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -412,5 +414,7 @@
     <Folder Include="Terradue\Tep\WebServer\Auth\" />
     <Folder Include="Terradue\Tep\Controller\Auth\" />
     <Folder Include="Terradue\Tep\WebServer\Storage\" />
+    <Folder Include="Terradue\Tep\WebServer\Geoserver\" />
+    <Folder Include="Terradue\Tep\Controller\Geoserver\" />
   </ItemGroup>
 </Project>
