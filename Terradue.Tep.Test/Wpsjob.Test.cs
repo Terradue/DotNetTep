@@ -621,7 +621,7 @@ namespace Terradue.Tep.Test {
             }
         }
 
-        [Test]
+        //[Test]
         public void RefreshWpsjobResultNb(){
             var usr4 = User.FromUsername(context, "testusr4");
             context.StartImpersonation(usr4.Id);
