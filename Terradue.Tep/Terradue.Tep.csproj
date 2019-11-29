@@ -146,10 +146,10 @@
       <HintPath>..\packages\HtmlAgilityPack.1.11.12\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.OpenSearch.Twitter">
-      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.7.1\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
+      <HintPath>..\packages\Terradue.OpenSearch.Twitter.1.8.0\lib\net45\Terradue.OpenSearch.Twitter.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.News">
-      <HintPath>..\packages\Terradue.News.1.4.0\lib\net45\Terradue.News.dll</HintPath>
+      <HintPath>..\packages\Terradue.News.1.5.0\lib\net45\Terradue.News.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -200,18 +200,7 @@
       <HintPath>..\packages\Terradue.Ldap.1.2.3\lib\net40\Terradue.Ldap.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.GeoJson">
-      <HintPath>..\packages\Terradue.GeoJson.1.10.0\lib\net45\Terradue.GeoJson.dll</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
-    </Reference>
-    <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.Agent.exe</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.7.66\lib\net45\Terradue.Portal.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\Terradue.GeoJson.1.10.1\lib\net45\Terradue.GeoJson.dll</HintPath>
     </Reference>
     <Reference Include="Terradue.WebService.Model">
       <HintPath>..\packages\Terradue.WebService.Model.1.1.28\lib\net45\Terradue.WebService.Model.dll</HintPath>
@@ -229,6 +218,15 @@
     <Reference Include="System.Net" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="Terradue.Portal.AdminTool">
+      <HintPath>..\packages\Terradue.Portal.2.8.0\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal.Agent">
+      <HintPath>..\packages\Terradue.Portal.2.8.0\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+    </Reference>
+    <Reference Include="Terradue.Portal">
+      <HintPath>..\packages\Terradue.Portal.2.8.0\lib\net45\Terradue.Portal.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -344,7 +342,6 @@
     <None Include="modules\cloud\db\db-1.1#.sql" />
     <None Include="modules\cloud\db\db-1.0#.sql" />
     <None Include="modules\github\db\db-create.sql" />
-    <None Include="modules\news\db\db-create.sql" />
     <None Include="modules\umsso\www\register.aspx" />
     <None Include="modules\umsso\ne_110m_land\ne_110m_land.shx" />
     <None Include="modules\umsso\ne_110m_land\ne_110m_land.shp" />
@@ -395,6 +392,11 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.shx" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.shp" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.prj" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.dbf" />
+    <None Include="modules\news\db\db-create.sql" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />
