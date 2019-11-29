@@ -79,13 +79,13 @@ namespace Terradue.Tep.OpenSearch
             searchUrl.Query = string.Join("&", queryStrings);
             urls.Add(new OpenSearchDescriptionUrl("application/atom+xml",
                                                   searchUrl.ToString(),
-                                                  "results"));
+                                                  "results", osd.ExtraNamespace));
 
             UriBuilder descriptionUrl = new UriBuilder(context.BaseUrl);
             descriptionUrl.Path += "/description";
             urls.Add(new OpenSearchDescriptionUrl("application/opensearchdescription+xml",
                                                   searchUrl.ToString(),
-                                                  "self"));
+                                                  "self", osd.ExtraNamespace));
             osd.Url = urls.ToArray();
 
             return osd;

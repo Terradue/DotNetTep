@@ -33,7 +33,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach(Series s in series) result.Add(new WebSeries(s));
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -56,7 +56,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebDataCollectionTep(serie);
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -87,7 +87,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebSeries(serie);
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -131,7 +131,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebSeries(serie);
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -157,7 +157,7 @@ namespace Terradue.Tep.WebServer.Services {
                 activity.Store();
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -190,7 +190,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -224,7 +224,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -250,7 +250,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -270,7 +270,7 @@ namespace Terradue.Tep.WebServer.Services {
 
 				context.Close();
 			} catch (Exception e) {
-				context.LogError(this, e.Message);
+				context.LogError(this, e.Message, e);
 				context.Close();
 				throw e;
 			}

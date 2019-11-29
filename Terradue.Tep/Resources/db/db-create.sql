@@ -1,4 +1,4 @@
--- VERSION 1.2.13
+-- VERSION 1.2.14
 
 USE $MAIN$;
 
@@ -91,8 +91,8 @@ CREATE TABLE wpsjob (
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
     status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
     status_url varchar(400) NOT NULL COMMENT 'Wps job status url',
-    ows_url varchar(400) NOT NULL COMMENT 'Wps job ows url',
-    app_identifier varchar(50) NOT NULL COMMENT 'Wps job app identifier',
+    ows_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps job ows url',
+    app_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Wps job app identifier',
     created_time datetime NOT NULL COMMENT 'Wps created date',
     access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
     CONSTRAINT pk_wpsjob PRIMARY KEY (id),
@@ -426,5 +426,6 @@ UPDATE config SET value='Dear Content Authority,\n\nthe user $(USERNAME) ($(USER
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('CommunityDetailPageUrl', 'string', 'Community detailed page url', '', '', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('CommunityJoinConfirmationEmailSubject', 'string', 'Community Join confirmation email subject', '', '[$(SITENAME)] - Join community $(COMMUNITY)', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('CommunityJoinConfirmationEmailBody', 'string', 'Community Join confirmation email body', '', 'Dear user,\n\nyou have been added as member of the community $(COMMUNITY).\nYou can access it directly from this link: $(LINK).\n\nBest Regards', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('log-hideException', 'bool', 'Hide exception in error log', 'Hide exception in error log', '1', '0');
 -- RESULT
 

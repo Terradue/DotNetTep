@@ -217,11 +217,11 @@ namespace Terradue.Tep.WebServer {
                             });
                         }
                     } catch (Exception e) {
-                        context.LogError(this, e.Message);
+                        context.LogError(this, e.Message, e);
                     }
                 }
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
             }
             return communityroles;
         }

@@ -41,6 +41,13 @@ namespace Terradue.Tep {
             this.settings = settings;
         }
 
+        public UrlBasedOpenSearchable(IfyContext context, OpenSearchDescription osd, OpenSearchUrl url, OpenSearchableFactorySettings settings) {
+            this.context = context;
+            this.osd = osd;
+            this.url = url;
+            this.settings = settings;
+        }
+
         public IOpenSearchable Entity {
             get {
                 if (entity == null) {
@@ -237,8 +244,8 @@ namespace Terradue.Tep {
             return new UrlBasedOpenSearchable(context, url, Settings);
         }
 
-        public IOpenSearchable Create(OpenSearchDescription osd) {
-            return new UrlBasedOpenSearchable(context, osd, Settings);
+        public IOpenSearchable Create(OpenSearchDescription osd, OpenSearchUrl url = null) {
+            return new UrlBasedOpenSearchable(context, osd, url, Settings);
         }
         #endregion
     }

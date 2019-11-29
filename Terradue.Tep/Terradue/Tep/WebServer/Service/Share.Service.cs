@@ -75,7 +75,7 @@ namespace Terradue.Tep.WebServer.Services {
                         try {
                             DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"),item.StatusLocation, "results", "private");
                         }catch(Exception e){
-                            context.LogError(this, "Unable to share on STORE : " + e.Message);
+                            context.LogError(this, "Unable to share on STORE : " + e.Message, e);
                         }
 
                         //unpublish on community index
@@ -123,7 +123,7 @@ namespace Terradue.Tep.WebServer.Services {
 						try {
 							DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), job.StatusLocation, "results", "public");
 						} catch (Exception e) {
-							context.LogError(this, "Unable to share on STORE : " + e.Message);
+							context.LogError(this, "Unable to share on STORE : " + e.Message, e);
 						}
 
                         //publish on community index
@@ -199,7 +199,7 @@ namespace Terradue.Tep.WebServer.Services {
 						try {
 							DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), job.StatusLocation, "results", "restricted", sharedUsers, sharedCommunities);
 						} catch (Exception e) {
-							context.LogError(this, "Unable to share on STORE : " + e.Message);
+							context.LogError(this, "Unable to share on STORE : " + e.Message, e);
 						}
 
                     }

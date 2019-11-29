@@ -136,7 +136,7 @@ namespace Terradue.Tep.WebServer.Services
                     execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (stream);
                 context.LogDebug (this, string.Format ("Wps proxy - exec response OK"));
             } catch (Exception e) {
-                context.LogError (this, string.Format (e.Message));
+                context.LogError (this, e.Message, e);
             }
             if (execResponse == null) throw new Exception ("Unable to get execute response from proxied job");
 
@@ -287,7 +287,7 @@ namespace Terradue.Tep.WebServer.Services
                             }
                         }
                     } catch (Exception e) {
-                        context.LogError (this, e.Message);
+                        context.LogError(this, e.Message, e);
                         throw e;
                     }
                     return new AtomFeed (atomFormatter.Feed);
@@ -470,6 +470,10 @@ namespace Terradue.Tep.WebServer.Services
             OSDD.InputEncoding = "UTF-8";
             OSDD.Description = "This Search Service performs queries in the available results of Gpod process. There are several URL templates that return the results in different formats (RDF, ATOM or KML). This search service is in accordance with the OGC 10-032r3 specification.";
 
+            OSDD.ExtraNamespace.Add("geo", "http://a9.com/-/opensearch/extensions/geo/1.0/");
+            OSDD.ExtraNamespace.Add("time", "http://a9.com/-/opensearch/extensions/time/1.0/");
+            OSDD.ExtraNamespace.Add("dct", "http://purl.org/dc/terms/");
+
             // The new URL template list 
             Hashtable newUrls = new Hashtable ();
             UriBuilder urib;
@@ -482,17 +486,17 @@ namespace Terradue.Tep.WebServer.Services
 
             queryString = Array.ConvertAll (query.AllKeys, key => string.Format ("{0}={1}", key, query [key]));
             urib.Query = string.Join ("&", queryString);
-            newUrls.Add ("application/atom+xml", new OpenSearchDescriptionUrl ("application/atom+xml", urib.ToString (), "search"));
+            newUrls.Add ("application/atom+xml", new OpenSearchDescriptionUrl ("application/atom+xml", urib.ToString (), "search", OSDD.ExtraNamespace));
 
             query.Set ("format", "json");
             queryString = Array.ConvertAll (query.AllKeys, key => string.Format ("{0}={1}", key, query [key]));
             urib.Query = string.Join ("&", queryString);
-            newUrls.Add ("application/json", new OpenSearchDescriptionUrl ("application/json", urib.ToString (), "search"));
+            newUrls.Add ("application/json", new OpenSearchDescriptionUrl ("application/json", urib.ToString (), "search", OSDD.ExtraNamespace));
 
             query.Set ("format", "html");
             queryString = Array.ConvertAll (query.AllKeys, key => string.Format ("{0}={1}", key, query [key]));
             urib.Query = string.Join ("&", queryString);
-            newUrls.Add ("text/html", new OpenSearchDescriptionUrl ("application/html", urib.ToString (), "search"));
+            newUrls.Add ("text/html", new OpenSearchDescriptionUrl ("application/html", urib.ToString (), "search", OSDD.ExtraNamespace));
 
             OSDD.Url = new OpenSearchDescriptionUrl [newUrls.Count];
 

@@ -39,7 +39,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -60,7 +60,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -96,7 +96,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -114,7 +114,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = oneCloud.XmlRpc.UserUpdatePassword(Int32.Parse(request.Id), request.Password);
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
@@ -164,7 +164,7 @@ namespace Terradue.Tep.WebServer.Services {
                 result = new WebOneUser{ Id = oneuser.ID, Name = oneuser.NAME, Password = oneuser.PASSWORD, AuthDriver = oneuser.AUTH_DRIVER};
                 context.Close();
             } catch (Exception e) {
-                context.LogError(this, e.Message);
+                context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }

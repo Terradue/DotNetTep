@@ -97,6 +97,7 @@ namespace Terradue.Tep.OpenSearch
             osd.ExtraNamespace.Add("geo", "http://a9.com/-/opensearch/extensions/geo/1.0/");
             osd.ExtraNamespace.Add("time", "http://a9.com/-/opensearch/extensions/time/1.0/");
             osd.ExtraNamespace.Add("dct", "http://purl.org/dc/terms/");
+            osd.ExtraNamespace.Add("t2", "http://www.terradue.com/opensearch");
 
             var searchExtensions = MasterCatalogue.OpenSearchEngine.Extensions;
             List<OpenSearchDescriptionUrl> urls = new List<OpenSearchDescriptionUrl>();
@@ -123,7 +124,7 @@ namespace Terradue.Tep.OpenSearch
                 searchUrl.Query = string.Join("&", queryStrings);
                 var url = new OpenSearchDescriptionUrl(searchExtensions[code].DiscoveryContentType,
                                                       searchUrl.ToString(),
-                                                       "results");
+                                                       "results", osd.ExtraNamespace);
                 url.Parameters = paramdesc.ToArray();
                 urls.Add(url);
 
@@ -132,7 +133,7 @@ namespace Terradue.Tep.OpenSearch
             descriptionUrl.Path += string.Format("/job/wps/{0}/products/description", Wpsjob.Identifier);
             urls.Add(new OpenSearchDescriptionUrl("application/opensearchdescription+xml",
                                                   searchUrl.ToString(),
-                                                  "self"));
+                                                  "self", osd.ExtraNamespace));
             osd.Url = urls.ToArray();
 
             return osd;
