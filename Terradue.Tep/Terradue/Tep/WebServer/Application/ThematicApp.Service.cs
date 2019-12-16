@@ -399,7 +399,7 @@ namespace Terradue.Tep.WebServer.Services {
                             var tagsresult = string.Join(",", r1.Select(t => "*" + t + "*"));
                             services.SetFilter("Tags", tagsresult);
                         }
-                        services.SetFilter("Available", true);
+                        services.SetFilter("Available", "true");
                         services.Load();
                         var appServices = new List<WpsServiceOverview>();
                         foreach (var s in services.GetItemsAsList()) {
