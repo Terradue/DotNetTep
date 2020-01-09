@@ -165,9 +165,9 @@ namespace Terradue.Tep {
         public override void Load() {
             base.Load();
             this.LoadCloudUsername();
-            if (string.IsNullOrEmpty(this.ApiKey)) GenerateApiKey();
-            if (IsNeededTerradueUserInfo()) LoadTerradueUserInfo();
             if (Domain == null) CreatePrivateDomain();
+            if (string.IsNullOrEmpty(this.ApiKey)) GenerateApiKey();
+            if (IsNeededTerradueUserInfo()) LoadTerradueUserInfo();            
         }
 
         public override void Store() {
