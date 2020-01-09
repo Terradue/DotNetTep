@@ -270,6 +270,40 @@ namespace Terradue.Tep {
                 if(settings == null){
                     settings = new OpenSearchableFactorySettings(MasterCatalogue.OpenSearchEngine);
                     settings.MergeFilters = Terradue.Metadata.EarthObservation.Helpers.GeoTimeOpenSearchHelper.MergeGeoTimeFilters;
+
+                    settings.ParametersKeywordsTable.Add("update", "{http://purl.org/dc/terms/}modified");
+                    settings.ParametersKeywordsTable.Add("updated", "{http://purl.org/dc/terms/}modified");
+                    settings.ParametersKeywordsTable.Add("modified", "{http://purl.org/dc/terms/}modified");
+                    settings.ParametersKeywordsTable.Add("do", "{http://www.terradue.com/opensearch}downloadOrigin");
+                    settings.ParametersKeywordsTable.Add("from", "{http://a9.com/-/opensearch/extensions/eo/1.0/}accessedFrom");
+                    settings.ParametersKeywordsTable.Add("start", "{http://a9.com/-/opensearch/extensions/time/1.0/}start");
+                    settings.ParametersKeywordsTable.Add("stop", "{http://a9.com/-/opensearch/extensions/time/1.0/}end");
+                    settings.ParametersKeywordsTable.Add("end", "{http://a9.com/-/opensearch/extensions/time/1.0/}end");
+                    settings.ParametersKeywordsTable.Add("trel", "{http://a9.com/-/opensearch/extensions/time/1.0/}relation");
+                    settings.ParametersKeywordsTable.Add("box", "{http://a9.com/-/opensearch/extensions/geo/1.0/}box");
+                    settings.ParametersKeywordsTable.Add("bbox", "{http://a9.com/-/opensearch/extensions/geo/1.0/}box");
+                    settings.ParametersKeywordsTable.Add("geom", "{http://a9.com/-/opensearch/extensions/geo/1.0/}geometry");
+                    settings.ParametersKeywordsTable.Add("geometry", "{http://a9.com/-/opensearch/extensions/geo/1.0/}geometry");
+                    settings.ParametersKeywordsTable.Add("uid", "{http://a9.com/-/opensearch/extensions/geo/1.0/}uid");
+                    settings.ParametersKeywordsTable.Add("id", "{http://purl.org/dc/terms/}identifier");
+                    settings.ParametersKeywordsTable.Add("rel", "{http://a9.com/-/opensearch/extensions/geo/1.0/}relation");
+                    settings.ParametersKeywordsTable.Add("cat", "{http://purl.org/dc/terms/}subject");
+                    settings.ParametersKeywordsTable.Add("pt", "{http://a9.com/-/opensearch/extensions/eo/1.0/}productType");
+                    settings.ParametersKeywordsTable.Add("psn", "{http://a9.com/-/opensearch/extensions/eo/1.0/}platform");
+                    settings.ParametersKeywordsTable.Add("psi", "{http://a9.com/-/opensearch/extensions/eo/1.0/}platformSerialIdentifier");
+                    settings.ParametersKeywordsTable.Add("isn", "{http://a9.com/-/opensearch/extensions/eo/1.0/}instrument");
+                    settings.ParametersKeywordsTable.Add("sensor", "{http://a9.com/-/opensearch/extensions/eo/1.0/}sensorType");
+                    settings.ParametersKeywordsTable.Add("st", "{http://a9.com/-/opensearch/extensions/eo/1.0/}sensorType");
+                    settings.ParametersKeywordsTable.Add("od", "{http://a9.com/-/opensearch/extensions/eo/1.0/}orbitDirection");
+                    settings.ParametersKeywordsTable.Add("ot", "{http://a9.com/-/opensearch/extensions/eo/1.0/}orbitType");
+                    settings.ParametersKeywordsTable.Add("title", "{http://a9.com/-/opensearch/extensions/eo/1.0/}title");
+                    settings.ParametersKeywordsTable.Add("track", "{http://a9.com/-/opensearch/extensions/eo/1.0/}track");
+                    settings.ParametersKeywordsTable.Add("frame", "{http://a9.com/-/opensearch/extensions/eo/1.0/}frame");
+                    settings.ParametersKeywordsTable.Add("swath", "{http://a9.com/-/opensearch/extensions/eo/1.0/}swathIdentifier");
+                    settings.ParametersKeywordsTable.Add("cc", "{http://a9.com/-/opensearch/extensions/eo/1.0/}cloudCover");
+                    settings.ParametersKeywordsTable.Add("lc", "{http://www.terradue.com/opensearch}landCover");
+                    settings.ParametersKeywordsTable.Add("dcg", "{http://www.terradue.com/opensearch}doubleCheckGeometry");
+
                 }
                 return settings;
             }

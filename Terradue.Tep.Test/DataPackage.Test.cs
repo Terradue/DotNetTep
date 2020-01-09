@@ -2,6 +2,10 @@
 using NUnit.Framework;
 using Terradue.Portal;
 using Terradue.OpenSearch.Engine;
+using Terradue.OpenSearch;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using Terradue.OpenSearch.Result;
 
 namespace Terradue.Tep.Test {
 
@@ -76,6 +80,45 @@ namespace Terradue.Tep.Test {
             Assert.AreEqual(2, dp.Items.Count);
         }
 
+        [Test]
+        public void SearchDataPackage() {
+            Terradue.Tep.DataPackage datapackage = DataPackage.GetTemporaryForCurrentUser(context);
+            datapackage.LoadItems();
+            foreach (RemoteResource res in datapackage.Resources) {
+                res.Delete();
+            }
+            datapackage.LoadItems();
+            Assert.AreEqual(0, datapackage.Items.Count);
+
+            var ressourceItem = new RemoteResource(context);
+            ressourceItem.Location = "https://catalog.terradue.com:443/sentinel1/search?uid=S1A_EW_OCN__2SDH_20200108T051332_20200108T051348_030704_038509_0C1C";
+            datapackage.AddResourceItem(ressourceItem);
+
+            ressourceItem = new RemoteResource(context);
+            ressourceItem.Location = "https://catalog.terradue.com:443/sentinel1/search?uid=S1A_IW_RAW__0SSH_20200108T050838_20200108T050910_030704_038508_ED48";
+            datapackage.AddResourceItem(ressourceItem);
+
+            ressourceItem = new RemoteResource(context);
+            ressourceItem.Location = "https://catalog.terradue.com:443/sentinel1/search?uid=S1A_IW_OCN__2SDV_20200108T043336_20200108T043412_030704_038504_3458";
+            datapackage.AddResourceItem(ressourceItem);
+
+            datapackage.LoadItems();
+            Assert.AreEqual(3, datapackage.Items.Count);
+
+            datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
+            
+            List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
+            osentities.AddRange(datapackage.GetOpenSearchableArray());
+
+            var settings = MasterCatalogue.OpenSearchFactorySettings;
+            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(osentities, settings, true);
+
+            var parameters = new NameValueCollection();
+
+            IOpenSearchResultCollection osr = ose.Query(multiOSE, parameters);
+
+            Assert.AreEqual(3, osr.TotalResults);
+        }
 
     }
 }
