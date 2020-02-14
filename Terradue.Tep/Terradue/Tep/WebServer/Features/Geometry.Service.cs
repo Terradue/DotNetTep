@@ -101,7 +101,7 @@ namespace Terradue.Tep.WebServer.Services {
                         case ".geojson":
                             using (var stream = new MemoryStream()) {
                                 this.RequestContext.Files[0].InputStream.CopyTo(stream);
-                                wkt = ExtractWKTFromGeoJson(stream);
+                                wkt = ExtractWKTFromGeoJson(stream, points);
                             }
                             break;
                         default:
@@ -306,20 +306,55 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return result;
         }
-
+        
         private string ExtractWKTFromGeoJson(Stream stream) {
             stream.Seek(0, SeekOrigin.Begin);
 
 			Terradue.GeoJson.Feature.FeatureCollection fc;
 			var serializer = new JsonSerializer();
 
-			using (var sr = new StreamReader(stream))
-			using (var jsonTextReader = new JsonTextReader(sr)) {
-				fc = serializer.Deserialize<Terradue.GeoJson.Feature.FeatureCollection>(jsonTextReader);
-			}
-            if (fc.Features != null && fc.Features.Count > 0)
-                return Terradue.GeoJson.Geometry.WktExtensions.ToWkt(fc.Features[0]);
-            else throw new Exception("no feature found in the geojson");
+            using (var sr = new StreamReader(stream))
+            using (var jsonTextReader = new JsonTextReader(sr)) {
+                fc = serializer.Deserialize<Terradue.GeoJson.Feature.FeatureCollection>(jsonTextReader);
+            }
+            if (fc.Features != null && fc.Features.Count > 0) {
+
+                if (fc.Features.Count == 1)
+                    return Terradue.GeoJson.Geometry.WktExtensions.ToWkt(fc.Features[0]);
+
+                var polygons = new Terradue.GeoJson.Geometry.MultiPolygon();
+                polygons.Polygons = new List<GeoJson.Geometry.Polygon>();
+                foreach (var feature in fc.Features) {
+                    var geom = feature.Geometry;
+                    if (geom is Terradue.GeoJson.Geometry.MultiPolygon) {
+                        foreach(var poly in ((GeoJson.Geometry.MultiPolygon)geom).Polygons){
+                            polygons.Polygons.Add(poly);
+                        }
+                    }
+                    else if (geom is Terradue.GeoJson.Geometry.Polygon) {
+                        polygons.Polygons.Add((GeoJson.Geometry.Polygon)geom);
+                    }
+                }
+                return Terradue.GeoJson.Geometry.WktExtensions.ToWkt(polygons);
+            } else throw new Exception("no feature found in the geojson");
+        }
+
+        private string ExtractWKTFromGeoJson(Stream stream, int points) {
+            var wkt = ExtractWKTFromGeoJson(stream);
+            NetTopologySuite.IO.WKTReader wktReader = new NetTopologySuite.IO.WKTReader();
+            wktReader.RepairRings = true;
+            var finalgeometry = wktReader.Read(wkt);
+
+            if (finalgeometry != null) {
+                finalgeometry = SimplifyGeometry(finalgeometry, points);
+                foreach (var p in finalgeometry.Coordinates.ToArray()) {
+                    p.X = Math.Round(p.X, 2);
+                    p.Y = Math.Round(p.Y, 2);
+                    p.Z = Math.Round(p.Z, 2);
+                }
+                wkt = finalgeometry.AsText();
+            }
+            return wkt;
         }
     }
 
