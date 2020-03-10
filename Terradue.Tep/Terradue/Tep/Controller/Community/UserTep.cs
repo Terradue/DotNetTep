@@ -424,6 +424,32 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Check if user has T2 notebooks account created
+        /// </summary>
+        /// <returns></returns>
+        public bool HasT2NotebooksAccount() {
+            bool hasnotebooks = false;
+            var url = string.Format("{0}?token={1}&username={2}&request=jupyterhub",
+                                        context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                        context.GetConfigValue("t2portal-safe-token"),
+                                        this.TerradueCloudUsername);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+            request.Proxy = null;
+
+            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    var s = streamReader.ReadToEnd();
+                    hasnotebooks = s.Trim('"') == "true";
+                }
+            }
+            return hasnotebooks;
+        }
+
+        /// <summary>
         /// Gets the nb of login.
         /// </summary>
         /// <returns>The nb of login.</returns>

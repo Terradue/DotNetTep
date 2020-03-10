@@ -107,6 +107,12 @@ namespace Terradue.Tep.WebServer {
         public string UsrId { get; set; }
     }
 
+    [Route("/user/{usrId}/notebooks", "GET", Summary = "GET user has T2 notebooks", Notes = "")]
+    public class UserHasT2NotebooksRequestTep : IReturn<WebResponseBool> {
+        [ApiMember(Name = "usrId", Description = "id of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string UsrId { get; set; }
+    }
+
     [Route("/user/csv", "GET", Summary = "GET user list as csv", Notes = "")]
     public class UserCsvListRequestTep : IReturn<string> { }
 
@@ -134,7 +140,7 @@ namespace Terradue.Tep.WebServer {
         [ApiMember (Name = "t2apikey", Description = "T2 User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string T2ApiKey { get; set; }
 
-		[ApiMember(Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
+        [ApiMember(Name = "apikey", Description = "User apikey", ParameterType = "query", DataType = "string", IsRequired = false)]
 		public string ApiKey { get; set; }
 
         [ApiMember(Name = "balance", Description = "User accounting balance", ParameterType = "query", DataType = "double", IsRequired = false)]

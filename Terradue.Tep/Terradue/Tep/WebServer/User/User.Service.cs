@@ -582,6 +582,26 @@ namespace Terradue.Tep.WebServer.Services {
             return csv.ToString();
         }
 
+        public object Get(UserHasT2NotebooksRequestTep request) {
+            bool result = false;
+
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/{{usrId}}/notebooks GET usrId='{0}'", request.UsrId));
+
+                UserTep user = UserTep.FromIdentifier(context, request.UsrId);
+                if (context.AccessLevel == EntityAccessLevel.Administrator || context.Username == request.UsrId) result = user.HasT2NotebooksAccount();
+                
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
     }
 }
 
