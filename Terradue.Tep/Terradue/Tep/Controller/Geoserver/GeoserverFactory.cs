@@ -16,8 +16,54 @@ namespace Terradue.Tep {
 
         public GeoserverFactory() {}
 
-        public static GeoserverStylesResponse GetStyles(string layer) {
+        public static GeoserverStylesResponse GetGlobalStyles() {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/rest/styles.json", geoserverBaseUrl));
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Credentials = new NetworkCredential(geoserverUsername, geoserverPwd);
+            request.Proxy = null;
+
+            GeoserverStylesResponse response = null;
+
+            try {
+                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        string result = streamReader.ReadToEnd();
+                        response = JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                    }
+                }
+            } catch (Exception e) {
+                throw e;
+            }
+
+            return response;
+        }
+
+        public static GeoserverStylesResponse GetStylesForLayer(string layer) {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/rest/layers/{1}/styles.json", geoserverBaseUrl, layer));
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Credentials = new NetworkCredential(geoserverUsername, geoserverPwd);
+            request.Proxy = null;
+
+            GeoserverStylesResponse response = null;
+
+            try {
+                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        string result = streamReader.ReadToEnd();
+                        response = JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                    }
+                }
+            } catch (Exception e) {
+                throw e;
+            }
+
+            return response;
+        }
+
+        public static GeoserverStylesResponse GetStylesForWorkspace(string workspace) {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/rest/{1}/styles.json", geoserverBaseUrl, workspace));
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Credentials = new NetworkCredential(geoserverUsername, geoserverPwd);
