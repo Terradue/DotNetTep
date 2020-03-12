@@ -63,7 +63,7 @@ namespace Terradue.Tep {
         }
 
         public static GeoserverStylesResponse GetStylesForWorkspace(string workspace) {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/rest/{1}/styles.json", geoserverBaseUrl, workspace));
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(string.Format("{0}/rest/workspaces/{1}/styles.json", geoserverBaseUrl, workspace));
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Credentials = new NetworkCredential(geoserverUsername, geoserverPwd);
