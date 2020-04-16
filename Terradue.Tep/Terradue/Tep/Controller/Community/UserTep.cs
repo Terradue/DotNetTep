@@ -434,17 +434,21 @@ namespace Terradue.Tep {
                                         context.GetConfigValue("t2portal-safe-token"),
                                         this.TerradueCloudUsername);
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.Method = "GET";
-            request.ContentType = "application/json";
-            request.Accept = "application/json";
-            request.Proxy = null;
+            try{
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Method = "GET";
+                request.ContentType = "application/json";
+                request.Accept = "application/json";
+                request.Proxy = null;
 
-            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    var s = streamReader.ReadToEnd();
-                    hasnotebooks = s.Trim('"') == "true";
+                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        var s = streamReader.ReadToEnd();
+                        hasnotebooks = s.Trim('"') == "true";
+                    }
                 }
+            }catch(Exception e){
+                context.LogError(this, e.Message, e);
             }
             return hasnotebooks;
         }
