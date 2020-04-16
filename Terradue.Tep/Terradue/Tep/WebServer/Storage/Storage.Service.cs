@@ -420,7 +420,7 @@ externalDocs:
                 context.Open();
                 context.LogInfo(this, string.Format("/store/download/{0}/{1} GET", request.repoKey, request.path));
 
-                var apikey = request.apikey ?? (context.UserId > 0 ? UserTep.FromId(context, context.UserId).GetSessionApiKey() : null));
+                var apikey = request.apikey ?? (context.UserId > 0 ? UserTep.FromId(context, context.UserId).GetSessionApiKey() : null);
                 var factory = new StoreFactory(context, apikey);
 
                 result = factory.DownloadItem(request.repoKey, request.path);
