@@ -412,14 +412,15 @@ externalDocs:
         }
 
         public object Get(GetDownloadStorageFileRequestTep request) {
-            var context = string.IsNullOrEmpty(request.apikey) ? TepWebContext.GetWebContext(PagePrivileges.UserView) : TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            //var context = string.IsNullOrEmpty(request.apikey) ? TepWebContext.GetWebContext(PagePrivileges.UserView) : TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             Stream result = null;
 
             try {
                 context.Open();
                 context.LogInfo(this, string.Format("/store/download/{0}/{1} GET", request.repoKey, request.path));
 
-                var apikey = request.apikey ?? UserTep.FromId(context, context.UserId).GetSessionApiKey();
+                var apikey = request.apikey ?? (context.UserId > 0 ? UserTep.FromId(context, context.UserId).GetSessionApiKey() : null);
                 var factory = new StoreFactory(context, apikey);
 
                 result = factory.DownloadItem(request.repoKey, request.path);
