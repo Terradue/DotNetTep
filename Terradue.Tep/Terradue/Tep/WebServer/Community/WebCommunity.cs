@@ -92,7 +92,15 @@ namespace Terradue.Tep
 		public string Identifier { get; set; }
 		[ApiMember(Name = "wpsIdentifier", Description = "Identifier of the wps service", ParameterType = "query", DataType = "string", IsRequired = false)]
 		public string WpsIdentifier { get; set; }
-	}
+    }
+
+    [Route("/community/{identifier}/sync/info", "PUT", Summary = "PUT the the community", Notes = "")]
+    public class CommunityUpdateSyncInfoRequestTep : IReturn<WebResponseBool> {
+        [ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        [ApiMember(Name = "syncIdentifier", Description = "Identifier of the sync entity", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string SyncIdentifier { get; set; }
+    }
 
     public class WebCommunityTep : WebDomain {
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "List<string>", IsRequired = true)]

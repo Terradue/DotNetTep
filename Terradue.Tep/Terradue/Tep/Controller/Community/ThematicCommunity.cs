@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Web;
+using ServiceStack.Text;
 using Terradue.OpenSearch;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
@@ -83,6 +86,9 @@ namespace Terradue.Tep {
 
         [EntityDataField("contributor_icon_url")]
         public string ContributorIcon { get; set; }
+
+        [EntityDataField("usersync_identifier")]
+        public string UserSyncIdentifier { get; set; }
 
         private Role defaultRole;
         public string DefaultRoleName { 
@@ -289,6 +295,8 @@ namespace Terradue.Tep {
             role.GrantToUser(user, this);
 
             context.LogInfo(this, string.Format("Set owner ({0}) of community {1}", user.Username, this.Identifier));
+
+            SyncUsers();
         }
 
         /// <summary>
@@ -324,6 +332,8 @@ namespace Terradue.Tep {
                 body = body.Replace("$(USERNAME)", user.Username);
                 body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
                 context.SendMail(emailFrom, emailTo, subject, body);
+            } else {
+                SyncUsers();
             }
         }
 
@@ -339,6 +349,9 @@ namespace Terradue.Tep {
                 context.LogInfo(this, string.Format("Joining user {0} to PUBLIC community {1}", context.Username, this.Identifier));
                 Role role = Role.FromIdentifier(context, this.DefaultRoleName);
                 role.GrantToUser(context.UserId, this.Id);
+
+                SyncUsers();
+
             } else {
                 //private communities, we add user in pending table and request manager to add him
                 this.SetUserAsTemporaryMember(user);
@@ -425,6 +438,8 @@ namespace Terradue.Tep {
             role.RevokeFromUser(user, this);
 
             context.LogInfo(this, string.Format("User {0} set as definitive member for community {1}", user.Username, this.Identifier));
+
+            SyncUsers();
         }
 
         /// <summary>
@@ -467,6 +482,8 @@ namespace Terradue.Tep {
                 }
             }
 
+            SyncUsers();
+
         }
 
         /// <summary>
@@ -492,6 +509,43 @@ namespace Terradue.Tep {
 			}
 
             return users;
+        }
+
+        private void SyncUsers() {            
+            try {
+                var token = context.GetConfigValue(this.UserSyncIdentifier + "-token");
+                var syncUrl = context.GetConfigValue(this.UserSyncIdentifier + "-sync-url");                
+
+                List<UserSync> a2sUsers = new List<UserSync>();
+                foreach (var user in GetUsers()) {
+                    a2sUsers.Add(new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation });
+                }
+
+                var a2sInput = new UserSyncRequest { token = token, users = a2sUsers };
+
+                var request = (HttpWebRequest)WebRequest.Create(syncUrl);
+                request.Proxy = null;
+                request.Method = "PUT";
+                request.ContentType = "application/json";
+                request.Accept = "application/json";
+
+                var payload = JsonSerializer.SerializeToString<UserSyncRequest>(a2sInput);
+
+                using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
+                    streamWriter.Write(payload);
+                    streamWriter.Flush();
+                    streamWriter.Close();
+
+                    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                            var result = streamReader.ReadToEnd();
+                        }
+                    }
+                }
+
+            } catch(Exception e) {
+                context.LogError(this, "Sync A2sHpc users - " + e.Message, e);
+            }                    
         }
 
         /// <summary>
@@ -700,6 +754,7 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("defaultRoleDescription", null, DefaultRoleDescription));
             result.Categories.Add(new SyndicationCategory("emailNotification", null, EmailNotification ? "true" : "false"));
             result.Categories.Add(new SyndicationCategory("enableJoinRequest", null, EnableJoinRequest ? "true" : "false"));
+            if (canusermanage && !string.IsNullOrEmpty(this.UserSyncIdentifier)) result.Categories.Add(new SyndicationCategory("usersync", null, this.UserSyncIdentifier));
 
             //overview
             var roles = new EntityList<Role>(context);
@@ -1173,6 +1228,27 @@ namespace Terradue.Tep {
             IsLoading = false;
             context.CloseQueryResult(reader, dbConnection);
         }
+    }
 
+    [DataContract]
+    public class UserSyncRequest {
+        [DataMember]
+        public string token;
+        [DataMember]
+        public List<UserSync> users;
+    }
+
+    [DataContract]
+    public class UserSync {
+        [DataMember]
+        public int id;
+        [DataMember]
+        public string lastname;
+        [DataMember]
+        public string firstname;
+        [DataMember]
+        public string email;
+        [DataMember]
+        public string company;
     }
 }
