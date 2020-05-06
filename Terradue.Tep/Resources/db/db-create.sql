@@ -1,4 +1,4 @@
--- VERSION 1.2.14
+-- VERSION 1.2.15
 
 USE $MAIN$;
 
@@ -429,3 +429,11 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('log-hideException', 'bool', 'Hide exception in error log', 'Hide exception in error log', '1', '0');
 -- RESULT
 
+-- Add community sync identifier
+ALTER TABLE domain ADD COLUMN `usersync_identifier` VARCHAR(50) NULL DEFAULT NULL;
+-- RESULT
+
+-- Update config...\
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('a2shpc-token', 'string', 'A2s HPC sync user token', 'A2s HPC sync user token', '', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('a2shpc-sync-url', 'string', 'A2s HPC sync user sync url', 'A2s HPC sync user sync url', '', '0');
+-- RESULT

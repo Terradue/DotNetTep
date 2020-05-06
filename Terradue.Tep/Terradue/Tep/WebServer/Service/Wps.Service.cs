@@ -386,17 +386,37 @@ namespace Terradue.Tep.WebServer.Services {
                 var describeResponse = wps.DescribeProcess();
 				if (describeResponse is ProcessDescriptions) {
                     var descResponse = describeResponse as ProcessDescriptions;
-					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2Username")) {
+					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2InternalJobTitle")) {
 						var input = new InputType();
-						input.Identifier = new CodeType { Value = "_T2Username" };
+						input.Identifier = new CodeType { Value = "_T2InternalJobTitle" };
 						input.Data = new DataType {
 							Item = new LiteralDataType {
-								Value = user.TerradueCloudUsername
+								Value = wpsjob.Name
 							}
 						};
 						executeInput.DataInputs.Add(input);
 					}
-					if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ApiKey")) {
+                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2Username")) {
+                        var input = new InputType();
+                        input.Identifier = new CodeType { Value = "_T2Username" };
+                        input.Data = new DataType {
+                            Item = new LiteralDataType {
+                                Value = user.TerradueCloudUsername
+                            }
+                        };
+                        executeInput.DataInputs.Add(input);
+                    }
+                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2UserEmail")) {
+                        var input = new InputType();
+                        input.Identifier = new CodeType { Value = "_T2UserEmail" };
+                        input.Data = new DataType {
+                            Item = new LiteralDataType {
+                                Value = user.Email
+                            }
+                        };
+                        executeInput.DataInputs.Add(input);
+                    }
+                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ApiKey")) {
 						var input = new InputType();
 						input.Identifier = new CodeType { Value = "_T2ApiKey" };
 						input.Data = new DataType {
@@ -522,7 +542,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogDebug(this, string.Format("Execute response ok"));
 
                 var execResponse = executeResponse as ExecuteResponse;
-                Uri uri = new Uri(execResponse.serviceInstance);
+                Uri uri = new Uri(execResponse.serviceInstance ?? execResponse.statusLocation);
                 execResponse.serviceInstance = context.BaseUrl + uri.PathAndQuery;
                 execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
                 new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(stream, execResponse);
