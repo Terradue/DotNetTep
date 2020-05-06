@@ -205,9 +205,11 @@ namespace Terradue.Tep {
                     if (data.Identifier != null) {
                         switch (data.Identifier.Value) {
                             case "_T2Username":
+                            case "_T2UserEmail":
                             case "_T2ApiKey":
                             case "_T2JobInfoFeed":
                             case "_T2ResultsAnalysis":
+                            case "_T2InternalJobTitle":
                                 break;
                             case "index":
                             case "repoKey":
