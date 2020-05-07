@@ -296,7 +296,7 @@ namespace Terradue.Tep {
 
             context.LogInfo(this, string.Format("Set owner ({0}) of community {1}", user.Username, this.Identifier));
 
-            SyncUsers();
+            SyncUserAdd(user);
         }
 
         /// <summary>
@@ -333,7 +333,7 @@ namespace Terradue.Tep {
                 body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
                 context.SendMail(emailFrom, emailTo, subject, body);
             } else {
-                SyncUsers();
+                SyncUserAdd(user);
             }
         }
 
@@ -350,7 +350,7 @@ namespace Terradue.Tep {
                 Role role = Role.FromIdentifier(context, this.DefaultRoleName);
                 role.GrantToUser(context.UserId, this.Id);
 
-                SyncUsers();
+                SyncUserAdd(user);
 
             } else {
                 //private communities, we add user in pending table and request manager to add him
@@ -439,7 +439,7 @@ namespace Terradue.Tep {
 
             context.LogInfo(this, string.Format("User {0} set as definitive member for community {1}", user.Username, this.Identifier));
 
-            SyncUsers();
+            SyncUserAdd(user);
         }
 
         /// <summary>
@@ -482,7 +482,7 @@ namespace Terradue.Tep {
                 }
             }
 
-            SyncUsers();
+            SyncUserRemove(user);
 
         }
 
@@ -511,17 +511,27 @@ namespace Terradue.Tep {
             return users;
         }
 
-        private void SyncUsers() {            
+        private void SyncUserAdd(User user) {
+            SyncUser(user, "POST");
+        }
+        private void SyncUserRemove(User user) {
+            //first we check that the user is not in another community that can synchronize with the same endpoint
+            var sql = string.Format("SELECT COUNT(*) FROM rolegrant " +
+                "WHERE id_usr={0} " +
+                "AND id_domain IN (SELECT id FROM domain WHERE usersync_identifier='{1}' AND id != {2}) " +
+                "AND id_role != (SELECT id FROM role WHERE identifier='pending');",user.Id, this.UserSyncIdentifier, this.Id);
+            var count = context.GetQueryIntegerValue(sql);
+            if (count==0) SyncUser(user, "DELETE");
+        }
+        private void SyncUser(User user, string action) {
+            if (string.IsNullOrEmpty(UserSyncIdentifier)) return;
+
             try {
                 var token = context.GetConfigValue(this.UserSyncIdentifier + "-token");
                 var syncUrl = context.GetConfigValue(this.UserSyncIdentifier + "-sync-url");                
-
-                List<UserSync> a2sUsers = new List<UserSync>();
-                foreach (var user in GetUsers()) {
-                    a2sUsers.Add(new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation });
-                }
-
-                var a2sInput = new UserSyncRequest { token = token, users = a2sUsers };
+                
+                var a2sUser = new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation };                
+                var a2sInput = new UserSyncRequest { token = token, user = a2sUser, action = action };
 
                 var request = (HttpWebRequest)WebRequest.Create(syncUrl);
                 request.Proxy = null;
@@ -529,7 +539,7 @@ namespace Terradue.Tep {
                 request.ContentType = "application/json";
                 request.Accept = "application/json";
 
-                var payload = JsonSerializer.SerializeToString<UserSyncRequest>(a2sInput);
+                var payload = JsonSerializer.SerializeToString(a2sInput);
 
                 using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
                     streamWriter.Write(payload);
@@ -544,10 +554,10 @@ namespace Terradue.Tep {
                 }
 
             } catch(Exception e) {
-                context.LogError(this, "Sync A2sHpc users - " + e.Message, e);
+                context.LogError(this, "Sync A2sHpc user - " + e.Message, e);
             }                    
         }
-
+                
         /// <summary>
         /// Gets the thematic application.
         /// </summary>
@@ -1233,22 +1243,24 @@ namespace Terradue.Tep {
     [DataContract]
     public class UserSyncRequest {
         [DataMember]
-        public string token;
+        public string token { get; set; }
         [DataMember]
-        public List<UserSync> users;
+        public UserSync user { get; set; }
+        [DataMember]
+        public string action { get; set; }
     }
 
     [DataContract]
     public class UserSync {
         [DataMember]
-        public int id;
+        public int id { get; set; }
         [DataMember]
-        public string lastname;
+        public string lastname { get; set; }
         [DataMember]
-        public string firstname;
+        public string firstname { get; set; }
         [DataMember]
-        public string email;
+        public string email { get; set; }
         [DataMember]
-        public string company;
+        public string company { get; set; }
     }
 }
