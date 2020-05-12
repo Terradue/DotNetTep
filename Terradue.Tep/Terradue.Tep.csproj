@@ -219,13 +219,13 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.8.0\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.8.8\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.8.0\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.8.8\lib\net45\Terradue.Portal.Agent.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.8.0\lib\net45\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.8.8\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -359,6 +359,11 @@
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.prj" />
     <None Include="modules\ldap\ne_110m_land\ne_110m_land.dbf" />
     <None Include="modules\ldap\db\db-create.sql" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.shx" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.shp" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.prj" />
+    <None Include="modules\news\ne_110m_land\ne_110m_land.dbf" />
+    <None Include="modules\news\db\db-create.sql" />
     <None Include="core\db\db-create.sql" />
     <None Include="core\db\db-2.7.9#.sql" />
     <None Include="core\db\db-2.7.8#.sql" />
@@ -394,11 +399,6 @@
     <None Include="core\db\db-2.5#.sql" />
     <None Include="core\db\db-2.4c.sql" />
     <None Include="core\db\db-2.4#.sql" />
-    <None Include="modules\news\ne_110m_land\ne_110m_land.shx" />
-    <None Include="modules\news\ne_110m_land\ne_110m_land.shp" />
-    <None Include="modules\news\ne_110m_land\ne_110m_land.prj" />
-    <None Include="modules\news\ne_110m_land\ne_110m_land.dbf" />
-    <None Include="modules\news\db\db-create.sql" />
 </ItemGroup>
   <ItemGroup>
     <Folder Include="Terradue\Tep\WebServer\Config\" />

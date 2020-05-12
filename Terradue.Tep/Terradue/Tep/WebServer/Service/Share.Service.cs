@@ -94,6 +94,21 @@ namespace Terradue.Tep.WebServer.Services {
                         }
                     }
                 }
+            } else if (entitySelf is EntityList<WpsProcessOffering>) {
+                var entitylist = entitySelf as EntityList<WpsProcessOffering>;
+                var items = entitylist.GetItemsAsList();
+                if (items.Count > 0) {
+                    foreach (var item in items) {
+                        item.RevokePermissionsFromAll(true, false);
+                        if (item.UserId != 0) {
+                            var owner = User.FromId(context, item.UserId);
+                            if (item.DomainId != owner.DomainId) {
+                                item.DomainId = owner.DomainId;
+                                item.Store();
+                            }
+                        }
+                    }
+                }
             }
 
             context.Close();
@@ -263,8 +278,66 @@ namespace Terradue.Tep.WebServer.Services {
                             }
                         }
                     }
+                } 
+
+            } else if (entitySelf is EntityList<WpsProcessOffering>) {
+                var entitylist = entitySelf as EntityList<WpsProcessOffering>;
+                var services = entitylist.GetItemsAsList();
+                if (services.Count == 0) return new WebResponseBool(false);
+
+                //if to is null, we share publicly
+                if (request.to == null) {
+                    foreach (var s in services) { //the entitySelf can return several entities
+                        s.GrantPermissionsToAll();
+
+                        Activity activity = new Activity(context, s, EntityOperationType.Share);
+                        activity.Store();
+                    }
                 }
 
+                //we share with restriction (community + users)
+                else {
+                    foreach (var s in services) { //the entitySelf can return several entities
+                        //remove previous visibility sharing
+                        s.RevokePermissionsFromAll(true, false);
+                        var owner = User.FromId(context, s.UserId);
+                        if (owner != null && s.DomainId != owner.DomainId) {
+                            s.DomainId = owner.DomainId;
+                            s.Store();
+                        }
+
+                        foreach (var to in request.to) {
+                            var entityTo = new UrlBasedOpenSearchable(context, new OpenSearchUrl(to), settings).Entity;
+
+                            //case community
+                            if (entityTo is EntityList<ThematicCommunity>) {
+                                var entityTolist = entityTo as EntityList<ThematicCommunity>;
+                                var communities = entityTolist.GetItemsAsList();
+                                if (communities.Count == 0) return new WebResponseBool(false);
+                                //the entitySelflist can return several entities but we only take the first one (we can share with only one community)
+                                s.DomainId = communities[0].Id;
+                                s.Store();
+
+                                ActivityTep activity = new ActivityTep(context, s, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.DomainId = communities[0].Id;
+                                activity.Store();
+                            }
+
+                            //case user
+                            else if (entityTo is EntityList<UserTep>) {
+                                var entityTolist = entityTo as EntityList<UserTep>;
+                                var users = entityTolist.GetItemsAsList();
+                                if (users.Count == 0) return new WebResponseBool(false);
+                                s.GrantPermissionsToUsers(users);
+
+                                ActivityTep activity = new ActivityTep(context, s, EntityOperationType.Share);
+                                activity.AppId = request.id;
+                                activity.Store();
+                            }
+                        }
+                    }
+                }
             }
 
             context.Close ();
