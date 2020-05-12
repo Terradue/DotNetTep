@@ -346,7 +346,7 @@ namespace Terradue.Tep {
         }
 
         public bool IsPublic(){
-            return DoesGrantGlobalPermission();
+            return DoesGrantPermissionsToAll();
         }
 
         public bool IsPrivate(){

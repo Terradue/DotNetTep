@@ -72,24 +72,9 @@ namespace Terradue.Tep {
                             }
 
                             if (match.Groups[1].Value == "/service/wps") {
-								//EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
-								//CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
-								//var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
-								//MultiGenericOpenSearchable list = new MultiGenericOpenSearchable(entities, ose);
-								//IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
-								//entity = list;
-								EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
-								wpsProcesses.SetFilter("Available", "true");
-								wpsProcesses.OpenSearchEngine = ose;
-                                CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
-								wpsOneProcesses.OpenSearchEngine = ose;
-								wpsProcesses.Identifier = "service/wps";
-								var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
-
-                                MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
-                                IOpenSearchResultCollection osr = ose.Query(multiOSE, url.SearchAttributes);
-                                entity = multiOSE;
-                                Items = osr.Items;
+                                EntityList<WpsProcessOffering> list = new EntityList<WpsProcessOffering>(context);
+                                IOpenSearchResultCollection osr = ose.Query(list, url.SearchAttributes);
+                                entity = list;                                
                             }
 
                             if (match.Groups[1].Value == "/cr/wps") {
