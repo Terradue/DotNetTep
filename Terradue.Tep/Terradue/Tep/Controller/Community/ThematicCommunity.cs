@@ -512,9 +512,12 @@ namespace Terradue.Tep {
         }
 
         private void SyncUserAdd(User user) {
+            if (string.IsNullOrEmpty(UserSyncIdentifier)) return;
             SyncUser(user, "POST");
         }
         private void SyncUserRemove(User user) {
+            if (string.IsNullOrEmpty(UserSyncIdentifier)) return;
+
             //first we check that the user is not in another community that can synchronize with the same endpoint
             var sql = string.Format("SELECT COUNT(*) FROM rolegrant " +
                 "WHERE id_usr={0} " +
