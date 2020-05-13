@@ -889,6 +889,13 @@ namespace Terradue.Tep {
                         var dp = items[0];
 						if (dp.Owner.Id == this.Id || !dp.IsSharedToUser(this.Id, correlatedPolicy)) return null;
                     }
+                } else if (cachedItem is EntityList<WpsProcessOffering>) {
+                    var entitylist = cachedItem as EntityList<WpsProcessOffering>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        var s = items[0];
+                        if (s.Owner!= null && (s.Owner.Id == this.Id || !s.IsSharedToUser(this.Id, correlatedPolicy))) return null;
+                    }
                 }
 
             }

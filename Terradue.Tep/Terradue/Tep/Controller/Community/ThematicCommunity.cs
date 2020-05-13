@@ -1014,8 +1014,14 @@ namespace Terradue.Tep {
                     if (items.Count > 0) {
                         return new KeyValuePair<string, string>("Id", items[0].DomainId.ToString());
                     }
+                } else if (entity is EntityList<WpsProcessOffering>) {
+                    var entitylist = entity as EntityList<WpsProcessOffering>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        return new KeyValuePair<string, string>("Id", items[0].DomainId.ToString());
+                    }
                 }
-                return new KeyValuePair<string, string>("DomainId", "0");
+            return new KeyValuePair<string, string>("DomainId", "0");
             default:
                 return base.GetFilterForParameter(parameter, value);
             }

@@ -100,10 +100,9 @@ namespace Terradue.Tep.WebServer.Services {
                 if (items.Count > 0) {
                     foreach (var item in items) {
                         item.RevokePermissionsFromAll(true, false);
-                        if (item.UserId != 0) {
-                            var owner = User.FromId(context, item.UserId);
-                            if (item.DomainId != owner.DomainId) {
-                                item.DomainId = owner.DomainId;
+                        if (item.Owner != null) {
+                            if (item.DomainId != item.Owner.DomainId) {
+                                item.DomainId = item.Owner.DomainId;
                                 item.Store();
                             }
                         }
@@ -299,10 +298,9 @@ namespace Terradue.Tep.WebServer.Services {
                 else {
                     foreach (var s in services) { //the entitySelf can return several entities
                         //remove previous visibility sharing
-                        s.RevokePermissionsFromAll(true, false);
-                        var owner = User.FromId(context, s.UserId);
-                        if (owner != null && s.DomainId != owner.DomainId) {
-                            s.DomainId = owner.DomainId;
+                        s.RevokePermissionsFromAll(true, false);                        
+                        if (s.Owner != null && s.DomainId != s.Owner.DomainId) {
+                            s.DomainId = s.Owner.DomainId;
                             s.Store();
                         }
 
