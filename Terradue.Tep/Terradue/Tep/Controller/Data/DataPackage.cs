@@ -393,9 +393,14 @@ namespace Terradue.Tep {
             return sharedUsersIds != null && (sharedUsersIds.Contains(id));
         }
 
-        public bool IsRestricted(){
+        public bool IsSharedWithUsers(){
 			string sql = String.Format("SELECT COUNT(*) FROM resourceset_perm WHERE id_resourceset={0} AND ((id_usr IS NOT NULL AND id_usr != {1}) OR id_grp IS NOT NULL);", this.Id, this.OwnerId);
             return context.GetQueryIntegerValue(sql) > 0;
+        }
+
+        public bool IsRestricted()
+        {
+            return (IsSharedWithUsers() || IsSharedToCommunity());
         }
 
         public void SetOpenSearchEngine(OpenSearchEngine ose) {
