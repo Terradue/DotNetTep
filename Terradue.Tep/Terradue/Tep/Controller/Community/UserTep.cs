@@ -894,7 +894,7 @@ namespace Terradue.Tep {
                     var items = entitylist.GetItemsAsList();
                     if (items.Count > 0) {
                         var s = items[0];
-                        if (s.Owner!= null && (s.Owner.Id == this.Id || !s.IsSharedToUser(this.Id, correlatedPolicy))) return null;
+                        if ((s.Owner != null && s.Owner.Id == this.Id) || !s.IsSharedToUser(this.Id, correlatedPolicy)) return null;
                     }
                 }
 
