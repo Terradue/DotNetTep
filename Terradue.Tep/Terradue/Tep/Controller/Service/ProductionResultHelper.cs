@@ -208,8 +208,25 @@ namespace Terradue.Tep {
                     if (m.Success) {
                         workflow = m.Result("${workflow}");
                         runId = m.Result("${runid}");
+
+                        if (wpsjob.Provider != null && wpsjob.Provider.BaseUrl != null) {
+                            r = new System.Text.RegularExpressions.Regex(@"https?:\/\/ogc-eo-apps-0?[0-9@].terradue.com");
+                            m = r.Match(wpsjob.Provider.BaseUrl);
+                            if (m.Success) {
+                                if (wpsjob.Owner != null) {
+                                    var username = wpsjob.Owner.TerradueCloudUsername;
+                                    var recastdescribeurl = string.Format("{0}/t2api/describe/{1}/_results/workflows/{2}/run/{3}", recastBaseUrl, username, workflow, runId);
+                                    wpsjob.StatusLocation = recastdescribeurl;
+                                    wpsjob.Status = WpsJobStatus.STAGED;
+                                    wpsjob.Store();
+                                    return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
+                                }
+                            }   
+                        }
+
                         recaststatusurl = GetWpsJobRecastStatusUrl(hostname, workflow, runId);
                         newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
+
                     } else {
                         //case new sandboxes
                         r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
