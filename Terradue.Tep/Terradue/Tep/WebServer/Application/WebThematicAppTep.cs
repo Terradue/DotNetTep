@@ -22,7 +22,10 @@ namespace Terradue.Tep.WebServer {
 
 	[Route("/apps/cache", "GET", Summary = "cache thematic apps", Notes = "")]
     public class ThematicAppCacheRequestTep : IReturn<List<HttpResult>> {
-		[ApiMember(Name = "username", Description = "identifier of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
+		[ApiMember(Name = "uid", Description = "identifier of the app", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Uid { get; set; }
+
+        [ApiMember(Name = "username", Description = "identifier of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Username { get; set; }
 
 		[ApiMember(Name = "community", Description = "identifier of the community", ParameterType = "query", DataType = "string", IsRequired = false)]
