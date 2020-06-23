@@ -94,7 +94,7 @@ namespace Terradue.Tep
 		public string WpsIdentifier { get; set; }
     }
 
-    [Route("/community/{identifier}/sync/info", "PUT", Summary = "PUT the the community", Notes = "")]
+    [Route("/community/{identifier}/sync/info", "PUT", Summary = "PUT the sync to the community", Notes = "")]
     public class CommunityUpdateSyncInfoRequestTep : IReturn<WebResponseBool> {
         [ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Identifier { get; set; }
@@ -102,6 +102,15 @@ namespace Terradue.Tep
         public string SyncIdentifier { get; set; }
     }
 
+    [Route("/community/{identifier}/sync/info", "DELETE", Summary = "DELETE the sync of the community", Notes = "")]
+    public class CommunityRemoveSyncInfoRequestTep : IReturn<WebResponseBool>
+    {
+        [ApiMember(Name = "identifier", Description = "Identifier of the community", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        [ApiMember(Name = "syncIdentifier", Description = "Identifier of the sync entity", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string SyncIdentifier { get; set; }
+    }
+    
     public class WebCommunityTep : WebDomain {
         [ApiMember(Name="Apps", Description = "Thematic Apps link", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
         public List<string> Apps { get; set; }

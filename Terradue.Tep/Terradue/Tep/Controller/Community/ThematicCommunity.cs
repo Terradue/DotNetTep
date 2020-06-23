@@ -511,29 +511,52 @@ namespace Terradue.Tep {
             return users;
         }
 
+        public void SyncExistingUsersAdd(string syncIdentifier) {
+            SyncExistingUsers(syncIdentifier, "POST");
+        }
+        public void SyncExistingUsersRemove(string syncIdentifier) {
+            SyncExistingUsers(syncIdentifier, "DELETE");
+        }
+        private void SyncExistingUsers(string syncIdentifier, string action) {            
+            foreach(var user in GetUsers()) {
+                SyncUser(user, action, syncIdentifier);
+            }
+        }
+        
         private void SyncUserAdd(User user) {
             if (string.IsNullOrEmpty(UserSyncIdentifier)) return;
             SyncUser(user, "POST");
         }
         private void SyncUserRemove(User user) {
             if (string.IsNullOrEmpty(UserSyncIdentifier)) return;
-
-            //first we check that the user is not in another community that can synchronize with the same endpoint
-            var sql = string.Format("SELECT COUNT(*) FROM rolegrant " +
-                "WHERE id_usr={0} " +
-                "AND id_domain IN (SELECT id FROM domain WHERE usersync_identifier='{1}' AND id != {2}) " +
-                "AND id_role != (SELECT id FROM role WHERE identifier='pending');",user.Id, this.UserSyncIdentifier, this.Id);
-            var count = context.GetQueryIntegerValue(sql);
-            if (count==0) SyncUser(user, "DELETE");
+            SyncUser(user, "DELETE");
         }
         private void SyncUser(User user, string action) {
             if (string.IsNullOrEmpty(UserSyncIdentifier)) return;
 
+            var syncidentifiers = UserSyncIdentifier.Split(',');
+            foreach (var syncIdentifier in syncidentifiers) {
+                SyncUser(user, action, syncIdentifier);
+            }
+        }
+
+        private void SyncUser(User user, string action, string syncIdentifier) {
+            if (string.IsNullOrEmpty(syncIdentifier)) return;
             try {
-                var token = context.GetConfigValue(this.UserSyncIdentifier + "-token");
-                var syncUrl = context.GetConfigValue(this.UserSyncIdentifier + "-sync-url");                
-                
-                var a2sUser = new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation };                
+                if (action == "DELETE") {
+                    //first we check that the user is not in another community that can synchronize with the same endpoint
+                    var sql = string.Format("SELECT COUNT(*) FROM rolegrant " +
+                        "WHERE id_usr={0} " +
+                        "AND id_domain IN (SELECT id FROM domain WHERE (usersync_identifier = '{1}' OR usersync_identifier LIKE '%,{1}' OR usersync_identifier LIKE '{1},%' OR usersync_identifier LIKE '%,{1},%') AND id != {2}) " +
+                        "AND id_role != (SELECT id FROM role WHERE identifier='pending');", user.Id, syncIdentifier, this.Id);
+                    var count = context.GetQueryIntegerValue(sql);
+                    if (count > 0) return;
+                }
+
+                var token = context.GetConfigValue(syncIdentifier + "-token");
+                var syncUrl = context.GetConfigValue(syncIdentifier + "-sync-url");
+
+                var a2sUser = new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation };
                 var a2sInput = new UserSyncRequest { token = token, user = a2sUser, action = action };
 
                 var request = (HttpWebRequest)WebRequest.Create(syncUrl);
@@ -556,9 +579,9 @@ namespace Terradue.Tep {
                     }
                 }
 
-            } catch(Exception e) {
+            } catch (Exception e) {
                 context.LogError(this, "Sync A2sHpc user - " + e.Message, e);
-            }                    
+            }
         }
                 
         /// <summary>
