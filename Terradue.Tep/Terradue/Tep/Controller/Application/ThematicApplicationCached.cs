@@ -370,13 +370,60 @@ namespace Terradue.Tep {
             return upIds;
         }
 
+        public void RefreshCachedApp(string uid)
+        {
+            this.LogInfo(string.Format("RefreshCachedApps -- Get public apps"));
+            var apps = new EntityList<ThematicApplicationCached>(context);
+            apps.SetFilter("UId", uid);				
+            apps.Load();
+            if(apps.Count == 1){
+                var app = apps.GetItemsAsList()[0];
+                var entries = app.Feed;
+                if (entries == null) entries = ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+                var itemFeed = entries.Items.First();
+                var link = itemFeed.Links.FirstOrDefault(l => l.RelationshipType == "self");
+                if (link == null) return;
+                var url = link.Uri.AbsoluteUri;
+                var urib = new UriBuilder(url);
+                var query = HttpUtility.ParseQueryString(urib.Query);
+
+                //add user apikey
+                var user = UserTep.FromId(context, context.UserId);
+                var apikey = user.GetSessionApiKey();
+                if (!string.IsNullOrEmpty(apikey)) query.Set("apikey", apikey);
+
+                //add random for cache
+                var random = new Random();
+                query.Set("random", random.Next() + "");
+                var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                urib.Query = string.Join("&", queryString);
+                url = urib.Uri.AbsoluteUri;
+
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+                        var feed = GetOwsContextAtomFeed(stream);
+                        var entry = feed.Items.First();
+                        if (feed.Items != null && feed.Items.Count() == 1) {                                
+                            app.Feed = feed;
+                            app.TextFeed = GetOwsContextAtomFeedAsString(feed);
+                            app.Searchable = GetSearchableTextFromAtomEntry(entry);
+                            app.LastUpdate = entry.LastUpdatedTime.DateTime == DateTime.MinValue ? DateTime.UtcNow : entry.LastUpdatedTime.DateTime;            
+                            app.Store();
+                            this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}'", app.UId));                                
+                        }
+                    }
+                }                    
+            }				
+        }
+
         /// <summary>
         /// Refreshs the cached apps.
         /// </summary>
         /// <param name="withUserPrivateApps">If set to <c>true</c> with user private apps.</param>
         /// <param name="withCommunitiesApps">If set to <c>true</c> with communities apps.</param>
         /// <param name="withPublicApps">If set to <c>true</c> with public apps.</param>
-		public void RefreshCachedApps(bool withUserPrivateApps, bool withCommunitiesApps, bool withPublicApps){
+        public void RefreshCachedApps(bool withUserPrivateApps, bool withCommunitiesApps, bool withPublicApps){
 
 			//Get all existing apps
 			EntityList<ThematicApplicationCached> existingApps = new EntityList<ThematicApplicationCached>(context);

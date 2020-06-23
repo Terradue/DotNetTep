@@ -329,7 +329,10 @@ namespace Terradue.Tep.WebServer.Services {
 			try {
                 context.LogInfo(this, string.Format("/apps/cache GET"));
 				var appFactory = new ThematicAppCachedFactory(context);
-                if (!string.IsNullOrEmpty(request.Username)) {
+                if (!string.IsNullOrEmpty(request.Uid)) {
+                    //refresh only a given app
+                    appFactory.RefreshCachedApp(request.Uid);
+                } else if (!string.IsNullOrEmpty(request.Username)) {
                     //refresh only for private apps
                     var user = UserTep.FromIdentifier(context, request.Username);
                     if (user.Id == context.UserId) appFactory.RefreshCachedAppsForUser(user);
