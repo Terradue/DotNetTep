@@ -364,10 +364,42 @@ namespace Terradue.Tep.WebServer.Services{
                 context.LogInfo(this, string.Format("/community/{{Identifier}}/sync/info PUT Identifier='{0}' , SyncIdentifier='{1}'", request.Identifier, request.SyncIdentifier));
                 var domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
                 if (!domain.CanUserManage(context.UserId)) throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
-                domain.UserSyncIdentifier = request.SyncIdentifier;
+                domain.UserSyncIdentifier += "," + request.SyncIdentifier;
+                domain.UserSyncIdentifier = domain.UserSyncIdentifier.Trim(',');
                 domain.Store();
+
+                //add all users already in the community
+                domain.SyncExistingUsersAdd(request.SyncIdentifier);
+
                 context.Close();
             } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        public object Delete(CommunityRemoveSyncInfoRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try
+            {
+                context.Open();
+                context.AccessLevel = EntityAccessLevel.Privilege;
+                context.LogInfo(this, string.Format("/community/{{Identifier}}/sync/info DELETE Identifier='{0}' , SyncIdentifier='{1}'", request.Identifier, request.SyncIdentifier));
+                var domain = ThematicCommunity.FromIdentifier(context, request.Identifier);
+                if (!domain.CanUserManage(context.UserId)) throw new UnauthorizedAccessException(CustomErrorMessages.ADMINISTRATOR_ONLY_ACTION);
+                if (domain.UserSyncIdentifier != null) domain.UserSyncIdentifier = domain.UserSyncIdentifier.Replace(request.SyncIdentifier,"").Replace(",,",",").Trim(',');
+                domain.Store();
+
+                //remove all users already in the community
+                domain.SyncExistingUsersRemove(request.SyncIdentifier);
+
+                context.Close();
+            }
+            catch (Exception e)
+            {
                 context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
