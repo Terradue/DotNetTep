@@ -2,10 +2,6 @@ USE $MAIN$;
 
 /*****************************************************************************/
 
--- Add community sync identifier
-ALTER TABLE domain ADD COLUMN `usersync_identifier` VARCHAR(50) NULL DEFAULT NULL;
--- RESULT
-
 -- Update config...\
 UPDATE config set name = 'a2shpcmpic-token' WHERE name = 'a2shpc-token';
 UPDATE config set name = 'a2shpcmpic-sync-url' WHERE name = 'a2shpc-sync-url';
