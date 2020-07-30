@@ -250,7 +250,12 @@ namespace Terradue.Tep.WebServer.Services
                         datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
                 }
 
-                datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
+                if (Request.QueryString != null && Request.QueryString["cache"] == "false")
+                    datapackage.SetOpenSearchEngine(MasterCatalogue.GetNewOpenSearchEngine());
+                else if (Request.QueryString != null && Request.QueryString["clearcache"] == "true")
+                    datapackage.SetOpenSearchEngine(MasterCatalogue.ClearOpenSearchEngine());
+                else
+                    datapackage.SetOpenSearchEngine(MasterCatalogue.OpenSearchEngine);
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 

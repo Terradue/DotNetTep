@@ -237,6 +237,7 @@ namespace Terradue.Tep {
                         }
                         resultFeed.Items = updatedResultItems;
                         CatalogueFactory.PostAtomFeedToIndex(context, resultFeed, index, username, apikey);
+                        MetricsFactory.SendPublishNotification(context, this.Identifier, user.TerradueCloudUsername, parentSelfB.Uri.AbsoluteUri, this.StatusLocation, true);
                     } else {
                         context.LogError(this, "Unable to publish job results on catalog index : no results link");
                     }
@@ -259,6 +260,7 @@ namespace Terradue.Tep {
 
                 //remove entry from catalogue index
                 CatalogueFactory.DeleteEntryFromIndex(context, index, this.Identifier, username, apikey);
+                MetricsFactory.SendPublishNotification(context, this.Identifier, user.TerradueCloudUsername, null, null, false);
 
                 //remove associated results
                 identifier = null;

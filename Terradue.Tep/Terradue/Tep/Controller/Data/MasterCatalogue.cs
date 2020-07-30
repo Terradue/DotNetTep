@@ -242,23 +242,34 @@ namespace Terradue.Tep {
 
             get {
                 if (ose == null) {
-                    ose = new OpenSearchEngine();
-                    AtomOpenSearchEngineExtension aosee = new AtomOpenSearchEngineExtension();
-                    ose.RegisterExtension(aosee);
-                    FeatureCollectionOpenSearchEngineExtension ngosee = new FeatureCollectionOpenSearchEngineExtension();
-                    ose.RegisterExtension(ngosee);
-                    RdfOpenSearchEngineExtension rosee = new RdfOpenSearchEngineExtension();
-                    ose.RegisterExtension(rosee);
-
-                    NameValueCollection nvc = new NameValueCollection();
-                    nvc.Add("SlidingExpiration", "30");
-                    searchCache = new OpenSearchMemoryCache("cache", nvc);
-                    ose.RegisterPreSearchFilter(searchCache.TryReplaceWithCacheRequest);
-                    ose.RegisterPostSearchFilter(searchCache.CacheResponse);
+                    ose = GetNewOpenSearchEngine();
                 }
 
                 return ose;
             }
+        }
+
+        public static OpenSearchEngine ClearOpenSearchEngine() {
+
+            ose = GetNewOpenSearchEngine();
+            return ose;
+        }
+
+        public static OpenSearchEngine GetNewOpenSearchEngine() {
+            var newOse = new OpenSearchEngine();
+            AtomOpenSearchEngineExtension aosee = new AtomOpenSearchEngineExtension();
+            newOse.RegisterExtension(aosee);
+            FeatureCollectionOpenSearchEngineExtension ngosee = new FeatureCollectionOpenSearchEngineExtension();
+            newOse.RegisterExtension(ngosee);
+            RdfOpenSearchEngineExtension rosee = new RdfOpenSearchEngineExtension();
+            newOse.RegisterExtension(rosee);
+
+            NameValueCollection nvc = new NameValueCollection();
+            nvc.Add("SlidingExpiration", "30");
+            searchCache = new OpenSearchMemoryCache("cache", nvc);
+            newOse.RegisterPreSearchFilter(searchCache.TryReplaceWithCacheRequest);
+            newOse.RegisterPostSearchFilter(searchCache.CacheResponse);
+            return newOse;
         }
 
         /// <summary>

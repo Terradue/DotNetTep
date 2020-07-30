@@ -438,4 +438,6 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('a2shpcmpic-sync-url', 'string', 'A2s HPC sync user sync url', 'A2s HPC sync user sync url', '', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('a2shpcdsmopt-token', 'string', 'A2s HPC sync user token', 'A2s HPC sync user token (DSM OPT)', '', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('a2shpcdsmopt-sync-url', 'string', 'A2s HPC sync user sync url', 'A2s HPC sync user sync url (DSM OPT)', '', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('metrics-job-publish-url', 'string', 'Metrics job publish url', 'Metrics job publish url', 'https://metrics.terradue.com/job/publish', '0');
 -- RESULT
+
