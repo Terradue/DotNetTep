@@ -327,6 +327,7 @@
     <Compile Include="Terradue\Tep\WebServer\Geoserver\Geoserver.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Geoserver\GeoserverFactory.cs" />
     <Compile Include="Terradue\Tep\Controller\Data\MetricsFactory.cs" />
+    <Compile Include="Terradue\Tep\Controller\Data\DataGatewayFactory.ShareRequest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
