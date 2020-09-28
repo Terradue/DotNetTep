@@ -10,6 +10,8 @@ using System.Runtime.Serialization;
 using System.Collections.Generic;
 using ServiceStack.Text;
 using System.IO;
+using Terradue.Artifactory.Response;
+using Terradue.Artifactory;
 
 namespace Terradue.Tep
 {
@@ -23,6 +25,7 @@ namespace Terradue.Tep
         static string dataGatewayBaseUrl = AppSettings["DataGatewayBaseUrl"];
         static string dataGatewayShareUrl = AppSettings["DataGatewayShareUrl"];
         static string dataGatewaySecretKey = AppSettings["DataGatewaySecretKey"];
+        static string dataGatewayApikey = AppSettings["DataGatewayApikey"];
 
         public static SyndicationLink SubstituteEnclosure(SyndicationLink link, IOpenSearchable os, IOpenSearchResultItem item)
         {
@@ -218,36 +221,10 @@ namespace Terradue.Tep
                     shareInput.communities.Add(new StoreShareCommunity { identifier = c.Identifier, users = scUsers });
 				}
 			}
-            var payload = JsonSerializer.SerializeToString<StoreShareRequest>(shareInput);
-			System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
-			byte[] payloadBytes = encoding.GetBytes(payload);
-			var sso = System.Convert.ToBase64String(payloadBytes);
-			var sig = TepUtility.HashHMAC(dataGatewaySecretKey, sso);
+            var payload = JsonSerializer.SerializeToString<StoreShareRequest>(shareInput);			
 
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(dataGatewayShareUrl);
-			request.Proxy = null;
-			request.Method = "POST";
-			request.ContentType = "application/json";
-			request.Accept = "application/json";
-
-			string json = "{" +
-				"\"payload\":\"" + sso + "\"," +
-				"\"sig\":\"" + sig + "\"" + 
-				"}";
-
-            log.WarnFormat("Sharing to store : {0}", payload);
-
-			using (var streamWriter = new StreamWriter(request.GetRequestStream())) {
-				streamWriter.Write(json);
-				streamWriter.Flush();
-				streamWriter.Close();
-
-				using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-					using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
-						var result = streamReader.ReadToEnd();
-					}
-				}
-			}
+            ShareRequest shareRequest = ShareRequest.LoadFromJsonString(payload, new ArtifactoryBaseUrl(dataGatewayBaseUrl, dataGatewayApikey));
+            shareRequest.ExecuteAsync(new System.Threading.CancellationToken());
 
         }
 
