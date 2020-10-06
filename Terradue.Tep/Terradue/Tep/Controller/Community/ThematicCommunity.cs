@@ -308,6 +308,9 @@ namespace Terradue.Tep {
             //only owner can do this
             if (!CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can add new users");
 
+            if (!string.IsNullOrEmpty(this.UserSyncIdentifier) && (string.IsNullOrEmpty(user.Affiliation) || string.IsNullOrEmpty(user.Country)))
+                throw new Exception("User cannot be added to the community. Profile is not complete.");
+
             context.LogInfo(this, string.Format("Set role {0} to user {1} for community {2}", role.Identifier, user.Username, this.Identifier));
 
             //delete previous roles
@@ -343,6 +346,9 @@ namespace Terradue.Tep {
         public void TryJoinCurrentUser(string objectives = "") {
 
             var user = User.FromId(context, context.UserId);
+
+            if (!string.IsNullOrEmpty(this.UserSyncIdentifier) && (string.IsNullOrEmpty(user.Affiliation) || string.IsNullOrEmpty(user.Country)))
+                throw new Exception("User cannot be added to the community. Profile is not complete.");
 
             if (this.Kind == DomainKind.Public) {
                 //public community -> user can always join

@@ -172,6 +172,8 @@ namespace Terradue.Tep.WebServer {
             if (context.UserId == entity.Id) {
                 this.ApiKey = entity.ApiKey;
                 this.T2ProfileError = HttpContext.Current.Session["t2profileError"] as string;
+                if ((string.IsNullOrEmpty(entity.Affiliation) || string.IsNullOrEmpty(entity.Country) || string.IsNullOrEmpty(entity.FirstName) || string.IsNullOrEmpty(entity.LastName)))
+                    this.T2ProfileError += (string.IsNullOrEmpty(this.T2ProfileError) ? "" : "\n" ) + "Profile not complete";
                 this.T2ApiKey = entity.GetSessionApiKey();
             }
 
