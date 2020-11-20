@@ -197,7 +197,7 @@ namespace Terradue.Tep.WebServer.Services {
                 csv.Append("Username,Name,Affiliation,First Login date,Terradue cloud username" + Environment.NewLine);
                 foreach (int id in ids) {
                     var usr = UserTep.FromId(context, id);
-                    csv.Append(String.Format("{0},{1},{2},{3},{4}{5}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"), usr.GetFirstLoginDate(), usr.TerradueCloudUsername, Environment.NewLine));
+                    csv.Append(String.Format("{0},{1},\"{2}\",{3},{4}{5}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"), usr.GetFirstLoginDate(), usr.TerradueCloudUsername, Environment.NewLine));
                 }
             }
             csv.Append(Environment.NewLine);
@@ -210,7 +210,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var analytics = new List<ReportAnalytic>();
                 foreach (string id in nvc.AllKeys) {
                     var usr = UserTep.FromId(context, Int32.Parse(id));
-                    var name = string.Format("{0},{1},{2}", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"));
+                    var name = string.Format("{0},{1},\"{2}\"", usr.Username, usr.FirstName + " " + usr.LastName, string.IsNullOrEmpty(usr.Affiliation) ? "n/a" : usr.Affiliation.Replace(",", "\\,"));
 
 					//get average session time
                     sql = string.Format("SELECT log_time,log_end FROM usrsession WHERE id_usr={0} AND log_time > '{1}' AND log_time < '{2}' AND log_end IS NOT NULL order by log_time desc;",id,startdate,enddate);
@@ -290,7 +290,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var statuslocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + job.Identifier;
                     var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
                     totalProcessingTime += processingTime;
-                    csv.Append(String.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}{9}",job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss"), wpsname.Replace(",", "\\,"), job.StringStatus,processingTime,job.NbResults,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
+                    csv.Append(String.Format("\"{0}\",{1},{2},\"{3}\",{4},{5},{6},{7},{8}{9}", job.Name.Replace(",", "\\,"), usr.Username, job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss"), wpsname.Replace(",", "\\,"), job.StringStatus,processingTime,job.NbResults,(job.IsPrivate() ? "no" : "yes"),statuslocation, Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
                 TimeSpan span = TimeSpan.FromMinutes(totalProcessingTime);
@@ -423,7 +423,7 @@ namespace Terradue.Tep.WebServer.Services {
                 analytics.Sort();
                 analytics.Reverse();
                 foreach (var analytic in analytics) {
-                    csv.Append(String.Format("{0},{1},{2},{3}{4}",
+                    csv.Append(String.Format("\"{0}\",{1},{2},{3}{4}",
                                              analytic.name,
                                              analytic.Total,
                                              analytic.Analytic1,
@@ -455,7 +455,7 @@ namespace Terradue.Tep.WebServer.Services {
                 csv.Append(String.Format("Data processed by Wps jobs created between {0} and {1},{2}{3}", startdate, enddate, totalDataProcessed, Environment.NewLine));
                 csv.Append("Catalog URL,Number" + Environment.NewLine);
                 foreach(var key in dic.Keys){
-                    csv.Append(String.Format(" {0},{1}{2}", key.Replace(",", "\\,"), dic[key], Environment.NewLine));
+                    csv.Append(String.Format("\"{0}\",{1}{2}", key.Replace(",", "\\,"), dic[key], Environment.NewLine));
                 }
                 csv.Append(Environment.NewLine);
             }
@@ -483,7 +483,7 @@ namespace Terradue.Tep.WebServer.Services {
             while (reader.Read()) {
                 if (reader.GetValue(0) != DBNull.Value) {
                     ids.Add(reader.GetInt32(0));
-                    lines.Add(string.Format("{0},{1},{2}",reader.GetString(1), reader.GetString(2).Replace(",","\\,"), reader.GetDateTime(3)));
+                    lines.Add(string.Format("{0},\"{1}\",{2}", reader.GetString(1), reader.GetString(2).Replace(",", "\\,"), reader.GetDateTime(3)));
                 }
             }
             context.CloseQueryResult(reader, dbConnection);
@@ -614,7 +614,7 @@ namespace Terradue.Tep.WebServer.Services {
                         dpname = dp.Name;
                         dpdate = dp.CreationTime.ToString("yyyy-MM-dd");
                     }catch(Exception){}
-                    csv.Append(string.Format("{0},{1},{2},{3}{4}",user.Username,dpname.Replace(",","\\,"),dpdate,activity.CreationTime.ToString("yyyy-MM-dd"),Environment.NewLine));
+                    csv.Append(string.Format("{0},\"{1}\",{2},{3}{4}", user.Username,dpname.Replace(",","\\,"),dpdate,activity.CreationTime.ToString("yyyy-MM-dd"),Environment.NewLine));
                 }
             }
             csv.Append(Environment.NewLine);
