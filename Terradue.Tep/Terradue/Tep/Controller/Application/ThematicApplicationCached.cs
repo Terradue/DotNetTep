@@ -232,9 +232,13 @@ namespace Terradue.Tep {
             var query = HttpUtility.ParseQueryString(urib.Query);
 
 			//add user apikey
-			var user = UserTep.FromId(context, context.UserId);
-			var apikey = user.GetSessionApiKey();
-			if(!string.IsNullOrEmpty(apikey)) query.Set("apikey", apikey);
+            try{
+    			var user = UserTep.FromId(context, context.UserId);
+    			var apikey = user.GetSessionApiKey();
+    			if(!string.IsNullOrEmpty(apikey)) query.Set("apikey", apikey);
+            }catch(Exception e){
+                this.LogError(string.Format("ThematicAppCachedFactory (GetUser) -- {0} - {1}", e.Message, e.StackTrace));
+            }
 
 			//add random for cache
 			var random = new Random();
