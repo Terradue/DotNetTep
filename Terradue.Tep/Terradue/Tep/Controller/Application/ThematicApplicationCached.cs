@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Web;
 using System.Xml;
 using Terradue.OpenSearch.Result;
@@ -181,7 +182,7 @@ namespace Terradue.Tep {
                     sw.Flush();
                     sw.Close();
                     stream.Seek(0, SeekOrigin.Begin);
-                    StreamReader reader = new StreamReader(stream);
+                    StreamReader reader = new StreamReader(stream,Encoding.UTF8);
                     result = reader.ReadToEnd();
                 }
             }
@@ -319,8 +320,8 @@ namespace Terradue.Tep {
 
 			appcached.Index = index;
             appcached.Feed = feed;
-            appcached.TextFeed = GetOwsContextAtomFeedAsString(feed);
-            appcached.Searchable = GetSearchableTextFromAtomEntry(entry);
+            appcached.TextFeed = System.Text.RegularExpressions.Regex.Replace(GetOwsContextAtomFeedAsString(feed), @"\p{Cs}", "");            
+            appcached.Searchable = System.Text.RegularExpressions.Regex.Replace(GetSearchableTextFromAtomEntry(entry), @"\p{Cs}", "");
             appcached.LastUpdate = entry.LastUpdatedTime.DateTime;
             if (appcached.DomainId == 0 && domainid > 0) appcached.DomainId = domainid;
             appcached.Store();
