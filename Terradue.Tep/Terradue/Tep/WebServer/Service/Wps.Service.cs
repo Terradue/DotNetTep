@@ -1482,6 +1482,25 @@ namespace Terradue.Tep.WebServer.Services {
             return tags;
         }
 
+        public object Get(WpsServiceIconsRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<string> icons = new List<string>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/icons GET - remoteidentifier = {0}",request.RemoteIdentifier));
+
+                var iconsdb = context.GetQueryStringValues(string.Format("SELECT DISTINCT icon_url FROM service WHERE id IN (SELECT id FROM wpsproc WHERE remote_id='{0}');",request.RemoteIdentifier));
+                if (iconsdb != null) icons = iconsdb.ToList<String>();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return icons;
+        }
+
         public object Get(WpsServiceAllVersionsRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             List<string> versions = new List<string>();
