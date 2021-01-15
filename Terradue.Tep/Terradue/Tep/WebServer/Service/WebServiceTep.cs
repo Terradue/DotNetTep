@@ -32,7 +32,7 @@ namespace Terradue.Tep.WebServer {
     [Route("/service/wps/icons", "GET", Summary = "GET all existing services icons", Notes = "")]
     public class WpsServiceIconsRequestTep : List<string> {
         [ApiMember(Name = "access", Description = "Remote identifier", ParameterType = "query", DataType = "string", IsRequired = false)]
-        public string RemoteIdentifier { get; set; }
+        public string SearchText { get; set; }
     }
 
     [Route("/service/wps/versions", "GET", Summary = "GET all existing service versions", Notes = "")]

@@ -1487,11 +1487,11 @@ namespace Terradue.Tep.WebServer.Services {
             List<string> icons = new List<string>();
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/service/wps/icons GET - remoteidentifier = {0}",request.RemoteIdentifier));
+                context.LogInfo(this, string.Format("/service/wps/icons GET - remoteidentifier = {0}",request.SearchText));
 
-                var sql = string.IsNullOrEmpty(request.RemoteIdentifier)
+                var sql = string.IsNullOrEmpty(request.SearchText)
                             ? "SELECT DISTINCT icon_url FROM service;"
-                            : string.Format("SELECT DISTINCT icon_url FROM service WHERE id IN (SELECT id FROM wpsproc WHERE remote_id='{0}');", request.RemoteIdentifier);
+                            : string.Format("SELECT DISTINCT icon_url FROM service WHERE (id IN (SELECT id FROM wpsproc WHERE remote_id LIKE '{0}') OR name like '{0}') AND icon_url IS NOT NULL AND icon_url <> '';", request.SearchText.Replace("*","%"));
                 var iconsdb = context.GetQueryStringValues(sql);
                 if (iconsdb != null) icons = iconsdb.ToList<String>();
 
