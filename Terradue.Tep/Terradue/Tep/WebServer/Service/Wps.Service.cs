@@ -82,7 +82,9 @@ namespace Terradue.Tep.WebServer.Services {
             //Create EntityList from DB
             EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
             wpsProcesses.OpenSearchEngine = ose;
-            wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);
+            wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);                        
+            wpsProcesses.AddSort("Name",SortDirection.Descending);
+            wpsProcesses.AddSort("Version");
 
             CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
             wpsOneProcesses.OpenSearchEngine = ose;
