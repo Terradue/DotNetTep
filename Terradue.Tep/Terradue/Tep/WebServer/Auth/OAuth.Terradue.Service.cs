@@ -145,6 +145,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.SetUserInformation(auth, user);
 
                 redirect = context.GetConfigValue("dashboard_page");
+                if(string.IsNullOrEmpty(redirect)) redirect = context.GetConfigValue("BaseUrl");
 
                 if (!string.IsNullOrEmpty(HttpContext.Current.Session["return_to"] as string)) {
                     redirect = HttpContext.Current.Session["return_to"] as string;
@@ -173,7 +174,7 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             if (request.redirect_uri != null) return DoRedirect(request.redirect_uri, request.ajax);
-            else return DoRedirect("/", request.ajax);
+            else return DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);
         }
 
         public object Get(OauthLogoutRequest request) {
@@ -189,7 +190,7 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             if (request.redirect_uri != null) return DoRedirect(request.redirect_uri, request.ajax);
-            else return DoRedirect("/", request.ajax);
+            else return DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);
         }
 
         private HttpResult DoRedirect(string redirect, bool ajax) {
