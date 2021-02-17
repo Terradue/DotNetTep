@@ -51,6 +51,13 @@ namespace Terradue.Tep {
 			this.Feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(feed);
         }
 
+        public static ThematicApplicationCached FromId(IfyContext context, int id){
+            var app = new ThematicApplicationCached(context);
+            app.Id = id;            
+            app.Load();
+            return app;
+        }
+
 		public static ThematicApplicationCached FromUidAndDomain(IfyContext context, string identifier, int domainid){
 			var app = new ThematicApplicationCached(context);
 			app.UId = identifier;
@@ -68,8 +75,9 @@ namespace Terradue.Tep {
         }
 
         public override string GetIdentifyingConditionSql() {
-            if (this.UId == null) return null;
-            if (!string.IsNullOrEmpty(this.Index)) return String.Format("t.uid={0} AND t.cat_index={1}", StringUtils.EscapeSql(this.UId), StringUtils.EscapeSql(this.Index));
+            if (this.Id != 0) return String.Format("t.id={0}",this.Id);
+            else if (this.UId == null) return null;
+            else if (!string.IsNullOrEmpty(this.Index)) return String.Format("t.uid={0} AND t.cat_index={1}", StringUtils.EscapeSql(this.UId), StringUtils.EscapeSql(this.Index));
             else return String.Format("t.uid={0} AND t.id_domain{1}", StringUtils.EscapeSql(this.UId), DomainId == 0 ? " IS NULL" : "=" + DomainId);
         }
   
