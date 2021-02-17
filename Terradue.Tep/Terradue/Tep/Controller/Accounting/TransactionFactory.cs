@@ -266,7 +266,10 @@ namespace Terradue.Tep {
         private List<Transaction> GetRemoteTransactions(string username, DateTime timestamp) {
             List<Transaction> transactions = new List<Transaction>();
 
-            var request = (HttpWebRequest)WebRequest.Create(context.GetConfigValue("t2-accounting-baseurl"));
+            var url = context.GetConfigValue("t2-accounting-baseurl");
+            if(string.IsNullOrEmpty(url)) return transactions;
+
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
             request.ContentType = "application/json";
             request.Proxy = null;
