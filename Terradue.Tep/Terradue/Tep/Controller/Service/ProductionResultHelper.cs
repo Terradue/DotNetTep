@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Web;
@@ -334,8 +335,10 @@ namespace Terradue.Tep {
 
             var statusurl = wpsjob.StatusLocation;
             var url = new Uri(statusurl);
-			bool statusNotOpensearchable = 
-				!(url.Host == new Uri(recastBaseUrl).Host) &&
+            var searchableUrls = JsonSerializer.DeserializeFromString<List<string>>(AppSettings["OpenSearchableWpsjobStatusUrls"]);
+            if (searchableUrls == null || searchableUrls.Count == 0) searchableUrls.Add(recastBaseUrl);//in case appsettings not set
+            bool statusNotOpensearchable = 
+				!(searchableUrls.Select(u => new Uri(u).Host == url.Host).Count() > 0) &&
 				!statusurl.Contains("/search") &&
 				!statusurl.Contains("/description");
 			if (url.Host == new Uri(catalogBaseUrl).Host || statusNotOpensearchable) {

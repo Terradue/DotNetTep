@@ -271,7 +271,7 @@ namespace Terradue.Tep {
         }
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        public WpsProcessOffering CreateWpsProcessOfferingForOne(string vmId, string processId){
+        public WpsProcessOfferingTep CreateWpsProcessOfferingForOne(string vmId, string processId){
             WpsProvider wps = this.CreateWpsProviderForOne(vmId);
 
             foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
@@ -279,7 +279,7 @@ namespace Terradue.Tep {
                 if (process.RemoteIdentifier.Equals(processId)) {
                     if (process.Domain == null && wps.Domain != null) process.Domain = wps.Domain;
                     process.Available = true;
-                    return process;
+                    return process as WpsProcessOfferingTep;
                 }
             }
 
@@ -291,11 +291,11 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The wps process offering.</returns>
         /// <param name="identifier">Identifier.</param>
-        public static WpsProcessOffering GetWpsProcessOffering(IfyContext context, string identifier){
-            WpsProcessOffering wps = null;
+        public static WpsProcessOfferingTep GetWpsProcessOffering(IfyContext context, string identifier){
+            WpsProcessOfferingTep wps = null;
             try {
                 //wps is stored in DB
-                wps = (WpsProcessOffering)WpsProcessOffering.FromIdentifier (context, identifier);
+                wps = WpsProcessOfferingTep.FromIdentifier (context, identifier);
             } catch (UnauthorizedAccessException e) {
                 throw e;
             } catch (Exception e) {

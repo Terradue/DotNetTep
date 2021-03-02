@@ -617,6 +617,14 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The execute response.</returns>
         public object GetStatusLocationContent() {
+
+            try {
+                WpsProcessOfferingTep wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
+                if (wps.IsWPS3()) return wps.GetStatusLocationContent(this.StatusLocation);
+            } catch(Exception e) {
+                context.LogError(this, e.Message);
+            }
+
             //Create Web request
             HttpWebRequest executeHttpRequest;
             if (Provider != null)
