@@ -216,16 +216,23 @@
     <Reference Include="System.ServiceModel" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Terradue.Portal.AdminTool">
-      <HintPath>..\packages\Terradue.Portal.2.8.18\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.8.19\lib\net45\Terradue.Portal.AdminTool.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal.Agent">
-      <HintPath>..\packages\Terradue.Portal.2.8.18\lib\net45\Terradue.Portal.Agent.exe</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.8.19\lib\net45\Terradue.Portal.Agent.exe</HintPath>
     </Reference>
     <Reference Include="Terradue.Portal">
-      <HintPath>..\packages\Terradue.Portal.2.8.18\lib\net45\Terradue.Portal.dll</HintPath>
+      <HintPath>..\packages\Terradue.Portal.2.8.19\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
     <Reference Include="Flurl.Http">
       <HintPath>..\packages\Flurl.Http.2.4.2\lib\net46\Flurl.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="FubarCoder.RestSharp.Portable.Core">
+      <HintPath>..\packages\FubarCoder.RestSharp.Portable.Core.4.0.8\lib\net45\FubarCoder.RestSharp.Portable.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="FubarCoder.RestSharp.Portable.HttpClient">
+      <HintPath>..\packages\FubarCoder.RestSharp.Portable.HttpClient.4.0.8\lib\net45\FubarCoder.RestSharp.Portable.HttpClient.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -330,6 +337,67 @@
     <Compile Include="Terradue\Tep\Controller\Data\DataGatewayFactory.ShareRequest.cs" />
     <Compile Include="Terradue\Tep\WebServer\Authorization\TermsConditions.Service.cs" />
     <Compile Include="Terradue\Tep\Controller\Contents\TermsConditionsHelper.cs" />
+    <Compile Include="Terradue\Tep\Controller\Service\Wps3.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\AdditionalParameter.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\AllOfdescriptionTypeAdditionalParameters.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\AllowedValues.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\AnyValue.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\BoundingBoxData.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\BoundingBoxDataType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ComplexData.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ComplexDataType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ConfClasses.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\DataDescriptionType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\DataType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\DescriptionType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Exception.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Execute.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Format.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\FormatDescription.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\InlineValue.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Input.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\InputDescription.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\IOneOfInput.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\JobControlOptions.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\JobList.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\LandingPage.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Link.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\LiteralData.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\LiteralDataDomain.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\LiteralDataType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Metadata.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\NameReferenceType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OneOfadditionalParameterValueItems.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OneOfallowedValuesItems.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OneOfinlineValueInlineValue.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OneOfinputInput.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OneOfliteralDataDomainValueDefinition.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OneOfvalueType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Output.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OutputDescription.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\OutputInfo.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Process.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ProcessList.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ProcessListObject.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ProcessSummary.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ReferenceValue.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Result.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\StatusInfo.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\StupidData.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\StupidDataType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\Subscriber.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\SupportedCRS.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\TransmissionMode.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Model\ValueType.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\ApiClient.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\ApiException.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\ApiResponse.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\Configuration.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\ExceptionFactory.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\GlobalConfiguration.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\IApiAccessor.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\IReadableConfiguration.cs" />
+    <Compile Include="Terradue\Tep\IO.Swagger\Client\SwaggerDateConverter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -422,5 +490,6 @@
     <Folder Include="Terradue\Tep\WebServer\Storage\" />
     <Folder Include="Terradue\Tep\WebServer\Geoserver\" />
     <Folder Include="Terradue\Tep\Controller\Geoserver\" />
+    <Folder Include="Terradue\Tep\IO.Swagger\" />
   </ItemGroup>
 </Project>

@@ -194,7 +194,7 @@ namespace Terradue.Tep.WebServer.Services {
 
             if (string.IsNullOrEmpty(request.Service) || string.IsNullOrEmpty(request.Request) || request.Service.ToLower() != "wps")
                 throw new Exception("Web Processing Service Request is not valid");
-            WpsProcessOffering wps = null;
+            WpsProcessOfferingTep wps = null;
             switch (request.Request.ToLower()) {
                 case "getcapabilities":
                     context.LogDebug(this,string.Format("WPS GetCapabilities requested"));
@@ -354,7 +354,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private object Execute(IfyContext context, Execute executeInput){
-            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, executeInput.Identifier.Value);
+            WpsProcessOfferingTep wps = CloudWpsFactory.GetWpsProcessOffering(context, executeInput.Identifier.Value);
             object executeResponse = null;
             var stream = new System.IO.MemoryStream();
             WpsJob wpsjob = null;
