@@ -335,12 +335,17 @@ namespace Terradue.Tep {
 
             var statusurl = wpsjob.StatusLocation;
             var url = new Uri(statusurl);
-            var searchableUrls = JsonSerializer.DeserializeFromString<List<string>>(AppSettings["OpenSearchableWpsjobStatusUrls"]);
+            var searchableUrls = JsonSerializer.DeserializeFromString<List<string>>(AppSettings["OpenSearchableUrls"]);
             if (searchableUrls == null || searchableUrls.Count == 0) searchableUrls.Add(recastBaseUrl);//in case appsettings not set
+            var recognizedHost = false;
+            foreach(var u in searchableUrls) {
+                if (new Uri(u).Host == url.Host) recognizedHost = true;
+            }
             bool statusNotOpensearchable = 
-				!(searchableUrls.Select(u => new Uri(u).Host == url.Host).Count() > 0) &&
+				!recognizedHost &&
 				!statusurl.Contains("/search") &&
 				!statusurl.Contains("/description");
+            context.LogDebug(wpsjob, string.Format("Status url {0} is opensearchable : {1}", statusurl, statusNotOpensearchable ? "false" : "true"));
 			if (url.Host == new Uri(catalogBaseUrl).Host || statusNotOpensearchable) {
                 statusurl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
             }
