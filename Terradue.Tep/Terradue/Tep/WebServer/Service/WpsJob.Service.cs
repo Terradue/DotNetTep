@@ -159,7 +159,9 @@ namespace Terradue.Tep.WebServer.Services {
                         var user = UserTep.FromId(context, context.UserId);
                         var apikey = user.GetSessionApiKey();
                         var t2userid = user.TerradueCloudUsername;
-                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                        if (!string.IsNullOrEmpty(apikey)) {
+                            specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                        }
                     }
                     GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), specsettings);
                     var res = ose.Query(urlToShare, nvc, type);
@@ -232,7 +234,9 @@ namespace Terradue.Tep.WebServer.Services {
                         var user = UserTep.FromId(context, context.UserId);
                         var apikey = user.GetSessionApiKey();
                         var t2userid = user.TerradueCloudUsername;
-                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                        if (!string.IsNullOrEmpty(apikey)) {
+                            specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                        }
                     }
                     GenericOpenSearchable urlToShare = new GenericOpenSearchable(new OpenSearchUrl(wpsjob.StatusLocation), specsettings);
                     osd = urlToShare.GetOpenSearchDescription();
