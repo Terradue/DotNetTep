@@ -612,18 +612,12 @@ namespace Terradue.Tep {
             //}
         }
 
+
         /// <summary>
         /// Gets the execute response.
         /// </summary>
         /// <returns>The execute response.</returns>
         public object GetStatusLocationContent() {
-
-            try {
-                WpsProcessOfferingTep wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
-                if (wps.IsWPS3()) return wps.GetStatusLocationContent(this.StatusLocation);
-            } catch(Exception e) {
-                context.LogError(this, e.Message);
-            }
 
             //Create Web request
             HttpWebRequest executeHttpRequest;
@@ -700,24 +694,141 @@ namespace Terradue.Tep {
                     execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
                     return execResponse;
                 } catch (Exception e) {
-                    // Maybe an exceptionReport
-                    OpenGis.Wps.ExceptionReport exceptionReport = null;
-                    remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                    //try wps3 (json)
                     try {
-                        exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
-                        return exceptionReport;
-                    } catch (Exception e2) {
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                        string errormsg = null;
-                        using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
-                            errormsg = reader.ReadToEnd();
+                        var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromStream<IO.Swagger.Model.StatusInfo>(remoteWpsResponseStream);
+                        return GetExecuteResponseFromWps3StatusInfo(statusInfo);
+                    } catch (Exception e1) {
+                        // Maybe an exceptionReport
+                        OpenGis.Wps.ExceptionReport exceptionReport = null;
+                        remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                        try {
+                            exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
+                            return exceptionReport;
+                        } catch (Exception e2) {
+                            remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                            string errormsg = null;
+                            using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
+                                errormsg = reader.ReadToEnd();
+                            }
+                            remoteWpsResponseStream.Close();
+                            context.LogError(this, errormsg);
+                            return errormsg;
                         }
-                        remoteWpsResponseStream.Close();
-                        context.LogError(this, errormsg);
-                        return errormsg;
                     }
                 }
             }
+        }
+
+        public object GetExecuteResponseFromWps3StatusInfo(IO.Swagger.Model.StatusInfo statusInfo) {
+
+            WpsProcessOfferingTep wps = null;
+            try {
+                wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
+            }catch(Exception) {}
+
+            //create response
+            ExecuteResponse response = new ExecuteResponse();
+            response.statusLocation = this.StatusLocation;
+
+            var uri = new Uri(this.StatusLocation);
+            response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
+            response.Process = wps != null ? wps.ProcessBrief : null;
+            response.service = "WPS";
+            response.version = "3.0.0";
+
+            switch (statusInfo.Status) {
+                case IO.Swagger.Model.StatusInfo.StatusEnum.Accepted:
+                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessAccepted, Item = new ProcessAcceptedType() { Value = statusInfo.Message }, creationTime = this.CreatedTime };
+                    break;
+                case IO.Swagger.Model.StatusInfo.StatusEnum.Running:
+                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessStarted, Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = statusInfo.Progress.ToString() }, creationTime = this.CreatedTime };
+                    break;
+                case IO.Swagger.Model.StatusInfo.StatusEnum.Dismissed:
+                case IO.Swagger.Model.StatusInfo.StatusEnum.Failed:
+                    var exceptionReport = new ExceptionReport {
+                        Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { statusInfo.Message } } }
+                    };
+                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessFailed, Item = new ProcessFailedType { ExceptionReport = exceptionReport }, creationTime = this.CreatedTime };
+                    break;
+                case IO.Swagger.Model.StatusInfo.StatusEnum.Successful:
+                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessSucceeded, Item = new ProcessSucceededType() { Value = statusInfo.Message }, creationTime = this.CreatedTime };
+                    if (wps != null) {
+                        var outputs = wps.GetOutputs(this.StatusLocation);
+                        var urib = new UriBuilder(this.Provider.BaseUrl);
+                        var wfoutput = outputs.outputs.First(o => o.id == "wf_outputs");
+                        urib.Path = urib.Path.Substring(0, urib.Path.IndexOf("/", 1)) + wfoutput.value.href;
+                        var resultlink = urib.Uri.AbsoluteUri;
+                        string s3link = null;
+                        if (resultlink.StartsWith("s3:"))
+                            s3link = resultlink;
+                        else {
+                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(resultlink);
+                            webRequest.Method = "GET";
+                            webRequest.Accept = "application/json";
+                            webRequest.ContentType = "application/json";
+
+                            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+                                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                                    var result = streamReader.ReadToEnd();
+                                    var res = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
+                                    s3link = res.StacCatalogUri;
+                                }
+                            }
+
+                        }
+                        var resultdescription = s3link;
+
+                        if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && !string.IsNullOrEmpty(s3link)) {
+                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]);
+                            webRequest.Method = "POST";
+                            webRequest.Accept = "application/json";
+                            webRequest.ContentType = "application/json";
+                            var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+                            webRequest.Timeout = 10000;
+
+                            var jsonurl = new JsonUrl { url = s3link };
+                            var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
+
+                            byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
+                            webRequest.ContentLength = data.Length;
+
+                            using (var requestStream = webRequest.GetRequestStream()) {
+                                requestStream.Write(data, 0, data.Length);
+                                requestStream.Close();
+                                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+                                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                                        var location = httpResponse.Headers["Location"];
+                                        if (!string.IsNullOrEmpty(location)) {
+                                            resultdescription = new Uri(httpResponse.Headers["Location"], UriKind.RelativeOrAbsolute).AbsoluteUri;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (outputs != null && wfoutput != null) {
+                            response.ProcessOutputs = new List<OutputDataType> { };
+                            response.ProcessOutputs.Add(new OutputDataType {
+                                Identifier = new CodeType { Value = "result_osd" },
+                                Item = new OpenGis.Wps.DataType {
+                                    Item = new OpenGis.Wps.ComplexDataType {
+                                        mimeType = "application/xml",
+                                        Reference = new OutputReferenceType {
+                                            href = resultdescription,
+                                            mimeType = "application/opensearchdescription+xml"
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    break;
+            }
+
+            return response;
         }
 
         /// <summary>
