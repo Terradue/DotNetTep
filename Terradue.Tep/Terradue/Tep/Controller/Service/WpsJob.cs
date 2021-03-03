@@ -651,7 +651,6 @@ namespace Terradue.Tep {
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         string str = new StreamReader(remoteWpsResponseStream).ReadToEnd();
                         context.LogDebug(this, "Status response : " + str);
-
                     }
 
                 } catch (WebException we) {
@@ -689,23 +688,32 @@ namespace Terradue.Tep {
 
                 // Deserialization
                 try {
+                    context.LogDebug(this, "Deserialization (WPS 1.0.0)");
                     remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                     execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
+                    context.LogDebug(this, "response is WPS 1.0.0");
                     return execResponse;
                 } catch (Exception e) {
+                    context.LogError(this, e.Message);
                     //try wps3 (json)
                     try {
+                        context.LogDebug(this, "Deserialization (WPS 3.0.0)");
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromStream<IO.Swagger.Model.StatusInfo>(remoteWpsResponseStream);
+                        context.LogDebug(this, "response is WPS 3.0.0");
                         return GetExecuteResponseFromWps3StatusInfo(statusInfo);
                     } catch (Exception e1) {
+                        context.LogError(this, e1.Message);
                         // Maybe an exceptionReport
                         OpenGis.Wps.ExceptionReport exceptionReport = null;
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         try {
+                            context.LogDebug(this, "Deserialization (ExceptionReport)");
                             exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
+                            context.LogDebug(this, "response is ExceptionReport");
                             return exceptionReport;
                         } catch (Exception e2) {
+                            context.LogError(this, e2.Message);
                             remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                             string errormsg = null;
                             using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
@@ -783,28 +791,36 @@ namespace Terradue.Tep {
                             webRequest.Method = "POST";
                             webRequest.Accept = "application/json";
                             webRequest.ContentType = "application/json";
+                            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
                             var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
                             webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
                             webRequest.Timeout = 10000;
 
+                            context.LogDebug(this, "publish request to supervisor");
+
                             var jsonurl = new JsonUrl { url = s3link };
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
 
-                            byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
-                            webRequest.ContentLength = data.Length;
+                            try {
+                                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
+                                    streamWriter.Write(json);
+                                    streamWriter.Flush();
+                                    streamWriter.Close();
 
-                            using (var requestStream = webRequest.GetRequestStream()) {
-                                requestStream.Write(data, 0, data.Length);
-                                requestStream.Close();
-                                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                                        var location = httpResponse.Headers["Location"];
-                                        if (!string.IsNullOrEmpty(location)) {
-                                            resultdescription = new Uri(httpResponse.Headers["Location"], UriKind.RelativeOrAbsolute).AbsoluteUri;
+                                    using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+                                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {                                        
+                                            var location = httpResponse.Headers["Location"];
+                                                if (!string.IsNullOrEmpty(location)) {
+                                                    context.LogDebug(this, "location = " + location);
+                                                    resultdescription = new Uri(httpResponse.Headers["Location"], UriKind.RelativeOrAbsolute).AbsoluteUri;
+                                            }
                                         }
                                     }
                                 }
+                            } catch (Exception e) {
+                                context.LogError(this, e.Message);
                             }
+
                         }
 
                         if (outputs != null && wfoutput != null) {
@@ -827,6 +843,17 @@ namespace Terradue.Tep {
             }
 
             return response;
+        }
+
+        
+        private IWebProxy GetWebRequestProxy() {
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) {
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]))
+                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"], int.Parse(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]));
+                else
+                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"]);
+            } else
+                return null;
         }
 
         /// <summary>
