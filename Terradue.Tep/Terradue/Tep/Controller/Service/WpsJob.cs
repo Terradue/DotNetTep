@@ -676,7 +676,6 @@ namespace Terradue.Tep {
                                 using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
                                     errormsg = reader.ReadToEnd();
                                 }
-                                remoteWpsResponseStream.Close();
                                 context.LogError(this, errormsg);
                                 return errormsg;
                             }
@@ -712,7 +711,6 @@ namespace Terradue.Tep {
                             using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
                                 errormsg = reader.ReadToEnd();
                             }
-                            remoteWpsResponseStream.Close();
                             context.LogError(this, errormsg);
                             return errormsg;
                         }
