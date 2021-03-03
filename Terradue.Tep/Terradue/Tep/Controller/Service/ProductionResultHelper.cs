@@ -336,7 +336,10 @@ namespace Terradue.Tep {
             var statusurl = wpsjob.StatusLocation;
             var url = new Uri(statusurl);
             var searchableUrls = JsonSerializer.DeserializeFromString<List<string>>(AppSettings["OpenSearchableUrls"]);
-            if (searchableUrls == null || searchableUrls.Count == 0) searchableUrls.Add(recastBaseUrl);//in case appsettings not set
+            if (searchableUrls == null || searchableUrls.Count == 0) {
+                searchableUrls = new List<string>();
+                searchableUrls.Add(recastBaseUrl);//in case appsettings not set
+            }
             var recognizedHost = false;
             foreach(var u in searchableUrls) {
                 if (new Uri(u).Host == url.Host) recognizedHost = true;

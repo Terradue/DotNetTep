@@ -79,7 +79,11 @@ namespace Terradue.Tep.WebServer.Services {
 				var specsettings = (OpenSearchableFactorySettings)settings.Clone();
 				if (context.UserId != 0) {
 					var user = UserTep.FromId(context, context.UserId);
-					specsettings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+                    var apikey = user.GetSessionApiKey();
+                    var t2userid = user.TerradueCloudUsername;
+                    if (!string.IsNullOrEmpty(apikey)) {
+                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                    }
 				}
 
 				//get apps link from the communities the user can see
@@ -253,9 +257,13 @@ namespace Terradue.Tep.WebServer.Services {
 
 					result = ose.Query(appsCached, Request.QueryString, responseType);
 					OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);               
-				} else {               
-					//get user private thematic app
-					specsettings.Credentials = new System.Net.NetworkCredential(user.TerradueCloudUsername, user.GetSessionApiKey());
+				} else {
+                    //get user private thematic app
+                    var apikey = user.GetSessionApiKey();
+                    var t2userid = user.TerradueCloudUsername;
+                    if (!string.IsNullOrEmpty(apikey)) {
+                        specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+                    }
 					var app = user.GetPrivateThematicApp();
 					if (app != null) {
 						foreach (var item in app.Items) {
