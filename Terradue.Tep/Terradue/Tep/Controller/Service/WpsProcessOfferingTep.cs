@@ -224,7 +224,7 @@ namespace Terradue.Tep {
         /* WPS 3.0 GET STATUS */
         /**********************/
 
-        private ProcessBriefType ProcessBrief {
+        public ProcessBriefType ProcessBrief {
             get {
                 ProcessBriefType processbrief = new ProcessBriefType();
                 processbrief.Identifier = new CodeType { Value = this.RemoteIdentifier };
@@ -235,7 +235,7 @@ namespace Terradue.Tep {
             }
         }
 
-        private StatusInfo GetJobStatus(string location) {
+        public static StatusInfo GetJobStatus(string location) {
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(location);
             webRequest.Method = "GET";
@@ -251,110 +251,7 @@ namespace Terradue.Tep {
                 }
             }
         }
-
-        public object GetStatusLocationContent(string statuslocation) {
-
-            var statusInfo = GetJobStatus(statuslocation);
-
-            //create response
-            ExecuteResponse response = new ExecuteResponse();
-            response.statusLocation = statuslocation;
-
-            var uri = new Uri(statuslocation);
-            response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
-            response.Process = ProcessBrief;
-            response.service = "WPS";
-            response.version = "3.0.0";
-
-            switch (statusInfo.Status) {
-                case StatusInfo.StatusEnum.Accepted:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessAccepted, Item = new ProcessAcceptedType() { Value = statusInfo.Message } };
-                    break;
-                case StatusInfo.StatusEnum.Running:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessStarted, Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = statusInfo.Progress.ToString() } };
-                    break;
-                case StatusInfo.StatusEnum.Dismissed:
-                case StatusInfo.StatusEnum.Failed:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessFailed, Item = new ProcessFailedType() { ExceptionReport = new ExceptionReport { Exception = new List<ExceptionType>() { new ExceptionType { ExceptionText = new List<string>() { statusInfo.Message } } } } } };
-                    break;
-                case StatusInfo.StatusEnum.Successful:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessSucceeded, Item = new ProcessSucceededType() { Value = statusInfo.Message } };
-                    var outputs = GetOutputs(statuslocation);
-                    var urib = new UriBuilder(this.Provider.BaseUrl);
-                    var wfoutput = outputs.outputs.First(o => o.id == "wf_outputs");
-                    urib.Path = urib.Path.Substring(0, urib.Path.IndexOf("/", 1)) + wfoutput.value.href;
-                    var resultlink = urib.Uri.AbsoluteUri;
-                    string s3link = null;
-                    if (resultlink.StartsWith("s3:"))
-                        s3link = resultlink;
-                    else {
-                        HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(resultlink);
-                        webRequest.Method = "GET";
-                        webRequest.Accept = "application/json";
-                        webRequest.ContentType = "application/json";
-
-                        using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                                var result = streamReader.ReadToEnd();
-                                var res = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
-                                s3link = res.StacCatalogUri;
-                            }
-                        }
-
-                    }
-                    var resultdescription = s3link;
-
-                    if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && !string.IsNullOrEmpty(s3link)) {
-                        HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]);
-                        webRequest.Method = "POST";
-                        webRequest.Accept = "application/json";
-                        webRequest.ContentType = "application/json";
-                        var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
-                        webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
-                        webRequest.Timeout = 10000;
-
-                        var jsonurl = new JsonUrl { url = s3link };
-                        var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
-
-                        byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
-                        webRequest.ContentLength = data.Length;
-
-                        using (var requestStream = webRequest.GetRequestStream()) {
-                            requestStream.Write(data, 0, data.Length);
-                            requestStream.Close();
-                            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                                    var location = httpResponse.Headers["Location"];
-                                    if (!string.IsNullOrEmpty(location)) {
-                                        resultdescription = new Uri(httpResponse.Headers["Location"], UriKind.RelativeOrAbsolute).AbsoluteUri;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (outputs != null && wfoutput != null) {
-                        response.ProcessOutputs = new List<OutputDataType> { };
-                        response.ProcessOutputs.Add(new OutputDataType {
-                            Identifier = new CodeType { Value = "result_osd" },
-                            Item = new OpenGis.Wps.DataType {
-                                Item = new OpenGis.Wps.ComplexDataType {
-                                    mimeType = "application/xml",
-                                    Reference = new OutputReferenceType {
-                                        href = resultdescription,
-                                        mimeType = "application/opensearchdescription+xml"
-                                    }
-                                }
-                            }
-                        });
-                    }
-                    break;
-            }
-
-            return response;
-        }
-
-
+        
         /*******************/
         /* WPS 3.0 EXECUTE */
         /*******************/
