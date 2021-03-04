@@ -259,7 +259,7 @@ namespace Terradue.Tep {
         public new object Execute(OpenGis.Wps.Execute executeInput, string jobreference = null) {
 
             if (this.IsWPS3()) {
-
+                context.LogDebug(this, "WPS 3.0.0 Execute");
                 var location = SubmitExecute(executeInput);
 
                 ExecuteResponse response = new ExecuteResponse();
@@ -277,6 +277,7 @@ namespace Terradue.Tep {
 
                 //TODO: handle case of errors
             } else {
+                context.LogDebug(this, "WPS 1.0.0 Execute");
                 return base.Execute(executeInput, jobreference);
             }
         }
@@ -313,12 +314,15 @@ namespace Terradue.Tep {
 
         protected IO.Swagger.Model.Execute BuildExecute(OpenGis.Wps.Execute executeInput) {
 
+            context.LogDebug(this, "BuildExecute");
             var wps3 = GetWps3ProcessingFromDescribeProcess(this.Url);
 
             List<IO.Swagger.Model.Input> inputs = new List<IO.Swagger.Model.Input>();
             foreach (var dataInput in executeInput.DataInputs) {
                 var inp = new Inputs();
                 inp.Id = dataInput.Identifier.Value;
+
+                context.LogDebug(this, "BuildExecute - input = " + dataInput.Identifier.Value);
 
                 if (dataInput.Data != null && dataInput.Data.Item != null) {
                     if (dataInput.Data.Item is OpenGis.Wps.LiteralDataType) {
@@ -328,14 +332,28 @@ namespace Terradue.Tep {
                             if (inp.Id == i.Id) {
                                 if (i.Input.LiteralDataDomains != null) {
                                     var literaldomain = i.Input.LiteralDataDomains[0];
-                                    if (!string.IsNullOrEmpty(literaldomain.DataType.Reference))
+                                    if (!string.IsNullOrEmpty(literaldomain.DataType.Reference)) {
                                         datatype = literaldomain.DataType.Reference;
+                                    }
                                 }
                             }
                         }
 
                         var ld = dataInput.Data.Item as OpenGis.Wps.LiteralDataType;
-                        StupidData literalData = new StupidData(ld.Value, new StupidDataType(datatype));
+                        string inputValue = ld.Value;
+                        try {
+                            var urib = new UriBuilder(inputValue);
+                            var nvc = HttpUtility.ParseQueryString(urib.Query);
+                            if (!string.IsNullOrEmpty(nvc["format"])) nvc["format"] = "atom";
+                            string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
+                            urib.Query = string.Join("&", queryString);
+                            inputValue = urib.Uri.AbsoluteUri;
+                        } catch (System.Exception e) {
+                            context.LogError(this, e.Message);
+                            inputValue = inputValue.Replace("format=json", "format=atom");
+                        }
+
+                        StupidData literalData = new StupidData(inputValue, new StupidDataType(datatype));
                         inputs.Add(new IO.Swagger.Model.Input(dataInput.Identifier.Value, literalData));
                     }
                 }
