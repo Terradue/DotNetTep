@@ -234,23 +234,6 @@ namespace Terradue.Tep {
                 return processbrief;
             }
         }
-
-        public static StatusInfo GetJobStatus(string location) {
-
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(location);
-            webRequest.Method = "GET";
-            webRequest.Accept = "application/json";
-            webRequest.ContentType = "application/json";
-
-
-            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    var result = streamReader.ReadToEnd();
-                    var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<StatusInfo>(result);
-                    return response;
-                }
-            }
-        }
         
         /*******************/
         /* WPS 3.0 EXECUTE */
