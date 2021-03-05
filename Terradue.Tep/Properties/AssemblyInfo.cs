@@ -4,7 +4,7 @@
 @{
     Terradue.Tep Software Package provides with all the functionalities specific to the TEP.
 
-    \xrefitem sw_version "Versions" "Software Package Version" 1.3.36
+    \xrefitem sw_version "Versions" "Software Package Version" 1.3.37
 
     \xrefitem sw_link "Links" "Software Package List" [Terradue.Tep](https://git.terradue.com/sugar/Terradue.Tep)
 
@@ -77,6 +77,6 @@ using NuGet4Mono.Extensions;
 [assembly: AssemblyLicenseUrl("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("1.3.36")]
-[assembly: AssemblyInformationalVersion("1.3.36")]
+[assembly: AssemblyVersion("1.3.37")]
+[assembly: AssemblyInformationalVersion("1.3.37")]
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
