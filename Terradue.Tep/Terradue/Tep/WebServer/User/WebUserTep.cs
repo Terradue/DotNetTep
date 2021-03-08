@@ -215,7 +215,13 @@ namespace Terradue.Tep.WebServer {
                     try {
                         var roles = entity.GetUserRoles(community);
                         var webroles = new List<WebRole>();
-                        foreach (var role in roles) webroles.Add(new WebRole(role));
+                        foreach (var role in roles) {
+                            webroles.Add(new WebRole {
+                                Description = role.Description,
+                                Identifier = role.Identifier,
+                                Name = role.Name
+                            });
+                        }
                         if (webroles.Count > 0) {
                             communityroles.Add(new WebCommunityRoles {
                                 Community = community.Name,
