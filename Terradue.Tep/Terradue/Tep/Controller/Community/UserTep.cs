@@ -990,13 +990,9 @@ namespace Terradue.Tep {
         public List<ThematicCommunity> GetUserCommunities() { 
             if (context.UserId == 0) return new List<ThematicCommunity>();
 
-            //CommunityCollection domains = new CommunityCollection(context);
-            //domains.LoadRestricted(new DomainKind[] { DomainKind.Public, DomainKind.Private });
-            //return domains.GetItemsAsList();
-
-            EntityList<ThematicCommunity> domains = new EntityList<ThematicCommunity>(context);
-            domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
-            domains.Load();
+            CommunityCollection domains = new CommunityCollection(context);
+            domains.UserStatus = ThematicCommunity.USERSTATUS_JOINED;
+            domains.LoadRestricted(new DomainKind[] { DomainKind.Public, DomainKind.Private });
             return domains.GetItemsAsList();
         }
 
