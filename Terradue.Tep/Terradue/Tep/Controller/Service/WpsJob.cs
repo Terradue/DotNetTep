@@ -546,10 +546,20 @@ namespace Terradue.Tep {
         /// <param name="wpsjob">Wpsjob.</param>
         /// <param name="execResponse">Exec response.</param>
         public void UpdateJobFromExecuteResponse(IfyContext context, ExecuteResponse execResponse) {
-            context.LogDebug(this, string.Format("Creating job from execute response"));
-            Uri uri = new Uri(execResponse.statusLocation.ToLower());
+            context.LogDebug(this, string.Format("Update job from execute response"));
 
-            //create WpsJob
+            //get remote identifier
+            this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(execResponse.statusLocation.ToLower());
+            
+            if (string.IsNullOrEmpty(this.StatusLocation)) this.StatusLocation = execResponse.statusLocation;
+
+            UpdateStatusFromExecuteResponse(execResponse);
+
+            this.Store();
+        }
+
+        private string GetRemoteIdentifierFromStatusLocation(string statuslocation) {
+            Uri uri = new Uri(statuslocation);
             context.LogDebug(this, string.Format("Get identifier from status location"));
             string identifier = null;
             NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
@@ -569,15 +579,17 @@ namespace Terradue.Tep {
                     identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
                     identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
                 }
+                //case WPS 3.0.0 (ADES)
+                else {
+                    var r = new System.Text.RegularExpressions.Regex(@"^.*\/watchjob\/processes\/(?<process>[a-zA-Z0-9_\-]+)\/jobs\/(?<runid>[a-zA-Z0-9_\-]+)");
+                    var m = r.Match(uri.AbsolutePath);
+                    if (m.Success) {
+                        identifier = m.Result("${runid}");
+                    }
+                }
             }
             context.LogDebug(this, string.Format("identifier = " + identifier));
-            this.RemoteIdentifier = identifier;
-
-            if (string.IsNullOrEmpty(this.StatusLocation)) this.StatusLocation = execResponse.statusLocation;
-
-            UpdateStatusFromExecuteResponse(execResponse);
-
-            this.Store();
+            return identifier;
         }
 
         /// <summary>
@@ -597,6 +609,11 @@ namespace Terradue.Tep {
                 var endtime = response.Status.creationTime.ToUniversalTime();
                 if (this.Status == WpsJobStatus.SUCCEEDED && this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
             }catch(Exception){}
+
+            //check remote identfier if not set
+            if (string.IsNullOrEmpty(this.RemoteIdentifier)) {
+                this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
+            }
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
             //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
