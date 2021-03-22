@@ -547,7 +547,7 @@ namespace Terradue.Tep.WebServer.Services {
                 var supportModes = context.GetConfigValue("wpsjob-support-mode").Split(',');
                 if (supportModes.Contains("mail")) {
                     //send email from job's owner to mailto
-                    context.SendMail(job.Owner.Email, context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
+                    context.SendMail(job.Owner.Email ?? context.GetConfigValue("MailSenderAddress"), context.GetConfigValue("MailSenderAddress"), request.Subject, request.Body);
                 }
                 if (supportModes.Contains("jira")) {
                     //create JIRA ticket
