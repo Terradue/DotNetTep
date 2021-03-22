@@ -398,6 +398,10 @@
     <Compile Include="Terradue\Tep\IO.Swagger\Client\IApiAccessor.cs" />
     <Compile Include="Terradue\Tep\IO.Swagger\Client\IReadableConfiguration.cs" />
     <Compile Include="Terradue\Tep\IO.Swagger\Client\SwaggerDateConverter.cs" />
+    <Compile Include="Terradue\Tep\Controller\Kubernetes\KubernetesFactory.cs" />
+    <Compile Include="Terradue\Tep\Controller\Kubernetes\Kubernetes.Guacamole.cs" />
+    <Compile Include="Terradue\Tep\Controller\Kubernetes\Kubernetes.Kubectl.cs" />
+    <Compile Include="Terradue\Tep\WebServer\Kubernetes\Kubernetes.Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -491,5 +495,7 @@
     <Folder Include="Terradue\Tep\WebServer\Geoserver\" />
     <Folder Include="Terradue\Tep\Controller\Geoserver\" />
     <Folder Include="Terradue\Tep\IO.Swagger\" />
+    <Folder Include="Terradue\Tep\Controller\Kubernetes\" />
+    <Folder Include="Terradue\Tep\WebServer\Kubernetes\" />
   </ItemGroup>
 </Project>
