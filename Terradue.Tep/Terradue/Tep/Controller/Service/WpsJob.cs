@@ -379,6 +379,40 @@ namespace Terradue.Tep {
             }
         }
 
+        public override void Delete() {
+
+            try {
+                if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_CLEAN_URL"] != null) {
+                    HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_CLEAN_URL"]);
+                    webRequest.Method = "POST";
+                    webRequest.Accept = "application/json";
+                    webRequest.ContentType = "application/json";
+                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
+                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;                
+                    webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+                    webRequest.Timeout = 10000;
+
+                    context.LogDebug(this, "clean wps job request to supervisor - Identifier = " + this.RemoteIdentifier);
+
+                    var jsonId = new JsonIdentifier { identifier = this.RemoteIdentifier };
+                    var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonId);
+
+                
+                        using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
+                            streamWriter.Write(json);
+                            streamWriter.Flush();
+                            streamWriter.Close();
+
+                            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {}
+                        }
+                    }
+            } catch (Exception e) {
+                context.LogError(this, e.Message);
+            }
+
+            base.Delete();
+        }
+
         /// <summary>
         /// Is the job public.
         /// </summary>
@@ -821,7 +855,7 @@ namespace Terradue.Tep {
                             webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
                             webRequest.Timeout = 10000;
 
-                            context.LogDebug(this, "publish request to supervisor");
+                            context.LogDebug(this, "publish request to supervisor - s3link = " + s3link);
 
                             var jsonurl = new JsonUrl { url = s3link };
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);

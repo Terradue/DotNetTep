@@ -164,4 +164,9 @@ namespace Terradue.Tep {
         public string url { get; set; }
     }
 
+    public class JsonIdentifier {
+        [DataMember]
+        public string identifier { get; set; }
+    }
+
 }
