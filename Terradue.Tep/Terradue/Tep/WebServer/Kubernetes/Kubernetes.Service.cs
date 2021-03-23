@@ -31,6 +31,8 @@ namespace Terradue.Tep.WebServer {
     /// </summary>
     public class KubernetesService : ServiceStack.ServiceInterface.Service {
 
+        public KubernetesFactory k8sFactory { get; set; }
+
         public object Get(GetQgisIPRequest request) {
             string url = "";
             TepWebContext context = new TepWebContext(PagePrivileges.UserView);
@@ -40,7 +42,7 @@ namespace Terradue.Tep.WebServer {
                 context.LogInfo(this, string.Format("/user/current/qgis GET"));
 
                 var user = UserTep.FromId(context, context.UserId);
-                url = GetUserVncUrl(context, user, false);
+                url = GetUserVncUrl(context, user, null);
 
                 context.Close();
             } catch (Exception e) {
@@ -61,8 +63,8 @@ namespace Terradue.Tep.WebServer {
                 context.LogInfo(this, string.Format("/user/current/qgis POST"));
 
                 var user = UserTep.FromId(context, context.UserId);
-
-                url = GetUserVncUrl(context, user, true);
+                var k8srequest = CreateK8sRequest(k8sFactory, user);
+                url = GetUserVncUrl(context, user, k8srequest);
 
                 context.Close();
             } catch (Exception e) {
@@ -102,7 +104,7 @@ namespace Terradue.Tep.WebServer {
             return new WebResponseBool(true);
         }
 
-        private string GetUserVncUrl(IfyContext context, User user, bool createPod = false) {
+        protected string GetUserVncUrl(IfyContext context, User user, KubectlPod k8srequest) {
 
             var k8sFactory = new KubernetesFactory(context);
 
@@ -120,12 +122,9 @@ namespace Terradue.Tep.WebServer {
             var pod = k8sFactory.GetPod(user.Username);
 
             //if not, we may create it (optional)
-            if (pod == null && createPod) {                
-                List<KubectlVolumeMount> volumeMounts = GetVolumeMounts(user);
-                List<KubectlVolume> volumes = GetVolumes(user);
-                pod = k8sFactory.CreateUserQgisEnvironment(user.Username, volumeMounts, volumes);
-            }
-
+            if (pod == null && k8srequest != null)                               
+                pod = k8sFactory.CreateUserQgisEnvironment(user.Username, k8srequest);
+            
             //if exists, we save info on guacamole and return the url
             if (pod != null) {
 
@@ -149,12 +148,23 @@ namespace Terradue.Tep.WebServer {
             return null;
         }
 
-        protected List<KubectlVolumeMount> GetVolumeMounts(User user) {
-            return new List<KubectlVolumeMount>();
-        }
+        private KubectlPod CreateK8sRequest(KubernetesFactory k8sFactory, User user) {
 
-        protected List<KubectlVolume> GetVolumes(User user) {
-            return new List<KubectlVolume>();
+            var appname = k8sFactory.K8S_APPNAME;
+            var persistentappname = k8sFactory.GenerateKubectlPVCName(user.Username);
+
+            var volumeMounts = new List<KubectlVolumeMount>();
+            volumeMounts.Add(new KubectlVolumeMount {
+                name = persistentappname,
+                mountPath = "/workspace"
+            });
+            var volumes = new List<KubectlVolume>();
+            volumes.Add(new KubectlVolume {
+                name = persistentappname,
+                persistentVolumeClaim = new KubectlPersistentVolumeClaim { claimName = persistentappname }
+            });
+            
+            return k8sFactory.GenerateKubectlRequest(user.Username, volumeMounts, volumes);
         }
 
     }

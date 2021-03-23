@@ -11,7 +11,7 @@ using Terradue.Portal;
 namespace Terradue.Tep.Controller {
     public class KubernetesFactory {
 
-        System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
+        public System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
 
         public IfyContext Context;
 
@@ -24,11 +24,13 @@ namespace Terradue.Tep.Controller {
             }
         }
 
-        public readonly string K8S_APPNAME = "ubuntu-qgis-vnc";
-        public readonly string K8S_PVCNAME = "pvc-qgis";
+        public string K8S_APPNAME = "ubuntu-qgis-vnc";
+        public string K8S_PVCNAME = "pvc-qgis";
 
         public KubernetesFactory(IfyContext context) {
             this.Context = context;
+            if (!string.IsNullOrEmpty(AppSettings["K8S_APPNAME"])) K8S_APPNAME = AppSettings["K8S_APPNAME"];
+            if (!string.IsNullOrEmpty(AppSettings["K8S_PVCNAME"])) K8S_PVCNAME = AppSettings["K8S_PVCNAME"];
         }
 
         /*********************/
@@ -69,14 +71,14 @@ namespace Terradue.Tep.Controller {
         /// <param name="volumeMounts"></param>
         /// <param name="volumes"></param>
         /// <returns></returns>
-        public KubectlPod CreateUserQgisEnvironment(string username, List<KubectlVolumeMount> volumeMounts, List<KubectlVolume> volumes) {
+        public KubectlPod CreateUserQgisEnvironment(string username, KubectlPod k8srequest) {
             //pvc
             var pvc = GetPvc(username);
             if (pvc == null) pvc = CreatePvc(username);
 
             //pod
             var pod = GetPod(username);
-            if (pod == null) pod = CreateDeployment(username, volumeMounts, volumes);
+            if (pod == null) pod = CreateDeployment(username, k8srequest);
 
             int i = 0;
             int maxtry = int.Parse(AppSettings["K8S_DESCRIBE_MAX_TRY"]);
@@ -111,7 +113,7 @@ namespace Terradue.Tep.Controller {
         /// </summary>
         /// <param name="username"></param>
         /// <returns></returns>
-        private string GenerateKubectlPVCName(string username) {
+        public string GenerateKubectlPVCName(string username) {
             return string.Format("{0}-{1}", K8S_PVCNAME, username);
         }
 
@@ -120,7 +122,7 @@ namespace Terradue.Tep.Controller {
         /// </summary>
         /// <param name="username"></param>
         /// <returns></returns>
-        private string GenerateKubectlName(string username) {
+        public string GenerateKubectlName(string username) {
             return string.Format("{0}-{1}", K8S_APPNAME, username);
         }
 
@@ -161,7 +163,7 @@ namespace Terradue.Tep.Controller {
         /// <param name="volumeMounts"></param>
         /// <param name="volumes"></param>
         /// <returns></returns>
-        private KubectlPod GenerateKubectlRequest(string username, List<KubectlVolumeMount> volumeMounts, List<KubectlVolume> volumes) {
+        public KubectlPod GenerateKubectlRequest(string username, List<KubectlVolumeMount> volumeMounts, List<KubectlVolume> volumes) {
 
             var appname = K8S_APPNAME;
             var persistentappname = GenerateKubectlPVCName(username);
@@ -243,10 +245,9 @@ namespace Terradue.Tep.Controller {
         /// <param name="volumeMounts"></param>
         /// <param name="volumes"></param>
         /// <returns></returns>
-        private KubectlPod CreateDeployment(string username, List<KubectlVolumeMount> volumeMounts, List<KubectlVolume> volumes) {
+        private KubectlPod CreateDeployment(string username, KubectlPod k8srequest) {
 
             KubectlPod response = null;
-            var k8srequest = GenerateKubectlRequest(username, volumeMounts, volumes);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(AppSettings["K8S_API_URL_DEPL"]);
             webRequest.Method = "POST";
