@@ -42,6 +42,7 @@ namespace Terradue.Tep.WebServer {
                 context.LogInfo(this, string.Format("/user/current/qgis GET"));
 
                 var user = UserTep.FromId(context, context.UserId);
+                k8sFactory = new KubernetesFactory(context);
                 url = GetUserVncUrl(context, user, null);
 
                 context.Close();
@@ -63,6 +64,7 @@ namespace Terradue.Tep.WebServer {
                 context.LogInfo(this, string.Format("/user/current/qgis POST"));
 
                 var user = UserTep.FromId(context, context.UserId);
+                k8sFactory = new KubernetesFactory(context);
                 var k8srequest = CreateK8sRequest(k8sFactory, user);
                 url = GetUserVncUrl(context, user, k8srequest);
 
