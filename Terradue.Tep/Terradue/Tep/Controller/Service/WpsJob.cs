@@ -855,9 +855,11 @@ namespace Terradue.Tep {
                             webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
                             webRequest.Timeout = 10000;
 
-                            context.LogDebug(this, "publish request to supervisor - s3link = " + s3link);
+                            var shareUri = GetJobShareUri(this.AppIdentifier);
 
-                            var jsonurl = new JsonUrl { url = s3link };
+                            context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}",s3link, shareUri.AbsoluteUri));
+
+                            var jsonurl = new JsonUrl { url = s3link, producerUrl = shareUri.AbsoluteUri };
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
 
                             try {

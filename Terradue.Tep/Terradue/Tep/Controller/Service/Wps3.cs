@@ -162,6 +162,8 @@ namespace Terradue.Tep {
     public class JsonUrl {
         [DataMember]
         public string url { get; set; }
+        [DataMember]
+        public string producerUrl { get; set; }
     }
 
     public class JsonIdentifier {
