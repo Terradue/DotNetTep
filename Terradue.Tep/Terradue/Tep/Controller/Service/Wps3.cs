@@ -159,16 +159,19 @@ namespace Terradue.Tep {
         public string StacCatalogUri { get; set; }
     }
 
-    public class JsonUrl {
+    public class SupervisorPublish {
         [DataMember]
         public string url { get; set; }
         [DataMember]
         public string producerUrl { get; set; }
     }
 
-    public class JsonIdentifier {
+    public class SupervisorDelete {
+        [DataMember]
+        public string type { get; set; }
         [DataMember]
         public string identifier { get; set; }
+        [DataMember]
+        public bool async { get; set; }
     }
-
 }

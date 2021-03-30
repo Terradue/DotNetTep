@@ -394,7 +394,7 @@ namespace Terradue.Tep {
 
                     context.LogDebug(this, "clean wps job request to supervisor - Identifier = " + this.RemoteIdentifier);
 
-                    var jsonId = new JsonIdentifier { identifier = this.RemoteIdentifier };
+                    var jsonId = new SupervisorDelete { type = "JobResults", identifier = this.RemoteIdentifier, async = true };
                     var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonId);
 
                 
@@ -859,7 +859,7 @@ namespace Terradue.Tep {
 
                             context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}",s3link, shareUri.AbsoluteUri));
 
-                            var jsonurl = new JsonUrl { url = s3link, producerUrl = shareUri.AbsoluteUri };
+                            var jsonurl = new SupervisorPublish { url = s3link, producerUrl = shareUri.AbsoluteUri };
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
 
                             try {
