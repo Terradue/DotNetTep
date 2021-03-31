@@ -216,6 +216,18 @@ namespace Terradue.Tep {
                 description.DataInputs.Add(input);
             }
 
+            //outputs
+            var output = new OutputDescriptionType {
+                Identifier = new CodeType { Value = "result_osd" },
+                Title = new LanguageStringType { Value = "OpenSearch Description to the Results" },
+                Abstract = new LanguageStringType { Value = "OpenSearch Description to the Results" },
+                Item = new SupportedComplexDataType {
+                    Default = new ComplexDataCombinationType { Format = new ComplexDataDescriptionType { MimeType = "application/opensearchdescription+xml" } },
+                    Supported = new List<ComplexDataDescriptionType> { new ComplexDataDescriptionType { MimeType = "application/opensearchdescription+xml" } }
+                }
+            };
+            description.ProcessOutputs.Add(output);
+
             processDescriptions.ProcessDescription = new List<ProcessDescriptionType> { description };
             return processDescriptions;
         }
