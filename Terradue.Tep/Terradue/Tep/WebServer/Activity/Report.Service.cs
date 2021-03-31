@@ -29,8 +29,23 @@ namespace Terradue.Tep.WebServer.Services {
         public string Filename { get; set; }
     }
 
+    [Route("/report/jobs", "POST", Summary = "GET report", Notes = "")]
+    public class GetJobReportingRequest : IReturn<string> {
+        [ApiMember(Name = "emails", Description = "user emails", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
+        public List<string> Emails { get; set; }
 
-     [Api("Tep Terradue webserver")]
+        [ApiMember(Name = "token", Description = "token", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string token { get; set; }
+
+        [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
+        public DateTime startdate { get; set; }
+
+        [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
+        public DateTime enddate { get; set; }
+    }
+
+
+    [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json)]
     public class ReportServiceTep : ServiceStack.ServiceInterface.Service {
@@ -122,6 +137,88 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             Response.AddHeader("Content-Disposition", string.Format("attachment;filename={2}-report-{0}-{1}.csv",startdate,enddate,context.GetConfigValue("SiteNameShort")));
+            return csv.ToString();
+        }
+
+        public object Post(GetJobReportingRequest request) {
+            TepWebContext context = null;
+            var csv = new System.Text.StringBuilder();
+            try { 
+                context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+                context.Open();
+
+                if (!(request.token == context.GetConfigValue("t2portal-safe-token"))) throw new Exception("Unauthorized access");
+
+                context.AccessLevel = EntityAccessLevel.Administrator;
+                
+                var startdate = (request.startdate != DateTime.MinValue ? request.startdate.ToString("yyyy-MM-dd") : "2014-01-01");
+                var enddate = (request.enddate != DateTime.MinValue ? request.enddate.ToString("yyyy-MM-dd") : DateTime.UtcNow.ToString("yyyy-MM-dd"));
+
+                csv.Append("Owner Email,Creation date,Process name,Status,Processing time (minutes),Thematic App name, Nb Input" + Environment.NewLine);
+
+                foreach (var email in request.Emails) {
+                    var user = User.FromEmail(context, email);
+
+                    //get list of jobs
+                    string sql = String.Format("SELECT wpsjob.id from wpsjob WHERE wpsjob.id_usr={0} AND wpsjob.created_time > '{1}' AND wpsjob.created_time < '{2}';", user.Id, startdate, enddate);
+                    var ids = context.GetQueryIntegerValues(sql);
+
+                    foreach (var id in ids) {
+                        var job = WpsJob.FromId(context, id);
+
+                        //status
+                        bool succeeded = false;
+                        switch (job.Status) {
+                            case WpsJobStatus.SUCCEEDED:
+                            case WpsJobStatus.STAGED:
+                            case WpsJobStatus.COORDINATOR:
+                                succeeded = true;
+                                break;
+                            default:
+                                break;
+                        }
+
+                        //wps name
+                        string wpsname = "";
+                        try {
+                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
+                            wpsname = wps.Name;
+                        } catch (Exception) {
+                            wpsname = job.ProcessId;
+                        }
+
+                        //processing time
+                        var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
+
+                        //processed data
+                        int totalDataProcessed = 0;
+                        if (job.Parameters != null) {
+                            foreach (var parameter in job.Parameters) {
+                                if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {
+                                    var url = parameter.Value;
+                                    totalDataProcessed++;
+                                }
+                            }
+                        }
+
+                        csv.Append(String.Format("{0},{1},\"{2}\",{3},{4},{5},{6}{7}",
+                            email,
+                            job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                            wpsname.Replace(",", "\\,"),
+                            succeeded ? "succeeded" : "failed",
+                            processingTime,
+                            job.AppIdentifier,
+                            totalDataProcessed,
+                            Environment.NewLine
+                        ));
+                    }
+                }
+
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
             return csv.ToString();
         }
 
