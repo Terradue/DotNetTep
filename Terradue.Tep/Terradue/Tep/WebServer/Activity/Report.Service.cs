@@ -350,6 +350,10 @@ namespace Terradue.Tep.WebServer.Services {
                 if (!path.EndsWith("/")) path += "/";
                 var filename = string.Format("{0}files/{1}", path, request.filename);
                 System.IO.File.WriteAllText(filename, csv.ToString());
+
+                path = context.GetConfigValue("BaseUrl");
+                if (!path.EndsWith("/")) path += "/";
+                filename = string.Format("{0}files/{1}", path, request.filename);                
                 return filename;
             } else {
                 return csv.ToString();
