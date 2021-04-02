@@ -34,14 +34,23 @@ namespace Terradue.Tep.WebServer.Services {
         [ApiMember(Name = "emails", Description = "user emails", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
         public List<string> Emails { get; set; }
 
-        [ApiMember(Name = "token", Description = "token", ParameterType = "query", DataType = "string", IsRequired = false)]
-        public string token { get; set; }
-
         [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
         public DateTime startdate { get; set; }
 
         [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
         public DateTime enddate { get; set; }
+
+        [ApiMember(Name = "token", Description = "token", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string token { get; set; }
+
+        [ApiMember(Name = "filename", Description = "filename", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string filename { get; set; }
+
+        [ApiMember(Name = "userinfo", Description = "userinfo", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
+        public List<string> userinfo { get; set; }
+
+        [ApiMember(Name = "jobinfo", Description = "userinfo", ParameterType = "query", DataType = "List<string>", IsRequired = false)]
+        public List<string> jobinfo { get; set; }
     }
 
 
@@ -154,72 +163,197 @@ namespace Terradue.Tep.WebServer.Services {
                 var startdate = (request.startdate != DateTime.MinValue ? request.startdate.ToString("yyyy-MM-dd") : "2014-01-01");
                 var enddate = (request.enddate != DateTime.MinValue ? request.enddate.ToString("yyyy-MM-dd") : DateTime.UtcNow.ToString("yyyy-MM-dd"));
 
-                csv.Append("Owner Email,Creation date,Process name,Status,Processing time (minutes),Thematic App name, Nb Input" + Environment.NewLine);
+                //Create Header
+                var csvHeader = new System.Text.StringBuilder();
+                if (request.userinfo != null){
+                    foreach (var userinfo in request.userinfo) {
+                        switch(userinfo){
+                            case "email":
+                                csvHeader.Append("User email,");
+                            break;
+                            case "identifier":
+                                csvHeader.Append("User identifier,");
+                            break;
+                            case "level":
+                                csvHeader.Append("User level,");
+                            break;
+                            case "affiliation":
+                                csvHeader.Append("User affiliation,");
+                            break;
+                            case "creation":
+                                csvHeader.Append("User creation,");
+                            break;
+                            case "login":
+                                csvHeader.Append("User creation,");
+                            break;
+                        }
+                    }                        
+                }
+                if (request.jobinfo != null){
+                    foreach (var jobinfo in request.jobinfo) {
+                        switch(jobinfo){
+                            case "id":
+                                csvHeader.Append("Job id,");
+                            break;
+                            case "url":
+                                csvHeader.Append("Job url,");
+                            break;
+                            case "status":
+                                csvHeader.Append("Job status,");
+                            break;
+                            case "shared":
+                                csvHeader.Append("Job shared,");
+                            break;
+                            case "creation":
+                                csvHeader.Append("Job creation,");
+                            break;
+                            case "wps":
+                                csvHeader.Append("Job wps,");
+                            break;
+                            case "duration":
+                                csvHeader.Append("Job duration,");
+                            break;
+                            case "app":
+                                csvHeader.Append("Job app,");
+                            break;
+                            case "nbinput":
+                                csvHeader.Append("Job nb inputs,");
+                            break;
+                        }
+                    }                        
+                }
+                csvHeader.Length --;
+                csvHeader.Append(Environment.NewLine);
 
-                foreach (var email in request.Emails) {
-                    var user = User.FromEmail(context, email);
+                //Create body
+                var csvBody = new System.Text.StringBuilder();
+                var users = new List<UserTep>();
+                if (request.Emails != null) {
+                    foreach (var email in request.Emails) {
+                        try{
+                            users.Add(UserTep.FromEmail(context, email));
+                        }catch(Exception){}
+                    }
+                } else {
+                    var dbusers = new EntityList<UserTep>(context);
+                    dbusers.Load();
+                    users.AddRange(dbusers.GetItemsAsList());
+                }
 
+                foreach(var user in users){
                     //get list of jobs
                     string sql = String.Format("SELECT wpsjob.id from wpsjob WHERE wpsjob.id_usr={0} AND wpsjob.created_time > '{1}' AND wpsjob.created_time < '{2}';", user.Id, startdate, enddate);
                     var ids = context.GetQueryIntegerValues(sql);
-
                     foreach (var id in ids) {
                         var job = WpsJob.FromId(context, id);
-
-                        //status
-                        bool succeeded = false;
-                        switch (job.Status) {
-                            case WpsJobStatus.SUCCEEDED:
-                            case WpsJobStatus.STAGED:
-                            case WpsJobStatus.COORDINATOR:
-                                succeeded = true;
-                                break;
-                            default:
-                                break;
+                        if (request.userinfo != null){
+                            foreach (var userinfo in request.userinfo) {
+                                switch(userinfo){
+                                    case "email":
+                                        csvBody.Append(user.Email+",");
+                                    break;
+                                    case "identifier":
+                                        csvBody.Append(user.Username+",");
+                                    break;
+                                    case "level":
+                                        csvBody.Append(user.Level+",");
+                                    break;
+                                    case "affiliation":
+                                        csvBody.Append(user.Affiliation+",");
+                                    break;
+                                    case "creation":
+                                        user.LoadRegistrationInfo();            
+                                        csvBody.Append(user.RegistrationDate+",");
+                                    break;
+                                    case "login":
+                                        user.LoadRegistrationInfo();
+                                        csvBody.Append(user.GetLastLoginDate()+",");
+                                    break;
+                                }
+                            }                        
                         }
+                        if(request.jobinfo != null){
+                            foreach (var jobinfo in request.jobinfo) {
+                                switch(jobinfo){
+                                    case "id":
+                                        csvBody.Append(job.Id+",");
+                                    break;
+                                    case "url":
+                                        csvBody.Append(job.StatusLocation+",");
+                                    break;
+                                    case "status":
+                                        bool succeeded = false;
+                                        switch (job.Status) {
+                                            case WpsJobStatus.SUCCEEDED:
+                                            case WpsJobStatus.STAGED:
+                                            case WpsJobStatus.COORDINATOR:
+                                                succeeded = true;
+                                                break;
+                                            default:
+                                                break;
+                                        }
 
-                        //wps name
-                        string wpsname = "";
-                        try {
-                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
-                            wpsname = wps.Name;
-                        } catch (Exception) {
-                            wpsname = job.ProcessId;
-                        }
-
-                        //processing time
-                        var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
-
-                        //processed data
-                        int totalDataProcessed = 0;
-                        if (job.Parameters != null) {
-                            foreach (var parameter in job.Parameters) {
-                                if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {
-                                    var url = parameter.Value;
-                                    totalDataProcessed++;
+                                        csvBody.Append((succeeded?"succeeded":"failed")+",");
+                                    break;
+                                    case "shared":
+                                        csvBody.Append((job.IsPrivate()?"false":"true")+",");
+                                    break;
+                                    case "creation":
+                                        csvBody.Append(job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss")+",");
+                                    break;
+                                    case "wps":
+                                        string wpsname = "";
+                                        try {
+                                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
+                                            wpsname = wps.Name;
+                                        } catch (Exception) {
+                                            wpsname = job.ProcessId;
+                                        }
+                                        csvBody.Append(wpsname.Replace(",", "\\,")+",");
+                                    break;
+                                    case "duration":
+                                        var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
+                                        csvBody.Append(processingTime+",");
+                                    break;
+                                    case "app":
+                                        csvBody.Append(job.AppIdentifier+",");
+                                    break;
+                                    case "nbinput":
+                                        int totalDataProcessed = 0;
+                                        if (job.Parameters != null) {
+                                            foreach (var parameter in job.Parameters) {
+                                                if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {
+                                                    var url = parameter.Value;
+                                                    totalDataProcessed++;
+                                                }
+                                            }
+                                        }
+                                        csvBody.Append(totalDataProcessed+",");
+                                    break;
                                 }
                             }
                         }
-
-                        csv.Append(String.Format("{0},{1},\"{2}\",{3},{4},{5},{6}{7}",
-                            email,
-                            job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                            wpsname.Replace(",", "\\,"),
-                            succeeded ? "succeeded" : "failed",
-                            processingTime,
-                            job.AppIdentifier,
-                            totalDataProcessed,
-                            Environment.NewLine
-                        ));
-                    }
+                        csvBody.Length--;
+                        csvBody.Append(Environment.NewLine);
+                    }                        
                 }
-
+                csv.Append(csvHeader).Append(csvBody);
+                
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
                 context.Close();
                 throw e;
             }
-            return csv.ToString();
+
+            if (!string.IsNullOrEmpty(request.filename)){
+                string path = AppDomain.CurrentDomain.BaseDirectory;
+                if (!path.EndsWith("/")) path += "/";
+                var filename = string.Format("{0}files/{1}", path, request.filename);
+                System.IO.File.WriteAllText(filename, csv.ToString());
+                return filename;
+            } else {
+                return csv.ToString();
+            }
         }
 
         /// <summary>
