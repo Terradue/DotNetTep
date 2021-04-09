@@ -80,21 +80,19 @@ namespace Terradue.Tep.WebServer.Services {
 
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
+            var qs = new NameValueCollection(httpRequest.QueryString);
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            string format;
-            if (Request.QueryString["format"] == null)
-                format = "atom";
-            else
-                format = Request.QueryString["format"];
-
-            if(Request.QueryString["visibility"] != null && Request.QueryString["visibility"] != "all"){
+            if(qs["visibility"] != null && qs["visibility"] != "all"){
                 wpsjobs.AccessLevel = EntityAccessLevel.Privilege;
             }
 
+            if (string.IsNullOrEmpty(qs["id"]) && string.IsNullOrEmpty(qs["uid"]) && string.IsNullOrEmpty(qs["archivestatus"]))
+                qs.Set("archivestatus", (int)WpsJobArchiveStatus.NOT_ARCHIVED + "");
+
             Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-            IOpenSearchResultCollection osr = ose.Query(wpsjobs, httpRequest.QueryString, responseType);
+            IOpenSearchResultCollection osr = ose.Query(wpsjobs, qs, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobs, osr);
 //            OpenSearchFactory.ReplaceSelfLinks(wpsjobs, httpRequest.QueryString, osr.Result, EntrySelfLinkTemplate);
@@ -623,6 +621,32 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return nbresults;
         }
+
+        public object Put(WpsJobUpdateArchiveStatusRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebWpsJobTep result;
+            try
+            {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/archive PUT identifier='{0}', status={1}", request.JobId, request.ArchiveStatus));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+                job.ArchiveStatus = (WpsJobArchiveStatus)request.ArchiveStatus;
+                job.Store();
+                result = new WebWpsJobTep(job);
+                context.Close();
+            }
+            catch (Exception e)
+            {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        
 
     }
 }
