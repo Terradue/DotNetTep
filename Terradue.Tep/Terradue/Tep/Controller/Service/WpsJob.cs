@@ -1,4 +1,4 @@
-    using System;
+using System;
 using Terradue.Portal;
 using System.Collections.Generic;
 using Terradue.OpenSearch;
@@ -50,6 +50,9 @@ namespace Terradue.Tep {
 
         [EntityDataField("status")]
         public WpsJobStatus Status { get; set; }
+
+        [EntityDataField("archive_status")]
+        public WpsJobArchiveStatus ArchiveStatus { get; set; }
 
         [EntityDataField("created_time")]
         public DateTime CreatedTime { get; set; }
@@ -338,6 +341,7 @@ namespace Terradue.Tep {
             newjob.OwsUrl = job.OwsUrl;
             newjob.AppIdentifier = job.AppIdentifier;
             newjob.Status = job.Status;
+            newjob.ArchiveStatus = job.ArchiveStatus;
             newjob.Parameters = job.Parameters;
             newjob.EndTime = job.EndTime;
             newjob.Name = job.Name;
@@ -410,7 +414,11 @@ namespace Terradue.Tep {
                 context.LogError(this, e.Message);
             }
 
-            base.Delete();
+            if (context.GetConfigBooleanValue("wpsjob-archive-enabled")) {
+                this.ArchiveStatus = WpsJobArchiveStatus.TO_BE_ARCHIVED;
+                this.Store();
+                //TODO: trigger action to actually delete the phusical results of the job
+            } else base.Delete();
         }
 
         /// <summary>
@@ -509,6 +517,7 @@ namespace Terradue.Tep {
             wpsjob.ProcessId = wps.Identifier;
             wpsjob.CreatedTime = DateTime.UtcNow;
             wpsjob.Status = WpsJobStatus.NONE;
+            wpsjob.ArchiveStatus = WpsJobArchiveStatus.NOT_ARCHIVED;
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
             wpsjob.Parameters = parameters;
             wpsjob.WpsVersion = wps.Version;
@@ -1348,6 +1357,8 @@ namespace Terradue.Tep {
                     return new KeyValuePair<string, string>();
                 case "appId":
                     return new KeyValuePair<string, string>("AppIdentifier", value);
+                case "archivestatus":
+                    return new KeyValuePair<string, string>("ArchiveStatus", value);
                 default:
                     return base.GetFilterForParameter(parameter, value);
             }
@@ -1469,6 +1480,7 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
+            if(context.UserLevel == UserLevel.Administrator) result.Categories.Add(new SyndicationCategory("archivestatus", null, this.ArchiveStatus.ToString()));
             if (!string.IsNullOrEmpty(this.WpsVersion)) result.Categories.Add(new SyndicationCategory("service_version", null, "" + this.WpsVersion));
             return result;
         }
@@ -1790,6 +1802,15 @@ namespace Terradue.Tep {
         STAGED = 5, //wps job has been staged on store
         FAILED = 6, //wps job has failed
         COORDINATOR = 7 //wps job is a coordinator
+    }
+
+    /// <summary>
+    /// WPS job archive status
+    /// </summary>
+    public enum WpsJobArchiveStatus {
+        NOT_ARCHIVED = 0, //wps job is not archived (it is available to user)
+        TO_BE_ARCHIVED = 1, //wps job has to be archived (not available to users)
+        ARCHIVED = 2 //wps job has been archived (not available to users)
     }
 
     [DataContract]

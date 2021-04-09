@@ -1,4 +1,4 @@
--- VERSION 1.2.18
+-- VERSION 1.2.19
 
 USE $MAIN$;
 
@@ -90,6 +90,7 @@ CREATE TABLE wpsjob (
     process varchar(100) NOT NULL COMMENT 'Process name',
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
     status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
+    archive_status int NOT NULL DEFAULT 0 COMMENT 'Wps job archive status',
     status_url varchar(400) NOT NULL COMMENT 'Wps job status url',
     ows_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps job ows url',
     app_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Wps job app identifier',

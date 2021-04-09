@@ -122,6 +122,15 @@ namespace Terradue.Tep.WebServer {
         public string JobId { get; set; }
     }
 
+    [Route("/job/wps/{jobId}/archive", "PUT", Summary = "PUT nbresult of job", Notes = "")]
+    public class WpsJobUpdateArchiveStatusRequestTep : IReturn<WebWpsJobTep> {
+        [ApiMember(Name = "jobId", Description = "id of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string JobId { get; set; }
+
+        [ApiMember(Name = "archiveStatus", Description = "archiveStatus of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int ArchiveStatus { get; set; }
+    }
+
     public class WebWpsJobTep : WebEntity {
         [ApiMember(Name="RemoteIdentifier", Description = "RemoteIdentifier of the job", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string RemoteIdentifier { get; set; }
@@ -135,6 +144,8 @@ namespace Terradue.Tep.WebServer {
         public string ProcessName { get; set; }
 		[ApiMember(Name = "Status", Description = "Status of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
 		public int Status { get; set; }
+        [ApiMember(Name = "ArchiveStatus", Description = "ArchiveStatus of the job", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int ArchiveStatus { get; set; }
         [ApiMember(Name = "WpsVersion", Description = "Version of the job wps service", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsVersion { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
@@ -179,6 +190,7 @@ namespace Terradue.Tep.WebServer {
             this.WpsVersion = entity.WpsVersion;
             this.OwsUrl = entity.OwsUrl;
             this.AppIdentifier = entity.AppIdentifier;
+            this.ArchiveStatus = (int)entity.ArchiveStatus;
         }
 
         /// <summary>
