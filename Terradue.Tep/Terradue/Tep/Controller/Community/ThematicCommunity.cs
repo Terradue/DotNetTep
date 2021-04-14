@@ -562,7 +562,7 @@ namespace Terradue.Tep {
                 var token = context.GetConfigValue(syncIdentifier + "-token");
                 var syncUrl = context.GetConfigValue(syncIdentifier + "-sync-url");
 
-                var a2sUser = new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation };
+                var a2sUser = new UserSync { email = user.Email, lastname = user.LastName, firstname = user.FirstName, company = user.Affiliation, platform = context.GetConfigValue("SiteNameShort") };
                 var a2sInput = new UserSyncRequest { token = token, user = a2sUser, action = action };
 
                 var request = (HttpWebRequest)WebRequest.Create(syncUrl);
@@ -1300,5 +1300,7 @@ namespace Terradue.Tep {
         public string email { get; set; }
         [DataMember]
         public string company { get; set; }
+        [DataMember]
+        public string platform { get; set; }
     }
 }
