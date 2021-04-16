@@ -223,6 +223,114 @@ namespace Terradue.Tep {
 		}
 
         /// <summary>
+        /// Synchronize WPS services
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="appcached"></param>
+        public static void SyncWpsServices(IfyContext context, ThematicApplicationCached appcached) {
+            context.LogDebug(context, string.Format("Sync WPS app : {0}/{1}", appcached.Index, appcached.UId));
+
+            //get app self url            
+            var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(appcached.TextFeed);
+            var entry = feed.Items.First();
+            SyncWpsServices(context, entry);
+        }
+
+        /// <summary>
+        /// Synchronize WPS services
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="entry"></param>
+        /// <param name="domain"></param>
+        public static void SyncWpsServices(IfyContext context, OwsContextAtomEntry entry, Domain domain = null) {           
+            if (entry.Offerings == null) return;
+
+            var offering = entry.Offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+            if (offering == null) return;
+
+            string wpsDomainIdentifier = null;
+            string wpsTags = null;
+
+            //get domain and tag for app
+            var op = offering.Operations.FirstOrDefault(o => o.Code == "ListProcess");
+            if (op != null && op.Href != null) {
+                var nvc = HttpUtility.ParseQueryString((new Uri(op.Href)).Query);
+                foreach (var key in nvc.AllKeys) {
+                    switch (key) {
+                        case "domain":
+                            wpsDomainIdentifier = nvc[key];
+                            break;
+                        case "tag":
+                            wpsTags = nvc[key];
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            //check domain
+            if (domain == null) domain = Domain.FromIdentifier(context, wpsDomainIdentifier);
+
+            op = offering.Operations.FirstOrDefault(o => o.Code == "RemoteSyncProcess");
+            if (op != null && op.Href != null) {
+
+                //get current services from DB
+                string[] tags = !string.IsNullOrEmpty(wpsTags) ? wpsTags.Split(",".ToArray()) : new string[0];
+                var dbProcesses = WpsProcessOfferingTep.GetWpsProcessingOfferingsForApp(context, domain, tags);
+
+                //get new services from remote
+                //TODO: manage case of /description (we should get the search and do one or more searches in case of more than 20 items
+                OwsContextAtomFeed wpsfeed = null;
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(op.Href);
+                using (var resp = httpRequest.GetResponse()) {
+                    using (var stream = resp.GetResponseStream()) {
+                        wpsfeed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                    }
+                }
+                var remoteProcesses = WpsProcessOfferingTep.GetWpsProcessingOfferingsFromAtomFeed(context, wpsfeed, true);
+                foreach (var p in remoteProcesses) {
+                    p.Domain = domain;
+                    p.Tags = wpsTags;
+                    p.Available = true;
+                }
+
+                //store only new services (not already in DB)
+                foreach (WpsProcessOffering pR in remoteProcesses) {
+                    bool inDB = false;
+                    foreach (WpsProcessOffering pDB in dbProcesses) {
+                        if (pR.ProviderId == pDB.ProviderId
+                            && pR.RemoteIdentifier == pDB.RemoteIdentifier
+                            && pR.Version == pDB.Version) {
+                            inDB = true;
+                            //we update title/description/icon
+                            pDB.Name = pR.Name;
+                            pDB.Description = pR.Description;
+                            pDB.IconUrl = pR.IconUrl;
+                            pDB.Store();
+                        }
+                    }
+                    if (!inDB) pR.Store();
+                }
+
+                //remove services from DB not anymore in the list
+                foreach (WpsProcessOffering pDB in dbProcesses) {
+                    bool inRemote = false;
+                    foreach (WpsProcessOffering pR in remoteProcesses) {
+                        if (pR.ProviderId == pDB.ProviderId
+                            && pR.RemoteIdentifier == pDB.RemoteIdentifier
+                            && pR.Version == pDB.Version) {
+                            inRemote = true;
+                            break;
+                        }
+                    }
+                    if (!inRemote) pDB.Delete();
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Creates the or update app from the url.
         /// </summary>
         /// <returns>The or update app.</returns>
