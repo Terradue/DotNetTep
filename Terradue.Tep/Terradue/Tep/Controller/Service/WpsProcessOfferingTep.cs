@@ -13,6 +13,7 @@ using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class WpsProcessOfferingTep : WpsProcessOffering {
+
         public WpsProcessOfferingTep(IfyContext context) : base(context) {
         }
 
@@ -287,7 +288,7 @@ namespace Terradue.Tep {
             webRequest.ContentType = "application/json";
 
             var json = ServiceStack.Text.JsonSerializer.SerializeToString<IO.Swagger.Model.Execute>(execute);
-
+            context.LogDebug(this, json);
             byte[] data = System.Text.Encoding.UTF8.GetBytes(json);
             webRequest.ContentLength = data.Length;
 
@@ -336,16 +337,28 @@ namespace Terradue.Tep {
 
                         var ld = dataInput.Data.Item as OpenGis.Wps.LiteralDataType;
                         string inputValue = ld.Value;
-                        try {
-                            var urib = new UriBuilder(inputValue);
-                            var nvc = HttpUtility.ParseQueryString(urib.Query);
-                            if (!string.IsNullOrEmpty(nvc["format"])) nvc["format"] = "atom";
-                            string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
-                            urib.Query = string.Join("&", queryString);
-                            inputValue = urib.Uri.AbsoluteUri;
-                        } catch (System.Exception e) {
-                            context.LogError(this, e.Message);
-                            inputValue = inputValue.Replace("format=json", "format=atom");
+                        Uri outUri;
+                        if (Uri.TryCreate(inputValue, UriKind.Absolute, out outUri) && (outUri.Scheme == Uri.UriSchemeHttp || outUri.Scheme == Uri.UriSchemeHttps)) {
+                            try {
+                                var urib = new UriBuilder(inputValue);
+                                var nvc = HttpUtility.ParseQueryString(urib.Query);
+
+                                //case WPS3 endpoint does not support format=json
+                                if (urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host
+                                    && !string.IsNullOrEmpty(context.GetConfigValue("wps3input-format"))) {
+                                    nvc["format"] = context.GetConfigValue("wps3input-format");
+                                }
+                                //case WPS3 endpoint needs a specific downloadorigin
+                                if (urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host
+                                    && !string.IsNullOrEmpty(context.GetConfigValue("wps3input-downloadorigin"))) {
+                                    nvc["do"] = context.GetConfigValue("wps3input-downloadorigin");
+                                }
+                                string[] queryString = Array.ConvertAll(nvc.AllKeys, key => string.Format("{0}={1}", key, nvc[key]));
+                                urib.Query = string.Join("&", queryString);
+                                inputValue = urib.Uri.AbsoluteUri;
+                            } catch (System.Exception e) {
+                                context.LogError(this, e.Message);                                
+                            }
                         }
 
                         StupidData literalData = new StupidData(inputValue, new StupidDataType(datatype));

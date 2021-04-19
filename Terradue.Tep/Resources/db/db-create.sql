@@ -1,4 +1,4 @@
--- VERSION 1.2.19
+-- VERSION 1.2.20
 
 USE $MAIN$;
 
@@ -452,3 +452,15 @@ CREATE TABLE termsconditions (
 );
 -- RESULT
 
+-- Adding domain for wpsjob table ... \
+ALTER TABLE wpsjob ADD COLUMN archive_status int NOT NULL DEFAULT 0 COMMENT 'Wps job archive status';
+-- RESULT
+
+-- Update config
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('wpsjob-archive-enabled', 'bool', 'Wpsjob archive is enabled or not (if set to yes, job are not deleted but set as to be archived)', 'Wpsjob archive is enabled or not (if set to yes, job are not deleted but set as to be archived)', 'true', '0');
+-- RESULT
+
+-- Update config
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('wps3input-format', 'string', 'wps3 input fixed format value', 'wps3 input fixed format value', 'atom', '0');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('wps3input-downloadorigin', 'string', 'wps3 input fixed download origin value', 'wps3 input fixed download origin value', '[terradue]', '0');
+-- RESULT
