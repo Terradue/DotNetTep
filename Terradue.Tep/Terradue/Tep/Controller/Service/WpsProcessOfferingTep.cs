@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Web;
 using IO.Swagger.Model;
 using OpenGis.Wps;
@@ -70,60 +71,91 @@ namespace Terradue.Tep {
         /// <param name="feed"></param>
         /// <param name="createProviderIfNotFound"></param>
         /// <returns></returns>
-        public static List<WpsProcessOffering> GetWpsProcessingOfferingsFromAtomFeed(IfyContext context, OwsContextAtomFeed feed, bool createProviderIfNotFound) {
+        public static List<WpsProcessOffering> GetRemoteWpsProcessingOfferingsFromUrl(IfyContext context, string url, bool createProviderIfNotFound) {
             var remoteProcesses = new List<WpsProcessOffering>();
 
-            if (feed.Items != null) {
-                foreach (OwsContextAtomEntry item in feed.Items) {
-                    var wpsOffering = item.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
-                    if (wpsOffering == null) continue;
+            var items = GetRemoteWpsServiceEntriesFromUrl(context, url);
 
-                    var appIconLink = item.Links.FirstOrDefault(l => l.RelationshipType == "icon");
-                    string icon = null;
-                    if (appIconLink != null) icon = appIconLink.Uri.AbsoluteUri;
+            foreach (OwsContextAtomEntry item in items) {
+                var wpsOffering = item.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+                if (wpsOffering == null) continue;
 
-                    var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
-                    var href = operation.Href;
-                    switch (operation.Code) {
-                        case "ProcessDescription":
-                            var dpUri = new Uri(href);
-                            var describeProcessUrl = dpUri.GetLeftPart(UriPartial.Path);
-                            var providerBaseUrl = describeProcessUrl.Substring(0, describeProcessUrl.LastIndexOf("/"));
-                            var processIdentifier = describeProcessUrl.Substring(describeProcessUrl.LastIndexOf("/") + 1);
-                            WpsProvider wpsprovider = null;
-                            try {
-                                wpsprovider = WpsProvider.FromBaseUrl(context, providerBaseUrl);
-                            } catch (System.Exception e) {
-                                if (createProviderIfNotFound) {
-                                    wpsprovider = new WpsProvider(context);
-                                    wpsprovider.Identifier = new Uri(describeProcessUrl).Host;
-                                    wpsprovider.BaseUrl = providerBaseUrl;
-                                    wpsprovider.StageResults = true;
-                                    wpsprovider.Proxy = true;
-                                    wpsprovider.Store();
+                var appIconLink = item.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+                string icon = null;
+                if (appIconLink != null) icon = appIconLink.Uri.AbsoluteUri;
 
-                                    wpsprovider.GrantPermissionsToAll();
-                                }
-                            }
+                var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
+                var href = operation.Href;                   
+                var dpUri = new Uri(href);
+                var describeProcessUrl = dpUri.GetLeftPart(UriPartial.Path);
+                var providerBaseUrl = describeProcessUrl.Substring(0, describeProcessUrl.LastIndexOf("/"));
+                var processIdentifier = describeProcessUrl.Substring(describeProcessUrl.LastIndexOf("/") + 1);
+                WpsProvider wpsprovider = null;
+                try {
+                    wpsprovider = WpsProvider.FromBaseUrl(context, providerBaseUrl);
+                } catch (System.Exception e) {
+                    if (createProviderIfNotFound) {
+                        var urip = new Uri(providerBaseUrl);
+                        wpsprovider = new WpsProvider(context);
+                        wpsprovider.Identifier = urip.AbsolutePath.Contains("/wps3/processes") ?
+                                                    urip.Host + urip.AbsolutePath.Substring(0, urip.AbsolutePath.IndexOf("/wps3/processes")).Replace("/", ".") :
+                                                    Guid.NewGuid().ToString();
+                        wpsprovider.Name = urip.AbsolutePath.Contains("/wps3/processes") ?
+                                                    urip.Host + urip.AbsolutePath.Substring(0, urip.AbsolutePath.IndexOf("/wps3/processes")).Replace("/",".") :
+                                                    urip.Host + urip.AbsolutePath.Replace("/", ".");
+                        wpsprovider.BaseUrl = providerBaseUrl;
+                        wpsprovider.StageResults = true;
+                        wpsprovider.Proxy = true;
+                        wpsprovider.Store();
 
-                            //case WPS 3.0
-                            if (IsWPS3(describeProcessUrl)) {
-                                WpsProcessOffering process = GetProcessingFromDescribeProcessWps3(context, describeProcessUrl);
-                                if (wpsprovider != null) process.Provider = wpsprovider;
-                                process.IconUrl = icon;
-                                remoteProcesses.Add(process);
-                            }
-                            break;
-                        case "DescribeProcess":
-                            //case WPS 1.0 -> TODO
-                            break;
-                        default:
-                            break;
+                        wpsprovider.GrantPermissionsToAll();
                     }
-
                 }
+
+                //case WPS 3.0
+                if (IsWPS3(describeProcessUrl)) {
+                    WpsProcessOffering process = GetProcessingFromDescribeProcessWps3(context, describeProcessUrl);
+                    if (wpsprovider != null) process.Provider = wpsprovider;
+                    process.IconUrl = icon;
+                    remoteProcesses.Add(process);
+                }                            
             }
             return remoteProcesses;
+        }
+
+        public static List<OwsContextAtomEntry> GetRemoteWpsServiceEntriesFromUrl(IfyContext context, string href) {
+            var result = new List<OwsContextAtomEntry>();
+
+            var user = UserTep.FromId(context, context.UserId);
+            var apikey = user.GetSessionApiKey();            
+
+            //TODO: manage case of /description
+            //TODO: manage case of total result > 20 
+            var httpRequest = (HttpWebRequest)WebRequest.Create(href);
+            httpRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(user.Username + ":" + apikey)));
+            using (var resp = httpRequest.GetResponse()) {
+                using (var stream = resp.GetResponseStream()) {
+                    var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                    if (feed.Items != null) {
+                        foreach (OwsContextAtomEntry item in feed.Items) {
+                            result.Add(item);                            
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        public static List<string> GetRemoteWpsServiceUrlsFromUrl(IfyContext context, string href) {
+            var result = new List<string>();
+            var items = GetRemoteWpsServiceEntriesFromUrl(context, href);
+            foreach(var item in items) {
+                var wpsOffering = item.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+                if (wpsOffering == null) continue;
+                var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
+                result.Add(operation.Href);
+            }
+            return result;
         }
 
         /******************************/
@@ -177,6 +209,25 @@ namespace Terradue.Tep {
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                     var result = streamReader.ReadToEnd();
                     var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<Wps3>(result);
+                    return response;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get WPS3 processings from Get Capabilities url
+        /// </summary>
+        /// <param name="getCapabilitiesUrl"></param>
+        /// <returns></returns>
+        public static List<Process> GetWps3ProcessingsFromGetCapabilities(string getCapabilitiesUrl) {
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(getCapabilitiesUrl);
+            webRequest.Method = "GET";
+            webRequest.Accept = "application/json";
+
+            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    var result = streamReader.ReadToEnd();
+                    var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<List<Process>>(result);
                     return response;
                 }
             }

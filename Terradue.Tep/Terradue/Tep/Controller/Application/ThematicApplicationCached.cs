@@ -279,16 +279,8 @@ namespace Terradue.Tep {
                 string[] tags = !string.IsNullOrEmpty(wpsTags) ? wpsTags.Split(",".ToArray()) : new string[0];
                 var dbProcesses = WpsProcessOfferingTep.GetWpsProcessingOfferingsForApp(context, domain, tags);
 
-                //get new services from remote
-                //TODO: manage case of /description (we should get the search and do one or more searches in case of more than 20 items
-                OwsContextAtomFeed wpsfeed = null;
-                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(op.Href);
-                using (var resp = httpRequest.GetResponse()) {
-                    using (var stream = resp.GetResponseStream()) {
-                        wpsfeed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
-                    }
-                }
-                var remoteProcesses = WpsProcessOfferingTep.GetWpsProcessingOfferingsFromAtomFeed(context, wpsfeed, true);
+                //get new services from remote                
+                var remoteProcesses = WpsProcessOfferingTep.GetRemoteWpsProcessingOfferingsFromUrl(context, op.Href, true);
                 foreach (var p in remoteProcesses) {
                     p.Domain = domain;
                     p.Tags = wpsTags;
