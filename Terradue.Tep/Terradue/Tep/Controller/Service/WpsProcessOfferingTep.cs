@@ -77,17 +77,11 @@ namespace Terradue.Tep {
             var items = GetRemoteWpsServiceEntriesFromUrl(context, url);
 
             foreach (OwsContextAtomEntry item in items) {
-                var wpsOffering = item.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
-                if (wpsOffering == null) continue;
 
-                var appIconLink = item.Links.FirstOrDefault(l => l.RelationshipType == "icon");
-                string icon = null;
-                if (appIconLink != null) icon = appIconLink.Uri.AbsoluteUri;
+                var wps = GetWpsProcessOfferingFromProcessDescriptionAtomFeed(context, item);
+                if (wps == null) continue;
 
-                var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
-                var href = operation.Href;                   
-                var dpUri = new Uri(href);
-                var describeProcessUrl = dpUri.GetLeftPart(UriPartial.Path);
+                var describeProcessUrl = wps.Url;
                 var providerBaseUrl = describeProcessUrl.Substring(0, describeProcessUrl.LastIndexOf("/"));
                 var processIdentifier = describeProcessUrl.Substring(describeProcessUrl.LastIndexOf("/") + 1);
                 WpsProvider wpsprovider = null;
@@ -111,16 +105,44 @@ namespace Terradue.Tep {
                         wpsprovider.GrantPermissionsToAll();
                     }
                 }
+                if (wpsprovider != null) wps.Provider = wpsprovider;
 
                 //case WPS 3.0
                 if (IsWPS3(describeProcessUrl)) {
-                    WpsProcessOffering process = GetProcessingFromDescribeProcessWps3(context, describeProcessUrl);
-                    if (wpsprovider != null) process.Provider = wpsprovider;
-                    process.IconUrl = icon;
-                    remoteProcesses.Add(process);
-                }                            
+                    WpsProcessOffering process = GetProcessingFromDescribeProcessWps3(context, describeProcessUrl);                    
+                    wps.RemoteIdentifier = process.RemoteIdentifier;
+                    if (string.IsNullOrEmpty(wps.Name)) wps.Name = process.Name;
+                    if (string.IsNullOrEmpty(wps.Description)) wps.Description = process.Description;
+                    if (string.IsNullOrEmpty(wps.Version)) wps.Version = process.Version;                                        
+                }
+                remoteProcesses.Add(wps);
             }
             return remoteProcesses;
+        }
+
+        public static WpsProcessOffering GetWpsProcessOfferingFromProcessDescriptionAtomFeed(IfyContext context, OwsContextAtomEntry entry) {
+
+            var wpsOffering = entry.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+            if (wpsOffering == null) return null;
+
+            var wps = new WpsProcessOffering(context);
+
+            wps.Identifier = Guid.NewGuid().ToString();
+            var identifiers = entry.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
+            if (identifiers.Count > 0) wps.RemoteIdentifier = identifiers[0];
+            wps.Name = entry.Title != null ? entry.Title.Text : "";
+            wps.Description = entry.Summary != null ? entry.Summary.Text : "";
+
+            var appIconLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+            if (appIconLink != null) wps.IconUrl = appIconLink.Uri.AbsoluteUri;
+
+            var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
+            var href = operation.Href;
+            var dpUri = new Uri(href);
+            var describeProcessUrl = dpUri.GetLeftPart(UriPartial.Path);
+            wps.Url = describeProcessUrl;
+
+            return wps;
         }
 
         public static List<OwsContextAtomEntry> GetRemoteWpsServiceEntriesFromUrl(IfyContext context, string href) {
@@ -146,14 +168,13 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public static List<string> GetRemoteWpsServiceUrlsFromUrl(IfyContext context, string href) {
-            var result = new List<string>();
+        public static List<WpsProcessOffering> GetRemoteWpsServiceUrlsFromUrl(IfyContext context, string href) {
+            var result = new List<WpsProcessOffering>();
             var items = GetRemoteWpsServiceEntriesFromUrl(context, href);
             foreach(var item in items) {
-                var wpsOffering = item.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
-                if (wpsOffering == null) continue;
-                var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
-                result.Add(operation.Href);
+                var wps = GetWpsProcessOfferingFromProcessDescriptionAtomFeed(context, item);
+                if (wps == null) continue;
+                result.Add(wps);
             }
             return result;
         }
