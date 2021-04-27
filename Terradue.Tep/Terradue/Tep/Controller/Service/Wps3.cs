@@ -164,6 +164,15 @@ namespace Terradue.Tep {
         public string url { get; set; }
         [DataMember]
         public string producerUrl { get; set; }
+        [DataMember]
+        public List<SupervisorPublishCategory> categories { get; set; }
+    }
+
+    public class SupervisorPublishCategory {
+        [DataMember(Name = "name")]
+        public string Name { get; set; }
+        [DataMember(Name = "value")]
+        public string Value { get; set; }
     }
 
     public class SupervisorDelete {
