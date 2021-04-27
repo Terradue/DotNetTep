@@ -869,6 +869,23 @@ namespace Terradue.Tep {
                             context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}",s3link, shareUri.AbsoluteUri));
 
                             var jsonurl = new SupervisorPublish { url = s3link, producerUrl = shareUri.AbsoluteUri };
+                            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"] != null) {
+                                jsonurl.categories = new List<SupervisorPublishCategory>();
+                                var categories = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"].Split(',');
+                                foreach(var cat in categories) {
+                                    switch(cat){
+                                        case "activationId":
+                                            if (this.AppIdentifier != null) jsonurl.categories.Add(new SupervisorPublishCategory { Name = cat, Value = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-")+1) });
+                                            break;
+                                        case "appId":
+                                            jsonurl.categories.Add(new SupervisorPublishCategory { Name = cat, Value = this.AppIdentifier });
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
 
                             try {
