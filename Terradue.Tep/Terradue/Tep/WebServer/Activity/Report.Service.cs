@@ -302,15 +302,8 @@ namespace Terradue.Tep.WebServer.Services {
                                         csvBody.Append(job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss")+",");
                                     break;
                                     case "wps":
-                                        string wpsname = "";
-                                        try {
-                                            WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
-                                            wpsname = wps.Name;
-                                        } catch (Exception) {
-                                            wpsname = job.ProcessId;
-                                        }
-                                        csvBody.Append(wpsname.Replace(",", "\\,")+",");
-                                    break;
+                                        csvBody.Append(job.WpsName + ",");
+                                        break;
                                     case "duration":
                                         var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
                                         csvBody.Append(processingTime+",");
