@@ -35,6 +35,9 @@ namespace Terradue.Tep {
         [EntityDataField("wps")]
         public string WpsId { get; set; }
 
+        [EntityDataField("wps_name")]
+        public string WpsName { get; set; }
+
         [EntityDataField("wps_version")]
         public string WpsVersion { get; set; }
 
@@ -349,6 +352,7 @@ namespace Terradue.Tep {
             newjob.RemoteIdentifier = job.RemoteIdentifier;
             newjob.WpsId = job.WpsId;
             newjob.WpsVersion = job.WpsVersion;
+            newjob.WpsName = job.WpsName;
             newjob.Store();
 
             newjob.CreatedTime = job.CreatedTime;
@@ -371,7 +375,8 @@ namespace Terradue.Tep {
                 this.NbResults = -1;
                 try {
                     if (string.IsNullOrEmpty(this.WpsVersion) && this.Process != null) this.WpsVersion = this.Process.Version;//we set only at creation as service version may change with time
-                }catch(Exception e){
+                    if (string.IsNullOrEmpty(this.WpsName) && this.Process != null) this.WpsName = this.Process.Name;//we set only at creation as service version may change with time
+                } catch(Exception e){
                     //if error while getting Process, we skip the version
                 }
             }
@@ -521,6 +526,7 @@ namespace Terradue.Tep {
             wpsjob.Parameters = new List<KeyValuePair<string, string>>();
             wpsjob.Parameters = parameters;
             wpsjob.WpsVersion = wps.Version;
+            wpsjob.WpsName = wps.Name;
 
             if (executeInput != null && executeInput.DataInputs != null) {
                 var tmpInputs = new List<InputType>();
@@ -1499,6 +1505,7 @@ namespace Terradue.Tep {
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
             if(context.UserLevel == UserLevel.Administrator) result.Categories.Add(new SyndicationCategory("archivestatus", null, this.ArchiveStatus.ToString()));
             if (!string.IsNullOrEmpty(this.WpsVersion)) result.Categories.Add(new SyndicationCategory("service_version", null, "" + this.WpsVersion));
+            if (!string.IsNullOrEmpty(this.WpsName)) result.Categories.Add(new SyndicationCategory("service_name", null, "" + this.WpsName));
             return result;
         }
 
