@@ -148,6 +148,8 @@ namespace Terradue.Tep.WebServer {
         public int ArchiveStatus { get; set; }
         [ApiMember(Name = "WpsVersion", Description = "Version of the job wps service", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsVersion { get; set; }
+        [ApiMember(Name = "WpsName", Description = "Name of the job wps service", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string WpsName { get; set; }
         [ApiMember(Name="StatusLocation", Description = "Status location of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public string StatusLocation { get; set; }
         [ApiMember(Name = "OwsUrl", Description = "Ows url of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
@@ -188,6 +190,7 @@ namespace Terradue.Tep.WebServer {
             this.RemoteIdentifier = entity.RemoteIdentifier;
             this.Status = (int)entity.Status;
             this.WpsVersion = entity.WpsVersion;
+            this.WpsName = entity.WpsName;
             this.OwsUrl = entity.OwsUrl;
             this.AppIdentifier = entity.AppIdentifier;
             this.ArchiveStatus = (int)entity.ArchiveStatus;
@@ -216,6 +219,7 @@ namespace Terradue.Tep.WebServer {
             entity.CreatedTime = this.CreatedTime;
             entity.EndTime = this.EndTime;
             entity.WpsVersion = this.WpsVersion;
+            entity.WpsName = this.WpsName;
             entity.OwsUrl = this.OwsUrl;
             entity.AppIdentifier = this.AppIdentifier;
             return entity;

@@ -1,4 +1,4 @@
--- VERSION 1.2.20
+-- VERSION 1.2.21
 
 USE $MAIN$;
 
@@ -454,6 +454,10 @@ CREATE TABLE termsconditions (
 
 -- Adding domain for wpsjob table ... \
 ALTER TABLE wpsjob ADD COLUMN archive_status int NOT NULL DEFAULT 0 COMMENT 'Wps job archive status';
+-- RESULT
+
+-- Add wps name in wpsjob...\
+ALTER TABLE wpsjob ADD COLUMN `wps_name` VARCHAR(150) NULL DEFAULT NULL;
 -- RESULT
 
 -- Update config

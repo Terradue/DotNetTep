@@ -184,7 +184,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 csvHeader.Append("User creation,");
                             break;
                             case "login":
-                                csvHeader.Append("User creation,");
+                                csvHeader.Append("User last login,");
                             break;
                         }
                     }                        
