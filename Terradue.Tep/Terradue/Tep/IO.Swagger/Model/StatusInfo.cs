@@ -111,6 +111,30 @@ namespace IO.Swagger.Model
         public string Message { get; set; }
 
         /// <summary>
+        /// Gets or Sets created date time
+        /// </summary>
+        [DataMember(Name = "created", EmitDefaultValue = false)]
+        public DateTime Created { get; set; }
+
+        /// <summary>
+        /// Gets or Sets started date time
+        /// </summary>
+        [DataMember(Name = "started", EmitDefaultValue = false)]
+        public DateTime Started { get; set; }
+
+        /// <summary>
+        /// Gets or Sets finished date time
+        /// </summary>
+        [DataMember(Name = "finished", EmitDefaultValue = false)]
+        public DateTime Finished { get; set; }
+
+        /// <summary>
+        /// Gets or Sets updated date time
+        /// </summary>
+        [DataMember(Name = "updated", EmitDefaultValue = false)]
+        public DateTime Updated { get; set; }
+
+        /// <summary>
         /// Gets or Sets Progress
         /// </summary>
         [DataMember(Name = "progress", EmitDefaultValue = false)]
