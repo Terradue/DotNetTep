@@ -820,20 +820,36 @@ namespace Terradue.Tep {
 
             switch (statusInfo.Status) {
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Accepted:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessAccepted, Item = new ProcessAcceptedType() { Value = statusInfo.Message }, creationTime = this.CreatedTime };
+                    response.Status = new StatusType {
+                        ItemElementName = ItemChoiceType.ProcessAccepted,
+                        Item = new ProcessAcceptedType() { Value = statusInfo.Message },
+                        creationTime = this.CreatedTime
+                    };
                     break;
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Running:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessStarted, Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = statusInfo.Progress.ToString() }, creationTime = this.CreatedTime };
+                    response.Status = new StatusType {
+                        ItemElementName = ItemChoiceType.ProcessStarted,
+                        Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = statusInfo.Progress.ToString() },
+                        creationTime = this.CreatedTime
+                    };
                     break;
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Dismissed:
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Failed:
                     var exceptionReport = new ExceptionReport {
                         Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { statusInfo.Message } } }
                     };
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessFailed, Item = new ProcessFailedType { ExceptionReport = exceptionReport }, creationTime = this.CreatedTime };
+                    response.Status = new StatusType {
+                        ItemElementName = ItemChoiceType.ProcessFailed,
+                        Item = new ProcessFailedType { ExceptionReport = exceptionReport },
+                        creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
+                    };
                     break;
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Successful:
-                    response.Status = new StatusType { ItemElementName = ItemChoiceType.ProcessSucceeded, Item = new ProcessSucceededType() { Value = statusInfo.Message }, creationTime = this.CreatedTime };
+                    response.Status = new StatusType {
+                        ItemElementName = ItemChoiceType.ProcessSucceeded,
+                        Item = new ProcessSucceededType() { Value = statusInfo.Message },
+                        creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
+                    };
                     if (wps != null) {
                         var outputs = wps.GetOutputs(this.StatusLocation);
                         var urib = new UriBuilder(this.Provider.BaseUrl);
