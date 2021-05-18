@@ -87,6 +87,7 @@ CREATE TABLE wpsjob (
     remote_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Unique remote identifier',
     name varchar(100) NOT NULL COMMENT 'WPS Job name',
     wps varchar(100) NOT NULL COMMENT 'FK: WPS Service identifier',
+    wps_name varchar(150) NOT NULL COMMENT 'FK: WPS Service name',
     process varchar(100) NOT NULL COMMENT 'Process name',
     params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
     status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
@@ -450,14 +451,6 @@ CREATE TABLE termsconditions (
   CONSTRAINT tc_usr FOREIGN KEY (id_usr) REFERENCES usr (id) ON DELETE CASCADE,
   UNIQUE INDEX `id_usrid_tc` (`identifier`, `id_usr`)
 );
--- RESULT
-
--- Adding domain for wpsjob table ... \
-ALTER TABLE wpsjob ADD COLUMN archive_status int NOT NULL DEFAULT 0 COMMENT 'Wps job archive status';
--- RESULT
-
--- Add wps name in wpsjob...\
-ALTER TABLE wpsjob ADD COLUMN `wps_name` VARCHAR(150) NULL DEFAULT NULL;
 -- RESULT
 
 -- Update config
