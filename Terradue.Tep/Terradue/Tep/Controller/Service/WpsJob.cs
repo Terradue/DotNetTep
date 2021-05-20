@@ -29,18 +29,22 @@ namespace Terradue.Tep {
     public class WpsJob : EntitySearchable, IComparable<WpsJob> {
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        [EntityDataField("remote_identifier")]
+        [EntityDataField("remote_identifier", IsUsedInKeywordSearch = true)]
         public string RemoteIdentifier { get; set; }
 
+        // Wps provider identifier
         [EntityDataField("wps")]
         public string WpsId { get; set; }
 
+        // Wps service identifier
         [EntityDataField("wps_name")]
         public string WpsName { get; set; }
 
+        // Wps service version
         [EntityDataField("wps_version")]
         public string WpsVersion { get; set; }
 
+        // Wps service identifier
         [EntityDataField("process")]
         public string ProcessId { get; set; }
 
@@ -1398,6 +1402,14 @@ namespace Terradue.Tep {
                     return new KeyValuePair<string, string>("AppIdentifier", value);
                 case "archivestatus":
                     return new KeyValuePair<string, string>("ArchiveStatus", value);
+                case "status":
+                    return new KeyValuePair<string, string>("Status", value);
+                case "created":
+                    return new KeyValuePair<string, string>("CreatedTime", value);
+                case "provider":
+                    return new KeyValuePair<string, string>("WpsId", value);
+                case "service":
+                    return new KeyValuePair<string, string>("WpsName", value);
                 default:
                     return base.GetFilterForParameter(parameter, value);
             }
@@ -1517,6 +1529,7 @@ namespace Terradue.Tep {
             }
 
             result.Categories.Add(new SyndicationCategory("remote_identifier", null, this.RemoteIdentifier));
+            result.Categories.Add(new SyndicationCategory("app_identifier", null, this.AppIdentifier));
             result.Categories.Add(new SyndicationCategory("visibility", null, status));
             result.Categories.Add(new SyndicationCategory("status", null, this.Status.ToString()));
             if(context.UserLevel == UserLevel.Administrator) result.Categories.Add(new SyndicationCategory("archivestatus", null, this.ArchiveStatus.ToString()));
