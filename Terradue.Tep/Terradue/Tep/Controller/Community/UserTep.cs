@@ -303,7 +303,7 @@ namespace Terradue.Tep {
         /// <summary>
         /// Loads the terradue user info.
         /// </summary>
-        public void LoadTerradueUserInfo(){
+        private void LoadTerradueUserInfo(){
             context.LogDebug(this, "Loading Terradue info - " + this.Username);
 			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = "true";
 
@@ -345,31 +345,36 @@ namespace Terradue.Tep {
                     var apikey = GetSessionApiKey();
                     if (apikey == null){
                         //no TerradueAPIKey, we need to load it (we load only the apikey)
-                        var url = string.Format("{0}?token={1}&username={2}&request=apikey",
-                                        context.GetConfigValue("t2portal-usrinfo-endpoint"),
-                                        context.GetConfigValue("t2portal-safe-token"),
-                                        this.TerradueCloudUsername);
-
-                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                        request.Method = "GET";
-                        request.ContentType = "application/json";
-                        request.Accept = "application/json";
-                        request.Proxy = null;
-
-                        using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                            using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                                apikey = streamReader.ReadToEnd();
-                                apikey = apikey.Trim('"');
-                                SetSessionApikey(apikey);
-                                context.LogDebug(this, "Found Terradue API Key for user '" + this.TerradueCloudUsername + "'");
-                            }
-                        }
+                        apikey = LoadApiKeyFromRemote();
+                        SetSessionApikey(apikey);
                     }
                 }
             } catch (Exception e) {
                 if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2profileError"] = e.Message;
             }
             if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = null;
+        }
+
+        public string LoadApiKeyFromRemote() {
+            var url = string.Format("{0}?token={1}&username={2}&request=apikey",
+                                        context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                        context.GetConfigValue("t2portal-safe-token"),
+                                        this.TerradueCloudUsername);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+            request.Proxy = null;
+
+            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    string apikey = streamReader.ReadToEnd();
+                    apikey = apikey.Trim('"');                    
+                    context.LogDebug(this, "Found Terradue API Key for user '" + this.TerradueCloudUsername + "'");
+                    return apikey;
+                }
+            }
         }
 
         /// <summary>

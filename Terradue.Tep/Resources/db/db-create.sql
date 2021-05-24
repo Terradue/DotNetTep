@@ -388,6 +388,7 @@ INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALU
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('cookieID-SUBSID', 'string', 'cookie identifier - SUBSID', '', 'oauth_sub_sid', '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('cookieID-token-access', 'string', 'cookie identifier - Token access', '', 'oauthtoken_access', '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('cookieID-token-refresh', 'string', 'cookie identifier - Token refresh', '', 'oauthtoken_refresh', '0');
+INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('cookieID-token-id', 'string', 'cookieID-token-id value', 'cookieID-token-id value', 'oauthtoken_id', '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-clientId', 'string', 'Terradue SSO Client Id', 'Enter the value of the client identifier of the Terradue SSO', "TBD", '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-clientSecret', 'string', 'Terradue SSO Client Secret', 'Enter the value of the client secret password of the Terradue SSO', "TBD", '0');
 INSERT INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-userInfoEndpoint', 'string', 'Terradue SSO User Info Endpoint url', 'Enter the value of the url of the User Info Endpoint of the Terradue SSO', "https://sso.terradue.com/c2id/userinfo", '0');
