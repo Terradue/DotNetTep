@@ -11,6 +11,18 @@ namespace Terradue.Tep {
 
         public TepLdapAuthenticationType(IfyContext context) : base(context) {}
 
+        public void CheckRefresh() {
+            var tokenaccess = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+            TimeSpan span = tokenaccess.Expire.Subtract(DateTime.UtcNow);
+            if (span.TotalMinutes < 3) {
+                var tokenrefresh = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
+                var tokenresponse = client.RefreshToken(tokenrefresh.Value);
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
+            }
+        }
+
         public override User GetUserProfile(IfyWebContext context, HttpRequest request = null, bool strict = false) {
 
             NewUserCreated = false;
@@ -26,7 +38,10 @@ namespace Terradue.Tep {
             if (!string.IsNullOrEmpty(tokenrefresh.Value) && DateTime.UtcNow > tokenaccess.Expire) {
                 // refresh the token
                 try {
-                    client.RefreshToken(tokenrefresh.Value);
+                    var tokenresponse = client.RefreshToken(tokenrefresh.Value);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
                     tokenaccess = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     context.LogDebug(this, string.Format("GetUserProfile - refresh -- tokenrefresh = {0} ; tokenaccess = {1}", tokenrefresh.Value, tokenaccess.Value));
                 } catch (Exception) {

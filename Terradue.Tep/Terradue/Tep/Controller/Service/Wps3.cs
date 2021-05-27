@@ -161,18 +161,15 @@ namespace Terradue.Tep {
 
     public class SupervisorPublish {
         [DataMember]
-        public string url { get; set; }
+        public string Url { get; set; }
         [DataMember]
-        public string producerUrl { get; set; }
+        public string AuthorizationHeader { get; set; }
         [DataMember]
-        public List<SupervisorPublishCategory> categories { get; set; }
-    }
-
-    public class SupervisorPublishCategory {
-        [DataMember(Name = "name")]
-        public string Name { get; set; }
-        [DataMember(Name = "value")]
-        public string Value { get; set; }
+        public string Index { get; set; }
+        [DataMember]
+        public List<Wps3Utils.SyndicationCategory> Categories { get; set; }
+        [DataMember]
+        public List<Wps3Utils.SyndicationLink> Links { get; set; }
     }
 
     public class SupervisorDelete {
@@ -184,3 +181,31 @@ namespace Terradue.Tep {
         public bool async { get; set; }
     }
 }
+
+
+namespace Terradue.Tep.Wps3Utils {
+
+    public class SyndicationCategory {
+        [DataMember(Name = "name")]
+        public string Name { get; set; }
+        [DataMember(Name = "label")]
+        public string Label { get; set; }
+        [DataMember(Name = "scheme")]
+        public string Scheme { get; set; }
+    }
+
+    public class SyndicationLink {
+        [DataMember(Name = "title")]
+        public string Title { get; set; }
+        [DataMember(Name = "rel")]
+        public string Rel { get; set; }
+        [DataMember(Name = "type")]
+        public string Type { get; set; }
+        [DataMember(Name = "href")]
+        public string Href { get; set; }
+        [DataMember(Name = "attributes")]
+        public List<KeyValuePair<string, string>> Attributes { get; set; }
+    }
+
+}
+

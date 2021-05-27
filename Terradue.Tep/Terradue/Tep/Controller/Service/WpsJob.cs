@@ -8,7 +8,6 @@ using Terradue.ServiceModel.Syndication;
 using System.Xml;
 using System.IO;
 using System.Net;
-using ServiceStack.Common.Web;
 using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
 using OpenGis.Wps;
 using System.Linq;
@@ -16,9 +15,6 @@ using Terradue.Tep.OpenSearch;
 using Terradue.Portal.OpenSearch;
 using System.Web;
 using System.Runtime.Serialization;
-using Terradue.OpenSearch.Schema;
-using Terradue.OpenSearch.Engine;
-using Terradue.OpenSearch.Request;
 
 namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true, AllowsKeywordSearch = true)]
@@ -892,19 +888,30 @@ namespace Terradue.Tep {
 
                             var shareUri = GetJobShareUri(this.AppIdentifier);
 
+                            var apikey = this.Owner.LoadApiKeyFromRemote();
+
                             context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}",s3link, shareUri.AbsoluteUri));
 
-                            var jsonurl = new SupervisorPublish { url = s3link, producerUrl = shareUri.AbsoluteUri };
+                            var publishlinks = new Wps3Utils.SyndicationLink {
+                                Href = shareUri.AbsoluteUri,
+                                Rel = "external",
+                                Type = "text/html",
+                                Title = "Producer Link",
+                                Attributes = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("level", "primary") }
+                            };
+                            var authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
+                            
+                            var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader };
                             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"] != null) {
-                                jsonurl.categories = new List<SupervisorPublishCategory>();
+                                jsonurl.Categories = new List<Wps3Utils.SyndicationCategory>();
                                 var categories = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"].Split(',');
                                 foreach(var cat in categories) {
                                     switch(cat){
                                         case "activationId":
-                                            if (this.AppIdentifier != null) jsonurl.categories.Add(new SupervisorPublishCategory { Name = cat, Value = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-")+1) });
+                                            if (this.AppIdentifier != null) jsonurl.Categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-")+1) });
                                             break;
                                         case "appId":
-                                            jsonurl.categories.Add(new SupervisorPublishCategory { Name = cat, Value = this.AppIdentifier });
+                                            jsonurl.Categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier });
                                             break;
                                         default:
                                             break;
