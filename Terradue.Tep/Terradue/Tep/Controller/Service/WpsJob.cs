@@ -899,18 +899,19 @@ namespace Terradue.Tep {
                                 Title = "Producer Link",
                                 Attributes = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("level", "primary") }
                             };
-                                new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>() };
-                            var jsonurl = new SupervisorPublish { url = s3link, apikey = apikey };
+                            var authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
+                            
+                            var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader };
                             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"] != null) {
-                                jsonurl.categories = new List<Wps3Utils.SyndicationCategory>();
+                                jsonurl.Categories = new List<Wps3Utils.SyndicationCategory>();
                                 var categories = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"].Split(',');
                                 foreach(var cat in categories) {
                                     switch(cat){
                                         case "activationId":
-                                            if (this.AppIdentifier != null) jsonurl.categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-")+1) });
+                                            if (this.AppIdentifier != null) jsonurl.Categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-")+1) });
                                             break;
                                         case "appId":
-                                            jsonurl.categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier });
+                                            jsonurl.Categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier });
                                             break;
                                         default:
                                             break;

@@ -161,15 +161,15 @@ namespace Terradue.Tep {
 
     public class SupervisorPublish {
         [DataMember]
-        public string url { get; set; }
+        public string Url { get; set; }
         [DataMember]
-        public string apikey { get; set; }
+        public string AuthorizationHeader { get; set; }
         [DataMember]
-        public string index { get; set; }
+        public string Index { get; set; }
         [DataMember]
-        public List<Wps3Utils.SyndicationCategory> categories { get; set; }
+        public List<Wps3Utils.SyndicationCategory> Categories { get; set; }
         [DataMember]
-        public List<Wps3Utils.SyndicationLink> links { get; set; }
+        public List<Wps3Utils.SyndicationLink> Links { get; set; }
     }
 
     public class SupervisorDelete {
