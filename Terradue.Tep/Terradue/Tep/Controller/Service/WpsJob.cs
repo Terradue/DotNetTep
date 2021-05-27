@@ -892,7 +892,7 @@ namespace Terradue.Tep {
 
                             context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}",s3link, shareUri.AbsoluteUri));
 
-                            var publishlinks = new Wps3Utils.SyndicationLink {
+                            var publishlink = new Wps3Utils.SyndicationLink {
                                 Href = shareUri.AbsoluteUri,
                                 Rel = "external",
                                 Type = "text/html",
@@ -918,6 +918,8 @@ namespace Terradue.Tep {
                                     }
                                 }
                             }
+                            jsonurl.Links = new List<Wps3Utils.SyndicationLink>();
+                            jsonurl.Links.Add(publishlink);
 
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
 
@@ -1368,7 +1370,7 @@ namespace Terradue.Tep {
         /// <param name="appId">App identifier.</param>
         public Uri GetJobShareUri(string appId = null){
             var selfUri = GetJobSelfUri();
-            var shareUrlB = new UriBuilder(string.Format("{0}/share?url={1}{2}", context.BaseUrl, selfUri.AbsoluteUri, !string.IsNullOrEmpty(appId) ? "&id=" + appId : ""));
+            var shareUrlB = new UriBuilder(string.Format("{0}/share?url={1}{2}", context.BaseUrl, HttpUtility.UrlEncode(selfUri.AbsoluteUri), !string.IsNullOrEmpty(appId) ? "&id=" + appId : ""));
             return shareUrlB.Uri;
         }
 
