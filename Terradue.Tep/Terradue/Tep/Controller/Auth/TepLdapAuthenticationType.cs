@@ -15,11 +15,15 @@ namespace Terradue.Tep {
             var tokenaccess = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
             TimeSpan span = tokenaccess.Expire.Subtract(DateTime.UtcNow);
             if (span.TotalMinutes < 3) {
-                var tokenrefresh = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
-                var tokenresponse = client.RefreshToken(tokenrefresh.Value);
-                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
-                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
-                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
+                if (span.TotalMinutes < 0) {
+                    throw new Exception("Token is not valid anymore");
+                } else {
+                    var tokenrefresh = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
+                    var tokenresponse = client.RefreshToken(tokenrefresh.Value);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
+                    if (!string.IsNullOrEmpty(tokenresponse.id_token)) DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
+                }
             }
         }
 

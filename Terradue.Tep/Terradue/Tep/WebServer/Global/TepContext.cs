@@ -48,6 +48,20 @@ namespace Terradue.Tep.WebServer {
         public override void Open (){
             base.Open ();
             if (UserLevel == Terradue.Portal.UserLevel.Administrator) AccessLevel = EntityAccessLevel.Administrator;
+            if (UserLevel > Terradue.Portal.UserLevel.Everybody) {
+
+                if (this.UserInformation != null && this.UserInformation.AuthenticationType is TepLdapAuthenticationType) {
+
+                    //check the validity of access token
+                    try {
+                        var auth = new TepLdapAuthenticationType(this);
+                        auth.CheckRefresh();
+                    } catch (Exception e) {
+                        LogError(this, e.Message);
+                        EndSession();//user token is not valid, we logout
+                    }
+                }
+            }
         }
 
         protected override void LoadAdditionalConfiguration() {
