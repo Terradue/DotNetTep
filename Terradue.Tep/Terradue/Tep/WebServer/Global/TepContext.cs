@@ -49,13 +49,17 @@ namespace Terradue.Tep.WebServer {
             base.Open ();
             if (UserLevel == Terradue.Portal.UserLevel.Administrator) AccessLevel = EntityAccessLevel.Administrator;
             if (UserLevel > Terradue.Portal.UserLevel.Everybody) {
-                //check the validity of access token
-                try {
-                    var auth = new TepLdapAuthenticationType(this);
-                    auth.CheckRefresh();
-                } catch (Exception e) {
-                    LogError(this, e.Message);
-                    EndSession();//user token is not valid, we logout
+
+                if (this.UserInformation != null && this.UserInformation.AuthenticationType is TepLdapAuthenticationType) {
+
+                    //check the validity of access token
+                    try {
+                        var auth = new TepLdapAuthenticationType(this);
+                        auth.CheckRefresh();
+                    } catch (Exception e) {
+                        LogError(this, e.Message);
+                        EndSession();//user token is not valid, we logout
+                    }
                 }
             }
         }

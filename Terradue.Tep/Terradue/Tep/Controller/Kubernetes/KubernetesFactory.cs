@@ -7,6 +7,8 @@ using ServiceStack.Text;
 using Terradue.Tep.Controller.Kubernetes.Kubectl;
 using Terradue.Tep.Controller.Kubernetes.Guacamole;
 using Terradue.Portal;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Terradue.Tep.Controller {
     public class KubernetesFactory {
@@ -43,25 +45,12 @@ namespace Terradue.Tep.Controller {
         /// <param name="username"></param>
         /// <returns></returns>
         private KubectlPod GenerateKubectlPVCRequest(string username) {
-
-            var appname = K8S_APPNAME;
-            var persistentappname = GenerateKubectlPVCName(username);
-
-            var requestPersistentStorage = new KubectlPod {
-                apiVersion = "v1",
-                kind = "PersistentVolumeClaim",
-                metadata = new PodMetadata {
-                    name = persistentappname,
-                    labels = new PodLabels { app = appname }
-                },
-                spec = new PodSpec {
-                    accessModes = new List<string> { "ReadWriteOnce" },
-                    resources = new KubectlResources { requests = new KubectlRequests { storage = "20Gi" } },
-                    storageClassName = "glusterfs-storage"
-                }
+            using (StreamReader reader = new StreamReader(AppSettings["K8S_PVC_YAML"])) {
+                string pvcstring = reader.ReadToEnd().Replace("$(PODNAME)", username);
+                var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+                var requestPersistentStorage = deserializer.Deserialize<KubectlPod>(pvcstring);
+                return requestPersistentStorage;
             };
-
-            return requestPersistentStorage;
         }
 
         /// <summary>
@@ -165,51 +154,23 @@ namespace Terradue.Tep.Controller {
         /// <returns></returns>
         public KubectlPod GenerateKubectlRequest(string username, List<KubectlVolumeMount> volumeMounts, List<KubectlVolume> volumes) {
 
-            var appname = K8S_APPNAME;
-            var persistentappname = GenerateKubectlPVCName(username);
+            using (StreamReader reader = new StreamReader(AppSettings["K8S_YAML"])) {
+                string k8string = reader.ReadToEnd().Replace("$(PODNAME)", username);                
+                var deserializer = new DeserializerBuilder().Build();
+                var request = deserializer.Deserialize<KubectlPod>(k8string);
 
-            var request = new KubectlPod {
-                apiVersion = "apps/v1",
-                kind = "Deployment",
-                metadata = new PodMetadata {
-                    name = GenerateKubectlName(username)
-                },
-                spec = new PodSpec {
-                    selector = new KubectlSelector {
-                        matchLabels = new KubectlLabels {
-                            app = appname
-                        }
-                    },
-                    replicas = 1,
-                    template = new KubectlTemplate {
-                        metadata = new KubectlMetadata {
-                            labels = new KubectlLabels {
-                                app = appname
-                            }
-                        },
-                        spec = new KubectlSpec {
-                            automountServiceAccountToken = false,
-                            imagePullSecrets = new List<KubectlMetadata> { new KubectlMetadata { name = "regcred" } },
-                            containers = new List<KubectlContainer> {
-                                new KubectlContainer {
-                                    name = appname,
-                                    image = AppSettings["K8S_QGIS_DOCKER_IMAGE"],
-                                    ports = new List<KubectlPort> {
-                                        new KubectlPort {
-                                            containerPort = 5901
-                                        }
-                                    },
-                                    volumeMounts = volumeMounts
-                                }
-                            },
-                            volumes = volumes,
-                            nodeSelector = new KubectlNodeSelector { application = "qgis" }
-                        }
-                    }
+                //add volumes mount
+                if (request.spec.template.spec.containers != null && request.spec.template.spec.containers.Count > 0) {
+                    if (request.spec.template.spec.containers[0].volumeMounts == null) request.spec.template.spec.containers[0].volumeMounts = new List<KubectlVolumeMount>();
+                    foreach (var volume in volumeMounts) request.spec.template.spec.containers[0].volumeMounts.Add(volume);
                 }
-            };
 
-            return request;
+                //add volumes
+                if (request.spec.template.spec.volumes == null) request.spec.template.spec.volumes = new List<KubectlVolume>();
+                foreach (var volume in volumes) request.spec.template.spec.volumes.Add(volume);
+                
+                return request;
+            };
         }
 
         /// <summary>
