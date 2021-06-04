@@ -56,8 +56,6 @@ namespace Terradue.Tep.Controller.Kubernetes.Kubectl {
         [DataMember]
         public KubectlSelector selector { get; set; }
         [DataMember]
-        public int replicas { get; set; }
-        [DataMember]
         public KubectlTemplate template { get; set; }
     }
 
@@ -374,8 +372,6 @@ namespace Terradue.Tep.Controller.Kubernetes.Kubectl {
         public string serviceAccountName { get; set; }
         [DataMember]
         public string serviceAccount { get; set; }
-        [DataMember]
-        public bool automountServiceAccountToken { get; set; }
         [DataMember]
         public string nodeName { get; set; }
         [DataMember]
