@@ -707,20 +707,20 @@ namespace Terradue.Tep {
 
             using (var remoteWpsResponseStream = new MemoryStream()) {
                 context.LogDebug(this, string.Format(string.Format("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
-
+                string remoteWpsResponseString = null;
                 // HTTP request                                
                 try {
-                    string str = null;
+                    
                     int retries = 0;
-                    while (retries++ < 5 && str == null) {
+                    while (retries++ < 5 && remoteWpsResponseString == null) {
                         try {
                             using (HttpWebResponse httpWebResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
                                 using (Stream responseStream = httpWebResponse.GetResponseStream()) {
                                     responseStream.CopyTo(remoteWpsResponseStream);
                                 }
                                 remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                                str = new StreamReader(remoteWpsResponseStream).ReadToEnd();
-                                context.LogDebug(this, "Status response : " + str);
+                                remoteWpsResponseString = new StreamReader(remoteWpsResponseStream).ReadToEnd();
+                                context.LogDebug(this, "Status response : " + remoteWpsResponseString);
                             }
                         } catch (System.Exception e) {
                             if (retries >= 5) throw e;
@@ -779,11 +779,17 @@ namespace Terradue.Tep {
                     } catch (Exception e1) {
                         context.LogError(this, e1.Message);
                         // Maybe an exceptionReport
-                        OpenGis.Wps.ExceptionReport exceptionReport = null;
-                        remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                        OpenGis.Wps.ExceptionReport exceptionReport = null;                        
                         try {
                             context.LogDebug(this, "Deserialization (ExceptionReport)");
-                            exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
+                            if (remoteWpsResponseStream.CanSeek) {
+                                remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                                exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
+                            } else {
+                                using (TextReader sr = new StringReader(remoteWpsResponseString)) {
+                                    exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(sr);
+                                }
+                            }
                             context.LogDebug(this, "response is ExceptionReport");
                             return exceptionReport;
                         } catch (Exception e2) {
