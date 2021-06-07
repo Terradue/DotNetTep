@@ -893,11 +893,6 @@ namespace Terradue.Tep {
                             webRequest.Timeout = 10000;
 
                             var shareUri = GetJobShareUri(this.AppIdentifier);
-
-                            var apikey = this.Owner.LoadApiKeyFromRemote();
-
-                            context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}",s3link, shareUri.AbsoluteUri));
-
                             var publishlink = new Wps3Utils.SyndicationLink {
                                 Href = shareUri.AbsoluteUri,
                                 Rel = "external",
@@ -905,8 +900,15 @@ namespace Terradue.Tep {
                                 Title = "Producer Link",
                                 Attributes = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("level", "primary") }
                             };
-                            var authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
-                            
+                            context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}", s3link, shareUri.AbsoluteUri));
+                            string authBasicHeader = null;
+                            try {
+                                var apikey = this.Owner.LoadApiKeyFromRemote();
+                                authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
+                            }catch(Exception e) {
+                                context.LogError(this, e.Message);
+                            }
+
                             var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader };
                             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"] != null) {
                                 jsonurl.Categories = new List<Wps3Utils.SyndicationCategory>();
