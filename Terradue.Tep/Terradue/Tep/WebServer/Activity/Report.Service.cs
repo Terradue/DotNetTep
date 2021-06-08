@@ -205,8 +205,11 @@ namespace Terradue.Tep.WebServer.Services {
                                 csvHeader.Append("Job shared,");
                             break;
                             case "creation":
-                                csvHeader.Append("Job creation,");
+                                csvHeader.Append("Job creation time,");
                             break;
+                            case "end":
+                                csvHeader.Append("Job end time,");
+                                break;
                             case "wps":
                                 csvHeader.Append("Job wps,");
                             break;
@@ -300,6 +303,9 @@ namespace Terradue.Tep.WebServer.Services {
                                     break;
                                     case "creation":
                                         csvBody.Append(job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss")+",");
+                                    break;
+                                    case "end":
+                                        csvBody.Append(job.EndTime != DateTime.MinValue ? job.EndTime.ToString("yyyy-MM-ddTHH:mm:ss") : "" + ",");
                                     break;
                                     case "wps":
                                         if (!string.IsNullOrEmpty(job.WpsName))
