@@ -58,7 +58,7 @@ namespace Terradue.Tep.WebServer {
                         auth.CheckRefresh();
                     } catch (Exception e) {
                         LogError(this, e.Message);
-                        EndSession();//user token is not valid, we logout
+                        if (this.GetConfigBooleanValue("sso-notoken-endsession-enabled")) EndSession();//user token is not valid, we logout
                     }
                 }
             }
