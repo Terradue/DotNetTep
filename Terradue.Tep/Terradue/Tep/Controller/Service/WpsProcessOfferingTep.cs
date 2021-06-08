@@ -154,7 +154,8 @@ namespace Terradue.Tep {
             //TODO: manage case of /description
             //TODO: manage case of total result > 20 
             var httpRequest = (HttpWebRequest)WebRequest.Create(href);
-            httpRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(user.Username + ":" + apikey)));
+            if(!string.IsNullOrEmpty(user.Username) && !string.IsNullOrEmpty(apikey))
+                httpRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(user.Username + ":" + apikey)));
             using (var resp = httpRequest.GetResponse()) {
                 using (var stream = resp.GetResponseStream()) {
                     var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
