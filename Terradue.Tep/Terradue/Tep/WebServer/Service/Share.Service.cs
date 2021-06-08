@@ -131,6 +131,13 @@ namespace Terradue.Tep.WebServer.Services {
                 //if to is null, we share publicly
                 if (request.to == null) {
                     foreach (var job in wpsjobs) { //the entitySelf can return several entities
+                        //first we remove the current sharing (in case of restricted)
+                        job.RevokePermissionsFromAll(true, false);
+                        if (job.Owner != null && job.DomainId != job.Owner.DomainId) {
+                            job.DomainId = job.Owner.DomainId;
+                            job.Store();
+                        }
+                        //secondly we share for all
                         job.GrantPermissionsToAll();
 
 						//share on store
