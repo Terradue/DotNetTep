@@ -289,7 +289,7 @@ namespace Terradue.Tep {
         /// Is the terradue user info needed.
         /// </summary>
         /// <returns><c>true</c>, if needed terradue user info was ised, <c>false</c> otherwise.</returns>
-        public bool IsNeededTerradueUserInfo(){
+        public virtual bool IsNeededTerradueUserInfo(){
             if (context.UserId != this.Id || context.UserId == 0) return false;
             if (AccountStatus != AccountStatusType.Enabled) return false;
             if (Level < 2) return false; //User must be at least starter
