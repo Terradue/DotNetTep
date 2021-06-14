@@ -147,15 +147,20 @@ namespace Terradue.Tep {
 
         public static List<OwsContextAtomEntry> GetRemoteWpsServiceEntriesFromUrl(IfyContext context, string href) {
             var result = new List<OwsContextAtomEntry>();
+            var httpRequest = (HttpWebRequest)WebRequest.Create(href);
 
-            var user = UserTep.FromId(context, context.UserId);
-            var apikey = user.GetSessionApiKey();            
+            if (context.UserId != 0)
+            {
+                var user = UserTep.FromId(context, context.UserId);
+                var apikey = user.GetSessionApiKey();
+                if (!string.IsNullOrEmpty(user.Username) && !string.IsNullOrEmpty(apikey))
+                {
+                    httpRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(user.Username + ":" + apikey)));
+                }
+            }
 
             //TODO: manage case of /description
-            //TODO: manage case of total result > 20 
-            var httpRequest = (HttpWebRequest)WebRequest.Create(href);
-            if(!string.IsNullOrEmpty(user.Username) && !string.IsNullOrEmpty(apikey))
-                httpRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(Encoding.Default.GetBytes(user.Username + ":" + apikey)));
+            //TODO: manage case of total result > 20                        
             using (var resp = httpRequest.GetResponse()) {
                 using (var stream = resp.GetResponseStream()) {
                     var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
