@@ -942,7 +942,7 @@ namespace Terradue.Tep {
                                             var location = httpResponse.Headers["Location"];
                                                 if (!string.IsNullOrEmpty(location)) {
                                                     context.LogDebug(this, "location = " + location);
-                                                    resultdescription = new Uri(httpResponse.Headers["Location"], UriKind.RelativeOrAbsolute).AbsoluteUri;
+                                                    resultdescription = new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
                                             }
                                         }
                                     }
