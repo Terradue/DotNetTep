@@ -22,7 +22,16 @@ using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
 
-     [Api("Tep Terradue webserver")]
+    [Route("/service/wps/validate", "POST", Summary = "POST a WPS service validation", Notes = "")]
+    public class ValidateWPSService : IReturn<WebWpsService> {
+        [ApiMember(Name = "Identifier", Description = "Service identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        [ApiMember(Name = "Json", Description = "Json to validate", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Json { get; set; }
+    }
+
+
+    [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json | EndpointAttributes.Xml,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json | EndpointAttributes.Xml)]
     public class WpsServiceTep : ServiceStack.ServiceInterface.Service {
@@ -31,6 +40,25 @@ namespace Terradue.Tep.WebServer.Services {
             (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         static readonly ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
+
+        public object Post(ValidateWPSService request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            if (string.IsNullOrEmpty(request.Identifier)) return null;
+            if (string.IsNullOrEmpty(request.Json)) return null;
+            string response = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/wps/service/validate?identifier={0} POST", request.Identifier));
+                WpsProcessOfferingTep service = WpsProcessOfferingTep.FromIdentifier(context, request.Identifier);
+                response = service.ValidateResult(request.Json);
+
+            } catch (Exception e) {
+                context.Close();
+                return new HttpError(e.Message);
+            }
+            context.Close();
+            return response;
+        }
 
         public object Get(SearchWPSProviders request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);

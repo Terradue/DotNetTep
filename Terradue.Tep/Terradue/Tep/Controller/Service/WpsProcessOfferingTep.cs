@@ -25,6 +25,32 @@ namespace Terradue.Tep {
             return p;
         }
 
+        public string ValidateResult(string json) {
+            if (string.IsNullOrEmpty(this.ValidationUrl)) return null;
+            try {
+                var httpRequest = (HttpWebRequest)WebRequest.Create(this.ValidationUrl);
+                httpRequest.Method = "POST";
+                httpRequest.Accept = "application/json";
+
+                using (var streamWriter = new StreamWriter(httpRequest.GetRequestStream())) {
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                    streamWriter.Close();
+
+                    using (var httpResponse = (HttpWebResponse)httpRequest.GetResponse()) {
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                            var result = streamReader.ReadToEnd();
+                            context.LogDebug(this, "WPS service validation result : " + result);
+                            return result;
+                        }
+                    }
+                }                
+            }catch(System.Exception e) {
+                context.LogError(this, e.Message, e);
+                return null;
+            }
+        }
+
         /***********/
         /* WPS 3.0 */
         /***********/
@@ -141,6 +167,12 @@ namespace Terradue.Tep {
             var dpUri = new Uri(href);
             var describeProcessUrl = dpUri.GetLeftPart(UriPartial.Path);
             wps.Url = describeProcessUrl;
+
+            var owcOffering = entry.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/owc/1.0");
+            if (owcOffering != null) {
+                operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ValidateProcess");
+                if (operation != null) wps.ValidationUrl = operation.Href;
+            }
 
             return wps;
         }
