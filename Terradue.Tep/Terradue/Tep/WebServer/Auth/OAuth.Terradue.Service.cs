@@ -125,6 +125,9 @@ namespace Terradue.Tep.WebServer.Services {
                 OauthTokenResponse tokenresponse;
                 try {
                     tokenresponse = client.AccessToken(request.Code);                    
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, null, tokenresponse.expires_in);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token, null);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, null);
                 } catch (Exception e) {
                     DBCookie.DeleteDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     DBCookie.DeleteDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
