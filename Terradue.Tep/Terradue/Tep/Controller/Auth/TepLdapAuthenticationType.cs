@@ -20,9 +20,9 @@ namespace Terradue.Tep {
                 } else {
                     var tokenrefresh = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
                     var tokenresponse = client.RefreshToken(tokenrefresh.Value);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
-                    if (!string.IsNullOrEmpty(tokenresponse.id_token)) DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, context.Username, tokenresponse.expires_in);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token, context.Username);
+                    if (!string.IsNullOrEmpty(tokenresponse.id_token)) DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, context.Username);
                 }
             }
         }
@@ -43,9 +43,9 @@ namespace Terradue.Tep {
                 // refresh the token
                 try {
                     var tokenresponse = client.RefreshToken(tokenrefresh.Value);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenaccess.Username, tokenresponse.expires_in);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token, tokenrefresh.Username);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, tokenrefresh.Username);
                     tokenaccess = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     context.LogDebug(this, string.Format("GetUserProfile - refresh -- tokenrefresh = {0} ; tokenaccess = {1}", tokenrefresh.Value, tokenaccess.Value));
                 } catch (Exception) {

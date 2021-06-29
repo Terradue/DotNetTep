@@ -122,11 +122,9 @@ namespace Terradue.Tep.WebServer.Services {
                 client.SSOApiSecret = context.GetConfigValue("sso-clientSecret");
                 client.SSOApiToken = context.GetConfigValue("sso-apiAccessToken");
                 client.RedirectUri = context.GetConfigValue("sso-callback");
+                OauthTokenResponse tokenresponse;
                 try {
-                    var tokenresponse = client.AccessToken(request.Code);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, tokenresponse.expires_in);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token);
+                    tokenresponse = client.AccessToken(request.Code);                    
                 } catch (Exception e) {
                     DBCookie.DeleteDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     DBCookie.DeleteDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
@@ -145,6 +143,10 @@ namespace Terradue.Tep.WebServer.Services {
 
                 context.StartSession(auth, user);
                 context.SetUserInformation(auth, user);
+
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, user.Username, tokenresponse.expires_in);
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token, user.Username);
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, user.Username);
 
                 redirect = context.GetConfigValue("dashboard_page");
                 if(string.IsNullOrEmpty(redirect)) redirect = context.GetConfigValue("BaseUrl");
