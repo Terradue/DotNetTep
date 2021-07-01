@@ -900,7 +900,7 @@ namespace Terradue.Tep {
                                 Title = "Producer Link",
                                 Attributes = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("level", "primary") }
                             };
-                            context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1}", s3link, shareUri.AbsoluteUri));
+                            context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1} ; index = {2}", s3link, shareUri.AbsoluteUri, this.Owner.Username));
                             string authBasicHeader = null;
                             try {
                                 var apikey = this.Owner.LoadApiKeyFromRemote();
@@ -909,7 +909,7 @@ namespace Terradue.Tep {
                                 context.LogError(this, e.Message);
                             }
 
-                            var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader };
+                            var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader, Index = this.Owner.Username };
                             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"] != null) {
                                 jsonurl.Categories = new List<Wps3Utils.SyndicationCategory>();
                                 var categories = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"].Split(',');
