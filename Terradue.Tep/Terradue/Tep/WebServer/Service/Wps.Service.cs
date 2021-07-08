@@ -22,7 +22,7 @@ using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
 
-    [Route("/service/wps/validate", "POST", Summary = "POST a WPS service validation", Notes = "")]
+    [Route("/service/wps/{Identifier}/validate", "POST", Summary = "POST a WPS service validation", Notes = "")]
     public class ValidateWPSService : IReturn<WebWpsService> {
         [ApiMember(Name = "Identifier", Description = "Service identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Identifier { get; set; }
