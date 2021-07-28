@@ -48,7 +48,7 @@ namespace Terradue.Tep.WebServer.Services {
             string response = null;
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/wps/service/validate?identifier={0} POST", request.Identifier));
+                context.LogInfo(this, string.Format("/service/wps/{0}/validate POST", request.Identifier));
                 WpsProcessOfferingTep service = WpsProcessOfferingTep.FromIdentifier(context, request.Identifier);
                 response = service.ValidateResult(request.Json);
 

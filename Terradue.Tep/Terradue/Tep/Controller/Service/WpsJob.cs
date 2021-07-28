@@ -906,7 +906,7 @@ namespace Terradue.Tep {
                                 var apikey = this.Owner.LoadApiKeyFromRemote();
                                 authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
                             }catch(Exception e) {
-                                context.LogError(this, e.Message);
+                                context.LogError(this, "Error get apikey : " + e.Message);
                             }
 
                             var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader, Index = this.Owner.Username };
@@ -931,6 +931,8 @@ namespace Terradue.Tep {
 
                             var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
 
+                            context.LogDebug(this, string.Format("publish request to supervisor - json = {0}", json));
+
                             try {
                                 using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
                                     streamWriter.Write(json);
@@ -948,7 +950,7 @@ namespace Terradue.Tep {
                                     }
                                 }
                             } catch (Exception e) {
-                                context.LogError(this, e.Message);
+                                context.LogError(this, "Error publish job: " + e.Message);
                             }
 
                         }
