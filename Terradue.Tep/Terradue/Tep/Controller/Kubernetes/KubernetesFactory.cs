@@ -46,7 +46,7 @@ namespace Terradue.Tep.Controller {
         /// <returns></returns>
         private KubectlPod GenerateKubectlPVCRequest(string username) {
             using (StreamReader reader = new StreamReader(AppSettings["K8S_PVC_YAML"])) {
-                string pvcstring = reader.ReadToEnd().Replace("$(PODNAME)", username);
+                string pvcstring = reader.ReadToEnd().Replace("$(PODNAME)", GetUsernameForPod(username));
                 var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
                 var requestPersistentStorage = deserializer.Deserialize<KubectlPod>(pvcstring);
                 return requestPersistentStorage;
@@ -67,7 +67,7 @@ namespace Terradue.Tep.Controller {
 
             //pod
             var pod = GetPod(username);
-            if (pod == null) pod = CreateDeployment(username, k8srequest);
+            if (pod == null) pod = CreateDeployment(k8srequest);
 
             int i = 0;
             int maxtry = int.Parse(AppSettings["K8S_DESCRIBE_MAX_TRY"]);
@@ -97,13 +97,17 @@ namespace Terradue.Tep.Controller {
             DeleteDeployment(podname);
         }
 
+        private string GetUsernameForPod(string username){
+            return string.Format("{0}-k8s", username.ToLower().Replace("_","-"));
+        }
+
         /// <summary>
         /// Generates the K8S pvc name
         /// </summary>
         /// <param name="username"></param>
         /// <returns></returns>
         public string GenerateKubectlPVCName(string username) {
-            return string.Format("{0}-{1}", K8S_PVCNAME, username);
+            return string.Format("{0}-{1}", K8S_PVCNAME, GetUsernameForPod(username));
         }
 
         /// <summary>
@@ -112,7 +116,8 @@ namespace Terradue.Tep.Controller {
         /// <param name="username"></param>
         /// <returns></returns>
         public string GenerateKubectlName(string username) {
-            return string.Format("{0}-{1}", K8S_APPNAME, username);
+
+            return string.Format("{0}-{1}", K8S_APPNAME, GetUsernameForPod(username));
         }
 
         /// <summary>
@@ -155,7 +160,7 @@ namespace Terradue.Tep.Controller {
         public KubectlPod GenerateKubectlRequest(string username, List<KubectlVolumeMount> volumeMounts, List<KubectlVolume> volumes) {
 
             using (StreamReader reader = new StreamReader(AppSettings["K8S_YAML"])) {
-                string k8string = reader.ReadToEnd().Replace("$(PODNAME)", username);                
+                string k8string = reader.ReadToEnd().Replace("$(PODNAME)", GetUsernameForPod(username));                
                 var deserializer = new DeserializerBuilder().Build();
                 var request = deserializer.Deserialize<KubectlPod>(k8string);
 
@@ -206,7 +211,7 @@ namespace Terradue.Tep.Controller {
         /// <param name="volumeMounts"></param>
         /// <param name="volumes"></param>
         /// <returns></returns>
-        private KubectlPod CreateDeployment(string username, KubectlPod k8srequest) {
+        private KubectlPod CreateDeployment(KubectlPod k8srequest) {
 
             KubectlPod response = null;
 
