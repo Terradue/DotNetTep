@@ -168,11 +168,8 @@ namespace Terradue.Tep {
             var describeProcessUrl = dpUri.GetLeftPart(UriPartial.Path);
             wps.Url = describeProcessUrl;
 
-            var owcOffering = entry.Offerings.FirstOrDefault(of => of.Code == "http://www.opengis.net/owc/1.0");
-            if (owcOffering != null) {
-                operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ValidateProcess");
-                if (operation != null) wps.ValidationUrl = operation.Href;
-            }
+            operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ValidateProcess");
+            if (operation != null) wps.ValidationUrl = operation.Href;
 
             return wps;
         }
