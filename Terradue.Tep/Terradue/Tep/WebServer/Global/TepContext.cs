@@ -57,8 +57,10 @@ namespace Terradue.Tep.WebServer {
                         var auth = new TepLdapAuthenticationType(this);
                         auth.CheckRefresh();
                     } catch (Exception e) {
-                        LogError(this, e.Message);
-                        if (this.GetConfigBooleanValue("sso-notoken-endsession-enabled")) EndSession();//user token is not valid, we logout
+                        if (this.GetConfigBooleanValue("sso-notoken-endsession-enabled")) {
+                            LogError(this, e.Message);
+                            EndSession();//user token is not valid, we logout
+                        }
                     }
                 }
             }

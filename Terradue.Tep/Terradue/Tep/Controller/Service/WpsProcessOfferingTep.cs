@@ -135,12 +135,19 @@ namespace Terradue.Tep {
 
                 //case WPS 3.0
                 if (IsWPS3(describeProcessUrl)) {
-                    WpsProcessOffering process = GetProcessingFromDescribeProcessWps3(context, describeProcessUrl);                    
-                    wps.RemoteIdentifier = process.RemoteIdentifier;
-                    if (string.IsNullOrEmpty(wps.Name)) wps.Name = process.Name;
-                    if (string.IsNullOrEmpty(wps.Description)) wps.Description = process.Description;
-                    if (string.IsNullOrEmpty(wps.Version)) wps.Version = process.Version;                                        
+                    try
+                    {
+                        WpsProcessOffering process = GetProcessingFromDescribeProcessWps3(context, describeProcessUrl);
+                        wps.RemoteIdentifier = process.RemoteIdentifier;
+                        if (string.IsNullOrEmpty(wps.Name)) wps.Name = process.Name;
+                        if (string.IsNullOrEmpty(wps.Description)) wps.Description = process.Description;
+                        if (string.IsNullOrEmpty(wps.Version)) wps.Version = process.Version;
+                    }catch(System.Exception e){
+                        context.LogError(context, "Error with url '" + describeProcessUrl + "' : " + e.Message);
+                        wps = null;
+                    }
                 }
+                if (wps == null) continue;
                 remoteProcesses.Add(wps);
             }
             return remoteProcesses;
