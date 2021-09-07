@@ -172,6 +172,26 @@ namespace Terradue.Tep {
         public List<Wps3Utils.SyndicationLink> Links { get; set; }
     }
 
+    public class SupervisorUserImportProduct {
+        [DataMember(Name = "url")]
+        public string Url { get; set; }
+        [DataMember(Name = "activation_id")]
+        public string ActivationId { get; set; }
+        [DataMember(Name = "additional_links")]
+        public List<SupervisorUserImportProductLink> AdditionalLinks { get; set; }
+    }
+
+    public class SupervisorUserImportProductLink {
+        [DataMember(Name = "type")]
+        public string Type { get; set; }
+        [DataMember(Name = "rel")]
+        public string Rel { get; set; }
+        [DataMember(Name = "title")]
+        public string Title { get; set; }
+        [DataMember(Name = "href")]
+        public string Href { get; set; }
+    }
+
     public class SupervisorDelete {
         [DataMember]
         public string type { get; set; }
@@ -207,5 +227,39 @@ namespace Terradue.Tep.Wps3Utils {
         public List<KeyValuePair<string, string>> Attributes { get; set; }
     }
 
+}
+
+namespace Terradue.Stac {
+
+    public class StacLink {
+        [DataMember(Name = "type")]
+        public string Type { get; set; }
+
+        [DataMember(Name = "rel")]
+        public string Rel { get; set; }
+
+        [DataMember(Name = "title")]
+        public string Title { get; set; }
+
+        [DataMember(Name = "href")]
+        public string Href { get; set; }
+    }
+
+    public class StacItem {
+        [DataMember(Name = "id")]
+        public string Id { get; set; }
+
+        [DataMember(Name = "stac_version")]
+        public string StacVersion { get; set; }
+
+        [DataMember(Name = "links")]
+        public List<StacLink> Links { get; set; }
+
+        [DataMember(Name = "type")]
+        public string Type { get; set; }
+
+        [DataMember(Name = "description")]
+        public string Description { get; set; }
+    }
 }
 

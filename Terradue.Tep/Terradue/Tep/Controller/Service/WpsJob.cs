@@ -599,8 +599,11 @@ namespace Terradue.Tep {
 
             //get remote identifier
             this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(execResponse.statusLocation.ToLower());
-            
-            if (string.IsNullOrEmpty(this.StatusLocation)) this.StatusLocation = execResponse.statusLocation;
+
+            if (string.IsNullOrEmpty(this.StatusLocation)) {
+                this.StatusLocation = execResponse.statusLocation;
+                context.LogDebug(this, string.Format("job Id = {0} ; StatusLocation = {1}",this.Identifier, this.StatusLocation));
+            }
 
             UpdateStatusFromExecuteResponse(execResponse);
 
@@ -879,11 +882,11 @@ namespace Terradue.Tep {
                                 }
                             }
 
-                        }
+                        } 
                         var resultdescription = s3link;
 
                         if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && !string.IsNullOrEmpty(s3link)) {
-                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]);
+                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"].Replace("{USER}",this.Owner.Username));
                             webRequest.Method = "POST";
                             webRequest.Accept = "application/json";
                             webRequest.ContentType = "application/json";
@@ -893,45 +896,25 @@ namespace Terradue.Tep {
                             webRequest.Timeout = 10000;
 
                             var shareUri = GetJobShareUri(this.AppIdentifier);
-                            var publishlink = new Wps3Utils.SyndicationLink {
-                                Href = shareUri.AbsoluteUri,
-                                Rel = "external",
-                                Type = "text/html",
-                                Title = "Producer Link",
-                                Attributes = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("level", "primary") }
-                            };
-                            context.LogDebug(this, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1} ; index = {2}", s3link, shareUri.AbsoluteUri, this.Owner.Username));
-                            string authBasicHeader = null;
-                            try {
-                                var apikey = this.Owner.LoadApiKeyFromRemote();
-                                authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
-                            }catch(Exception e) {
-                                context.LogError(this, "Error get apikey : " + e.Message);
-                            }
 
-                            var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader, Index = this.Owner.Username };
-                            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"] != null) {
-                                jsonurl.Categories = new List<Wps3Utils.SyndicationCategory>();
-                                var categories = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_CATEGORIES"].Split(',');
-                                foreach(var cat in categories) {
-                                    switch(cat){
-                                        case "activationId":
-                                            if (this.AppIdentifier != null) jsonurl.Categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-")+1) });
-                                            break;
-                                        case "appId":
-                                            jsonurl.Categories.Add(new Wps3Utils.SyndicationCategory { Name = cat, Label = this.AppIdentifier });
-                                            break;
-                                        default:
-                                            break;
+                            var importProduct = new SupervisorUserImportProduct {
+                                Url = s3link,
+                                ActivationId = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-") + 1),
+                                AdditionalLinks = new List<SupervisorUserImportProductLink> {
+                                    new SupervisorUserImportProductLink {
+                                        Href = shareUri.AbsoluteUri,
+                                        Rel = "external",
+                                        Type = "text/html",
+                                        Title = "Producer Link"
                                     }
                                 }
-                            }
-                            jsonurl.Links = new List<Wps3Utils.SyndicationLink>();
-                            jsonurl.Links.Add(publishlink);
+                            };
+                            var json = ServiceStack.Text.JsonSerializer.SerializeToString(importProduct);
 
-                            var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
+                            context.LogDebug(this, string.Format("Create user product request to supervisor - s3link = {0} ; username = {1}", s3link, this.Owner.Username));
+                            //var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader, Index = this.Owner.Username };
 
-                            context.LogDebug(this, string.Format("publish request to supervisor - json = {0}", json));
+                            context.LogDebug(this, string.Format("send request to supervisor - json = {0}", json));
 
                             try {
                                 using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
@@ -940,12 +923,14 @@ namespace Terradue.Tep {
                                     streamWriter.Close();
 
                                     using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {                                        
-                                            var location = httpResponse.Headers["Location"];
-                                                if (!string.IsNullOrEmpty(location)) {
-                                                    context.LogDebug(this, "location = " + location);
-                                                    resultdescription = new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
-                                            }
+                                        using (var stream = httpResponse.GetResponseStream()) {
+
+                                            //var stacItem = Stac.StacConvert.Deserialize<Stac.StacItem>(stream);
+                                            //var stacLink = stacItem.Links.First(l => l.RelationshipType == "alternate");
+                                            //resultdescription = stacLink.Uri.ToString();
+                                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromStream<Stac.StacItem>(stream);                                            
+                                            var stacLink = stacItem.Links.First(l => l.Rel == "alternate");
+                                            resultdescription = stacLink.Href;
                                         }
                                     }
                                 }
