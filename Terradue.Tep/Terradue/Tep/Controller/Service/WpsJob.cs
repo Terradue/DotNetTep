@@ -899,7 +899,7 @@ namespace Terradue.Tep {
 
                             var importProduct = new SupervisorUserImportProduct {
                                 Url = s3link,
-                                ActivationId = this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-") + 1),
+                                ActivationId = int.Parse(this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-") + 1)),
                                 AdditionalLinks = new List<SupervisorUserImportProductLink> {
                                     new SupervisorUserImportProductLink {
                                         Href = shareUri.AbsoluteUri,
@@ -909,9 +909,9 @@ namespace Terradue.Tep {
                                     }
                                 }
                             };
-                            var json = ServiceStack.Text.JsonSerializer.SerializeToString(importProduct);
+                            var json = Newtonsoft.Json.JsonConvert.SerializeObject(importProduct, Newtonsoft.Json.Formatting.None);
 
-                            context.LogDebug(this, string.Format("Create user product request to supervisor - s3link = {0} ; username = {1}", s3link, this.Owner.Username));
+                            context.LogDebug(this, string.Format("Create user product request to supervisor - s3link = {0} ; username = {1}", s3link, this.Owner.Username));                            
                             //var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader, Index = this.Owner.Username };
 
                             context.LogDebug(this, string.Format("send request to supervisor - json = {0}", json));
@@ -935,7 +935,7 @@ namespace Terradue.Tep {
                                     }
                                 }
                             } catch (Exception e) {
-                                context.LogError(this, "Error publish job: " + e.Message);
+                                context.LogError(this, "Error Create user product request to supervisor: " + e.Message);
                             }
 
                         }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Newtonsoft;
+using Newtonsoft.Json;
 
 namespace Terradue.Tep { 
 
@@ -173,22 +175,22 @@ namespace Terradue.Tep {
     }
 
     public class SupervisorUserImportProduct {
-        [DataMember(Name = "url")]
+        [JsonProperty("url")]
         public string Url { get; set; }
-        [DataMember(Name = "activation_id")]
-        public string ActivationId { get; set; }
-        [DataMember(Name = "additional_links")]
+        [JsonProperty("activation_id")]
+        public int ActivationId { get; set; }
+        [JsonProperty("additional_links")]
         public List<SupervisorUserImportProductLink> AdditionalLinks { get; set; }
     }
 
     public class SupervisorUserImportProductLink {
-        [DataMember(Name = "type")]
+        [JsonProperty("type")]
         public string Type { get; set; }
-        [DataMember(Name = "rel")]
+        [JsonProperty("rel")]
         public string Rel { get; set; }
-        [DataMember(Name = "title")]
+        [JsonProperty("title")]
         public string Title { get; set; }
-        [DataMember(Name = "href")]
+        [JsonProperty("href")]
         public string Href { get; set; }
     }
 
