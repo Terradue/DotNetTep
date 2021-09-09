@@ -224,9 +224,6 @@
     <Reference Include="Terradue.Portal">
       <HintPath>..\packages\Terradue.Portal.2.8.29\lib\net45\Terradue.Portal.dll</HintPath>
     </Reference>
-    <Reference Include="Flurl.Http">
-      <HintPath>..\packages\Flurl.Http.2.4.2\lib\net46\Flurl.Http.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="FubarCoder.RestSharp.Portable.Core">
       <HintPath>..\packages\FubarCoder.RestSharp.Portable.Core.4.0.8\lib\net45\FubarCoder.RestSharp.Portable.Core.dll</HintPath>
@@ -234,8 +231,11 @@
     <Reference Include="FubarCoder.RestSharp.Portable.HttpClient">
       <HintPath>..\packages\FubarCoder.RestSharp.Portable.HttpClient.4.0.8\lib\net45\FubarCoder.RestSharp.Portable.HttpClient.dll</HintPath>
     </Reference>
+    <Reference Include="Flurl.Http">
+      <HintPath>..\packages\Flurl.Http.2.4.2\lib\net45\Flurl.Http.dll</HintPath>
+    </Reference>
     <Reference Include="YamlDotNet">
-      <HintPath>..\packages\YamlDotNet.11.1.1\lib\net45\YamlDotNet.dll</HintPath>
+      <HintPath>..\packages\YamlDotNet.11.2.1\lib\net45\YamlDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
