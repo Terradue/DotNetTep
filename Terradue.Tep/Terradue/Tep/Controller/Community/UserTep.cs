@@ -819,7 +819,7 @@ namespace Terradue.Tep {
             foreach (var key in parameters.AllKeys) {
                 switch (key) {
                 case "correlatedTo":
-                    return true;
+                    return false;
                 default:
                     break;
                 }
@@ -847,6 +847,65 @@ namespace Terradue.Tep {
                 return new KeyValuePair<string, string>("Identifier", value);
             case "id":
                 return new KeyValuePair<string, string>("Identifier", value);
+            case "correlatedTo":
+                ObjectCache cache = MemoryCache.Default;
+				var correlatedPolicy = HttpContext.Current.Request.QueryString["correlatedPolicy"];
+                bool permissionOnly = false;
+                bool privilegeOnly = false;
+                switch (correlatedPolicy)
+                {
+                    case "permission":
+                        permissionOnly = true;
+                        break;
+                    case "privilege":
+                        privilegeOnly = true;
+                        break;
+                    default:
+                        break;
+                }
+                var cachedItem = cache[value];
+                if (cachedItem == null) { // if no cache yet, or is expired
+                    lock (_Lock) { // we lock only in this case
+                                   // you have to make one more check, another thread might have put item in cache already
+                        cachedItem = cache[value];
+                        if (cachedItem == null) {
+                            var policy = new CacheItemPolicy();
+                            policy.Priority = CacheItemPriority.NotRemovable;
+                            policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1);
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
+                            cachedItem = new UrlBasedOpenSearchable(context, new OpenSearchUrl(value), settings).Entity;
+                            cache.Set(value, cachedItem, policy);
+                        }
+                    }
+                }
+                var sharedUsersIds = new List<int>();                
+                if (cachedItem is EntityList<WpsJob>) {                    
+                    var entitylist = cachedItem as EntityList<WpsJob>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0)
+                    {
+                        var job = items[0];
+                        sharedUsersIds = job.GetAuthorizedUserIds(permissionOnly, privilegeOnly).ToList();
+                        sharedUsersIds.Remove(job.Owner.Id);
+                    }
+                } else if (cachedItem is EntityList<DataPackage>) {
+                    var entitylist = cachedItem as EntityList<DataPackage>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        var dp = items[0];
+						sharedUsersIds = dp.GetAuthorizedUserIds(permissionOnly, privilegeOnly).ToList();              
+                        sharedUsersIds.Remove(dp.Owner.Id);
+                    }
+                } else if (cachedItem is EntityList<WpsProcessOffering>) {
+                    var entitylist = cachedItem as EntityList<WpsProcessOffering>;
+                    var items = entitylist.GetItemsAsList();
+                    if (items.Count > 0) {
+                        var s = items[0];
+                        sharedUsersIds = s.GetAuthorizedUserIds(permissionOnly, privilegeOnly).ToList();              
+                        sharedUsersIds.Remove(s.Owner.Id);                        
+                    }
+                }
+                return new KeyValuePair<string, string>("Id", string.Join(",", sharedUsersIds));
             default:
                 return base.GetFilterForParameter(parameter, value);
             }
@@ -857,53 +916,6 @@ namespace Terradue.Tep {
 
             var entityType = EntityType.GetEntityType(typeof(User));
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
-
-            if (!string.IsNullOrEmpty(parameters["correlatedTo"])) {
-                ObjectCache cache = MemoryCache.Default;
-                var self = parameters["correlatedTo"];
-
-				var correlatedPolicy = parameters["correlatedPolicy"];
-
-                var cachedItem = cache[self];
-                if (cachedItem == null) { // if no cache yet, or is expired
-                    lock (_Lock) { // we lock only in this case
-                                   // you have to make one more check, another thread might have put item in cache already
-                        cachedItem = cache[self];
-                        if (cachedItem == null) {
-                            var policy = new CacheItemPolicy();
-                            policy.Priority = CacheItemPriority.NotRemovable;
-                            policy.AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1);
-                            var settings = MasterCatalogue.OpenSearchFactorySettings;
-                            cachedItem = new UrlBasedOpenSearchable(context, new OpenSearchUrl(self), settings).Entity;
-                            cache.Set(self, cachedItem, policy);
-                        }
-                    }
-                }
-
-                if (cachedItem is EntityList<WpsJob>) {
-                    var entitylist = cachedItem as EntityList<WpsJob>;
-                    var items = entitylist.GetItemsAsList();
-                    if (items.Count > 0) {
-                        var job = items[0];
-						if (job.Owner.Id == this.Id || !job.IsSharedToUser(this.Id, correlatedPolicy)) return null;
-                    }
-                } else if (cachedItem is EntityList<DataPackage>) {
-                    var entitylist = cachedItem as EntityList<DataPackage>;
-                    var items = entitylist.GetItemsAsList();
-                    if (items.Count > 0) {
-                        var dp = items[0];
-						if (dp.Owner.Id == this.Id || !dp.IsSharedToUser(this.Id, correlatedPolicy)) return null;
-                    }
-                } else if (cachedItem is EntityList<WpsProcessOffering>) {
-                    var entitylist = cachedItem as EntityList<WpsProcessOffering>;
-                    var items = entitylist.GetItemsAsList();
-                    if (items.Count > 0) {
-                        var s = items[0];
-                        if ((s.Owner != null && s.Owner.Id == this.Id) || !s.IsSharedToUser(this.Id, correlatedPolicy)) return null;
-                    }
-                }
-
-            }
 
             AtomItem result = new AtomItem();
 
