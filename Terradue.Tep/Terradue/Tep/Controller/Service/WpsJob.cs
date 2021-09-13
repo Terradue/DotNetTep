@@ -886,14 +886,14 @@ namespace Terradue.Tep {
                         var resultdescription = s3link;
 
                         if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && !string.IsNullOrEmpty(s3link)) {
-                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"].Replace("{USER}",this.Owner.Username));
-                            webRequest.Method = "POST";
-                            webRequest.Accept = "application/json";
-                            webRequest.ContentType = "application/json";
+                            var url = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"].Replace("{USER}", this.Owner.Username);
+                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);                            
                             if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
                             var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
                             webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
                             webRequest.Timeout = 10000;
+                            webRequest.Method = "POST";
+                            webRequest.ContentType = "application/json";
 
                             var shareUri = GetJobShareUri(this.AppIdentifier);
 
@@ -912,8 +912,6 @@ namespace Terradue.Tep {
                             var json = Newtonsoft.Json.JsonConvert.SerializeObject(importProduct, Newtonsoft.Json.Formatting.None);
 
                             context.LogDebug(this, string.Format("Create user product request to supervisor - s3link = {0} ; username = {1}", s3link, this.Owner.Username));                            
-                            //var jsonurl = new SupervisorPublish { Url = s3link, AuthorizationHeader = authBasicHeader, Index = this.Owner.Username };
-
                             context.LogDebug(this, string.Format("send request to supervisor - json = {0}", json));
 
                             try {
@@ -924,10 +922,6 @@ namespace Terradue.Tep {
 
                                     using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
                                         using (var stream = httpResponse.GetResponseStream()) {
-
-                                            //var stacItem = Stac.StacConvert.Deserialize<Stac.StacItem>(stream);
-                                            //var stacLink = stacItem.Links.First(l => l.RelationshipType == "alternate");
-                                            //resultdescription = stacLink.Uri.ToString();
                                             var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromStream<Stac.StacItem>(stream);                                            
                                             var stacLink = stacItem.Links.First(l => l.Rel == "alternate");
                                             resultdescription = stacLink.Href;
