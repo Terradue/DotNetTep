@@ -20,6 +20,33 @@ namespace Terradue.Tep.WebServer.Services {
         public bool withJobResultsNb { get; set; }
     }
 
+    [Route("/report/job", "GET", Summary = "GET report", Notes = "")]
+    public class JobReportGetRequest : IReturn<string>{
+        [ApiMember(Name = "created", Description = "created date range", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string created { get; set; }
+
+        [ApiMember(Name = "q", Description = "q", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string q { get; set; }
+
+        [ApiMember(Name = "service", Description = "service", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string service { get; set; }
+
+        [ApiMember(Name = "author", Description = "author", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string author { get; set; }
+
+        [ApiMember(Name = "archivestatus", Description = "archivestatus", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string archivestatus { get; set; }
+
+        [ApiMember(Name = "status", Description = "status", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string status { get; set; }
+
+        [ApiMember(Name = "provider", Description = "provider", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string provider { get; set; }
+
+        [ApiMember(Name = "info", Description = "job infos", ParameterType = "query", DataType = "bool", IsRequired = false)]
+        public string infos { get; set; }
+    }
+
     [Route("/reports", "GET", Summary = "GET existing reports", Notes = "")]
     public class ReportsGetRequest : IReturn<List<string>>{}
 
@@ -368,6 +395,213 @@ namespace Terradue.Tep.WebServer.Services {
             } else {
                 return csv.ToString();
             }
+        }
+
+        public object Get(JobReportGetRequest request){             
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+
+            if (string.IsNullOrEmpty(request.created)) return null;
+            if (request.infos == null) request.infos = "job-id,job-identifier,job-status,job-creation,job-end,job-url,job-nbinputs,job-wps,job-shared,user-username,user-email,user-affiliation,user-level,user-creation,user-login";
+
+            var startdate = request.created.Replace("[","").Replace("]","").Split(',')[0];
+            var enddate = request.created.Replace("[","").Replace("]","").Split(',')[1];
+
+            //add more tests to not have too long queries
+
+
+            string result = "";
+
+            try {
+                context.Open();
+                context.LogInfo(this,string.Format("/job/report GET startdate='{0}',enddate='{1}'", startdate, enddate));
+
+                var csv = new System.Text.StringBuilder();
+
+                //Create Header
+                var csvHeader = new System.Text.StringBuilder();            
+                foreach (var info in request.infos.Split(',')) {
+                    switch(info){
+                        case "user-email":
+                            csvHeader.Append("User email,");
+                        break;
+                        case "user-identifier":
+                            csvHeader.Append("User identifier,");
+                        break;
+                        case "user-level":
+                            csvHeader.Append("User level,");
+                        break;
+                        case "user-affiliation":
+                            csvHeader.Append("User affiliation,");
+                        break;
+                        case "user-creation":
+                            csvHeader.Append("User creation,");
+                        break;
+                        case "user-login":
+                            csvHeader.Append("User last login,");
+                        break;                
+                        case "job-id":
+                            csvHeader.Append("Job id,");
+                        break;
+                        case "job-identifier":
+                            csvHeader.Append("Job identifier,");
+                        break;
+                        case "job-url":
+                            csvHeader.Append("Job url,");
+                        break;
+                        case "job-status":
+                            csvHeader.Append("Job status,");
+                        break;
+                        case "job-shared":
+                            csvHeader.Append("Job shared,");
+                        break;
+                        case "job-creation":
+                            csvHeader.Append("Job creation time,");
+                        break;
+                        case "job-end":
+                            csvHeader.Append("Job end time,");
+                            break;
+                        case "job-wps":
+                            csvHeader.Append("Job wps,");
+                        break;
+                        case "job-duration":
+                            csvHeader.Append("Job duration,");
+                        break;
+                        case "job-app":
+                            csvHeader.Append("Job app,");
+                        break;
+                        case "job-nbinput":
+                            csvHeader.Append("Job nb inputs,");
+                        break;
+                    }                        
+                }
+                csvHeader.Length --;//remove the coma
+                csvHeader.Append(Environment.NewLine);
+
+                var userIdSearch = 0;
+                if(!string.IsNullOrEmpty(request.author)){
+                    var usr = User.FromUsername(context, request.author);
+                    userIdSearch = usr.Id;                    
+                }
+
+                // Create Body
+                var csvBody = new System.Text.StringBuilder();
+                string sql = String.Format("SELECT id as job_id, identifier as job_identifier, status as job_status, created_time as job_creation, end_time as job_end, job_storeurl, job_nbinputs, job_wps, MAX(shared) as job_shared, username as usr_username, email as user_email, affiliation as usr_affiliation, usr_level, MIN(usrlogin) as usr_firstlogin, MAX(usrlogin) as usr_lastlogin FROM " +
+                    "(SELECT wpsjob.id, wpsjob.identifier, wpsjob.status, wpsjob.created_time, wpsjob.end_time, " +
+                    "REPLACE(wpsjob.status_url,'https://recast.terradue.com/t2api/describe/','https://store.terradue.com/') as job_storeurl, " +
+                    "((CEILING((LENGTH(wpsjob.params) - LENGTH(REPLACE(wpsjob.params, 'http://', '')))/7)) + CEILING((LENGTH(wpsjob.params) - LENGTH(REPLACE(wpsjob.params, 'https://', '')))/8)) AS job_nbinputs, " +
+                    "service.name as job_wps, " +
+                    "usr.username, usr.email, usr.affiliation, " +
+                    "CASE WHEN usr.level = 0 THEN 'visitor' ELSE " +
+                        "CASE WHEN usr.level = 1 THEN 'member' ELSE " +
+                            "CASE WHEN usr.level = 2 THEN 'stakeholder' ELSE 'administrator' END END END AS usr_level, " +
+                    "usrsession.log_time as usrlogin," +
+                    "CASE WHEN (p.id_usr IS NOT NULL AND p.id_usr != wpsjob.id_usr) OR p.id_grp IS NOT NULL OR (p.id_usr IS NULL AND p.id_grp IS NULL AND p.id_wpsjob IS NOT NULL) THEN 1 ELSE 0 END AS shared " +
+                    "FROM wpsjob " +
+                    "INNER JOIN usr on wpsjob.id_usr = usr.id " +
+                    "INNER JOIN usrsession ON usr.id = usrsession.id_usr " +
+                    "LEFT JOIN service ON service.identifier = wpsjob.process " +
+                    "LEFT JOIN wpsjob_perm AS p ON wpsjob.id = p.id_wpsjob " +
+                    "WHERE {0}" + "{1}" + "{2}" + "{3}" + "{4}" + "{5}" + "{6}" + "{7}" + ") AS Q1 " +
+                    "GROUP BY id;", 
+                    string.Format("created_time >= STR_TO_DATE('{0}','%Y-%m-%d') ",startdate),
+                    (!string.IsNullOrEmpty(enddate) ? string.Format("AND created_time <= STR_TO_DATE('{0}','%Y-%m-%d') ",enddate) : ""),
+                    !string.IsNullOrEmpty(request.q) ? string.Format("AND identifier LIKE '%{0}%' AND name LIKE '%{0}%' ",request.q) : "",
+                    !string.IsNullOrEmpty(request.archivestatus) ? string.Format("AND archive_status IN ({0}) ",request.archivestatus) : "", 
+                    !string.IsNullOrEmpty(request.status) ? string.Format("AND status IN ({0}) ",request.status) : "", 
+                    !string.IsNullOrEmpty(request.service) ? string.Format("AND wps_name LIKE '%{0}%' ",request.service) : "",
+                    !string.IsNullOrEmpty(request.provider) ? string.Format("AND wps LIKE '%{0}%' ",request.provider) : "",
+                    userIdSearch != 0 ? string.Format("AND id_usr = {0}", userIdSearch) : ""
+                );
+
+                context.LogInfo(this, sql);
+
+                System.Data.IDbConnection dbConnection = context.GetDbConnection();
+                System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+                while (reader.Read()) {
+                    if (reader.GetValue(0) == DBNull.Value) continue;
+                    
+                    var job_id = reader.GetInt32(0);
+                    var job_identifier = reader.GetString(1);
+                    var job_status = reader.GetString(2);
+                    var job_start = reader.GetString(3);
+                    var job_end = reader.GetValue(4) != DBNull.Value ? reader.GetString(4) : "";
+                    var job_storeurl = reader.GetString(5);
+                    var job_nbinputs = reader.GetInt32(6);
+                    var job_wps = reader.GetValue(7) != DBNull.Value ? reader.GetString(7) : "";
+                    var job_shared = reader.GetInt32(8);
+                    var usr_username = reader.GetValue(9) != DBNull.Value ? reader.GetString(9) : "";
+                    var usr_email = reader.GetValue(10) != DBNull.Value ? reader.GetString(10) : "";
+                    var usr_affiliation = reader.GetValue(11) != DBNull.Value ? reader.GetString(11) : "";
+                    var usr_level = reader.GetValue(12) != DBNull.Value ? reader.GetString(12) : "";
+                    var usr_first_login = reader.GetValue(13) != DBNull.Value ? reader.GetString(13) : "";
+                    var usr_last_login = reader.GetValue(14) != DBNull.Value ? reader.GetString(14) : "";
+
+                    foreach (var info in request.infos.Split(',')) {
+                        switch(info){
+                            case "user-email":
+                                csvBody.Append(usr_email + ",");
+                            break;
+                            case "user-identifier":
+                                csvBody.Append(usr_username + ",");
+                            break;
+                            case "user-level":
+                                csvBody.Append(usr_level + ",");
+                            break;
+                            case "user-affiliation":
+                                csvBody.Append(usr_affiliation + ",");
+                            break;
+                            case "user-creation":
+                                csvBody.Append(usr_first_login + ",");
+                            break;
+                            case "user-login":
+                                csvBody.Append(usr_last_login + ",");
+                            break;                
+                            case "job-id":
+                                csvBody.Append(job_id + ",");
+                            break;
+                            case "job-identifier":
+                                csvBody.Append(job_identifier + ",");
+                            break;
+                            case "job-url":
+                                csvBody.Append(job_storeurl + ",");
+                            break;
+                            case "job-status":
+                                csvBody.Append(job_status + ",");
+                            break;
+                            case "job-shared":
+                                csvBody.Append(job_shared + ",");
+                            break;
+                            case "job-creation":
+                                csvBody.Append(job_start + ",");
+                            break;
+                            case "job-end":
+                                csvBody.Append(job_end + ",");
+                                break;
+                            case "job-wps":
+                                csvBody.Append(job_wps + ",");
+                            break;                                       
+                            case "job-nbinput":
+                                csvBody.Append(job_nbinputs + ",");
+                            break;
+                        }                        
+                    }
+                    csvBody.Length--;
+                    csvBody.Append(Environment.NewLine);
+                }
+                context.CloseQueryResult(reader, dbConnection);
+                csv.Append(csvHeader).Append(csvBody);
+
+                result = csv.ToString();      
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            var filename = (!string.IsNullOrEmpty(startdate) && !string.IsNullOrEmpty(enddate)) ? string.Format("{2}-jobreport-{0}-{1}.csv", startdate, enddate, context.GetConfigValue("SiteNameShort")) : string.Format("{0}-jobreport.csv", context.GetConfigValue("SiteNameShort"));
+            Response.AddHeader("Content-Disposition", string.Format("attachment;filename={0}",filename));
+            return result;
         }
 
         /// <summary>
