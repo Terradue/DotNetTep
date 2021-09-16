@@ -4,7 +4,7 @@
 @{
     Terradue.Tep Software Package provides with all the functionalities specific to the TEP.
 
-    \xrefitem sw_version "Versions" "Software Package Version" 1.3.81
+    \xrefitem sw_version "Versions" "Software Package Version" 1.3.82
 
     \xrefitem sw_link "Links" "Software Package List" [Terradue.Tep](https://git.terradue.com/sugar/Terradue.Tep)
 
