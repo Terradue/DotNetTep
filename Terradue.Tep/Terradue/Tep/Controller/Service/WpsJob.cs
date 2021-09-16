@@ -899,7 +899,7 @@ namespace Terradue.Tep {
 
                             var importProduct = new SupervisorUserImportProduct {
                                 Url = s3link,
-                                ActivationId = int.Parse(this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-") + 1)),
+                                ActivationId = int.Parse(this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-") + 1)),//TODO: to be changed later
                                 AdditionalLinks = new List<SupervisorUserImportProductLink> {
                                     new SupervisorUserImportProductLink {
                                         Href = shareUri.AbsoluteUri,
