@@ -566,6 +566,14 @@ namespace Terradue.Tep.WebServer.Services {
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
+                    try{
+                        using(StringWriter textWriter = new StringWriter())
+                        {
+                            new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ExecuteResponse)).Serialize(textWriter, executeResponse as ExecuteResponse);
+                            context.LogInfo(this, "Execute response : " + textWriter.ToString());
+                        }
+                    }catch(System.Exception) {}
+
                     wpsjob.UpdateJobFromExecuteResponse(context, executeResponse as ExecuteResponse);
                 }
 
