@@ -370,6 +370,7 @@ namespace Terradue.Tep {
 
             if (this.IsWPS3()) {
                 context.LogDebug(this, "WPS 3.0.0 Execute");
+                var creationTime = DateTime.UtcNow;
                 var location = SubmitExecute(executeInput);
 
                 ExecuteResponse response = new ExecuteResponse();
@@ -381,8 +382,7 @@ namespace Terradue.Tep {
                 response.service = "WPS";
                 response.version = "3.0.0";
 
-                response.Status = new StatusType { Item = new ProcessAcceptedType() { Value = string.Format("Preparing job") } };//TODO
-
+                response.Status = new StatusType { Item = new ProcessAcceptedType() { Value = string.Format("Preparing job") }, creationTime = creationTime };//TODO
                 return response;
 
                 //TODO: handle case of errors
