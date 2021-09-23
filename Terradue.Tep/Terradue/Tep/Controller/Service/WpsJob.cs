@@ -658,8 +658,11 @@ namespace Terradue.Tep {
             else this.Status = WpsJobStatus.NONE;
 
             try {
-                var endtime = response.Status.creationTime.ToUniversalTime();
-                if (this.Status == WpsJobStatus.SUCCEEDED && this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
+                if (this.Status == WpsJobStatus.SUCCEEDED)
+                {
+                    var endtime = response.Status.creationTime.ToUniversalTime();
+                    if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
+                }
             }catch(Exception){}
 
             //check remote identfier if not set
