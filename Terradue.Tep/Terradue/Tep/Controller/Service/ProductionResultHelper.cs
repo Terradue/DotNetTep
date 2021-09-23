@@ -349,7 +349,7 @@ namespace Terradue.Tep {
 				!statusurl.Contains("/search") &&
 				!statusurl.Contains("/description");
             context.LogDebug(wpsjob, string.Format("Status url {0} is opensearchable : {1}", statusurl, statusNotOpensearchable ? "false" : "true"));
-			if (url.Host == new Uri(catalogBaseUrl).Host || statusNotOpensearchable) {
+			if (statusNotOpensearchable) {
                 statusurl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
             }
 
