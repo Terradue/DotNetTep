@@ -427,6 +427,49 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
+        /// Create a job event (metrics)
+        /// </summary>
+        /// <returns></returns>
+        public void LogJobEvent(string message = null){
+            try
+            {
+                var durations = new Dictionary<string, int>();
+                durations.Add("from_start", ((int)(DateTime.UtcNow - this.CreatedTime).TotalSeconds));
+                if (this.EndTime != DateTime.MinValue) durations.Add("from_end", ((int)(DateTime.UtcNow - this.EndTime).TotalSeconds));
+
+                var properties = new Dictionary<string, object>();
+                properties.Add("remote_identifier", this.RemoteIdentifier);
+                properties.Add("wf_id", this.WpsName);
+                properties.Add("wf_version", this.WpsVersion);
+                properties.Add("inputs", this.Parameters.ToDictionary(x => x.Key, x => x.Value));
+
+                var logevent = new Event
+                {
+                    EventId = EventFactory.GetEventIdForWpsJob(this.Status),
+                    Timestamp = DateTime.UtcNow,
+                    Project = context.GetConfigValue("SiteNameShort"),
+                    Status = this.StringStatus,
+                    Durations = durations,
+                    Transmitter = System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_TRANSMITTER"],
+                    Message = message,
+                    Item = new EventItem
+                    {
+                        Created = this.CreatedTime,
+                        Updated = this.EndTime != DateTime.MinValue ? this.EndTime : this.CreatedTime,
+                        Id = this.Identifier,
+                        Title = this.Name,
+                        Type = EventType.JOB,
+                        Properties = properties
+                    }
+                };
+
+                EventFactory.Log(context, logevent);
+            }catch(Exception e){
+                this.context.LogError(this, "Log event error: " + e.Message);
+            }
+        }
+
+        /// <summary>
         /// Is the job public.
         /// </summary>
         /// <returns><c>true</c>, if public was ised, <c>false</c> otherwise.</returns>
@@ -650,11 +693,58 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="response">Response.</param>
         public void UpdateStatusFromExecuteResponse(ExecuteResponse response) {
+
+            //check remote identifier if not set
+            if (string.IsNullOrEmpty(this.RemoteIdentifier) && !string.IsNullOrEmpty(response.statusLocation)) {
+                this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
+            }
+
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
             else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
-            else if (response.Status.Item is ProcessSucceededType) this.Status = IsResponseFromCoordinator(response) ? WpsJobStatus.COORDINATOR : WpsJobStatus.SUCCEEDED;
-            else if (response.Status.Item is ProcessFailedType) this.Status = WpsJobStatus.FAILED;
+            else if (response.Status.Item is ProcessSucceededType)
+            {
+                if (IsResponseFromCoordinator(response)) this.Status = WpsJobStatus.COORDINATOR;
+                else {
+                    //check end time
+                    if (this.EndTime == DateTime.MinValue)
+                    {
+                        var endtime = response.Status.creationTime.ToUniversalTime();
+                        if (this.CreatedTime.ToString() != endtime.ToString() && this.CreatedTime < endtime) this.EndTime = endtime;
+                    }
+                    //log event (job succeeded) - if was not already succeeded
+                    if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
+                    {
+                        var message = "Job succeedeed";
+                        try{
+                            message = (response.Status.Item as ProcessSucceededType).Value;
+                        }catch(Exception){}                                        
+                        this.Status = WpsJobStatus.SUCCEEDED;
+                        this.LogJobEvent(message);
+                    }
+                    else
+                    {
+                        this.Status = WpsJobStatus.SUCCEEDED;
+                    }
+                }                
+            }
+            else if (response.Status.Item is ProcessFailedType)
+            {
+                //log event (job failed) - if was not already failed
+                if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
+                {
+                    var message = "Job failed";
+                    try{
+                        message = (response.Status.Item as ProcessFailedType).ExceptionReport.Exception[0].ExceptionText[0];
+                    }catch(Exception){}                                        
+                    this.Status = WpsJobStatus.FAILED;
+                    this.LogJobEvent(message);
+                }
+                else
+                {
+                    this.Status = WpsJobStatus.FAILED;
+                }
+            }
             else this.Status = WpsJobStatus.NONE;
 
             try {
@@ -664,11 +754,6 @@ namespace Terradue.Tep {
                     if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
                 }
             }catch(Exception){}
-
-            //check remote identfier if not set
-            if (string.IsNullOrEmpty(this.RemoteIdentifier)) {
-                this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
-            }
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
             //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
