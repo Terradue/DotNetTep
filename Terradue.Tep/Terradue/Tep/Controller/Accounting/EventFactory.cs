@@ -10,13 +10,13 @@ namespace Terradue.Tep {
     public class EventFactory {
 
         public static void Log(IfyContext context, Event log){
-
+            if(string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_URL"])) return;
+            
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_URL"]);
             webRequest.Method = "POST";
             webRequest.Accept = "application/json";
             webRequest.ContentType = "application/json";
 
-            // var json = ServiceStack.Text.JsonSerializer.SerializeToString<Event>(log);
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
 
