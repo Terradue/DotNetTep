@@ -441,7 +441,20 @@ namespace Terradue.Tep {
                 properties.Add("remote_identifier", this.RemoteIdentifier);
                 properties.Add("wf_id", this.WpsName);
                 properties.Add("wf_version", this.WpsVersion);
-                properties.Add("inputs", this.Parameters.ToDictionary(x => x.Key, x => x.Value));
+                if (this.Parameters != null)
+                {
+                    var paramDictionary = new Dictionary<string, object>();
+                    foreach (var p in this.Parameters)
+                    {
+                        if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
+                        else
+                        {
+                            if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
+                            (paramDictionary[p.Key] as List<string>).Add(p.Value);
+                        }
+                    }
+                    properties.Add("inputs", paramDictionary);
+                }
 
                 var logevent = new Event
                 {
