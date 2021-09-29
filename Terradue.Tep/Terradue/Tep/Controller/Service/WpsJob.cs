@@ -441,6 +441,9 @@ namespace Terradue.Tep {
                 properties.Add("remote_identifier", this.RemoteIdentifier);
                 properties.Add("wf_id", this.WpsName);
                 properties.Add("wf_version", this.WpsVersion);
+                properties.Add("app_id", this.AppIdentifier);
+                properties.Add("status_url", this.StatusLocation);
+                if (this.Owner != null) properties.Add("author", this.Owner.Username);
                 if (this.Parameters != null)
                 {
                     var paramDictionary = new Dictionary<string, object>();
