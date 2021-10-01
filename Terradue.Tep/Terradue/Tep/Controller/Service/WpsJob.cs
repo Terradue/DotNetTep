@@ -427,65 +427,6 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Create a job event (metrics)
-        /// </summary>
-        /// <returns></returns>
-        public void LogJobEvent(string message = null){
-            try
-            {
-                var durations = new Dictionary<string, int>();
-                durations.Add("from_start", ((int)(DateTime.UtcNow - this.CreatedTime).TotalSeconds));
-                if (this.EndTime != DateTime.MinValue) durations.Add("from_end", ((int)(DateTime.UtcNow - this.EndTime).TotalSeconds));
-
-                var properties = new Dictionary<string, object>();
-                properties.Add("remote_identifier", this.RemoteIdentifier);
-                properties.Add("wf_id", this.WpsName);
-                properties.Add("wf_version", this.WpsVersion);
-                properties.Add("app_id", this.AppIdentifier);
-                properties.Add("status_url", this.StatusLocation);
-                if (this.Owner != null) properties.Add("author", this.Owner.Username);
-                if (this.Parameters != null)
-                {
-                    var paramDictionary = new Dictionary<string, object>();
-                    foreach (var p in this.Parameters)
-                    {
-                        if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
-                        else
-                        {
-                            if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
-                            (paramDictionary[p.Key] as List<string>).Add(p.Value);
-                        }
-                    }
-                    properties.Add("inputs", paramDictionary);
-                }
-
-                var logevent = new Event
-                {
-                    EventId = EventFactory.GetEventIdForWpsJob(this.Status),
-                    Timestamp = DateTime.UtcNow,
-                    Project = context.GetConfigValue("SiteNameShort"),
-                    Status = this.StringStatus,
-                    Durations = durations,
-                    Transmitter = System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_TRANSMITTER"],
-                    Message = message,
-                    Item = new EventItem
-                    {
-                        Created = this.CreatedTime,
-                        Updated = this.EndTime != DateTime.MinValue ? this.EndTime : this.CreatedTime,
-                        Id = this.Identifier,
-                        Title = this.Name,
-                        Type = EventType.JOB,
-                        Properties = properties
-                    }
-                };
-
-                EventFactory.Log(context, logevent);
-            }catch(Exception e){
-                this.context.LogError(this, "Log event error: " + e.Message);
-            }
-        }
-
-        /// <summary>
         /// Is the job public.
         /// </summary>
         /// <returns><c>true</c>, if public was ised, <c>false</c> otherwise.</returns>
@@ -736,7 +677,7 @@ namespace Terradue.Tep {
                             message = (response.Status.Item as ProcessSucceededType).Value;
                         }catch(Exception){}                                        
                         this.Status = WpsJobStatus.SUCCEEDED;
-                        this.LogJobEvent(message);
+                        EventFactory.LogWpsJob(this.context, this, message);
                     }
                     else
                     {
@@ -754,7 +695,7 @@ namespace Terradue.Tep {
                         message = (response.Status.Item as ProcessFailedType).ExceptionReport.Exception[0].ExceptionText[0];
                     }catch(Exception){}                                        
                     this.Status = WpsJobStatus.FAILED;
-                    this.LogJobEvent(message);
+                    EventFactory.LogWpsJob(this.context, this, message);
                 }
                 else
                 {
