@@ -578,7 +578,7 @@ namespace Terradue.Tep.WebServer.Services {
                 }
 
                 context.LogDebug(this, string.Format("Execute response ok"));
-                wpsjob.LogJobEvent("Job created");
+                EventFactory.LogWpsJob(context, wpsjob, "Job created");
 
                 var execResponse = executeResponse as ExecuteResponse;
                 Uri uri = new Uri(execResponse.serviceInstance ?? execResponse.statusLocation);
