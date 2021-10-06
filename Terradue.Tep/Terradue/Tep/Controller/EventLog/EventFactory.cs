@@ -3,18 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Terradue.Portal;
 
 namespace Terradue.Tep {
     public class EventFactory
     {
+        public static EventLogConfiguration EventLogConfig = System.Configuration.ConfigurationManager.GetSection("EventLogConfiguration") as EventLogConfiguration;
 
         public static void Log(IfyContext context, Event log)
         {
-            if (string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_URL"])) return;
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
 
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_URL"]);
+            string logUrl = EventLogConfig.Settings["baseurl"].Value;
+            if (string.IsNullOrEmpty(logUrl)) return;
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(logUrl);
             webRequest.Method = "POST";
             webRequest.Accept = "application/json";
             webRequest.ContentType = "application/json";
@@ -32,9 +37,12 @@ namespace Terradue.Tep {
             }
         }
 
-        public static void LogWpsJob(IfyContext context, WpsJob job, string message){
-            IEventJobLogger logger;
-            string className = System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_JOB_CLASSNAME"];
+        public static void LogWpsJob(IfyContext context, WpsJob job, string message)
+        {
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
+
+            IEventJobLogger logger;            
+            string className = EventLogConfig.Settings["job_classname"].Value;
             if (className == null)
             {
                 logger = new EventJobLoggerTep(context);
@@ -52,9 +60,12 @@ namespace Terradue.Tep {
             }
         }
 
-        public static void LogUser(IfyContext context, UserTep usr, string eventid, string message){
+        public static void LogUser(IfyContext context, UserTep usr, string eventid, string message)
+        {
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
+
             IEventUserLogger logger;
-            string className = System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_USER_CLASSNAME"];
+            string className = EventLogConfig.Settings["user_classname"].Value;
             if (className == null)
             {
                 logger = new EventUserLoggerTep(context);
@@ -130,7 +141,9 @@ namespace Terradue.Tep {
                 if (job.Owner != null) properties.Add("author", job.Owner.Username);
                 if (job.Parameters != null)
                 {
+                    //add inputs
                     var paramDictionary = new Dictionary<string, object>();
+                    var missionDictionary = new Dictionary<string, object>();
                     foreach (var p in job.Parameters)
                     {
                         if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
@@ -139,18 +152,44 @@ namespace Terradue.Tep {
                             if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
                             (paramDictionary[p.Key] as List<string>).Add(p.Value);
                         }
+                        
+                        if (!string.IsNullOrEmpty(p.Value) 
+                            && p.Value.StartsWith(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"])
+                            && EventFactory.EventLogConfig.Missions.Count > 0)
+                        {
+                            string mission = null;
+                            try {
+                                var uid = System.Web.HttpUtility.ParseQueryString(new Uri(p.Value).Query)["uid"];
+                                foreach (EventLogElementConfiguration mission_regex in EventFactory.EventLogConfig.Missions)
+                                {
+                                    var match = Regex.Match(uid, mission_regex.Value);
+                                    if (match.Success)
+                                    {
+                                        mission = mission_regex.Key;
+                                        break;
+                                    }
+                                }
+                            } catch(Exception e){}
+
+                            if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
+                            (paramDictionary[p.Key] as List<string>).Add(p.Value);
+
+                            if (!missionDictionary.ContainsKey(mission)) missionDictionary.Add(mission, new EventProductMission { count = 1 });
+                            else (missionDictionary[mission] as EventProductMission).count ++;
+                        }
                     }
                     properties.Add("inputs", paramDictionary);
+                    properties.Add("products_platforms", missionDictionary);
                 }
 
                 var logevent = new Event
                 {
                     EventId = GetEventIdForWpsJob(job.Status),
                     Timestamp = DateTime.UtcNow,
-                    Project = context.GetConfigValue("SiteNameShort"),
+                    Project = EventFactory.EventLogConfig.Settings["project"].Value,
                     Status = job.StringStatus,
                     Durations = durations,
-                    Transmitter = System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_TRANSMITTER"],
+                    Transmitter = EventFactory.EventLogConfig.Settings["transmitter"].Value,
                     Message = message,
                     Item = new EventItem
                     {
@@ -186,7 +225,7 @@ namespace Terradue.Tep {
         }
 
         /// <summary>
-        /// Create a job event (metrics)
+        /// Create a user event (metrics)
         /// </summary>
         /// <returns></returns>
         public Event GetLogEvent(UserTep usr, string eventid, string message = null){
@@ -200,10 +239,10 @@ namespace Terradue.Tep {
                 {
                     EventId = eventid,
                     Timestamp = DateTime.UtcNow,
-                    Project = context.GetConfigValue("SiteNameShort"),
+                    Project = EventFactory.EventLogConfig.Settings["project"].Value,
                     Status = usr.Level.ToString(),
                     // Durations = durations,
-                    Transmitter = System.Configuration.ConfigurationManager.AppSettings["EVENT_LOG_TRANSMITTER"],
+                    Transmitter = EventFactory.EventLogConfig.Settings["transmitter"].Value,
                     Message = message,
                     Item = new EventItem
                     {
@@ -270,7 +309,15 @@ namespace Terradue.Tep {
         [JsonProperty("title")]
         public string Title { get; set; }
 
-        [DataMember(Name = "properties")]
+        [JsonProperty("properties")]
         public Dictionary<string, object> Properties { get; set; }
     }
+
+    [DataContract]
+    public class EventProductMission
+    {
+        [JsonProperty("count")]
+        public int count { get; set; }        
+    }
+
 }
