@@ -667,7 +667,7 @@ namespace Terradue.Tep {
                     if (this.EndTime == DateTime.MinValue)
                     {
                         var endtime = response.Status.creationTime.ToUniversalTime();
-                        if (this.CreatedTime.ToString() != endtime.ToString() && this.CreatedTime < endtime) this.EndTime = endtime;
+                        this.EndTime = endtime;
                     }
                     //log event (job succeeded) - if was not already succeeded
                     if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
