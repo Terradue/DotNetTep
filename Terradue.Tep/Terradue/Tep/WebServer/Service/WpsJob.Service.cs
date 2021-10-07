@@ -283,6 +283,8 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogInfo(this,string.Format("/job/wps POST Id='{0}'",job.Id));
             context.LogDebug(this,string.Format("WpsJob '{0}' created",job.Name));
 
+            EventFactory.LogWpsJob(context, job, "Job created");
+
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
             wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
             wpsjobs.Load();
