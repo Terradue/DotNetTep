@@ -14,11 +14,6 @@ using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
 using Terradue.ServiceModel.Syndication;
-using Terradue.OpenSearch.RdfEO.Extensions;
-
-
-
-
 
 namespace Terradue.Tep {
 
@@ -261,8 +256,8 @@ namespace Terradue.Tep {
             newOse.RegisterExtension(aosee);
             FeatureCollectionOpenSearchEngineExtension ngosee = new FeatureCollectionOpenSearchEngineExtension();
             newOse.RegisterExtension(ngosee);
-            RdfOpenSearchEngineExtension rosee = new RdfOpenSearchEngineExtension();
-            newOse.RegisterExtension(rosee);
+            // RdfOpenSearchEngineExtension rosee = new RdfOpenSearchEngineExtension();
+            // newOse.RegisterExtension(rosee);
 
             NameValueCollection nvc = new NameValueCollection();
             nvc.Add("SlidingExpiration", "30");
