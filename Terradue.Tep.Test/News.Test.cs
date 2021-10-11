@@ -15,7 +15,7 @@ namespace Terradue.Tep.Test {
     [TestFixture]
     public class NewsTest : BaseTest {
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public override void FixtureSetup() {
             base.FixtureSetup();
             context.BaseUrl = "http://localhost:8080/api";

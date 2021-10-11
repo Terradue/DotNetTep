@@ -55,7 +55,7 @@ namespace Terradue.Tep.WebServer.Services {
                 GithubClient githubClient = new GithubClient(context);
                 if(!user.IsAuthorizationTokenValid()) throw new UnauthorizedAccessException("Invalid token");
                 if(user.PublicSSHKey == null) throw new UnauthorizedAccessException("No available public ssh key");
-                githubClient.AddSshKey("Terradue ssh key", user.PublicSSHKey, user.Token);
+                githubClient.AddSshKey("Terradue ssh key", user.PublicSSHKey, user.Name, user.Token);
                 context.LogDebug(this,string.Format("User {0} added Terradue ssh key to his github account",userTep.Username));
                 result = new WebGithubProfile(user);
                 context.Close();

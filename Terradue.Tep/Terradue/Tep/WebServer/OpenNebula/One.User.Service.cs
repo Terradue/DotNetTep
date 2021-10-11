@@ -6,7 +6,6 @@ using ServiceStack.ServiceInterface;
 using Terradue.Cloud;
 using Terradue.Github;
 using Terradue.OpenNebula;
-using Terradue.OpenNebula.WebService;
 using Terradue.Portal;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
