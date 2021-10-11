@@ -28,7 +28,7 @@ namespace Terradue.Tep.Test {
             return result;
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public virtual void FixtureSetup() {
             connectionString = GetConnectionString();
             if (BaseDirectory == null) BaseDirectory = Directory.GetCurrentDirectory() + "/../database";
@@ -53,7 +53,7 @@ namespace Terradue.Tep.Test {
 
         }
 
-        [TestFixtureTearDown]
+        [TearDown]
         public virtual void FixtureTearDown() {
 
             //context.Execute(String.Format("DROP DATABASE {0};", DatabaseName));
