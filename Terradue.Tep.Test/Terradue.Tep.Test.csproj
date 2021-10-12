@@ -4,8 +4,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Terradue.Tep.Test</RootNamespace>
     <AssemblyName>Terradue.Tep.Test</AssemblyName>
-    <_ExtraTargetFrameworks Condition="'$(OS)' == 'Windows_NT' or '$(MSBuildRuntimeType)' == 'Mono'">net472</_ExtraTargetFrameworks>
-    <TargetFrameworks>$(RoslynPortableTargetFrameworks);$(_ExtraTargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks>net472</TargetFrameworks>
     <RuntimeIdentifiers>win;linux</RuntimeIdentifiers>
     <IsPackable>false</IsPackable>
     <RestorePackagesPath>$(SolutionDir)\packages</RestorePackagesPath>
@@ -19,10 +18,10 @@
     <Reference Include="System.Xml.Linq"/>
     <Reference Include="System.Core"/>
     <PackageReference Include="NUnit" Version="3.13.2"/>
-    <PackageReference Include="Terradue.Portal" Version="2.9.1"/>
+    <PackageReference Include="Terradue.Portal" Version="2.9.2"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Terradue.Tep\Terradue.Tep.csproj"/>
-    <Reference Include="../packages/terradue.portal/**/Terradue.Portal.AdminTool.exe"/>
-  </ItemGroup>  
+    <Reference Include="../packages/terradue.portal/**/lib/net472/Terradue.Portal.AdminTool.exe"/>
+  </ItemGroup>
 </Project>

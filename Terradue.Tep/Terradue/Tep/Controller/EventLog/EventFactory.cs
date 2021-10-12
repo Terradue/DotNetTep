@@ -1,11 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
-using System.Text.RegularExpressions;
+using System.Xml;
 using Newtonsoft.Json;
+using Terradue.OpenSearch.Result;
 using Terradue.Portal;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Terradue.Stars.Interface.Router.Translator;
+using Terradue.Stars.Services.Translator;
+using Terradue.Stars.Services.Credentials;
+using Terradue.Stars.Data.Translators;
 
 namespace Terradue.Tep {
     public class EventFactory
@@ -141,9 +149,20 @@ namespace Terradue.Tep {
                 if (job.Owner != null) properties.Add("author", job.Owner.Username);
                 if (job.Parameters != null)
                 {
+                    var token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                    var credentials = new NetworkCredential(job.Owner.Username, token);                    
+                    var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
+                    ServiceCollection services = new ServiceCollection();
+                    services.AddLogging(builder => builder.AddConsole());
+                    services.AddTransient<ITranslator, StacLinkTranslator>();
+                    services.AddTransient<ITranslator, AtomToStacTranslator>();
+                    services.AddTransient<ITranslator, DefaultStacTranslator>();
+                    services.AddTransient<ICredentials, ConfigurationCredentialsManager>();
+                    var sp = services.BuildServiceProvider();
+
                     //add inputs
                     var paramDictionary = new Dictionary<string, object>();
-                    var missionDictionary = new Dictionary<string, object>();
+                    var stacItemDictionary = new Dictionary<string, object>();
                     foreach (var p in job.Parameters)
                     {
                         if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
@@ -152,34 +171,27 @@ namespace Terradue.Tep {
                             if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
                             (paramDictionary[p.Key] as List<string>).Add(p.Value);
                         }
-                        
-                        if (!string.IsNullOrEmpty(p.Value) 
-                            && p.Value.StartsWith(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"])
-                            && EventFactory.EventLogConfig.Missions.Count > 0)
+
+                        // add data input stac item
+                        try
                         {
-                            string mission = null;
-                            try {
-                                var uid = System.Web.HttpUtility.ParseQueryString(new Uri(p.Value).Query)["uid"];
-                                foreach (EventLogElementConfiguration mission_regex in EventFactory.EventLogConfig.Missions)
-                                {
-                                    var match = Regex.Match(uid, mission_regex.Value);
-                                    if (match.Success)
-                                    {
-                                        mission = mission_regex.Key;
-                                        break;
-                                    }
-                                }
-                            } catch(Exception e){}
+                            if (!string.IsNullOrEmpty(p.Value))
+                            {
+                                var osuri = new Uri(p.Value);
+                                if (!(osuri.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
 
-                            if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
-                            (paramDictionary[p.Key] as List<string>).Add(p.Value);
-
-                            if (!missionDictionary.ContainsKey(mission)) missionDictionary.Add(mission, new EventProductMission { count = 1 });
-                            else (missionDictionary[mission] as EventProductMission).count ++;
+                                var atomFeed = AtomFeed.Load(XmlReader.Create(osuri.AbsolutePath));
+                                var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, osuri, credentials);
+                                var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
+                                var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
+                                var stacItem = stacNode.StacItem;
+                                stacItemDictionary.Add(item.Identifier, stacItem);
+                            }
                         }
+                        catch (Exception) { }
                     }
                     properties.Add("inputs", paramDictionary);
-                    properties.Add("products_platforms", missionDictionary);
+                    properties.Add("inputs_stac_item", stacItemDictionary);
                 }
 
                 var logevent = new Event
