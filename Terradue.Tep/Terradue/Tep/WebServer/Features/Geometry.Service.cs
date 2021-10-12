@@ -2,7 +2,6 @@
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using GeoAPI.Geometries;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using ServiceStack.ServiceHost;
@@ -106,7 +105,6 @@ namespace Terradue.Tep.WebServer.Services {
                             break;
                         default:
                             throw new Exception("Invalid file type");
-                            break;
                     }
                 }
 
@@ -209,7 +207,7 @@ namespace Terradue.Tep.WebServer.Services {
             //get all .shp files in unziped directory
             var myFiles = Directory.GetFiles(shapeDir, "*.shp", SearchOption.AllDirectories);
             GeometryFactory factory = new GeometryFactory();
-            IGeometry finalgeometry = null;
+            NetTopologySuite.Geometries.Geometry finalgeometry = null;
 
             foreach (var shapefile in myFiles) {
                 ShapefileDataReader shapeFileDataReader = new ShapefileDataReader(shapefile, factory);
@@ -236,7 +234,7 @@ namespace Terradue.Tep.WebServer.Services {
             return wkt;
         }
 
-        private IGeometry SimplifyGeometry(IGeometry geometry, int nbPoints, int pow = 1) {
+        private NetTopologySuite.Geometries.Geometry SimplifyGeometry(NetTopologySuite.Geometries.Geometry geometry, int nbPoints, int pow = 1) {
             if (geometry.NumPoints < nbPoints)
                 return geometry;
             if (!geometry.IsValid) geometry = geometry.Buffer(0.001);
@@ -245,7 +243,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         private string ExtractWKTFromKML(Stream stream, int points) {
-            IGeometry finalgeometry = null;
+            NetTopologySuite.Geometries.Geometry finalgeometry = null;
             try {
                 stream.Seek(0, SeekOrigin.Begin);
             }catch(Exception){}
@@ -255,10 +253,10 @@ namespace Terradue.Tep.WebServer.Services {
             var placemarks = kml.Flatten().OfType<Placemark>();
             foreach (var placemark in placemarks) {
                 try {
-                    IGeometry geometry = KmlGeometryToGeometry(placemark.Geometry);
+                    NetTopologySuite.Geometries.Geometry geometry = KmlGeometryToGeometry(placemark.Geometry);
                     if (finalgeometry == null) finalgeometry = geometry;
                     else finalgeometry = finalgeometry.Union(geometry);
-                } catch (Exception e) {
+                } catch (Exception) {
                     //throw new Exception(string.Format("Error with placemark {0}", placemark.Name));
                 }
             }
@@ -275,8 +273,8 @@ namespace Terradue.Tep.WebServer.Services {
             return wkt;
         }
 
-        private IGeometry KmlGeometryToGeometry(SharpKml.Dom.Geometry geometry) {
-            IGeometry result = null;
+        private NetTopologySuite.Geometries.Geometry KmlGeometryToGeometry(SharpKml.Dom.Geometry geometry) {
+            NetTopologySuite.Geometries.Geometry result = null;
             if (geometry is SharpKml.Dom.Point) {
                 var kmlPoint = geometry as SharpKml.Dom.Point;
                 result = new NetTopologySuite.Geometries.Point(new Coordinate(kmlPoint.Coordinate.Longitude, kmlPoint.Coordinate.Latitude));
@@ -342,7 +340,7 @@ namespace Terradue.Tep.WebServer.Services {
         private string ExtractWKTFromGeoJson(Stream stream, int points) {
             var wkt = ExtractWKTFromGeoJson(stream);
             NetTopologySuite.IO.WKTReader wktReader = new NetTopologySuite.IO.WKTReader();
-            wktReader.RepairRings = true;
+            // wktReader.RepairRings = true;
             var finalgeometry = wktReader.Read(wkt);
 
             if (finalgeometry != null) {
