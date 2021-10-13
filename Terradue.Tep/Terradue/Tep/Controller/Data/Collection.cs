@@ -53,7 +53,7 @@ namespace Terradue.Tep {
             result.Id = id;
             try{
                 result.Load();
-            }catch(Exception e){
+            }catch(Exception){
                 Series s = Series.FromId(context, id);
                 result = new Collection(context, s);
             }
@@ -71,7 +71,7 @@ namespace Terradue.Tep {
             result.Identifier = identifier;
             try{
                 result.Load();
-            }catch(Exception e){
+            }catch(Exception){
                 Series s = Series.FromIdentifier(context, identifier);
                 result = new Collection(context, s);
             }
@@ -83,7 +83,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns><c>true</c> if this instance is public; otherwise, <c>false</c>.</returns>
         public bool IsPublic(){
-            return DoesGrantGlobalPermission();
+            return DoesGrantPermissionsToAll();
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <param name="osr">IOpenSearchResult cotnaing the result of the a search</param>
         /// <param name="request">Request.</param>
-        public void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
+        public new void ApplyResultFilters(OpenSearchRequest request, ref IOpenSearchResultCollection osr, string finalContentType) {
             base.ApplyResultFilters(request, ref osr, finalContentType);
             //MasterCatalogue.ProxyOpenSearchResult(this, request, osr);
         }
@@ -174,7 +174,7 @@ namespace Terradue.Tep {
 			Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
 			try {
 				atomEntry = new AtomItem(name, text, null, id.ToString(), DateTime.UtcNow);
-			} catch (Exception e) {
+			} catch (Exception) {
 				atomEntry = new AtomItem();
 			}
 
@@ -205,7 +205,7 @@ namespace Terradue.Tep {
 			return atomEntry;
         }
 
-        public NameValueCollection GetOpenSearchParameters() {
+        public new NameValueCollection GetOpenSearchParameters() {
             return OpenSearchFactory.GetBaseOpenSearchParameter();
         }
     }

@@ -384,7 +384,7 @@ namespace Terradue.Tep.WebServer.Services {
                             var settings = MasterCatalogue.OpenSearchFactorySettings;
                             var os = new GenericOpenSearchable (new OpenSearchUrl (request.url), settings);
                             redirectUrl += "resultType=" + "data";
-                        } catch (Exception e) { 
+                        } catch (Exception) { 
                             redirectUrl += "resultType=" + "na";
                         }
                     }

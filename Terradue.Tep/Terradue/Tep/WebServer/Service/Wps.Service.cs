@@ -85,7 +85,7 @@ namespace Terradue.Tep.WebServer.Services {
             else
                 format = Request.QueryString["format"];
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query(wpsProviders, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProviders, osr);
@@ -105,7 +105,7 @@ namespace Terradue.Tep.WebServer.Services {
             HttpRequest httpRequest = HttpContext.Current.Request;
             var qs = new NameValueCollection(httpRequest.QueryString);
             if(string.IsNullOrEmpty(qs["available"])) qs.Set("available","true");
-			Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 
             //Create EntityList from DB
             EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
@@ -174,7 +174,7 @@ namespace Terradue.Tep.WebServer.Services {
                     try {
                         CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
                         wpss = wpsFinder.GetWPSFromVMs();
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         //we do nothing, we will return the list without any WPS from the cloud
                     }
                     foreach (WpsProvider wps in wpss) {
@@ -183,7 +183,7 @@ namespace Terradue.Tep.WebServer.Services {
                                 process.UserId = 0;
                                 services.Include(process);
                             }
-                        } catch (Exception e) {
+                        } catch (Exception) {
                             //we do nothing, we just dont add the process
                         }
                     }
@@ -941,7 +941,6 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this,string.Format("/cr/wps DELETE Id='{0}'", request.Id));
 
                 WpsProvider wps = null;
-                bool exists = false;
                 try {
                     wps = (WpsProvider)WpsProvider.FromId(context, request.Id);
                     wps.Delete();

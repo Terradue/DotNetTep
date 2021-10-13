@@ -75,7 +75,7 @@ namespace Terradue.Tep.WebServer.Services
                     throw new InvalidOperationException ("No Url in the OpenSearch Description Document that query fully qualified model");
                 }
 
-                var type = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
+                Type type = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request.QueryString, HttpContext.Current.Request.Headers, ose);
                 var res = ose.Query (e, new NameValueCollection (), type);
 
                 result = new HttpResult (res.SerializeToString (), res.ContentType);
@@ -203,13 +203,11 @@ namespace Terradue.Tep.WebServer.Services
             feed.Id = wpsjob.StatusLocation;
 
             var ose = MasterCatalogue.OpenSearchEngine;
-            var type = OpenSearchFactory.ResolveTypeFromRequest (HttpContext.Current.Request, ose);
-            var ext = ose.GetFirstExtensionByTypeAbility (type);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request.QueryString, HttpContext.Current.Request.Headers, ose);
+            var ext = ose.GetFirstExtensionByTypeAbility (responseType);
 
             var osfeed = new AtomFeedOpenSearchable (feed);
-            HttpRequest httpRequest = HttpContext.Current.Request;
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
-            IOpenSearchResultCollection osr = ose.Query (osfeed, httpRequest.QueryString, responseType);
+            IOpenSearchResultCollection osr = ose.Query (osfeed, HttpContext.Current.Request.QueryString, responseType);
 
             var osrDesc = new Uri (context.BaseUrl + "/proxy/wps/" + wpsjob.Identifier + "/description");
             osr.Links.Add (new Terradue.ServiceModel.Syndication.SyndicationLink (osrDesc, "search", "OpenSearch Description link", "application/opensearchdescription+xml", 0));

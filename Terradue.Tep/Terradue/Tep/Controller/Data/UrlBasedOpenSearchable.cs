@@ -197,7 +197,7 @@ namespace Terradue.Tep {
                 try {
                     string s = feed.ElementExtensions.ReadElementExtensions<string>("totalResults", "http://a9.com/-/spec/opensearch/1.1/").Single();
                     return long.Parse(s);
-                } catch (Exception e) {}
+                } catch (Exception) {}
                 return 0;
             }
         }

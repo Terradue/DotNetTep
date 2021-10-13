@@ -189,7 +189,7 @@ namespace Terradue.Tep.WebServer.Services{
             // Load the complete request
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 
             // the opensearch cache system uses the query parameters
             // we add to the parameters the filters added to the load in order to avoir wrong cache

@@ -308,7 +308,7 @@ namespace Terradue.Tep {
                         return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                     }
 
-                }catch(Exception e){
+                }catch(Exception){
                     
                 }
 			}

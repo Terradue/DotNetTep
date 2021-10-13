@@ -444,7 +444,7 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
 				UserTep.UpdateUserSessionEndTime(context, context.UserId);
-            } catch (Exception e) {
+            } catch (Exception) {
                 return new WebResponseBool(false);
             }
             context.Close();
@@ -513,7 +513,7 @@ namespace Terradue.Tep.WebServer.Services {
             else
                 format = Request.QueryString ["format"];
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query (users, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (users, osr);

@@ -376,7 +376,7 @@ namespace Terradue.Tep {
                 try {
                     if (string.IsNullOrEmpty(this.WpsVersion) && this.Process != null) this.WpsVersion = this.Process.Version;//we set only at creation as service version may change with time
                     if (string.IsNullOrEmpty(this.WpsName) && this.Process != null) this.WpsName = this.Process.Name;//we set only at creation as service version may change with time
-                } catch(Exception e){
+                } catch(Exception){
                     //if error while getting Process, we skip the version
                 }
             }
@@ -784,14 +784,14 @@ namespace Terradue.Tep {
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         try {
                             execResponse = (OpenGis.Wps.ExecuteResponse)WpsFactory.ExecuteResponseSerializer.Deserialize(remoteWpsResponseStream);
-                        }catch(Exception e){
+                        }catch(Exception){
                             // Maybe an exceptionReport
                             OpenGis.Wps.ExceptionReport exceptionReport = null;
                             remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                             try {
                                 exceptionReport = (OpenGis.Wps.ExceptionReport)WpsFactory.ExceptionReportSerializer.Deserialize(remoteWpsResponseStream);
                                 return exceptionReport;
-                            } catch (Exception e2) {
+                            } catch (Exception) {
                                 remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                                 string errormsg = null;
                                 using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
@@ -1046,7 +1046,7 @@ namespace Terradue.Tep {
             var result_osd = execResponse.ProcessOutputs.Where(po => po.Identifier.Value.Equals("result_metadata"));
             if (result_osd.Count() > 0) {
                 var po = result_osd.First();
-                string url = null;
+
                 //Get result Url
                 if (po.Item is DataType && ((DataType)(po.Item)).Item != null) {
 					if (((DataType)(po.Item)).Item is ComplexDataType) {
@@ -1508,7 +1508,7 @@ namespace Terradue.Tep {
                 result.Categories.Add(new SyndicationCategory("provider", null, provider.Name));
                 if (provider.Proxy) statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
 
-            } catch (Exception e) {
+            } catch (Exception) {
                 //if provider not on db, then it is proxied
                 statusloc = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + this.Identifier;
             }
@@ -1516,7 +1516,7 @@ namespace Terradue.Tep {
             try {
                 if (process == null) process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, this.ProcessId);
                 result.Categories.Add(new SyndicationCategory("process", null, process.Name));
-            } catch (Exception e) {
+            } catch (Exception) {
             }
 
             if (this.NbResults != -1){

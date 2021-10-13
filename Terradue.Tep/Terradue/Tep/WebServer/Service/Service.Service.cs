@@ -21,7 +21,6 @@ namespace Terradue.Tep.WebServer.Services {
         
         public object Get(ServiceServiceTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            object result;
             context.Open();
             EntityList<Terradue.Portal.Service> services = new EntityList<Terradue.Portal.Service>(context);
             services.Load();
@@ -35,7 +34,7 @@ namespace Terradue.Tep.WebServer.Services {
             if ( Request.QueryString["format"] == null ) format = "atom";
             else format = Request.QueryString["format"];
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query(services, httpRequest.QueryString, responseType);
 
             context.Close ();

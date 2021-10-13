@@ -100,7 +100,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogError(this,string.Format("Email already confirmed for user {0}", context.Username));
                 return new HttpError(System.Net.HttpStatusCode.BadRequest, new InvalidOperationException("Account does not require email confirmation"));
 
-            } catch (PendingActivationException e) {
+            } catch (PendingActivationException) {
                 context.LogDebug(this,string.Format("Pending activation for user {0}", context.Username));
                 AuthenticationType umssoauthType = IfyWebContext.GetAuthenticationType(typeof(UmssoAuthenticationType));
                 var umssoUser = umssoauthType.GetUserProfile(context, HttpContext.Current.Request, false);

@@ -217,7 +217,7 @@ namespace Terradue.Tep {
 				path = path.TrimStart('/');
 				var index = path.Substring(0, path.IndexOf('/'));
 				return index;
-			}catch(Exception e){
+			}catch(Exception){
 				return null;
 			}
 		}
@@ -421,7 +421,7 @@ namespace Terradue.Tep {
 
             try {
                 appcached.Load();
-            } catch (Exception e) { }
+            } catch (Exception) { }
 
             var feed = new OwsContextAtomFeed();
             feed.Items = new List<OwsContextAtomEntry> { entry };
@@ -711,7 +711,7 @@ namespace Terradue.Tep {
 
             try {
                 appcached.Load();
-            } catch (Exception e) { }
+            } catch (Exception) { }
 
             appcached.Index = index;
             appcached.Feed = feed;

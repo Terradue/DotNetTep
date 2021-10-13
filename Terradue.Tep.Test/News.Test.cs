@@ -32,8 +32,6 @@ namespace Terradue.Tep.Test {
 
         }
 
-        private int NBCOMMUNITY_PUBLIC = 2;
-
         private void Init() {
 
             //Create twitter news

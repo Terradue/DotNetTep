@@ -40,7 +40,7 @@ namespace Terradue.Tep.WebServer {
             this.DynamicDbConnectionsGlobal = true;
         }
 
-        public static TepWebContext GetWebContext(PagePrivileges privileges){
+        public new static TepWebContext GetWebContext(PagePrivileges privileges){
             TepWebContext result = new TepWebContext (privileges);
             return result;
         }

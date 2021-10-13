@@ -136,12 +136,12 @@ namespace Terradue.Tep {
                                     if (uid == wps.Identifier) result.Add(wps);
                                 } else result.Add(wps);
                             }
-                        }catch(Exception e){
+                        }catch(Exception){
 
                         }
                     }
                 }
-            }catch(System.Net.WebException e){
+            }catch(System.Net.WebException){
             }
             return result;
         }
@@ -298,7 +298,7 @@ namespace Terradue.Tep {
                 wps = WpsProcessOfferingTep.FromIdentifier (context, identifier);
             } catch (UnauthorizedAccessException e) {
                 throw e;
-            } catch (Exception e) {
+            } catch (Exception) {
                 //wps is not stored in DB
                 string[] identifierParams = identifier.Split("-".ToCharArray());
                 if (identifierParams.Length == 3) {
@@ -430,7 +430,7 @@ namespace Terradue.Tep {
                         Items.Add(process);
                         items.Add(item);
                     }
-				} catch (Exception e) {
+				} catch (Exception) {
 					//we do nothing, we just dont add the process
 				}
             }
@@ -460,7 +460,7 @@ namespace Terradue.Tep {
                     foreach (WpsProcessOffering process in wps.GetWpsProcessOfferingsFromRemote()) {
                         processes.Add(process);
                     }
-                }catch (Exception e) {
+                }catch (Exception) {
 					//we do nothing, we just dont add the process
 				}
 			}

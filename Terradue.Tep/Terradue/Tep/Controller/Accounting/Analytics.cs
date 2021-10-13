@@ -553,7 +553,6 @@ namespace Terradue.Tep {
                             if (offering.Operations != null) {
                                 foreach (var operation in offering.Operations) {
                                     if (operation.Any != null && operation.Any.Length > 0) {
-                                        string datacontext = null;
                                         foreach (var any in operation.Any) {
                                             switch (any.Name) {
                                                 case "datacontext":

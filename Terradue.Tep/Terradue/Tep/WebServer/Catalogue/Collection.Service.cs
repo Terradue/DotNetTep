@@ -144,7 +144,6 @@ namespace Terradue.Tep.WebServer.Services {
         /// </summary>
         /// <param name="request">Request.</param>
         public object Delete(DeleteSerie request) {
-            WebSeries result;
 
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {

@@ -104,7 +104,6 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Put(SortFeature request) {
-            WebFeature result = null;
 
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
