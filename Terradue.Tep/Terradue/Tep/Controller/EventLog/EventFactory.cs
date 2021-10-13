@@ -14,6 +14,7 @@ using Terradue.Stars.Interface.Router.Translator;
 using Terradue.Stars.Services.Translator;
 using Terradue.Stars.Services.Credentials;
 using Terradue.Stars.Data.Translators;
+using System.Web;
 
 namespace Terradue.Tep {
     public class EventFactory
@@ -172,23 +173,40 @@ namespace Terradue.Tep {
                             (paramDictionary[p.Key] as List<string>).Add(p.Value);
                         }
 
-                        // add data input stac item
+                        string osUrl = null;
                         try
                         {
                             if (!string.IsNullOrEmpty(p.Value))
                             {
-                                var osuri = new Uri(p.Value);
-                                if (!(osuri.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
+                                var urib = new UriBuilder(p.Value);
+                                if (!(urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
 
-                                var atomFeed = AtomFeed.Load(XmlReader.Create(osuri.AbsolutePath));
-                                var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, osuri, credentials);
+                                var query = HttpUtility.ParseQueryString(urib.Query);
+                                query.Set("format", "atom");
+                                var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                                urib.Query = string.Join("&", queryString);
+                                osUrl = urib.Uri.AbsoluteUri;
+                            }
+                        }
+                        catch(Exception){}
+
+                        // add data input stac item
+                        if (!string.IsNullOrEmpty(osUrl))
+                        {
+                            try
+                            {                           
+                                var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
+                                var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
                                 var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
                                 var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
                                 var stacItem = stacNode.StacItem;
-                                stacItemDictionary.Add(item.Identifier, stacItem);
+                                stacItemDictionary.Add(item.Identifier, stacItem);                                
+                            }
+                            catch (Exception e)
+                            {
+                                context.LogError(job, "Log event stac item error : " + osUrl + " - " + e.Message);
                             }
                         }
-                        catch (Exception) { }
                     }
                     properties.Add("inputs", paramDictionary);
                     properties.Add("inputs_stac_item", stacItemDictionary);

@@ -32,9 +32,6 @@
     <Reference Include="Novell.Directory.Ldap"/>
   </ItemGroup>
   <ItemGroup>
-
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="ServiceStack" Version="3.9.71"/>
     <PackageReference Include="ServiceStack.Common" Version="3.9.71"/>
     <PackageReference Include="ServiceStack.Text" Version="3.9.71"/>
