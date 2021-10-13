@@ -163,7 +163,7 @@ namespace Terradue.Tep {
 
                     //add inputs
                     var paramDictionary = new Dictionary<string, object>();
-                    var stacItemDictionary = new Dictionary<string, object>();
+                    var stacItemList = new List<object>();
                     foreach (var p in job.Parameters)
                     {
                         if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
@@ -199,8 +199,7 @@ namespace Terradue.Tep {
                                 var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
                                 var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
                                 var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
-                                var stacItem = stacNode.StacItem;
-                                stacItemDictionary.Add(item.Identifier, stacItem);                                
+                                stacItemList.Add(stacNode.StacItem);
                             }
                             catch (Exception e)
                             {
@@ -209,7 +208,7 @@ namespace Terradue.Tep {
                         }
                     }
                     properties.Add("inputs", paramDictionary);
-                    properties.Add("inputs_stac_item", stacItemDictionary);
+                    properties.Add("inputs_stac_item", stacItemList);
                 }
 
                 var logevent = new Event
