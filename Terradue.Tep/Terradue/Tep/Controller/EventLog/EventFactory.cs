@@ -36,17 +36,22 @@ namespace Terradue.Tep {
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
 
-            using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+            try
             {
-                streamWriter.Write(json);
-                streamWriter.Flush();
-                streamWriter.Close();
+                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+                {
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                    streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
+                    using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
+                }
+            }catch(Exception e){
+                context.LogError(context, "Log event error (POST): " + e.Message);
             }
         }
 
-        public static void LogWpsJob(IfyContext context, WpsJob job, string message)
+        public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
         {
             if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
 
@@ -64,12 +69,12 @@ namespace Terradue.Tep {
             }
 
             if (logger != null){
-                var logevent = logger.GetLogEvent(job, message);
+                var logevent = await logger.GetLogEvent(job, message);
                 Log(context, logevent);
             }
         }
 
-        public static void LogUser(IfyContext context, UserTep usr, string eventid, string message)
+        public static async System.Threading.Tasks.Task LogUser(IfyContext context, UserTep usr, string eventid, string message)
         {
             if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
 
@@ -87,8 +92,8 @@ namespace Terradue.Tep {
             }
 
             if (logger != null){
-                var logevent = logger.GetLogEvent(usr, eventid, message);
-                Log(context, logevent);
+                var logevent = await logger.GetLogEvent(usr, eventid, message);
+                Log(context, logevent);               
             }
         }
     }
@@ -97,7 +102,7 @@ namespace Terradue.Tep {
     /******** WPS JOB ********/
     /*************************/
     public interface IEventJobLogger {
-        Event GetLogEvent(WpsJob job, string message);
+        System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message);
     }
 
     public class EventJobLoggerTep : IEventJobLogger {
@@ -134,7 +139,7 @@ namespace Terradue.Tep {
         /// Create a job event (metrics)
         /// </summary>
         /// <returns></returns>
-        public Event GetLogEvent(WpsJob job, string message = null){
+        public async System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message = null){            
             try
             {
                 var durations = new Dictionary<string, int>();
@@ -207,8 +212,8 @@ namespace Terradue.Tep {
                             }
                         }
                     }
-                    properties.Add("inputs", paramDictionary);
-                    properties.Add("inputs_stac_item", stacItemList);
+                    properties.Add("parameters", paramDictionary);
+                    properties.Add("inputs", stacItemList);
                 }
 
                 var logevent = new Event
@@ -243,7 +248,7 @@ namespace Terradue.Tep {
     /******** USER ********/
     /**********************/
     public interface IEventUserLogger {
-        Event GetLogEvent(UserTep usr, string eventid, string message);
+        System.Threading.Tasks.Task<Event> GetLogEvent(UserTep usr, string eventid, string message);
     }
 
     public class EventUserLoggerTep : IEventUserLogger {
@@ -257,7 +262,7 @@ namespace Terradue.Tep {
         /// Create a user event (metrics)
         /// </summary>
         /// <returns></returns>
-        public Event GetLogEvent(UserTep usr, string eventid, string message = null){
+        public async System.Threading.Tasks.Task<Event> GetLogEvent(UserTep usr, string eventid, string message = null){
             try
             {
                 var properties = new Dictionary<string, object>();
