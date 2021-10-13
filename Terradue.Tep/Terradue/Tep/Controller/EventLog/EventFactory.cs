@@ -14,6 +14,7 @@ using Terradue.Stars.Interface.Router.Translator;
 using Terradue.Stars.Services.Translator;
 using Terradue.Stars.Services.Credentials;
 using Terradue.Stars.Data.Translators;
+using System.Web;
 
 namespace Terradue.Tep {
     public class EventFactory
@@ -35,17 +36,22 @@ namespace Terradue.Tep {
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
 
-            using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+            try
             {
-                streamWriter.Write(json);
-                streamWriter.Flush();
-                streamWriter.Close();
+                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+                {
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                    streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
+                    using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
+                }
+            }catch(Exception e){
+                context.LogError(context, "Log event error (POST): " + e.Message);
             }
         }
 
-        public static void LogWpsJob(IfyContext context, WpsJob job, string message)
+        public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
         {
             if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
 
@@ -63,12 +69,12 @@ namespace Terradue.Tep {
             }
 
             if (logger != null){
-                var logevent = logger.GetLogEvent(job, message);
+                var logevent = await logger.GetLogEvent(job, message);
                 Log(context, logevent);
             }
         }
 
-        public static void LogUser(IfyContext context, UserTep usr, string eventid, string message)
+        public static async System.Threading.Tasks.Task LogUser(IfyContext context, UserTep usr, string eventid, string message)
         {
             if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
 
@@ -86,8 +92,8 @@ namespace Terradue.Tep {
             }
 
             if (logger != null){
-                var logevent = logger.GetLogEvent(usr, eventid, message);
-                Log(context, logevent);
+                var logevent = await logger.GetLogEvent(usr, eventid, message);
+                Log(context, logevent);               
             }
         }
     }
@@ -96,7 +102,7 @@ namespace Terradue.Tep {
     /******** WPS JOB ********/
     /*************************/
     public interface IEventJobLogger {
-        Event GetLogEvent(WpsJob job, string message);
+        System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message);
     }
 
     public class EventJobLoggerTep : IEventJobLogger {
@@ -133,7 +139,7 @@ namespace Terradue.Tep {
         /// Create a job event (metrics)
         /// </summary>
         /// <returns></returns>
-        public Event GetLogEvent(WpsJob job, string message = null){
+        public async System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message = null){            
             try
             {
                 var durations = new Dictionary<string, int>();
@@ -162,7 +168,7 @@ namespace Terradue.Tep {
 
                     //add inputs
                     var paramDictionary = new Dictionary<string, object>();
-                    var stacItemDictionary = new Dictionary<string, object>();
+                    var stacItemList = new List<object>();
                     foreach (var p in job.Parameters)
                     {
                         if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
@@ -172,26 +178,42 @@ namespace Terradue.Tep {
                             (paramDictionary[p.Key] as List<string>).Add(p.Value);
                         }
 
-                        // add data input stac item
+                        string osUrl = null;
                         try
                         {
                             if (!string.IsNullOrEmpty(p.Value))
                             {
-                                var osuri = new Uri(p.Value);
-                                if (!(osuri.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
+                                var urib = new UriBuilder(p.Value);
+                                if (!(urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
 
-                                var atomFeed = AtomFeed.Load(XmlReader.Create(osuri.AbsolutePath));
-                                var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, osuri, credentials);
-                                var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
-                                var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
-                                var stacItem = stacNode.StacItem;
-                                stacItemDictionary.Add(item.Identifier, stacItem);
+                                var query = HttpUtility.ParseQueryString(urib.Query);
+                                query.Set("format", "atom");
+                                var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                                urib.Query = string.Join("&", queryString);
+                                osUrl = urib.Uri.AbsoluteUri;
                             }
                         }
-                        catch (Exception) { }
+                        catch(Exception){}
+
+                        // add data input stac item
+                        if (!string.IsNullOrEmpty(osUrl))
+                        {
+                            try
+                            {                           
+                                var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
+                                var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
+                                var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
+                                var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
+                                stacItemList.Add(stacNode.StacItem);
+                            }
+                            catch (Exception e)
+                            {
+                                context.LogError(job, "Log event stac item error : " + osUrl + " - " + e.Message);
+                            }
+                        }
                     }
-                    properties.Add("inputs", paramDictionary);
-                    properties.Add("inputs_stac_item", stacItemDictionary);
+                    properties.Add("parameters", paramDictionary);
+                    properties.Add("inputs", stacItemList);
                 }
 
                 var logevent = new Event
@@ -226,7 +248,7 @@ namespace Terradue.Tep {
     /******** USER ********/
     /**********************/
     public interface IEventUserLogger {
-        Event GetLogEvent(UserTep usr, string eventid, string message);
+        System.Threading.Tasks.Task<Event> GetLogEvent(UserTep usr, string eventid, string message);
     }
 
     public class EventUserLoggerTep : IEventUserLogger {
@@ -240,7 +262,7 @@ namespace Terradue.Tep {
         /// Create a user event (metrics)
         /// </summary>
         /// <returns></returns>
-        public Event GetLogEvent(UserTep usr, string eventid, string message = null){
+        public async System.Threading.Tasks.Task<Event> GetLogEvent(UserTep usr, string eventid, string message = null){
             try
             {
                 var properties = new Dictionary<string, object>();
