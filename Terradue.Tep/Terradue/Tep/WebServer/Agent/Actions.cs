@@ -10,6 +10,9 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep {
     public class Actions {
 
+        /**********************************************************************/
+        /**********************************************************************/
+
         /// <summary>
         /// Updates the wps providers.
         /// </summary>
@@ -43,6 +46,9 @@ namespace Terradue.Tep {
             }
         }
 
+        /**********************************************************************/
+        /**********************************************************************/
+
         /// <summary>
         /// Cleans the deposit without transaction for more than x days
         /// </summary>
@@ -71,6 +77,9 @@ namespace Terradue.Tep {
             }
         }
 
+        /**********************************************************************/
+        /**********************************************************************/
+
         /// <summary>
         /// Refreshs the wpjob status.
         /// </summary>
@@ -86,10 +95,9 @@ namespace Terradue.Tep {
             foreach(var job in jobs){
                 string status = job.StringStatus;
                 try {
-                    var jobresponse = job.GetStatusLocationContent();
+                    var jobresponse = job.UpdateStatus();
                     if (jobresponse is ExecuteResponse) {
                         var execResponse = jobresponse as ExecuteResponse;
-                        job.UpdateStatusFromExecuteResponse(execResponse);
 
                         //if job status not updated and job is older than the max time allowed, we set as failed
                         if(
@@ -97,12 +105,15 @@ namespace Terradue.Tep {
                             & (DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime)
                         ){
                             job.Status = WpsJobStatus.FAILED;
+                            job.Logs = "Job did not complete before the max allowed time";
                         }
                         job.Store();
                     } else {
                         //if job is an exception or older than the max time allowed, we set as failed
                         if(jobresponse is ExceptionReport || DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {
                             job.Status = WpsJobStatus.FAILED;
+                            if (jobresponse is ExceptionReport) job.Logs = "Unknown exception";
+                            else job.Logs = "Job did not complete before the max allowed time";
                             job.Store();
                         }
                     }
@@ -110,6 +121,7 @@ namespace Terradue.Tep {
                     context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
                     if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
                         job.Status = WpsJobStatus.FAILED;
+                        job.Logs = "Job did not complete before the max allowed time";
                         job.Store();
                     } else {
                     }
@@ -119,6 +131,9 @@ namespace Terradue.Tep {
                 context.WriteInfo(string.Format("RefreshWpjobStatus -- job '{0}' -- status = {1} -> {2}", job.Identifier, status, job.StringStatus));
             }
         }
+
+        /**********************************************************************/
+        /**********************************************************************/
 
         /// <summary>
         /// Refreshs the wpjob result nb.
@@ -161,12 +176,18 @@ namespace Terradue.Tep {
                 context.WriteInfo(string.Format("RefreshWpjobResultNb -- job '{0}' -- status = {1} -> {2} results", job.Identifier, job.StringStatus, job.NbResults));
             }
         }
+
+        /**********************************************************************/
+        /**********************************************************************/
         
         public static void RefreshThematicAppsCache(IfyContext context) {
 			var appFactory = new ThematicAppCachedFactory(context);
 			appFactory.ForAgent = true;         
 			appFactory.RefreshCachedApps(false, true, true);
         }
+
+        /**********************************************************************/
+        /**********************************************************************/
 
     }
 }

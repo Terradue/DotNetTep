@@ -72,6 +72,9 @@ namespace Terradue.Tep {
         [EntityDataField("app_identifier")]
         public string AppIdentifier { get; set; }
 
+        [EntityDataField("logs")]
+        public string Logs { get; set; }
+
         [EntityDataField("access_key")]
         public string accesskey { get; protected set; }
         public string AccessKey {
@@ -353,6 +356,7 @@ namespace Terradue.Tep {
             newjob.WpsId = job.WpsId;
             newjob.WpsVersion = job.WpsVersion;
             newjob.WpsName = job.WpsName;
+            newjob.Logs = job.Logs;
             newjob.Store();
 
             newjob.CreatedTime = job.CreatedTime;
@@ -656,6 +660,7 @@ namespace Terradue.Tep {
                 this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
             }
 
+            //check execute response status
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
             else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
@@ -696,21 +701,39 @@ namespace Terradue.Tep {
                     }catch(Exception){}                                        
                     this.Status = WpsJobStatus.FAILED;
                     EventFactory.LogWpsJob(this.context, this, message);
+                    this.Logs = message;
                 }
                 else
                 {
                     this.Status = WpsJobStatus.FAILED;
                 }
             }
-            else this.Status = WpsJobStatus.NONE;
+            else
+            {
+                this.Status = WpsJobStatus.NONE;
+            }
 
-            try {
-                if (this.Status == WpsJobStatus.SUCCEEDED)
+            if (this.Status == WpsJobStatus.SUCCEEDED)
+            {
+                //get job end time
+                try 
                 {
                     var endtime = response.Status.creationTime.ToUniversalTime();
                     if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
                 }
-            }catch(Exception){}
+                catch(Exception){}
+
+                //get job ows url
+                try
+                {
+                    var ows_url = WpsJob.GetJobOwsUrl(response);
+                    if (!string.IsNullOrEmpty(ows_url))
+                    {
+                        this.OwsUrl = ows_url;
+                    }
+                }
+                catch (Exception){}
+            }
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
             //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
@@ -853,6 +876,29 @@ namespace Terradue.Tep {
                     }
                 }
             }
+        }
+
+        public object UpdateStatus(){
+            object jobresponse;
+            try {
+                jobresponse = this.GetStatusLocationContent();
+            }catch(Exception esl){
+                throw esl;
+            }
+            //if needed, add Accounting
+            if (context.GetConfigBooleanValue("accounting-enabled")){
+                var tFactory = new TransactionFactory(context);
+                tFactory.UpdateDepositTransactionFromEntityStatus(context, this, jobresponse);
+            }
+            if (jobresponse is ExecuteResponse)
+            {
+
+                var execResponse = jobresponse as ExecuteResponse;
+                this.UpdateStatusFromExecuteResponse(execResponse);
+                this.Store();
+            }
+
+            return jobresponse;
         }
 
         public object GetExecuteResponseFromWps3StatusInfo(IO.Swagger.Model.StatusInfo statusInfo) {

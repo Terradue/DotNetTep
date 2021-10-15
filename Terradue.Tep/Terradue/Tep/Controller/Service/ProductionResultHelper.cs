@@ -396,6 +396,32 @@ namespace Terradue.Tep {
         public static bool IsUrlRecastUrl(string url){
             return !string.IsNullOrEmpty(url) && url.StartsWith(recastBaseUrl);
         }
+
+        /// <summary>
+        /// Create ExecuteResponse for failed wps job
+        /// </summary>
+        /// <param name="wpsjob"></param>
+        /// <returns></returns>
+        public static ExecuteResponse CreateExecuteResponseForFailedWpsjob(WpsJob wpsjob)
+        {
+            ExecuteResponse response = new ExecuteResponse();
+            response.statusLocation = wpsjob.StatusLocation;
+
+            var uri = new Uri(wpsjob.StatusLocation);
+            response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
+            response.service = "WPS";
+            response.version = "1.0.0";
+
+            var exceptionReport = new ExceptionReport {
+                Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { wpsjob.Logs } } }
+            };
+            response.Status = new StatusType {
+                ItemElementName = ItemChoiceType.ProcessFailed,
+                Item = new ProcessFailedType { ExceptionReport = exceptionReport },
+                creationTime = wpsjob.CreatedTime
+            };
+            return response;
+        }
     }
 
 	[DataContract]

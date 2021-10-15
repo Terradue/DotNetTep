@@ -643,7 +643,7 @@ namespace Terradue.Tep.WebServer.Services {
             return new List<T2Accounting>();
         }
 
-        public object Get(GetResultsServlets request) {
+        public object Get(GetResultsServlets request) { 
             var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
             context.AccessLevel = EntityAccessLevel.Administrator;
             System.IO.Stream stream = new System.IO.MemoryStream();
@@ -667,20 +667,18 @@ namespace Terradue.Tep.WebServer.Services {
                 else if (wpsjob.Status == WpsJobStatus.COORDINATOR && ProductionResultHelper.IsUrlRecastUrl(wpsjob.StatusLocation)){
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 }
+                else if (wpsjob.Status == WpsJobStatus.FAILED){
+                    execResponse = ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(wpsjob);
+                }
                 else {
                     object jobresponse;
                     try {
-                        jobresponse = wpsjob.GetStatusLocationContent();
+                        jobresponse = wpsjob.UpdateStatus();
                     }catch(Exception esl){
                         throw esl;
                     }
-                    if (accountingEnabled){
-                        var tFactory = new TransactionFactory(context);
-                        tFactory.UpdateDepositTransactionFromEntityStatus(context, wpsjob, jobresponse);
-                    }
 
-                    if (jobresponse is HttpResult) return jobresponse;
-                    else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                    if (jobresponse is HttpResult) return jobresponse;                    
                     else if (jobresponse is ExceptionReport) {
                         stream = new System.IO.MemoryStream();
                         context.LogDebug(this, string.Format("Exception report ok"));
@@ -692,25 +690,11 @@ namespace Terradue.Tep.WebServer.Services {
                             context.LogError(this, string.Format(errormsg));
                             return new HttpError(errormsg, HttpStatusCode.BadRequest, exceptionReport.Exception[0].exceptionCode, exceptionReport.Exception[0].ExceptionText[0]);
                         }
-                    } else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
-
-					wpsjob.UpdateStatusFromExecuteResponse(execResponse);
-					wpsjob.Store();
+                    }
+                    else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
+                    else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 
                     execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
-
-                    //get job ows url
-                    if (wpsjob.Status == WpsJobStatus.SUCCEEDED) {
-                        try {
-                            var ows_url = WpsJob.GetJobOwsUrl(execResponse);
-                            if (!string.IsNullOrEmpty(ows_url)) {
-                                wpsjob.OwsUrl = ows_url;
-                                wpsjob.Store();
-                            }
-                        } catch (Exception e) {
-                            context.LogError(this, e.Message, e);
-                        }
-                    }
 
                     //get job recast response
                     try {
