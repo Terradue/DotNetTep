@@ -42,7 +42,7 @@ namespace Terradue.Tep.WebServer.Services {
 			IOpenSearchResultCollection result;
 			OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             HttpRequest httpRequest = HttpContext.Current.Request;         
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);         
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose); 
 
 			//first we get the communities the user can see
 			var communities = new EntityList<ThematicCommunity>(context);
@@ -157,7 +157,7 @@ namespace Terradue.Tep.WebServer.Services {
 			IOpenSearchResultCollection result;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             HttpRequest httpRequest = HttpContext.Current.Request;         
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);         
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);    
 
 			if (request.cache) {
 
@@ -240,7 +240,8 @@ namespace Terradue.Tep.WebServer.Services {
 
 			IOpenSearchResultCollection result;
 			OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
-			Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+			var httpRequest = HttpContext.Current.Request;
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 			List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 			var settings = MasterCatalogue.OpenSearchFactorySettings;
 			OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
@@ -400,7 +401,7 @@ namespace Terradue.Tep.WebServer.Services {
                             try {
                                 var dm = Domain.FromIdentifier(context, app.WpsServiceDomain);
                                 services.SetFilter("DomainId", dm.Id.ToString());
-                            }catch(Exception e) {
+                            }catch(Exception) {
                                 services.SetFilter("DomainId", "0");
                             }
                         }

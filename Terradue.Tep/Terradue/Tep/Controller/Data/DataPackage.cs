@@ -224,7 +224,7 @@ namespace Terradue.Tep {
             result.Kind = KINDRESOURCESETUSER;
             try {
                 result.Load();
-            } catch (Exception e) {
+            } catch (Exception) {
                 //we create it
                 result.Identifier = Guid.NewGuid().ToString();
                 result.Name = "temporary workspace";
@@ -311,7 +311,7 @@ namespace Terradue.Tep {
                 DataPackage.FromIdentifier(context, identifier);
             } catch (EntityUnauthorizedException) {
                 //next
-            } catch (EntityNotFoundException e) {
+            } catch (EntityNotFoundException) {
                 return identifier;
             }
             for (int i = 0; i < 1000; i++){
@@ -320,7 +320,7 @@ namespace Terradue.Tep {
                     DataPackage.FromIdentifier(context, uname);
                 } catch (EntityUnauthorizedException) {
 					//next
-                }catch(EntityNotFoundException e){
+                }catch(EntityNotFoundException){
                     return uname;
                 }
 			}
@@ -533,7 +533,7 @@ namespace Terradue.Tep {
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier);
             try {
                 atomEntry = new AtomItem(identifier, name, null, id.ToString(), DateTime.UtcNow);
-            } catch (Exception e) {
+            } catch (Exception) {
                 atomEntry = new AtomItem();
             }
 

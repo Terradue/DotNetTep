@@ -47,7 +47,7 @@ namespace Terradue.Tep {
                 if (base.Domain == null) {
                     try {
                         base.Domain = GetPrivateDomain();
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         //bla
                     }
                 }
@@ -984,7 +984,7 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public NameValueCollection GetOpenSearchParameters() {
+        public new NameValueCollection GetOpenSearchParameters() {
             return OpenSearchFactory.GetBaseOpenSearchParameter();
         }
 

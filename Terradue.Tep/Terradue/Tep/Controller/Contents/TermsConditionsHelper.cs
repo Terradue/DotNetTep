@@ -24,7 +24,7 @@ namespace Terradue.Tep {
             string sql = string.Format("INSERT INTO termsconditions (identifier,id_usr) VALUES ('{0}',{1});", identifier, context.UserId);
             try {
                 context.Execute(sql);
-            }catch(Exception e) {
+            }catch(Exception) {
                 //T&C already exists
             }
         }

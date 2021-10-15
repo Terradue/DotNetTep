@@ -199,7 +199,7 @@ namespace Terradue.Tep.Controller {
                         return response;
                     }
                 }
-            } catch (Exception e) {
+            } catch (Exception) {
                 return null;
             }
         }
@@ -414,7 +414,7 @@ namespace Terradue.Tep.Controller {
                     if (httpResponse.StatusCode == HttpStatusCode.OK) return true;
                     else return false;
                 }
-            } catch (Exception e) {
+            } catch (Exception) {
                 return false;
             }
 
@@ -437,7 +437,7 @@ namespace Terradue.Tep.Controller {
                         return JsonSerializer.DeserializeFromString<Dictionary<string, GuacamoleConnection>>(result);
                     }
                 }
-            } catch (Exception e) {
+            } catch (Exception) {
                 return null;
             }
         }
@@ -490,7 +490,7 @@ namespace Terradue.Tep.Controller {
                         return JsonSerializer.DeserializeFromString<GuacamoleConnection>(result);
                     }
                 }
-            } catch (Exception e) {
+            } catch (Exception) {
                 return null;
             }
         }

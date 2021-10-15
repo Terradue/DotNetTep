@@ -91,7 +91,7 @@ namespace Terradue.Tep.WebServer.Services {
             if (string.IsNullOrEmpty(qs["id"]) && string.IsNullOrEmpty(qs["uid"]) && string.IsNullOrEmpty(qs["archivestatus"]))
                 qs.Set("archivestatus", (int)WpsJobArchiveStatus.NOT_ARCHIVED + "");
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query(wpsjobs, qs, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobs, osr);
@@ -145,7 +145,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 HttpRequest httpRequest = HttpContext.Current.Request;
-                var type = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
                 var nvc = httpRequest.QueryString;
 
                 if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
@@ -300,7 +300,7 @@ namespace Terradue.Tep.WebServer.Services {
             NameValueCollection nvc = new NameValueCollection();
             nvc.Add("id", job.Identifier);
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request.QueryString, HttpContext.Current.Request.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query(wpsjobs, nvc, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobs, osr);
@@ -338,7 +338,7 @@ namespace Terradue.Tep.WebServer.Services {
             NameValueCollection nvc = new NameValueCollection();
             nvc.Add("id", job.Identifier);
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request.QueryString, HttpContext.Current.Request.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query(wpsjobs, nvc, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsjobs, osr);
@@ -591,7 +591,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var jira = new JiraClient(context);
                     try {
                         jira.CreateServiceDeskIssue(issue);
-                    }catch(Exception e){
+                    }catch(Exception){
                         issue.raiseOnBehalfOf = job.Owner.Email;
                         jira.CreateServiceDeskIssue(issue);
                     }

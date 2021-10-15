@@ -34,7 +34,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 
                 List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
 

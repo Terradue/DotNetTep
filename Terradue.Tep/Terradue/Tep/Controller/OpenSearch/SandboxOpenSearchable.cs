@@ -7,13 +7,11 @@ namespace Terradue.Tep.OpenSearch
 {
     class SandboxOpenSearchable : GenericOpenSearchable
     {
-        OpenSearchEngine openSearchEngine;
         public SandboxOpenSearchInformation SandboxOpenSearchInformation { get; private set; }
 
         private SandboxOpenSearchable(SandboxOpenSearchInformation sosi, OpenSearchableFactorySettings settings) : base(sosi.Url, settings)
         {
             this.SandboxOpenSearchInformation = sosi;
-            this.openSearchEngine = openSearchEngine;
         }
 
         public static SandboxOpenSearchable CreateSandboxOpenSearchable(OpenSearchUrl osUrl, OpenSearchableFactorySettings settings){

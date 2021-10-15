@@ -1,4 +1,4 @@
--- VERSION 1.2.23
+-- VERSION 1.3
 
 USE $MAIN$;
 
@@ -463,4 +463,8 @@ INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('wps3input-downloadorigin', 'string', 'wps3 input fixed download origin value', 'wps3 input fixed download origin value', '[terradue]', '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('cookieID-token-id', 'string', 'cookieID-token-id value', 'cookieID-token-id value', 'oauthtoken_id', '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-notoken-endsession-enabled', 'bool', 'Tells if we enable the end of session in case of sso token not valid anymore', 'Tells if we enable the end of session in case of sso token not valid anymore', 'true', '1');
+-- RESULT
+
+-- Add wpsjob logs
+ALTER TABLE wpsjob ADD COLUMN `logs` TEXT NULL DEFAULT NULL;
 -- RESULT

@@ -163,7 +163,7 @@ namespace Terradue.Tep.WebServer.Services
             else
                 format = Request.QueryString ["format"];
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query (domains, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (domains, osr);

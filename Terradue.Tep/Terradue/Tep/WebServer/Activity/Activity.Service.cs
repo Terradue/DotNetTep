@@ -51,7 +51,7 @@ namespace Terradue.Tep.WebServer.Services {
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
 
             activities.Identifier = "activity";
@@ -100,7 +100,7 @@ namespace Terradue.Tep.WebServer.Services {
             var qs = new NameValueCollection(Request.QueryString);
             foreach (var filter in activities.FilterValues) qs.Set("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query (activities, qs, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (activities, osr);
@@ -115,7 +115,7 @@ namespace Terradue.Tep.WebServer.Services {
             HttpRequest httpRequest = HttpContext.Current.Request;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest (httpRequest, ose);
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
             IOpenSearchResultCollection osr = ose.Query (activities, httpRequest.QueryString, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks (activities, osr);

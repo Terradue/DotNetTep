@@ -170,7 +170,7 @@ namespace Terradue.Tep.WebServer {
         /// </summary>
         /// <returns>The entity.</returns>
         /// <param name="context">Context.</param>
-        public new DataPackage ToEntity(IfyContext context, DataPackage input){
+        public DataPackage ToEntity(IfyContext context, DataPackage input){
             DataPackage result = (input == null ? new DataPackage(context) : input);
 
             result.Name = this.Name;

@@ -41,7 +41,7 @@ namespace Terradue.Tep {
         /// </summary>
         /// <value>The name.</value>
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
-        public string Name {
+        public new string Name {
             get;
             set;
         }

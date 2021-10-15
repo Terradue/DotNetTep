@@ -79,7 +79,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 var ose = MasterCatalogue.OpenSearchEngine;
 
-                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
                 result = ose.Query(transactions, httpRequest.QueryString, responseType);
 
                 OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(transactions, result);

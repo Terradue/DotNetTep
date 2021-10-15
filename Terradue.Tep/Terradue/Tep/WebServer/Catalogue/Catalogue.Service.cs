@@ -51,7 +51,6 @@ namespace Terradue.Tep.WebServer.Services
 				Hashtable newUrls = new Hashtable();
 				UriBuilder urib;
 				NameValueCollection query = new NameValueCollection();
-				string[] queryString;
 
 				urib = new UriBuilder( baseUrl.ToString() );
 
@@ -169,7 +168,7 @@ namespace Terradue.Tep.WebServer.Services
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
                 ose.DefaultTimeOut = 60000;
 
-                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 
                 result = ose.Query(serie, httpRequest.QueryString, type);
 
@@ -212,7 +211,7 @@ namespace Terradue.Tep.WebServer.Services
                 collections.AddSort("Name",SortDirection.Ascending);
 				OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-				Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
+				Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 				result = ose.Query(collections, httpRequest.QueryString, responseType);
 
 				context.Close ();
@@ -240,7 +239,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 try{
                     datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
-                }catch(Exception e){
+                }catch(Exception){
                     if(request.Key != null) {//or if public
                         context.AccessLevel = EntityAccessLevel.Administrator;
                         datapackage = DataPackage.FromIdentifier(context, request.DataPackageId);
@@ -259,7 +258,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request,ose);
+                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request.QueryString, HttpContext.Current.Request.Headers, ose);
 
                 result = ose.Query(datapackage, Request.QueryString, responseType);
 
@@ -326,8 +325,8 @@ namespace Terradue.Tep.WebServer.Services
                 var qs = new NameValueCollection(Request.QueryString);
                 foreach (var filter in datapackages.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
-                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest, ose);
-                result = ose.Query(datapackages, qs, responseType);
+                Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
+                result = ose.Query(datapackages, qs, type);
 
                 context.Close();
 

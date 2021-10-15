@@ -74,7 +74,6 @@ namespace Terradue.Tep {
                 
             //load providers from Cloud Provider
             CloudWpsFactory wpsFinder = new CloudWpsFactory(context);
-            List<WpsProvider> provs = null;
             try{
                 foreach (WpsProvider prov in wpsFinder.GetWPSFromVMs()) {
                     try{

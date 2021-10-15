@@ -461,7 +461,7 @@ namespace Terradue.Tep.WebServer.Services
 
                 OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
-                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request,ose);
+                Type responseType = OpenSearchFactory.ResolveTypeFromRequest(HttpContext.Current.Request.QueryString, HttpContext.Current.Request.Headers, ose);
 
                 List<Terradue.OpenSearch.IOpenSearchable> osentities = new List<Terradue.OpenSearch.IOpenSearchable>();
                 osentities.AddRange(datapackage.GetOpenSearchableArray());
@@ -489,7 +489,6 @@ namespace Terradue.Tep.WebServer.Services
         /// <param name="request">Request.</param>
         public object Get(DataPackageDescriptionDefaultRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            IOpenSearchResultCollection result = null;
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/data/package/default/description GET"));
@@ -506,8 +505,6 @@ namespace Terradue.Tep.WebServer.Services
                 context.Close();
                 throw e;
             }
-
-            return new HttpResult(result.SerializeToString(), result.ContentType);
         }
 
 		/// <summary>

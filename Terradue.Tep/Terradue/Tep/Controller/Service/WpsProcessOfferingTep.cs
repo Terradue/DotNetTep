@@ -113,7 +113,7 @@ namespace Terradue.Tep {
                 WpsProvider wpsprovider = null;
                 try {
                     wpsprovider = WpsProvider.FromBaseUrl(context, providerBaseUrl);
-                } catch (System.Exception e) {
+                } catch (System.Exception) {
                     if (createProviderIfNotFound) {
                         var urip = new Uri(providerBaseUrl);
                         wpsprovider = new WpsProvider(context);

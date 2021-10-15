@@ -45,7 +45,7 @@ namespace Terradue.Tep.WebServer.Services
                 wsContext.LogDebug(this,string.Format("logout to " + redirect));
                 wsContext.EndSession();
                 wsContext.Close();
-            } catch (ThreadAbortException e) {
+            } catch (ThreadAbortException) {
 			} catch (Exception e){
                 wsContext.LogError(this, e.Message);
                 wsContext.Close();
