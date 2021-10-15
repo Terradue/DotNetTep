@@ -10,6 +10,9 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep {
     public class Actions {
 
+        /**********************************************************************/
+        /**********************************************************************/
+
         /// <summary>
         /// Updates the wps providers.
         /// </summary>
@@ -43,6 +46,9 @@ namespace Terradue.Tep {
             }
         }
 
+        /**********************************************************************/
+        /**********************************************************************/
+
         /// <summary>
         /// Cleans the deposit without transaction for more than x days
         /// </summary>
@@ -70,6 +76,9 @@ namespace Terradue.Tep {
                 }
             }
         }
+
+        /**********************************************************************/
+        /**********************************************************************/
 
         /// <summary>
         /// Refreshs the wpjob status.
@@ -120,6 +129,9 @@ namespace Terradue.Tep {
             }
         }
 
+        /**********************************************************************/
+        /**********************************************************************/
+
         /// <summary>
         /// Refreshs the wpjob result nb.
         /// </summary>
@@ -161,12 +173,38 @@ namespace Terradue.Tep {
                 context.WriteInfo(string.Format("RefreshWpjobResultNb -- job '{0}' -- status = {1} -> {2} results", job.Identifier, job.StringStatus, job.NbResults));
             }
         }
+
+        /**********************************************************************/
+        /**********************************************************************/
         
         public static void RefreshThematicAppsCache(IfyContext context) {
 			var appFactory = new ThematicAppCachedFactory(context);
 			appFactory.ForAgent = true;         
 			appFactory.RefreshCachedApps(false, true, true);
         }
+
+        /**********************************************************************/
+        /**********************************************************************/
+
+        public static void JoBStatusPolling(IfyContext context){
+            //get all running jobs
+            var jobs = new EntityList<WpsJob>(context);
+            jobs.SetFilter("Status", (int)WpsJobStatus.STARTED + "," + (int)WpsJobStatus.ACCEPTED);
+            jobs.Load();
+            context.WriteInfo(string.Format("JoBStatusPolling -- found {0} jobs to check", jobs.Count));
+            foreach (var job in jobs) {
+                var oldstatus = job.StringStatus;
+                try{
+                    job.UpdateStatus();
+                } catch (Exception e) {
+                    context.WriteError(string.Format("JoBStatusPolling -- job '{1}'-- '{0}'", e.Message, job.Identifier));
+                }
+                context.WriteInfo(string.Format("JoBStatusPolling -- job '{0}' -- status = {1} -> {2}", job.Identifier, oldstatus, job.StringStatus));
+            }
+        }
+
+        /**********************************************************************/
+        /**********************************************************************/
 
     }
 }
