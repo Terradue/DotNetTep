@@ -23,18 +23,35 @@ namespace Terradue.Tep {
 
         public static void Log(IfyContext context, Event log)
         {
-            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
-
-            string logUrl = EventLogConfig.Settings["baseurl"].Value;
-            if (string.IsNullOrEmpty(logUrl)) return;
-
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(logUrl);
-            webRequest.Method = "POST";
-            webRequest.Accept = "application/json";
-            webRequest.ContentType = "application/json";
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0 || string.IsNullOrEmpty(EventLogConfig.Settings["baseurl"].Value))
+                throw new Exception("Missing event log configuration in web.config");
 
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
+            
+            // var settings = new ConnectionSettings(new Uri(EventLogConfig.Settings["baseurl"].Value));
+            
+            // if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
+            //     settings.ApiKeyAuthentication(new Elasticsearch.Net.ApiKeyAuthenticationCredentials(EventLogConfig.Settings["auth_apikey"].Value));
+            // else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
+            //     settings.BasicAuthentication(EventLogConfig.Settings["auth_username"].Value, EventLogConfig.Settings["auth_password"].Value);                
+
+            // var client = new ElasticClient(settings);
+            // var response = client.Index(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
+
+            var esUrib = new UriBuilder(EventLogConfig.Settings["baseurl"].Value);
+            esUrib.Path = string.Format("{0}/_doc", EventLogConfig.Settings["index"].Value);
+            if(EventLogConfig.Settings["pipeline"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["pipeline"].Value)) 
+                esUrib.Query =  string.Format("pipeline={0}", EventLogConfig.Settings["pipeline"].Value);
+            
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(esUrib.Uri.AbsoluteUri);
+            webRequest.Method = "POST";
+            webRequest.Accept = "application/json";
+            webRequest.ContentType = "application/json";
+            if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
+                webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + EventLogConfig.Settings["auth_apikey"].Value);
+            else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
+                webRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(EventLogConfig.Settings["auth_username"].Value + ":" + EventLogConfig.Settings["auth_password"].Value)));
 
             try
             {
@@ -49,6 +66,7 @@ namespace Terradue.Tep {
             }catch(Exception e){
                 context.LogError(context, "Log event error (POST): " + e.Message);
             }
+
         }
 
         public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
@@ -219,7 +237,6 @@ namespace Terradue.Tep {
                 var logevent = new Event
                 {
                     EventId = GetEventIdForWpsJob(job.Status),
-                    Timestamp = DateTime.UtcNow,
                     Project = EventFactory.EventLogConfig.Settings["project"].Value,
                     Status = job.StringStatus,
                     Durations = durations,
@@ -272,7 +289,6 @@ namespace Terradue.Tep {
                 var logevent = new Event
                 {
                     EventId = eventid,
-                    Timestamp = DateTime.UtcNow,
                     Project = EventFactory.EventLogConfig.Settings["project"].Value,
                     Status = usr.Level.ToString(),
                     // Durations = durations,
@@ -302,9 +318,6 @@ namespace Terradue.Tep {
     {
         [JsonProperty("event_id")]
         public string EventId { get; set; }
-
-        [JsonProperty("timestamp")]
-        public DateTime Timestamp { get; set; }
 
         [JsonProperty("item")]
         public EventItem Item { get; set; }
