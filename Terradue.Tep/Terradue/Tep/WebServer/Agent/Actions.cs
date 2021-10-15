@@ -95,10 +95,9 @@ namespace Terradue.Tep {
             foreach(var job in jobs){
                 string status = job.StringStatus;
                 try {
-                    var jobresponse = job.GetStatusLocationContent();
+                    var jobresponse = job.UpdateStatus();
                     if (jobresponse is ExecuteResponse) {
                         var execResponse = jobresponse as ExecuteResponse;
-                        job.UpdateStatusFromExecuteResponse(execResponse);
 
                         //if job status not updated and job is older than the max time allowed, we set as failed
                         if(
@@ -106,12 +105,15 @@ namespace Terradue.Tep {
                             & (DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime)
                         ){
                             job.Status = WpsJobStatus.FAILED;
+                            job.Logs = "Job did not complete before the max allowed time";
                         }
                         job.Store();
                     } else {
                         //if job is an exception or older than the max time allowed, we set as failed
                         if(jobresponse is ExceptionReport || DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {
                             job.Status = WpsJobStatus.FAILED;
+                            if (jobresponse is ExceptionReport) job.Logs = "Unknown exception";
+                            else job.Logs = "Job did not complete before the max allowed time";
                             job.Store();
                         }
                     }
@@ -119,6 +121,7 @@ namespace Terradue.Tep {
                     context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
                     if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
                         job.Status = WpsJobStatus.FAILED;
+                        job.Logs = "Job did not complete before the max allowed time";
                         job.Store();
                     } else {
                     }
@@ -181,26 +184,6 @@ namespace Terradue.Tep {
 			var appFactory = new ThematicAppCachedFactory(context);
 			appFactory.ForAgent = true;         
 			appFactory.RefreshCachedApps(false, true, true);
-        }
-
-        /**********************************************************************/
-        /**********************************************************************/
-
-        public static void JoBStatusPolling(IfyContext context){
-            //get all running jobs
-            var jobs = new EntityList<WpsJob>(context);
-            jobs.SetFilter("Status", (int)WpsJobStatus.STARTED + "," + (int)WpsJobStatus.ACCEPTED);
-            jobs.Load();
-            context.WriteInfo(string.Format("JoBStatusPolling -- found {0} jobs to check", jobs.Count));
-            foreach (var job in jobs) {
-                var oldstatus = job.StringStatus;
-                try{
-                    job.UpdateStatus();
-                } catch (Exception e) {
-                    context.WriteError(string.Format("JoBStatusPolling -- job '{1}'-- '{0}'", e.Message, job.Identifier));
-                }
-                context.WriteInfo(string.Format("JoBStatusPolling -- job '{0}' -- status = {1} -> {2}", job.Identifier, oldstatus, job.StringStatus));
-            }
         }
 
         /**********************************************************************/

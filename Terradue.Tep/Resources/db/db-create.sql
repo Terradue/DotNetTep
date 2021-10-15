@@ -465,6 +465,6 @@ INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-notoken-endsession-enabled', 'bool', 'Tells if we enable the end of session in case of sso token not valid anymore', 'Tells if we enable the end of session in case of sso token not valid anymore', 'true', '1');
 -- RESULT
 
--- Adding Agent action...\
-INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`) VALUES ('JoBStatusPolling', 'WPS job status polling', 'This action regularly checks for wps job status and update it', 'Terradue.Tep.Actions, Terradue.Tep', 'JoBStatusPolling',1);
+-- Add wpsjob logs
+ALTER TABLE wpsjob ADD COLUMN `logs` TEXT NULL DEFAULT NULL;
 -- RESULT
