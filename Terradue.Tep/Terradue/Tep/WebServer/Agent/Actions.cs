@@ -94,41 +94,43 @@ namespace Terradue.Tep {
             context.WriteInfo(string.Format("RefreshWpjobStatus -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
             foreach(var job in jobs){
                 string status = job.StringStatus;
-                try {
-                    var jobresponse = job.UpdateStatus();
-                    if (jobresponse is ExecuteResponse) {
-                        var execResponse = jobresponse as ExecuteResponse;
+                if(job.Status != WpsJobStatus.FAILED && job.Status != WpsJobStatus.STAGED && job.Status != WpsJobStatus.COORDINATOR){
+                    try {
+                        var jobresponse = job.UpdateStatus();
+                        if (jobresponse is ExecuteResponse) {
+                            var execResponse = jobresponse as ExecuteResponse;
 
-                        //if job status not updated and job is older than the max time allowed, we set as failed
-                        if(
-                            (job.Status == WpsJobStatus.ACCEPTED || job.Status == WpsJobStatus.STARTED || job.Status == WpsJobStatus.PAUSED || job.Status == WpsJobStatus.NONE)
-                            & (DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime)
-                        ){
+                            //if job status not updated and job is older than the max time allowed, we set as failed
+                            if (DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime){
+                                job.Status = WpsJobStatus.FAILED;
+                                job.Logs = "Job did not complete before the max allowed time";
+                                EventFactory.LogWpsJob(context, job, job.Logs);
+                            }
+                            job.Store();
+                        } else {
+                            //if job is an exception or older than the max time allowed, we set as failed
+                            if(jobresponse is ExceptionReport || DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {
+                                job.Status = WpsJobStatus.FAILED;
+                                if (jobresponse is ExceptionReport) job.Logs = "Unknown exception";
+                                else job.Logs = "Job did not complete before the max allowed time";
+                                job.Store();
+                                EventFactory.LogWpsJob(context, job, job.Logs);
+                            }
+                        }
+                    }catch(WpsProxyException e){
+                        context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
+                        if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
                             job.Status = WpsJobStatus.FAILED;
                             job.Logs = "Job did not complete before the max allowed time";
-                        }
-                        job.Store();
-                    } else {
-                        //if job is an exception or older than the max time allowed, we set as failed
-                        if(jobresponse is ExceptionReport || DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {
-                            job.Status = WpsJobStatus.FAILED;
-                            if (jobresponse is ExceptionReport) job.Logs = "Unknown exception";
-                            else job.Logs = "Job did not complete before the max allowed time";
+                            EventFactory.LogWpsJob(context, job, job.Logs);
                             job.Store();
+                        } else {
                         }
+                    }catch(Exception e){
+                        context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
                     }
-                }catch(WpsProxyException e){
-                    context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
-                    if (DateTime.UtcNow.AddDays(- maxDaysJobRefresh) > job.CreatedTime) {//if job is older than a month and makes an exception, we set as failed
-                        job.Status = WpsJobStatus.FAILED;
-                        job.Logs = "Job did not complete before the max allowed time";
-                        job.Store();
-                    } else {
-                    }
-                }catch(Exception e){
-                    context.WriteError(string.Format("RefreshWpjobStatus -- job '{1}'-- '{0}'", e.Message, job.Identifier));
+                    context.WriteInfo(string.Format("RefreshWpjobStatus -- job '{0}' -- status = {1} -> {2}", job.Identifier, status, job.StringStatus));
                 }
-                context.WriteInfo(string.Format("RefreshWpjobStatus -- job '{0}' -- status = {1} -> {2}", job.Identifier, status, job.StringStatus));
             }
         }
 
