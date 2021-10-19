@@ -15,6 +15,7 @@ using Terradue.Stars.Services.Translator;
 using Terradue.Stars.Services.Credentials;
 using Terradue.Stars.Data.Translators;
 using System.Web;
+using Nest;
 
 namespace Terradue.Tep {
     public class EventFactory
@@ -29,16 +30,32 @@ namespace Terradue.Tep {
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
             
-            // var settings = new ConnectionSettings(new Uri(EventLogConfig.Settings["baseurl"].Value));
+            if (!LogWithNest(context, log)) LogDirect(context, json);
+        }
+
+        private static bool LogWithNest(IfyContext context, Event log)
+        {                        
+            var settings = new ConnectionSettings(new Uri(EventLogConfig.Settings["baseurl"].Value));
             
-            // if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
-            //     settings.ApiKeyAuthentication(new Elasticsearch.Net.ApiKeyAuthenticationCredentials(EventLogConfig.Settings["auth_apikey"].Value));
-            // else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
-            //     settings.BasicAuthentication(EventLogConfig.Settings["auth_username"].Value, EventLogConfig.Settings["auth_password"].Value);                
+            if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
+                settings.ApiKeyAuthentication(new Elasticsearch.Net.ApiKeyAuthenticationCredentials(EventLogConfig.Settings["auth_apikey"].Value));
+            else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
+                settings.BasicAuthentication(EventLogConfig.Settings["auth_username"].Value, EventLogConfig.Settings["auth_password"].Value);                
 
-            // var client = new ElasticClient(settings);
-            // var response = client.Index(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
+            var client = new ElasticClient(settings);
+            try{
+                var response = client.Index(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
+                context.LogError(context, "Log event response: " + response.DebugInformation);
+                if(string.IsNullOrEmpty(response.Id)) return false;
+            }catch(Exception e){
+                context.LogError(context, "Log event error  (POST): " + e.Message);
+                return false;
+            }
+            return true;
+        }
 
+        public static void LogDirect(IfyContext context, string json)
+        {
             var esUrib = new UriBuilder(EventLogConfig.Settings["baseurl"].Value);
             esUrib.Path = string.Format("{0}/_doc", EventLogConfig.Settings["index"].Value);
             if(EventLogConfig.Settings["pipeline"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["pipeline"].Value)) 
@@ -49,7 +66,7 @@ namespace Terradue.Tep {
             webRequest.Accept = "application/json";
             webRequest.ContentType = "application/json";
             if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
-                webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + EventLogConfig.Settings["auth_apikey"].Value);
+                webRequest.Headers.Set(HttpRequestHeader.Authorization, "ApiKey " + EventLogConfig.Settings["auth_apikey"].Value);
             else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
                 webRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(EventLogConfig.Settings["auth_username"].Value + ":" + EventLogConfig.Settings["auth_password"].Value)));
 
@@ -66,7 +83,6 @@ namespace Terradue.Tep {
             }catch(Exception e){
                 context.LogError(context, "Log event error (POST): " + e.Message);
             }
-
         }
 
         public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
@@ -133,21 +149,21 @@ namespace Terradue.Tep {
         protected string GetEventIdForWpsJob(WpsJobStatus status){
             switch (status) {
                 case WpsJobStatus.NONE:
-                    return "job_main_processing";
+                    return "portal_job_main_processing";
                 case WpsJobStatus.ACCEPTED:
-                    return "job_accepted_main_processing";
+                    return "portal_job_accepted_main_processing";
                 case WpsJobStatus.STARTED:
-                    return "job_start_main_processing";
+                    return "portal_job_start_main_processing";
                 case WpsJobStatus.PAUSED:
-                    return "job_pause_main_processing";
+                    return "portal_job_pause_main_processing";
                 case WpsJobStatus.SUCCEEDED:
-                    return "job_end_main_processing";
+                    return "portal_job_end_main_processing";
                 case WpsJobStatus.STAGED:
-                    return "job_end_main_processing";
+                    return "portal_job_end_main_processing";
                 case WpsJobStatus.FAILED:
-                    return "job_end_main_processing";
+                    return "portal_job_end_main_processing";
                 case WpsJobStatus.COORDINATOR:
-                    return "job_coordinator_main_processing";
+                    return "portal_job_coordinator_main_processing";
                 default:
                     return null;
             }
