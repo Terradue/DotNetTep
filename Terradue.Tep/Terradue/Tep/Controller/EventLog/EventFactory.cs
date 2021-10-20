@@ -35,6 +35,8 @@ namespace Terradue.Tep {
 
         private static bool LogWithNest(IfyContext context, Event log)
         {                        
+            if (EventLogConfig.Settings["use_nest_logger"] != null && EventLogConfig.Settings["use_nest_logger"].Value == "false") return false;
+            
             var settings = new ConnectionSettings(new Uri(EventLogConfig.Settings["baseurl"].Value));
             
             if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
@@ -45,7 +47,7 @@ namespace Terradue.Tep {
             var client = new ElasticClient(settings);
             try{
                 var response = client.Index(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
-                context.LogError(context, "Log event response: " + response.DebugInformation);
+                context.LogDebug(context, string.Format("Log event response: (ID={0}) {1}", response.Id, response.DebugInformation));
                 if(string.IsNullOrEmpty(response.Id)) return false;
             }catch(Exception e){
                 context.LogError(context, "Log event error  (POST): " + e.Message);
