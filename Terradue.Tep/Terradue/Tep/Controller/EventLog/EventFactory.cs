@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Xml;
 using Newtonsoft.Json;
 using Terradue.OpenSearch.Result;
@@ -29,14 +28,7 @@ namespace Terradue.Tep {
 
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
-            
-            if (!LogWithNest(context, log)) LogDirect(context, json);
-        }
-
-        private static bool LogWithNest(IfyContext context, Event log)
-        {                        
-            if (EventLogConfig.Settings["use_nest_logger"] != null && EventLogConfig.Settings["use_nest_logger"].Value == "false") return false;
-            
+                                             
             var settings = new ConnectionSettings(new Uri(EventLogConfig.Settings["baseurl"].Value));
             
             if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
@@ -48,44 +40,41 @@ namespace Terradue.Tep {
             try{
                 var response = client.Index(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
                 context.LogDebug(context, string.Format("Log event response: (ID={0}) {1}", response.Id, response.DebugInformation));
-                if(string.IsNullOrEmpty(response.Id)) return false;
             }catch(Exception e){
                 context.LogError(context, "Log event error  (POST): " + e.Message);
-                return false;
             }
-            return true;
         }
 
-        public static void LogDirect(IfyContext context, string json)
-        {
-            var esUrib = new UriBuilder(EventLogConfig.Settings["baseurl"].Value);
-            esUrib.Path = string.Format("{0}/_doc", EventLogConfig.Settings["index"].Value);
-            if(EventLogConfig.Settings["pipeline"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["pipeline"].Value)) 
-                esUrib.Query =  string.Format("pipeline={0}", EventLogConfig.Settings["pipeline"].Value);
+        // public static void LogDirect(IfyContext context, string json)
+        // {
+        //     var esUrib = new UriBuilder(EventLogConfig.Settings["baseurl"].Value);
+        //     esUrib.Path = string.Format("{0}/_doc", EventLogConfig.Settings["index"].Value);
+        //     if(EventLogConfig.Settings["pipeline"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["pipeline"].Value)) 
+        //         esUrib.Query =  string.Format("pipeline={0}", EventLogConfig.Settings["pipeline"].Value);
             
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(esUrib.Uri.AbsoluteUri);
-            webRequest.Method = "POST";
-            webRequest.Accept = "application/json";
-            webRequest.ContentType = "application/json";
-            if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
-                webRequest.Headers.Set(HttpRequestHeader.Authorization, "ApiKey " + EventLogConfig.Settings["auth_apikey"].Value);
-            else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
-                webRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(EventLogConfig.Settings["auth_username"].Value + ":" + EventLogConfig.Settings["auth_password"].Value)));
+        //     HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(esUrib.Uri.AbsoluteUri);
+        //     webRequest.Method = "POST";
+        //     webRequest.Accept = "application/json";
+        //     webRequest.ContentType = "application/json";
+        //     if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
+        //         webRequest.Headers.Set(HttpRequestHeader.Authorization, "ApiKey " + EventLogConfig.Settings["auth_apikey"].Value);
+        //     else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
+        //         webRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(EventLogConfig.Settings["auth_username"].Value + ":" + EventLogConfig.Settings["auth_password"].Value)));
 
-            try
-            {
-                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
-                {
-                    streamWriter.Write(json);
-                    streamWriter.Flush();
-                    streamWriter.Close();
+        //     try
+        //     {
+        //         using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+        //         {
+        //             streamWriter.Write(json);
+        //             streamWriter.Flush();
+        //             streamWriter.Close();
 
-                    using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
-                }
-            }catch(Exception e){
-                context.LogError(context, "Log event error (POST): " + e.Message);
-            }
-        }
+        //             using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
+        //         }
+        //     }catch(Exception e){
+        //         context.LogError(context, "Log event error (POST): " + e.Message);
+        //     }
+        // }
 
         public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
         {
@@ -331,7 +320,6 @@ namespace Terradue.Tep {
         }
     }
 
-    [DataContract]
     public class Event
     {
         [JsonProperty("event_id")]
@@ -356,7 +344,6 @@ namespace Terradue.Tep {
         public string Transmitter { get; set; }
     }
 
-    [DataContract]
     public class EventItem
     {
         [JsonProperty("type")]
@@ -378,7 +365,6 @@ namespace Terradue.Tep {
         public Dictionary<string, object> Properties { get; set; }
     }
 
-    [DataContract]
     public class EventProductMission
     {
         [JsonProperty("count")]
