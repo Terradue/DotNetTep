@@ -15,21 +15,23 @@ using Terradue.Stars.Services.Credentials;
 using Terradue.Stars.Data.Translators;
 using System.Web;
 using Nest;
+using Elasticsearch.Net;
+using Nest.JsonNetSerializer;
 
 namespace Terradue.Tep {
     public class EventFactory
     {
         public static EventLogConfiguration EventLogConfig = System.Configuration.ConfigurationManager.GetSection("EventLogConfiguration") as EventLogConfiguration;
 
-        public static void Log(IfyContext context, Event log)
+        public static async System.Threading.Tasks.Task Log(IfyContext context, Event log)
         {
             if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0 || string.IsNullOrEmpty(EventLogConfig.Settings["baseurl"].Value))
                 throw new Exception("Missing event log configuration in web.config");
 
             var json = JsonConvert.SerializeObject(log);
             context.LogDebug(context, "Event log : " + json);
-                                             
-            var settings = new ConnectionSettings(new Uri(EventLogConfig.Settings["baseurl"].Value));
+                           
+            var settings = new ConnectionSettings(new SingleNodeConnectionPool(new Uri(EventLogConfig.Settings["baseurl"].Value)), sourceSerializer: JsonNetSerializer.Default);
             
             if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
                 settings.ApiKeyAuthentication(new Elasticsearch.Net.ApiKeyAuthenticationCredentials(EventLogConfig.Settings["auth_apikey"].Value));
@@ -38,7 +40,7 @@ namespace Terradue.Tep {
 
             var client = new ElasticClient(settings);
             try{
-                var response = client.Index(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
+                var response = await client.IndexAsync(log, e => e.Index(EventLogConfig.Settings["index"].Value).Pipeline(EventLogConfig.Settings["pipeline"].Value));
                 context.LogDebug(context, string.Format("Log event response: (ID={0}) {1}", response.Id, response.DebugInformation));
             }catch(Exception e){
                 context.LogError(context, "Log event error  (POST): " + e.Message);
@@ -95,7 +97,7 @@ namespace Terradue.Tep {
 
             if (logger != null){
                 var logevent = await logger.GetLogEvent(job, message);
-                Log(context, logevent);
+                await Log(context, logevent);
             }
         }
 
@@ -118,7 +120,7 @@ namespace Terradue.Tep {
 
             if (logger != null){
                 var logevent = await logger.GetLogEvent(usr, eventid, message);
-                Log(context, logevent);               
+                await Log(context, logevent);               
             }
         }
     }
@@ -238,7 +240,7 @@ namespace Terradue.Tep {
                         }
                     }
                     properties.Add("parameters", paramDictionary);
-                    properties.Add("inputs", stacItemList);
+                    properties.Add("stac_items", stacItemList);
                 }
 
                 var logevent = new Event

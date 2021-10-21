@@ -57,8 +57,9 @@
     <PackageReference Include="Terradue.Data.Stars" Version="1.0.0-beta.3"/>
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0"/>
     <PackageReference Include="NEST" Version="7.15.0"/>
+    <PackageReference Include="NEST.JsonNetSerializer" Version="7.15.0"/>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(ProjectDir)Resources\**\*" PackagePath="content/modules/tep" Pack="true" />
+    <None Include="$(ProjectDir)Resources\**\*" PackagePath="content/modules/tep" Pack="true"/>
   </ItemGroup>
 </Project>
