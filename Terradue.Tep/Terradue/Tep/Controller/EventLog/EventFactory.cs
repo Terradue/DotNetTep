@@ -44,6 +44,7 @@ namespace Terradue.Tep {
                 context.LogDebug(context, string.Format("Log event response: (ID={0}) {1}", response.Id, response.DebugInformation));
             }catch(Exception e){
                 context.LogError(context, "Log event error  (POST): " + e.Message);
+                context.WriteError("Log event error  (POST): " + e.Message);
             }
         }
 
@@ -80,7 +81,12 @@ namespace Terradue.Tep {
 
         public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
         {
-            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0)
+            {
+                context.WriteError("Log error : missing configuration");
+                context.LogError(context, "Log error : missing configuration");
+                return;
+            }
 
             IEventJobLogger logger;            
             string className = EventLogConfig.Settings["job_classname"].Value;
@@ -182,7 +188,11 @@ namespace Terradue.Tep {
                 if (job.Owner != null) properties.Add("author", job.Owner.Username);
                 if (job.Parameters != null)
                 {
-                    var token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                    string token = "";
+                    try{
+                        token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                    }catch(Exception){}
+
                     var credentials = new NetworkCredential(job.Owner.Username, token);                    
                     var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
                     ServiceCollection services = new ServiceCollection();
