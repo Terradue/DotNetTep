@@ -101,7 +101,7 @@ namespace Terradue.Tep {
                             var execResponse = jobresponse as ExecuteResponse;
 
                             //if job status not updated and job is older than the max time allowed, we set as failed
-                            if (DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime){
+                            if (status == job.StringStatus && DateTime.UtcNow.AddDays(-maxDaysJobRefresh) > job.CreatedTime){
                                 job.Status = WpsJobStatus.FAILED;
                                 job.Logs = "Job did not complete before the max allowed time";
                                 EventFactory.LogWpsJob(context, job, job.Logs);
