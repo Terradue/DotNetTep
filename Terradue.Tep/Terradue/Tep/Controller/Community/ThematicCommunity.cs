@@ -835,6 +835,7 @@ namespace Terradue.Tep {
                                         Role = role.Name ?? role.Identifier,
                                         RoleDescription = role.Description,
                                         Status = IsUserPending(usrId) ? USERSTATUS_PENDING : USERSTATUS_JOINED,
+                                        Level = CanUserManage(context.UserId) ? user.Level : 0,
                                         Avatar = user.GetAvatar()
                                     });
                                 }
@@ -1097,6 +1098,8 @@ namespace Terradue.Tep {
         public string Status { get; set; }
         [DataMember]
         public string Avatar { get; set; }
+        [DataMember]
+        public int Level { get; set; }
 
         public UserRole() { }
 
