@@ -79,6 +79,17 @@ namespace Terradue.Tep {
                             usr.StoreCloudUsername();
                         }
                     }
+
+                    //update user infos
+                    if (!string.IsNullOrEmpty(usrInfo.given_name))
+                        usr.FirstName = usrInfo.given_name;
+                    if (!string.IsNullOrEmpty(usrInfo.family_name))
+                        usr.LastName = usrInfo.family_name;
+                    if (!string.IsNullOrEmpty(usrInfo.zoneinfo))
+                        usr.TimeZone = usrInfo.zoneinfo;
+                    if (!string.IsNullOrEmpty(usrInfo.locale))
+                        usr.Language = usrInfo.locale;
+
                     return usr;
                 }
 
