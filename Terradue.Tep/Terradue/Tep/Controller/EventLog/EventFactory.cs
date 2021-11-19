@@ -185,7 +185,14 @@ namespace Terradue.Tep {
                 properties.Add("wf_version", job.WpsVersion);
                 properties.Add("app_id", job.AppIdentifier);
                 properties.Add("status_url", job.StatusLocation);
-                if (job.Owner != null) properties.Add("author", job.Owner.Username);
+                if (job.Owner != null)
+                {
+                    var author = new Dictionary<string, string>();
+                    author.Add("username", job.Owner.Username);
+                    if(!string.IsNullOrEmpty(job.Owner.Affiliation)) author.Add("affiliation", job.Owner.Affiliation);
+                    if(!string.IsNullOrEmpty(job.Owner.Country)) author.Add("country", job.Owner.Country);
+                    properties.Add("author", author);
+                }
                 if (job.Parameters != null)
                 {
                     string token = "";
