@@ -377,6 +377,33 @@ namespace Terradue.Tep {
             }
         }
 
+        public void LoadProfileFromRemote() {
+            var url = string.Format("{0}?token={1}&username={2}&request=profile",
+                                        context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                        context.GetConfigValue("t2portal-safe-token"),
+                                        this.TerradueCloudUsername);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.ContentType = "application/json";
+            request.Accept = "application/json";
+            request.Proxy = null;
+
+            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    string json = streamReader.ReadToEnd();                    
+                    context.LogDebug(this, "Load T2 profile for user '" + this.TerradueCloudUsername + "' : " + json);
+                    var profileJson = JsonSerializer.DeserializeFromString<Dictionary<string, string>>(json);
+                    if (profileJson.ContainsKey("firstname") && !string.IsNullOrEmpty(profileJson["firstname"])) this.FirstName = profileJson["firstname"];
+                    if (profileJson.ContainsKey("lastname") && !string.IsNullOrEmpty(profileJson["lastname"])) this.LastName = profileJson["lastname"];
+                    if (profileJson.ContainsKey("affiliation_shortname") && !string.IsNullOrEmpty(profileJson["affiliation_shortname"])) this.Affiliation = profileJson["affiliation_shortname"];
+                    else if (profileJson.ContainsKey("affiliation") && !string.IsNullOrEmpty(profileJson["affiliation"])) this.Affiliation = profileJson["affiliation"];
+                    if (profileJson.ContainsKey("country") && !string.IsNullOrEmpty(profileJson["country"])) this.Country = profileJson["country"];
+                    this.Store();
+                }
+            }
+        }
+
         /// <summary>
         /// Sets the session apikey.
         /// </summary>
@@ -847,6 +874,10 @@ namespace Terradue.Tep {
                 return new KeyValuePair<string, string>("Identifier", value);
             case "id":
                 return new KeyValuePair<string, string>("Identifier", value);
+            case "level":
+                return new KeyValuePair<string, string>("Level", value);
+            case "affiliation":
+                return new KeyValuePair<string, string>("Affiliation", value);
             case "correlatedTo":
                 ObjectCache cache = MemoryCache.Default;
 				var correlatedPolicy = HttpContext.Current.Request.QueryString["correlatedPolicy"];
