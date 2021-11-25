@@ -116,6 +116,23 @@ namespace Terradue.Tep.WebServer {
     [Route("/user/csv", "GET", Summary = "GET user list as csv", Notes = "")]
     public class UserCsvListRequestTep : IReturn<string> { }
 
+    [Route("/user/profile", "PUT", Summary = "Update profile from remote")]
+    public class UpdateProfileFromRemoteTep : WebUserTep {
+    }
+    [Route("/users/profile", "PUT", Summary = "Update profile from remote")]
+    public class UpdateBulkUsersProfileFromRemoteTep {
+        [ApiMember(Name = "identifiers", Description = "ids", ParameterType = "query", DataType = "List<int>", IsRequired = true)]
+        public string[] Identifiers { get; set; }
+    }
+    [Route("/users/level", "PUT", Summary = "Update bulk users level")]
+    public class UpdateBulkUsersLevelTep {
+        [ApiMember(Name = "identifiers", Description = "ids", ParameterType = "query", DataType = "List<int>", IsRequired = true)]
+        public string[] Identifiers { get; set; }
+
+        [ApiMember(Name = "Level", Description = "user level", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int Level { get; set; }
+    }
+
     //-------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------

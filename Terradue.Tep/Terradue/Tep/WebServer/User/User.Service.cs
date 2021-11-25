@@ -601,6 +601,96 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Put(UpdateProfileFromRemoteTep request) {
+            WebUserTep result = null;
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            context.Open();
+            var usr = UserTep.FromIdentifier(context, request.Identifier);
+            try
+            {
+                usr.LoadProfileFromRemote();
+                result = new WebUserTep(context, usr);
+            }catch(Exception e){
+                context.LogError(this, e.Message + " - " + e.StackTrace);
+            }
+            context.Close();
+            return result;   
+        }
+
+        public object Put(UpdateBulkUsersLevelTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/users/level PUT Ids='{0}',level='{1}'", string.Join(",", request.Identifiers), request.Level));
+
+                string ids = "";
+                foreach(var id in request.Identifiers) ids += string.Format("'{0}',", id);
+                ids = ids.TrimEnd(',');
+                string sql = string.Format("UPDATE usr SET level='{0}' WHERE username IN ({1});", request.Level, ids);
+                context.Execute(sql);
+
+                try{
+                    var portalname = string.Format("{0} Portal", context.GetConfigValue("SiteNameShort"));
+                    var subject = context.GetConfigValue("EmailBulkActionSubject");
+                    subject = subject.Replace("$(SITENAME)",portalname);
+                    var body = context.GetConfigValue("EmailBulkActionBody");
+                    body = body.Replace("$(USERNAME)", context.Username);
+                    body = body.Replace("$(ACTION)", "User level update");
+                    body = body.Replace("$(IDENTIFIERS)", string.Join(",", request.Identifiers));
+                    context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
+                } catch(Exception e){
+                    context.LogError(this,e.Message + " - " + e.StackTrace);
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.Close();
+                throw e;
+            }
+
+            return true;
+        }
+
+        public object Put(UpdateBulkUsersProfileFromRemoteTep request) {
+            IfyWebContext context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/users/profile PUT Ids='{0}'", string.Join(",", request.Identifiers)));
+
+                foreach(var identifier in request.Identifiers){                    
+                    try
+                    {
+                        var usr = UserTep.FromIdentifier(context, identifier);
+                        usr.LoadProfileFromRemote();
+                    }catch(Exception e){
+                        context.LogError(this, e.Message + " - " + e.StackTrace);
+                    }
+                }
+
+                try{
+                    var portalname = string.Format("{0} Portal", context.GetConfigValue("SiteNameShort"));
+                    var subject = context.GetConfigValue("EmailBulkActionSubject");
+                    subject = subject.Replace("$(SITENAME)",portalname);
+                    var body = context.GetConfigValue("EmailBulkActionBody");
+                    body = body.Replace("$(USERNAME)", context.Username);
+                    body = body.Replace("$(ACTION)", "User remote profile load");
+                    body = body.Replace("$(IDENTIFIERS)", string.Join(",", request.Identifiers));
+                    context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
+                } catch(Exception e){
+                    context.LogError(this,e.Message + " - " + e.StackTrace);
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.Close();
+                throw e;
+            }
+
+            return true;
+        }
+
     }
 }
 
