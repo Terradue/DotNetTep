@@ -695,7 +695,7 @@ namespace Terradue.Tep.WebServer.Services {
             WebUserTep result = null;
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             context.Open();
-            var usr = UserTep.FromIdentifier(context, request.Identifier);            
+            var usr = UserTep.FromIdentifier(context, request.UsrId);            
             try{
                 var portalname = string.Format("{0} Portal", context.GetConfigValue("SiteNameShort"));
                 var subject = context.GetConfigValue("EmailUserDeleteSubject");
