@@ -132,6 +132,11 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "Level", Description = "user level", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Level { get; set; }
     }
+    [Route("/user/{UsrId}", "DELETE", Summary = "Delete user", Notes = "")]
+    public class UserDeleteRequestTep : IReturn<WebUserTep> {
+        [ApiMember(Name = "usrId", Description = "id of the user", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string UsrId { get; set; }
+    }
 
     //-------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------

@@ -634,7 +634,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var subject = context.GetConfigValue("EmailBulkActionSubject");
                     subject = subject.Replace("$(SITENAME)",portalname);
                     var body = context.GetConfigValue("EmailBulkActionBody");
-                    body = body.Replace("$(USERNAME)", context.Username);
+                    body = body.Replace("$(ADMIN)", context.Username);
                     body = body.Replace("$(ACTION)", "User level update");
                     body = body.Replace("$(IDENTIFIERS)", string.Join(",", request.Identifiers));
                     context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
@@ -673,7 +673,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var subject = context.GetConfigValue("EmailBulkActionSubject");
                     subject = subject.Replace("$(SITENAME)",portalname);
                     var body = context.GetConfigValue("EmailBulkActionBody");
-                    body = body.Replace("$(USERNAME)", context.Username);
+                    body = body.Replace("$(ADMIN)", context.Username);
                     body = body.Replace("$(ACTION)", "User remote profile load");
                     body = body.Replace("$(IDENTIFIERS)", string.Join(",", request.Identifiers));
                     context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
@@ -689,6 +689,27 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             return true;
+        }
+
+        public object Delete(UserDeleteRequestTep request) {
+            WebUserTep result = null;
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            context.Open();
+            var usr = UserTep.FromIdentifier(context, request.Identifier);            
+            try{
+                var portalname = string.Format("{0} Portal", context.GetConfigValue("SiteNameShort"));
+                var subject = context.GetConfigValue("EmailUserDeleteSubject");
+                subject = subject.Replace("$(SITENAME)",portalname);
+                var body = context.GetConfigValue("EmailUserDeleteBody");
+                body = body.Replace("$(USERNAME)", usr.Username);
+                body = body.Replace("$(ADMIN)", context.Username);                
+                context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
+            } catch(Exception e){
+                context.LogError(this,e.Message + " - " + e.StackTrace);
+            }
+            usr.Delete();
+            context.Close();
+            return result;   
         }
 
     }
