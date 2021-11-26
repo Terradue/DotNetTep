@@ -15,6 +15,12 @@ using Terradue.Tep.OpenSearch;
 using Terradue.Portal.OpenSearch;
 using System.Web;
 using System.Runtime.Serialization;
+using Terradue.Stars.Services.Translator;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Terradue.Stars.Interface.Router.Translator;
+using Terradue.Stars.Data.Translators;
+using Terradue.Stars.Services.Credentials;
 
 namespace Terradue.Tep {
     [EntityTable("wpsjob", EntityTableConfiguration.Custom, IdentifierField = "identifier", NameField = "name", HasOwnerReference = true, HasPermissionManagement = true, HasDomainReference = true, AllowsKeywordSearch = true)]
@@ -1013,7 +1019,7 @@ namespace Terradue.Tep {
 
                                     using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
                                         using (var stream = httpResponse.GetResponseStream()) {
-                                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromStream<Stac.StacItem>(stream);                                            
+                                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromStream<StacItem>(stream);                                            
                                             var stacLink = stacItem.Links.First(l => l.Rel == "alternate");
                                             resultdescription = stacLink.Href;
                                         }
@@ -1925,6 +1931,61 @@ namespace Terradue.Tep {
                     }
                 }
             } catch (Exception e) { throw e; }//return 0; }
+        }
+
+        public List<Stac.StacItem> GetJobInputsStacItems()
+        {
+            var stacItems = new List<Stac.StacItem>();
+            string token = "";
+            try{
+                token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+            }catch(Exception){}
+            var credentials = new NetworkCredential(this.Owner.Username, token);                    
+            var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
+            ServiceCollection services = new ServiceCollection();
+            services.AddLogging(builder => builder.AddConsole());
+            services.AddTransient<ITranslator, StacLinkTranslator>();
+            services.AddTransient<ITranslator, AtomToStacTranslator>();
+            services.AddTransient<ITranslator, DefaultStacTranslator>();
+            services.AddTransient<ICredentials, ConfigurationCredentialsManager>();
+            var sp = services.BuildServiceProvider();
+            foreach (var p in this.Parameters)
+            {
+                string osUrl = null;
+                try
+                {
+                    if (!string.IsNullOrEmpty(p.Value))
+                    {
+                        var urib = new UriBuilder(p.Value);
+                        if (!(urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
+
+                        var query = HttpUtility.ParseQueryString(urib.Query);
+                        query.Set("format", "atom");
+                        var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                        urib.Query = string.Join("&", queryString);
+                        osUrl = urib.Uri.AbsoluteUri;
+                    }
+                }
+                catch(Exception){}
+
+                // add data input stac item
+                if (!string.IsNullOrEmpty(osUrl))
+                {
+                    try
+                    {                           
+                        var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
+                        var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
+                        var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
+                        var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
+                        stacItems.Add(stacNode.StacItem);
+                    }
+                    catch (Exception e)
+                    {
+                        context.LogError(this, "Log event stac item error : " + osUrl + " - " + e.Message);
+                    }
+                }
+            }
+            return stacItems;
         }
     }
 

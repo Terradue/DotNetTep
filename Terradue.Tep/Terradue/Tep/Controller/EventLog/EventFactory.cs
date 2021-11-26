@@ -1,19 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Xml;
 using Newtonsoft.Json;
-using Terradue.OpenSearch.Result;
 using Terradue.Portal;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Terradue.Stars.Interface.Router.Translator;
-using Terradue.Stars.Services.Translator;
-using Terradue.Stars.Services.Credentials;
-using Terradue.Stars.Data.Translators;
-using System.Web;
 using Nest;
 using Elasticsearch.Net;
 using Nest.JsonNetSerializer;
@@ -48,37 +36,6 @@ namespace Terradue.Tep {
             }
         }
 
-        // public static void LogDirect(IfyContext context, string json)
-        // {
-        //     var esUrib = new UriBuilder(EventLogConfig.Settings["baseurl"].Value);
-        //     esUrib.Path = string.Format("{0}/_doc", EventLogConfig.Settings["index"].Value);
-        //     if(EventLogConfig.Settings["pipeline"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["pipeline"].Value)) 
-        //         esUrib.Query =  string.Format("pipeline={0}", EventLogConfig.Settings["pipeline"].Value);
-            
-        //     HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(esUrib.Uri.AbsoluteUri);
-        //     webRequest.Method = "POST";
-        //     webRequest.Accept = "application/json";
-        //     webRequest.ContentType = "application/json";
-        //     if (EventLogConfig.Settings["auth_apikey"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_apikey"].Value))
-        //         webRequest.Headers.Set(HttpRequestHeader.Authorization, "ApiKey " + EventLogConfig.Settings["auth_apikey"].Value);
-        //     else if (EventLogConfig.Settings["auth_username"] != null && !string.IsNullOrEmpty(EventLogConfig.Settings["auth_username"].Value) && EventLogConfig.Settings["auth_password"] != null)
-        //         webRequest.Headers.Set(HttpRequestHeader.Authorization, "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(EventLogConfig.Settings["auth_username"].Value + ":" + EventLogConfig.Settings["auth_password"].Value)));
-
-        //     try
-        //     {
-        //         using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
-        //         {
-        //             streamWriter.Write(json);
-        //             streamWriter.Flush();
-        //             streamWriter.Close();
-
-        //             using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) { }
-        //         }
-        //     }catch(Exception e){
-        //         context.LogError(context, "Log event error (POST): " + e.Message);
-        //     }
-        // }
-
         public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
         {
             if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0)
@@ -102,7 +59,7 @@ namespace Terradue.Tep {
             }
 
             if (logger != null){
-                var logevent = await logger.GetLogEvent(job, message);
+                var logevent = await logger.GetLogEvent(job, message);                
                 await Log(context, logevent);
             }
         }
@@ -179,86 +136,9 @@ namespace Terradue.Tep {
                 durations.Add("from_start", ((int)(DateTime.UtcNow - job.CreatedTime).TotalSeconds));
                 if (job.EndTime != DateTime.MinValue) durations.Add("from_end", ((int)(DateTime.UtcNow - job.EndTime).TotalSeconds));
 
-                var properties = new Dictionary<string, object>();
-                properties.Add("remote_identifier", job.RemoteIdentifier);
-                properties.Add("wf_id", job.WpsName);
-                properties.Add("wf_version", job.WpsVersion);
-                properties.Add("app_id", job.AppIdentifier);
-                properties.Add("status_url", job.StatusLocation);
-                if (job.Owner != null)
-                {
-                    var author = new Dictionary<string, string>();
-                    author.Add("username", job.Owner.Username);
-                    if(!string.IsNullOrEmpty(job.Owner.Affiliation)) author.Add("affiliation", job.Owner.Affiliation);
-                    if(!string.IsNullOrEmpty(job.Owner.Country)) author.Add("country", job.Owner.Country);
-                    properties.Add("author", author);
-                }
-                if (job.Parameters != null)
-                {
-                    string token = "";
-                    try{
-                        token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
-                    }catch(Exception){}
-
-                    var credentials = new NetworkCredential(job.Owner.Username, token);                    
-                    var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
-                    ServiceCollection services = new ServiceCollection();
-                    services.AddLogging(builder => builder.AddConsole());
-                    services.AddTransient<ITranslator, StacLinkTranslator>();
-                    services.AddTransient<ITranslator, AtomToStacTranslator>();
-                    services.AddTransient<ITranslator, DefaultStacTranslator>();
-                    services.AddTransient<ICredentials, ConfigurationCredentialsManager>();
-                    var sp = services.BuildServiceProvider();
-
-                    //add inputs
-                    var paramDictionary = new Dictionary<string, object>();
-                    var stacItemList = new List<object>();
-                    foreach (var p in job.Parameters)
-                    {
-                        if (!paramDictionary.ContainsKey(p.Key)) paramDictionary.Add(p.Key, p.Value);
-                        else
-                        {
-                            if (!(paramDictionary[p.Key] is List<string>)) paramDictionary[p.Key] = new List<string> { paramDictionary[p.Key] as string };
-                            (paramDictionary[p.Key] as List<string>).Add(p.Value);
-                        }
-
-                        string osUrl = null;
-                        try
-                        {
-                            if (!string.IsNullOrEmpty(p.Value))
-                            {
-                                var urib = new UriBuilder(p.Value);
-                                if (!(urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
-
-                                var query = HttpUtility.ParseQueryString(urib.Query);
-                                query.Set("format", "atom");
-                                var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-                                urib.Query = string.Join("&", queryString);
-                                osUrl = urib.Uri.AbsoluteUri;
-                            }
-                        }
-                        catch(Exception){}
-
-                        // add data input stac item
-                        if (!string.IsNullOrEmpty(osUrl))
-                        {
-                            try
-                            {                           
-                                var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
-                                var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
-                                var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
-                                var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
-                                stacItemList.Add(stacNode.StacItem);
-                            }
-                            catch (Exception e)
-                            {
-                                context.LogError(job, "Log event stac item error : " + osUrl + " - " + e.Message);
-                            }
-                        }
-                    }
-                    properties.Add("parameters", paramDictionary);
-                    properties.Add("stac_items", stacItemList);
-                }
+                var properties = GetJobBasicProperties(job);
+                var stacItems = job.GetJobInputsStacItems();
+                properties.Add("stac_items", stacItems);
 
                 var logevent = new Event
                 {
@@ -285,6 +165,38 @@ namespace Terradue.Tep {
             }
             return null;
         }
+
+        protected Dictionary<string, object> GetJobBasicProperties(WpsJob job)
+        {
+            var properties = new Dictionary<string, object>();
+            properties.Add("remote_identifier", job.RemoteIdentifier);
+            properties.Add("wf_id", job.WpsName);
+            properties.Add("wf_version", job.WpsVersion);
+            properties.Add("app_id", job.AppIdentifier);
+            properties.Add("status_url", job.StatusLocation);
+            if (job.Owner != null)
+            {
+                var author = new Dictionary<string, string>();
+                author.Add("username", job.Owner.Username);
+                if(!string.IsNullOrEmpty(job.Owner.Affiliation)) author.Add("affiliation", job.Owner.Affiliation);
+                if(!string.IsNullOrEmpty(job.Owner.Country)) author.Add("country", job.Owner.Country);
+                properties.Add("author", author);
+            }
+            var inputProperties = new Dictionary<string, object>();
+            foreach (var p in job.Parameters)
+            {
+                if (!inputProperties.ContainsKey(p.Key)) 
+                    inputProperties.Add(p.Key, p.Value);
+                else
+                {
+                    if (!(inputProperties[p.Key] is List<string>)) inputProperties[p.Key] = new List<string> { inputProperties[p.Key] as string };
+                    (inputProperties[p.Key] as List<string>).Add(p.Value);
+                }
+            }
+            properties.Add("parameters", inputProperties);
+            return properties;
+        }
+
     }
 
     /**********************/

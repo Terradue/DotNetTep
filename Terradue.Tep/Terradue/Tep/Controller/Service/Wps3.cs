@@ -231,7 +231,7 @@ namespace Terradue.Tep.Wps3Utils {
 
 }
 
-namespace Terradue.Stac {
+namespace Terradue.Tep {
 
     public class StacLink {
         [DataMember(Name = "type")]
