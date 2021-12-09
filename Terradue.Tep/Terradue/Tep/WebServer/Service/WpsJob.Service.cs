@@ -269,9 +269,11 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
+            bool isnew = string.IsNullOrEmpty(request.Identifier);
             try{
                 job.Store();
             }catch(DuplicateEntityIdentifierException){
+                isnew = false;
                 job = WpsJob.FromIdentifier(context, request.Identifier);
                 job.Name = request.Name;
                 job.AppIdentifier = request.AppIdentifier;
@@ -281,9 +283,12 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             context.LogInfo(this,string.Format("/job/wps POST Id='{0}'",job.Id));
-            context.LogDebug(this,string.Format("WpsJob '{0}' created",job.Name));
-
-            EventFactory.LogWpsJob(context, job, "Job created");
+            if(isnew){
+                context.LogDebug(this,string.Format("WpsJob '{0}' - '{1}' created",job.Identifier, job.Name));
+                EventFactory.LogWpsJob(context, job, "Job created");
+            } else {
+                context.LogDebug(this,string.Format("WpsJob '{0}' - '{1}' title updated",job.Identifier, job.Name));
+            }
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
             wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
