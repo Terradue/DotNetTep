@@ -74,6 +74,38 @@ namespace Terradue.Tep {
             return app;
         }
 
+        /// <summary>
+        /// Get Thematic App (cached) from identifier.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="appId"></param>
+        /// <returns></returns>
+        public static ThematicApplicationCached FromUid(IfyContext context, string appId){
+            //we get app from communities current user can see (in theory we can have more apps with the same uid, but one user can see only one of them)            
+            var communities = new EntityList<ThematicCommunity>(context);
+            if (context.UserId == 0) communities.SetFilter("Kind", (int)DomainKind.Public + "");
+            else {
+                communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Hidden + "," + (int)DomainKind.Private);
+                communities.AddSort("Kind", SortDirection.Ascending);
+            }
+            communities.Load();
+            List<int> ids = new List<int>();
+            foreach (var c in communities) {
+                if (c.IsUserJoined(context.UserId)) ids.Add(c.Id);
+            }
+
+            EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);
+            var filterValues = new List<object>();
+            filterValues.Add(string.Join(",", ids));
+            filterValues.Add(SpecialSearchValue.Null);
+            appsCached.SetFilter("DomainId", filterValues.ToArray());
+            appsCached.SetFilter("UId", appId);
+            appsCached.SetGroupFilter("UId");
+            appsCached.AddSort("LastUpdate", SortDirection.Descending);
+            appsCached.Load();
+            return appsCached.FirstOrDefault();
+        }
+
         public override string GetIdentifyingConditionSql() {
             if (this.Id != 0) return String.Format("t.id={0}",this.Id);
             else if (this.UId == null) return null;
@@ -107,7 +139,6 @@ namespace Terradue.Tep {
                     return base.GetFilterForParameter(parameter, value);
             }
         }
-
         #endregion      
     }
 
