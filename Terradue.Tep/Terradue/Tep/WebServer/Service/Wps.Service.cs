@@ -30,6 +30,12 @@ namespace Terradue.Tep.WebServer.Services {
         public string Json { get; set; }
     }
 
+    [Route("/wps/sync", "GET", Summary = "Sync services", Notes = "")]
+    public class ReloadWpsForApp : IReturn<HttpResult> {
+        [ApiMember(Name = "appid", Description = "servlet id", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public String AppId { get; set; }
+    }
+
 
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json | EndpointAttributes.Xml,
@@ -862,18 +868,29 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
 
-                WpsProvider wpsProvider = (WpsProvider)ComputingResource.FromIdentifier(context, request.CrIdentifier);
+                WpsProviderTep wpsProvider = WpsProviderTep.FromIdentifier(context, request.CrIdentifier);
                 WpsProcessOffering wps = (WpsProcessOffering)request.ToEntity(context, new WpsProcessOffering(context));
                 wps.Provider = wpsProvider;
 
                 var url = wpsProvider.BaseUrl;
-                if (!url.ToLower().Contains("describeprocess")) {
-                    var urib = new UriBuilder(url);
-                    var query = "Service=WPS&Request=DescribeProcess&Version=" + wpsProvider.WPSVersion ?? "1.0.0";
+                if(wpsProvider.IsWPS3()){
+                    url = request.Url;
+                    if (!url.Contains(wps.RemoteIdentifier))
+                    {
+                        var urib = new UriBuilder(url);
+                        urib.Path += "/" + wps.RemoteIdentifier;
+                        url = urib.Uri.AbsoluteUri;
+                    }
+                } else {
+                    if (!url.ToLower().Contains("describeprocess"))
+                    {
+                        var urib = new UriBuilder(url);
+                        var query = "Service=WPS&Request=DescribeProcess&Version=" + wpsProvider.WPSVersion ?? "1.0.0";
 
-                    query += "&Identifier=" + wps.RemoteIdentifier;
-                    urib.Query = query;
-                    url = urib.Uri.AbsoluteUri;
+                        query += "&Identifier=" + wps.RemoteIdentifier;
+                        urib.Query = query;
+                        url = urib.Uri.AbsoluteUri;
+                    }
                 }
                 wps.Url = url;
                 wps.Store();
@@ -998,7 +1015,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this, string.Format("/cr/wps/{{Identifier}}/services GET, Identifier='{0}'", request.Identifier));
 
-                WpsProvider provider = (Terradue.Portal.WpsProvider)ComputingResource.FromIdentifier(context, request.Identifier);
+                WpsProviderTep provider = WpsProviderTep.FromIdentifier(context, request.Identifier);
                 var services = provider.GetWpsProcessOfferingsFromRemote(true, null);
 
                 foreach (WpsProcessOffering wps in services) {
@@ -1559,6 +1576,24 @@ namespace Terradue.Tep.WebServer.Services {
                 wps.Available = !wps.Available;
                 wps.Store();
                 
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
+
+        public object Get(ReloadWpsForApp request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/wps/sync GET, app="+request.AppId));
+
+                var appcached = ThematicApplicationCached.FromUid(context, request.AppId);                
+                ThematicAppCachedFactory.SyncWpsServices(context, appcached);
+
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
