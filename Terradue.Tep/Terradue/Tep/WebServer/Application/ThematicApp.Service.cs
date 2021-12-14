@@ -142,6 +142,24 @@ namespace Terradue.Tep.WebServer.Services {
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
             }
+
+            if(!string.IsNullOrEmpty(httpRequest.QueryString["uid"])){
+				try{
+                    var user = UserTep.FromId(context, context.UserId);
+                    EventUserLoggerTep eventLogger = new EventUserLoggerTep(context);
+                    eventLogger.GetLogEvent(user, "portal_user_access_workspace", "User workspace access").ContinueWith<Event>(
+                        usrevent => { 
+							if (usrevent != null)
+							{
+								var callId = httpRequest.QueryString["uid"];
+                                usrevent.Result.Item.Properties.Add("app_id", callId);								
+								EventFactory.Log(context, usrevent.Result);
+							}
+                            return usrevent.Result;
+                        }
+                    );                    
+                }catch(Exception){}
+			}
             
 			context.Close ();         
             return new HttpResult (sresult, result.ContentType);         
