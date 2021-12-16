@@ -1320,12 +1320,12 @@ namespace Terradue.Tep {
             OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
             entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
-            entry.Summary = new TextSyndicationContent(this.Name);
-            entry.Title = new TextSyndicationContent(this.Name);
+            entry.Summary = new TextSyndicationContent(TepUtility.RemoveAccents(this.Name));
+            entry.Title = new TextSyndicationContent(TepUtility.RemoveAccents(this.Name));
 
             if (this.Owner != null) {
                 entry.Authors.Add(new SyndicationPerson {
-                    Name = this.Owner.Caption,
+                    Name = TepUtility.RemoveAccents(this.Owner.Caption),
                     Email = this.Owner.Email,
                     Uri = context.GetConfigValue("BaseUrl") + "/#!user/details/" + this.Owner.Identifier
                 });

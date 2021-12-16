@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Security.Cryptography;
 
 namespace Terradue.Tep {
@@ -23,5 +24,22 @@ namespace Terradue.Tep {
 			var hashmac = hash.ComputeHash(bmsg);
 			return BitConverter.ToString(hashmac).Replace("-", "").ToLower();
 		}
+
+        public static string RemoveAccents(string text){
+            if(string.IsNullOrEmpty(text)) return text;
+            try
+            {
+                var sbReturn = new System.Text.StringBuilder();
+                var arrayText = text.Normalize(System.Text.NormalizationForm.FormD).ToCharArray();
+                foreach (char letter in arrayText)
+                {
+                    if (CharUnicodeInfo.GetUnicodeCategory(letter) != UnicodeCategory.NonSpacingMark)
+                        sbReturn.Append(letter);
+                }
+                return sbReturn.ToString();
+            }catch(Exception e){
+                return text;
+            }
+        }  
     }
 }
