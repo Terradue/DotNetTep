@@ -89,7 +89,7 @@ CREATE TABLE wpsjob (
     wps varchar(100) NOT NULL COMMENT 'FK: WPS Service identifier',
     wps_name varchar(150) NOT NULL COMMENT 'FK: WPS Service name',
     process varchar(100) NOT NULL COMMENT 'Process name',
-    params varchar(1000) NOT NULL COMMENT 'Wps job parameters',
+    params TEXT NOT NULL COMMENT 'Wps job parameters',
     status int NOT NULL DEFAULT 0 COMMENT 'Wps job status',
     archive_status int NOT NULL DEFAULT 0 COMMENT 'Wps job archive status',
     status_url varchar(400) NOT NULL COMMENT 'Wps job status url',

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Globalization;
 using System.Security.Cryptography;
+using System.Net;
 
 namespace Terradue.Tep {
     public class TepUtility {
@@ -23,5 +25,32 @@ namespace Terradue.Tep {
 			var hashmac = hash.ComputeHash(bmsg);
 			return BitConverter.ToString(hashmac).Replace("-", "").ToLower();
 		}
+
+        public static string RemoveAccents(string text){
+            if(string.IsNullOrEmpty(text)) return text;
+            try
+            {
+                var sbReturn = new System.Text.StringBuilder();
+                var arrayText = text.Normalize(System.Text.NormalizationForm.FormD).ToCharArray();
+                foreach (char letter in arrayText)
+                {
+                    if (CharUnicodeInfo.GetUnicodeCategory(letter) != UnicodeCategory.NonSpacingMark)
+                        sbReturn.Append(letter);
+                }
+                return sbReturn.ToString();
+            }catch(Exception e){
+                return text;
+            }
+        }  
+
+        public static IWebProxy GetWebRequestProxy() {
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) {
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]))
+                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"], int.Parse(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]));
+                else
+                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"]);
+            } else
+                return null;
+        }
     }
 }
