@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Security.Cryptography;
+using System.Net;
 
 namespace Terradue.Tep {
     public class TepUtility {
@@ -41,5 +42,15 @@ namespace Terradue.Tep {
                 return text;
             }
         }  
+
+        public static IWebProxy GetWebRequestProxy() {
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) {
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]))
+                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"], int.Parse(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]));
+                else
+                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"]);
+            } else
+                return null;
+        }
     }
 }

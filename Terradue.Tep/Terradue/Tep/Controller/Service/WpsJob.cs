@@ -406,7 +406,7 @@ namespace Terradue.Tep {
                     webRequest.Method = "POST";
                     webRequest.Accept = "application/json";
                     webRequest.ContentType = "application/json";
-                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
+                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
                     var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;                
                     webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
                     webRequest.Timeout = 10000;
@@ -979,57 +979,22 @@ namespace Terradue.Tep {
                                 }
                             }
 
-                        } 
-                        var resultdescription = s3link;
+                        }                        
 
-                        if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && !string.IsNullOrEmpty(s3link)) {
-                            var url = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"].Replace("{USER}", this.Owner.Username);
-                            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);                            
-                            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
-                            var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
-                            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
-                            webRequest.Timeout = 10000;
-                            webRequest.Method = "POST";
-                            webRequest.ContentType = "application/json";
-
-                            var shareUri = GetJobShareUri(this.AppIdentifier);
-
-                            var importProduct = new SupervisorUserImportProduct {
-                                Url = s3link,
-                                ActivationId = int.Parse(this.AppIdentifier.Substring(this.AppIdentifier.LastIndexOf("-") + 1)),//TODO: to be changed later
-                                AdditionalLinks = new List<SupervisorUserImportProductLink> {
-                                    new SupervisorUserImportProductLink {
-                                        Href = shareUri.AbsoluteUri,
-                                        Rel = "external",
-                                        Type = "text/html",
-                                        Title = "Producer Link"
-                                    }
-                                }
-                            };
-                            var json = Newtonsoft.Json.JsonConvert.SerializeObject(importProduct, Newtonsoft.Json.Formatting.None);
-
-                            context.LogDebug(this, string.Format("Create user product request to supervisor - s3link = {0} ; username = {1}", s3link, this.Owner.Username));                            
-                            context.LogDebug(this, string.Format("send request to supervisor - json = {0}", json));
-
-                            try {
-                                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
-                                    streamWriter.Write(json);
-                                    streamWriter.Flush();
-                                    streamWriter.Close();
-
-                                    using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                                        using (var stream = httpResponse.GetResponseStream()) {
-                                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromStream<StacItem>(stream);                                            
-                                            var stacLink = stacItem.Links.First(l => l.Rel == "alternate");
-                                            resultdescription = stacLink.Href;
-                                        }
-                                    }
-                                }
-                            } catch (Exception e) {
-                                context.LogError(this, "Error Create user product request to supervisor: " + e.Message);
-                            }
-
+                        IWps3Factory wps3factory;
+                        string className = System.Configuration.ConfigurationManager.AppSettings["wps3factory_classname"];
+                        if (className == null)
+                        {
+                            wps3factory = new Wps3Factory(context);
                         }
+                        else
+                        {
+                            Type type = Type.GetType(className, true);
+                            System.Reflection.ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(IfyContext) });
+                            wps3factory = (IWps3Factory)ci.Invoke(new object[] { context });
+                        }
+
+                        var resultdescription = wps3factory.GetResultDescriptionFromS3Link(context, this, s3link);
 
                         if (outputs != null && wfoutput != null) {
                             response.ProcessOutputs = new List<OutputDataType> { };
@@ -1051,17 +1016,6 @@ namespace Terradue.Tep {
             }
 
             return response;
-        }
-
-        
-        private IWebProxy GetWebRequestProxy() {
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) {
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]))
-                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"], int.Parse(System.Configuration.ConfigurationManager.AppSettings["ProxyPort"]));
-                else
-                    return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"]);
-            } else
-                return null;
         }
 
         /// <summary>

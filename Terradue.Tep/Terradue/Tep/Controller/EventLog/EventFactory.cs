@@ -13,7 +13,11 @@ namespace Terradue.Tep {
 
         public static async System.Threading.Tasks.Task Log(IfyContext context, Event log)
         {
-            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0 || string.IsNullOrEmpty(EventLogConfig.Settings["baseurl"].Value))
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0 
+                || EventLogConfig.Settings["baseurl"] == null
+                || EventLogConfig.Settings["index"] == null
+                || EventLogConfig.Settings["pipeline"] == null
+                || string.IsNullOrEmpty(EventLogConfig.Settings["baseurl"].Value))
                 throw new Exception("Missing event log configuration in web.config");
 
             var json = JsonConvert.SerializeObject(log);
@@ -59,7 +63,8 @@ namespace Terradue.Tep {
             }
 
             if (logger != null){
-                var logevent = await logger.GetLogEvent(job, message);                
+                var logevent = await logger.GetLogEvent(job, message);
+                context.LogInfo(context, string.Format("Log event (job) ; event id = {0} ; job id = {1}", logevent.EventId, job.Identifier));
                 await Log(context, logevent);
             }
         }
@@ -83,6 +88,7 @@ namespace Terradue.Tep {
 
             if (logger != null){
                 var logevent = await logger.GetLogEvent(usr, eventid, message);
+                context.LogInfo(context, string.Format("Log event (user) ; event id = {0} ; user id = {1}", logevent.EventId, usr.Username));
                 await Log(context, logevent);               
             }
         }
@@ -227,10 +233,10 @@ namespace Terradue.Tep {
                 var logevent = new Event
                 {
                     EventId = eventid,
-                    Project = EventFactory.EventLogConfig.Settings["project"].Value,
+                    Project = EventFactory.EventLogConfig.Settings["project"] != null ? EventFactory.EventLogConfig.Settings["project"].Value : "",
                     Status = usr.Level.ToString(),
                     // Durations = durations,
-                    Transmitter = EventFactory.EventLogConfig.Settings["transmitter"].Value,
+                    Transmitter = EventFactory.EventLogConfig.Settings["transmitter"] != null ? EventFactory.EventLogConfig.Settings["transmitter"].Value : "",
                     Message = message,
                     Item = new EventItem
                     {
