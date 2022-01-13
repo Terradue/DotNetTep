@@ -227,7 +227,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach (var p in finalgeometry.Coordinates.ToArray()) {
                     p.X = Math.Round(p.X, 2);
                     p.Y = Math.Round(p.Y, 2);
-                    p.Z = Math.Round(p.Z, 2);
+                    if (p is CoordinateZ) p.Z = Math.Round(p.Z, 2);
                 }
                 wkt = finalgeometry.AsText();
             }
@@ -266,7 +266,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach (var p in finalgeometry.Coordinates.ToArray()) {
                     p.X = Math.Round(p.X, 2);
                     p.Y = Math.Round(p.Y, 2);
-                    p.Z = Math.Round(p.Z, 2);
+                    if (p is CoordinateZ) p.Z = Math.Round(p.Z, 2);
                 }
                 wkt = finalgeometry.AsText();
             }
@@ -348,7 +348,7 @@ namespace Terradue.Tep.WebServer.Services {
                 foreach (var p in finalgeometry.Coordinates.ToArray()) {
                     p.X = Math.Round(p.X, 2);
                     p.Y = Math.Round(p.Y, 2);
-                    p.Z = Math.Round(p.Z, 2);
+                    if (p is CoordinateZ) p.Z = Math.Round(p.Z, 2);
                 }
                 wkt = finalgeometry.AsText();
             }
