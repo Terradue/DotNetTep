@@ -23,11 +23,10 @@ using Terradue.WebService.Model;
 namespace Terradue.Tep.WebServer.Services {
 
     [Route("/service/wps/{Identifier}/validate", "POST", Summary = "POST a WPS service validation", Notes = "")]
-    public class ValidateWPSService : IReturn<WebWpsService> {
+    public class ValidateWPSService : IRequiresRequestStream, IReturn<WebWpsService> {
         [ApiMember(Name = "Identifier", Description = "Service identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Identifier { get; set; }
-        [ApiMember(Name = "Json", Description = "Json to validate", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Json { get; set; }
+        public System.IO.Stream RequestStream { get; set; }
     }
 
     [Route("/wps/sync", "GET", Summary = "Sync services", Notes = "")]
@@ -49,15 +48,32 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Post(ValidateWPSService request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            if (string.IsNullOrEmpty(request.Identifier)) return null;
-            if (string.IsNullOrEmpty(request.Json)) return null;
+
+            if (string.IsNullOrEmpty(request.Identifier)) {
+                var segments = base.Request.PathInfo.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                request.Identifier = segments[segments.Count() - 2];
+            }
+            if (string.IsNullOrEmpty(request.Identifier)) return null;            
+            
             string response = null;
             try {
                 context.Open();
                 context.LogInfo(this, string.Format("/service/wps/{0}/validate POST", request.Identifier));
-                WpsProcessOfferingTep service = WpsProcessOfferingTep.FromIdentifier(context, request.Identifier);
-                response = service.ValidateResult(request.Json);
+                WpsProcessOfferingTep service = WpsProcessOfferingTep.FromIdentifier(context, request.Identifier);                
+                
+                string json = "";
+                using(StreamReader reader = new StreamReader(request.RequestStream)){
+                    json = reader.ReadToEnd();
+                }
+                if(string.IsNullOrEmpty(json)) return null;
 
+                if(!json.Contains("t2_authorization_bearer")){
+                    var user = UserTep.FromId(context, context.UserId);                    
+                    json = json.Remove(json.Length - 1);
+                    json += "," + "\"t2_authorization_bearer\":\"" + user.GetSessionApiKey() + "\"}";
+                }
+                
+                response = service.ValidateResult(json);
             } catch (Exception e) {
                 context.Close();
                 return new HttpError(e.Message);

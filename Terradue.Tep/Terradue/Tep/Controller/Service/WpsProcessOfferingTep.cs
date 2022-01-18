@@ -31,6 +31,7 @@ namespace Terradue.Tep {
                 var httpRequest = (HttpWebRequest)WebRequest.Create(this.ValidationUrl);
                 httpRequest.Method = "POST";
                 httpRequest.Accept = "application/json";
+                httpRequest.ContentType = "application/json";
 
                 using (var streamWriter = new StreamWriter(httpRequest.GetRequestStream())) {
                     streamWriter.Write(json);
@@ -47,7 +48,7 @@ namespace Terradue.Tep {
                 }                
             }catch(System.Exception e) {
                 context.LogError(this, e.Message, e);
-                return null;
+                throw e;
             }
         }
 
