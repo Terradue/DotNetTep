@@ -361,7 +361,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsJob job = null;
                 job = WpsJob.FromIdentifier(context, request.id);
-                EventFactory.LogWpsJob(context, job, "Job deleted");
+                EventFactory.LogWpsJob(context, job, "Job deleted", "portal_job_delete");
                 job.Delete();
                 result = true;
 
