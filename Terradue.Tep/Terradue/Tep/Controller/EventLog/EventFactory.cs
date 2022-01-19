@@ -40,16 +40,12 @@ namespace Terradue.Tep {
             }
         }
 
-        public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
-        {
-            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0)
-            {
-                context.WriteError("Log error : missing configuration");
-                context.LogError(context, "Log error : missing configuration");
-                return;
-            }
+        /*************************/
+        /******** WPS JOB ********/
+        /*************************/
 
-            IEventJobLogger logger;            
+        private static IEventJobLogger GetJobLogger(IfyContext context){
+            IEventJobLogger logger;
             string className = EventLogConfig.Settings["job_classname"].Value;
             if (className == null)
             {
@@ -61,6 +57,18 @@ namespace Terradue.Tep {
                 System.Reflection.ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(IfyContext) });
                 logger = (IEventJobLogger)ci.Invoke(new object[] { context });
             }
+            return logger;
+        }
+
+        public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message)
+        {
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0)
+            {
+                context.LogError(context, "Log error : missing configuration");
+                return;
+            }
+
+            IEventJobLogger logger = GetJobLogger(context);
 
             if (logger != null){
                 var logevent = await logger.GetLogEvent(job, message);
@@ -69,10 +77,28 @@ namespace Terradue.Tep {
             }
         }
 
-        public static async System.Threading.Tasks.Task LogUser(IfyContext context, UserTep usr, string eventid, string message)
+        public static async System.Threading.Tasks.Task LogWpsJob(IfyContext context, WpsJob job, string message, string eventid)
         {
-            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0) return;
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0)
+            {
+                context.LogError(context, "Log error : missing configuration");
+                return;
+            }
 
+            IEventJobLogger logger = GetJobLogger(context);
+
+            if (logger != null){
+                var logevent = await logger.GetLogEvent(job, message, eventid);
+                context.LogInfo(context, string.Format("Log event (job) ; event id = {0} ; job id = {1}", logevent.EventId, job.Identifier));
+                await Log(context, logevent);
+            }
+        }
+
+        /**********************/
+        /******** USER ********/
+        /**********************/
+
+        private static IEventUserLogger GetUserLogger(IfyContext context){
             IEventUserLogger logger;
             string className = EventLogConfig.Settings["user_classname"].Value;
             if (className == null)
@@ -85,6 +111,18 @@ namespace Terradue.Tep {
                 System.Reflection.ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(IfyContext) });
                 logger = (IEventUserLogger)ci.Invoke(new object[] { context });
             }
+            return logger;
+        }
+
+        public static async System.Threading.Tasks.Task LogUser(IfyContext context, UserTep usr, string eventid, string message)
+        {
+            if (EventLogConfig == null || EventLogConfig.Settings == null || EventLogConfig.Settings.Count == 0)
+            {
+                context.LogError(context, "Log error : missing configuration");
+                return;
+            }
+
+            IEventUserLogger logger = GetUserLogger(context);            
 
             if (logger != null){
                 var logevent = await logger.GetLogEvent(usr, eventid, message);
@@ -99,6 +137,7 @@ namespace Terradue.Tep {
     /*************************/
     public interface IEventJobLogger {
         System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message);
+        System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message, string eventid);
     }
 
     public class EventJobLoggerTep : IEventJobLogger {
@@ -170,6 +209,20 @@ namespace Terradue.Tep {
                 context.LogError(job, "Log event error: " + e.Message);
             }
             return null;
+        }
+
+        public async System.Threading.Tasks.Task<Event> GetLogEvent(WpsJob job, string message, string eventid){
+            var logevent = GetLogEvent(job, message).ContinueWith<Event>(
+                    jobevent => { 
+                        if (jobevent != null)
+                        {								
+                            jobevent.Result.EventId = eventid;
+                            return jobevent.Result;
+                        }
+                        return null;
+                    }
+                );
+            return await logevent;
         }
 
         protected Dictionary<string, object> GetJobBasicProperties(WpsJob job)
