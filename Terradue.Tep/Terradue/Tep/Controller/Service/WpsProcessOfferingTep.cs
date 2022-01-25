@@ -25,6 +25,29 @@ namespace Terradue.Tep {
             return p;
         }
 
+        public static WpsProcessOfferingTep Copy(WpsProcessOfferingTep service, IfyContext context) {
+            WpsProcessOfferingTep newservice = new WpsProcessOfferingTep(context);
+            newservice.OwnerId = context.UserId;
+            newservice.UserId = context.UserId;
+            newservice.Identifier = Guid.NewGuid().ToString();
+            newservice.Name = service.Name;
+            newservice.Description = service.Description;
+            newservice.Url = service.Url;
+            newservice.Version = service.Version;
+            newservice.IconUrl = service.IconUrl;
+            newservice.ValidationUrl = service.ValidationUrl;
+            newservice.TermsConditionsUrl = service.TermsConditionsUrl;
+            newservice.TermsConditionsText = service.TermsConditionsText;
+            newservice.Domain = service.Domain;
+            newservice.Tags = service.Tags;            
+            newservice.RemoteIdentifier = service.RemoteIdentifier;
+            newservice.Available = service.Available;    
+            newservice.Commercial = service.Commercial;
+            newservice.Provider = service.Provider;
+            newservice.Geometry = service.Geometry;
+            return newservice;
+        }
+
         public string ValidateResult(string json) {
             if (string.IsNullOrEmpty(this.ValidationUrl)) return null;
             try {

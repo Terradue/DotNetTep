@@ -131,6 +131,65 @@ namespace Terradue.Tep.WebServer {
         public string Identifier { get; set; }
     }
 
+    [Route("/service/wps/{Identifier}/validate", "POST", Summary = "POST a WPS service validation", Notes = "")]
+    public class ValidateWPSService : IRequiresRequestStream, IReturn<WebWpsService> {
+        [ApiMember(Name = "Identifier", Description = "Service identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+        public System.IO.Stream RequestStream { get; set; }
+    }
+
+    [Route("/wps/sync", "GET", Summary = "Sync services", Notes = "")]
+    public class ReloadWpsForApp : IReturn<HttpResult> {
+        [ApiMember(Name = "appid", Description = "servlet id", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public String AppId { get; set; }
+    }
+
+    [Route("/service/wps/bulk/app", "POST", Summary = "POST services for app", Notes = "")]
+    public class BulkServicesForAppRequestTep
+    {
+        [ApiMember(Name = "identifiers", Description = "identifiers of the services", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> Identifiers { get; set; }
+
+        [ApiMember(Name = "selfapp", Description = "identifier of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string SelfApp { get; set; }
+    }
+
+    [Route("/service/wps/bulk/available", "PUT", Summary = "PUT services availability", Notes = "")]
+    public class BulkServicesAvailabilityRequestTep
+    {
+        [ApiMember(Name = "identifiers", Description = "identifiers of the services", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> Identifiers { get; set; }
+
+        [ApiMember(Name = "identifier", Description = "identifier of the service to be copied", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+
+        [ApiMember(Name = "available", Description = "availability of the service", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool Available { get; set; }
+    }
+
+    [Route("/service/wps/bulk/replace", "PUT", Summary = "PUT services availability", Notes = "")]
+    public class BulkSwitchServiceRequestTep
+    {
+        [ApiMember(Name = "identifiers", Description = "identifiers of the services", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> Identifiers { get; set; }
+
+        [ApiMember(Name = "service", Description = "identifier of the service to be copied", ParameterType = "query", DataType = "WebServiceTep", IsRequired = true)]
+        public WebServiceTep Service { get; set; }
+
+        [ApiMember(Name = "wpsIdentifier", Description = "wps identifier of the service to be copied", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string WpsIdentifier { get; set; }
+
+        [ApiMember(Name = "deleteOld", Description = "Delete old services", ParameterType = "query", DataType = "bool", IsRequired = true)]
+        public bool DeleteOld { get; set; }
+    }
+
+    [Route("/service/wps/bulk/delete", "DELETE", Summary = "DELETE services", Notes = "")]
+    public class BulkServicesDeleteRequestTep
+    {
+        [ApiMember(Name = "identifiers", Description = "identifiers of the services", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> Identifiers { get; set; }
+    }
+    
     [Route("/user/current/service/wps/sync", "GET", Summary = "GET refresh current user wps service", Notes = "")]
     public class CurrentUserWpsServiceSyncRequestTep: IReturn<WebResponseBool> { }
 
