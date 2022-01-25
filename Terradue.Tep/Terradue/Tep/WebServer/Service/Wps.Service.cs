@@ -22,20 +22,6 @@ using Terradue.WebService.Model;
 
 namespace Terradue.Tep.WebServer.Services {
 
-    [Route("/service/wps/{Identifier}/validate", "POST", Summary = "POST a WPS service validation", Notes = "")]
-    public class ValidateWPSService : IRequiresRequestStream, IReturn<WebWpsService> {
-        [ApiMember(Name = "Identifier", Description = "Service identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Identifier { get; set; }
-        public System.IO.Stream RequestStream { get; set; }
-    }
-
-    [Route("/wps/sync", "GET", Summary = "Sync services", Notes = "")]
-    public class ReloadWpsForApp : IReturn<HttpResult> {
-        [ApiMember(Name = "appid", Description = "servlet id", ParameterType = "query", DataType = "String", IsRequired = true)]
-        public String AppId { get; set; }
-    }
-
-
     [Api("Tep Terradue webserver")]
     [Restrict(EndpointAttributes.InSecure | EndpointAttributes.InternalNetworkAccess | EndpointAttributes.Json | EndpointAttributes.Xml,
               EndpointAttributes.Secure | EndpointAttributes.External | EndpointAttributes.Json | EndpointAttributes.Xml)]
@@ -1132,6 +1118,9 @@ namespace Terradue.Tep.WebServer.Services {
                 wpsNew.Available = true;
                 wpsNew.Commercial = wpsOld.Commercial;
                 wpsNew.Geometry = wpsOld.Geometry;
+                wpsNew.ValidationUrl = wpsOld.ValidationUrl;
+                wpsNew.TermsConditionsUrl = wpsOld.TermsConditionsUrl;
+                wpsNew.TermsConditionsText = wpsOld.TermsConditionsText;
                 wpsNew.Store();
 
                 if (request.DeleteOld)
@@ -1586,7 +1575,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/available GET, identifier='{0}'", request.Identifier));
+                context.LogInfo(this, string.Format("/service/wps/{{identifier}}/available PUT, identifier='{0}'", request.Identifier));
 
                 var wps = Service.FromIdentifier(context, request.Identifier);
                 wps.Available = !wps.Available;

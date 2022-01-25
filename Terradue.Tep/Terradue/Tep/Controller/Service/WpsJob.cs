@@ -1834,16 +1834,24 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The recast result count.</returns>
         private long GetOpenSearchableResultCount(string url) {
+            bool isCatalogUri = new Uri(url).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host;
             try {
+                var user = UserTep.FromId(context, this.OwnerId);
+                var apikey = user.GetSessionApiKey();
+                var t2userid = user.TerradueCloudUsername;            
+                OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)MasterCatalogue.OpenSearchFactorySettings.Clone();
+                // For Terradue resources, use the API key
+				if (isCatalogUri && !string.IsNullOrEmpty(apikey))
+				{
+                    specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
+				}
+
                 var nvc = new NameValueCollection();
                 nvc.Set("count", "0");
-                var ios = OpenSearchFactory.FindOpenSearchable(MasterCatalogue.OpenSearchFactorySettings, new OpenSearchUrl(url));
+                var ios = OpenSearchFactory.FindOpenSearchable(specsettings, new OpenSearchUrl(url));
                 var result = MasterCatalogue.OpenSearchEngine.Query(ios, nvc);
                 return result.TotalResults;
             } catch (Exception e) {
-                if (new Uri(url).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
-                    return 0;
-                }
                 throw e; 
             }
         }
