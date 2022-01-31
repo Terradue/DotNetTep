@@ -14,7 +14,7 @@ namespace Terradue.Tep {
         public void CheckRefresh() {
             var tokenaccess = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
             TimeSpan span = tokenaccess.Expire.Subtract(DateTime.UtcNow);
-            if (span.TotalMinutes < 3) {
+            if (span.TotalMinutes < context.GetConfigIntegerValue("AccessTokenExpireMinutes")) {
                 if (span.TotalMinutes < 0) {
                     throw new Exception("Token is not valid anymore");
                 } else {
