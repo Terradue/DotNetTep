@@ -462,7 +462,8 @@ INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('wps3input-format', 'string', 'wps3 input fixed format value', 'wps3 input fixed format value', 'atom', '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('wps3input-downloadorigin', 'string', 'wps3 input fixed download origin value', 'wps3 input fixed download origin value', '[terradue]', '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('cookieID-token-id', 'string', 'cookieID-token-id value', 'cookieID-token-id value', 'oauthtoken_id', '0');
-INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('sso-notoken-endsession-enabled', 'bool', 'Tells if we enable the end of session in case of sso token not valid anymore', 'Tells if we enable the end of session in case of sso token not valid anymore', 'true', '1');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('sso-notoken-endsession-enabled', 'bool', 'Tells if we enable the end of session in case of sso token not valid anymore', 'Tells if we enable the end of session in case of sso token not valid anymore', 'true', '1');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('AccessTokenExpireMinutes', 'int', 'access token max expire time in minutes', 'access token max expire time in minutes', 3, '0');
 -- RESULT
 
 -- Add wpsjob logs
