@@ -55,8 +55,9 @@ namespace Terradue.Tep {
                     Url = s3link,
                     AuthorizationHeader = authBasicHeader,
                     Index = job.Owner.Username,
+                    CreateIndex = true,
                     Categories = new List<Wps3Utils.SyndicationCategory>{
-                        new Wps3Utils.SyndicationCategory { Name = "appId", Label = job.AppIdentifier }
+                        new Wps3Utils.SyndicationCategory { Name = "appId", Label = job.AppIdentifier, Scheme = "" }
                     },
                     Links = new List<Wps3Utils.SyndicationLink>{
                         publishlink
