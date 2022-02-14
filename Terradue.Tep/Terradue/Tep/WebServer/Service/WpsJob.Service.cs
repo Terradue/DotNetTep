@@ -269,11 +269,10 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
-            bool isnew = string.IsNullOrEmpty(request.Identifier);
+            bool isnew = request.Id == 0;
             try{
                 job.Store();
-            }catch(DuplicateEntityIdentifierException){
-                isnew = false;
+            }catch(DuplicateEntityIdentifierException){                
                 job = WpsJob.FromIdentifier(context, request.Identifier);
                 job.Name = request.Name;
                 job.AppIdentifier = request.AppIdentifier;
