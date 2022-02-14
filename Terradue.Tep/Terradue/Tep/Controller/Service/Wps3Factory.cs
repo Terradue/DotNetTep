@@ -44,8 +44,12 @@ namespace Terradue.Tep {
                 context.LogDebug(job, string.Format("publish request to supervisor - s3link = {0} ; jobUrl = {1} ; index = {2}", s3link, shareUri.AbsoluteUri, job.Owner.Username));
                 string authBasicHeader = null;
                 try {
-                    var apikey = job.Owner.LoadApiKeyFromRemote();
-                    authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(job.Owner.Username + ":" + apikey));
+                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_FIXED_AUTH_HEADER"])){
+                        authBasicHeader = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_FIXED_AUTH_HEADER"];
+                    } else {
+                        var apikey = job.Owner.LoadApiKeyFromRemote();
+                        authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(job.Owner.Username + ":" + apikey));
+                    }
                 }catch(Exception e) {
                     context.LogError(this, "Error get apikey : " + e.Message);
                 }
@@ -55,8 +59,9 @@ namespace Terradue.Tep {
                     Url = s3link,
                     AuthorizationHeader = authBasicHeader,
                     Index = job.Owner.Username,
+                    CreateIndex = true,
                     Categories = new List<Wps3Utils.SyndicationCategory>{
-                        new Wps3Utils.SyndicationCategory { Name = "appId", Label = job.AppIdentifier }
+                        new Wps3Utils.SyndicationCategory { Name = "appId", Label = job.AppIdentifier, Scheme = "" }
                     },
                     Links = new List<Wps3Utils.SyndicationLink>{
                         publishlink

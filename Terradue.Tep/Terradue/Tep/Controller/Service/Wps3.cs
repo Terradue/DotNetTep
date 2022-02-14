@@ -169,6 +169,8 @@ namespace Terradue.Tep {
         [DataMember]
         public string Index { get; set; }
         [DataMember]
+        public bool CreateIndex { get; set; }
+        [DataMember]
         public List<Wps3Utils.SyndicationCategory> Categories { get; set; }
         [DataMember]
         public List<Wps3Utils.SyndicationLink> Links { get; set; }
