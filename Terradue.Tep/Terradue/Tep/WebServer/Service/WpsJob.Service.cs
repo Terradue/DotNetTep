@@ -148,7 +148,7 @@ namespace Terradue.Tep.WebServer.Services {
                 Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
                 var nvc = httpRequest.QueryString;
 
-                if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                if (CatalogueFactory.IsCatalogUrl(new Uri(wpsjob.StatusLocation))) {
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
                     OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
 
@@ -223,7 +223,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 OpenSearchDescription osd;
 
-                if (new Uri(wpsjob.StatusLocation).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host) {
+                if (CatalogueFactory.IsCatalogUrl(new Uri(wpsjob.StatusLocation))) {
                     var settings = MasterCatalogue.OpenSearchFactorySettings;
                     OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
 

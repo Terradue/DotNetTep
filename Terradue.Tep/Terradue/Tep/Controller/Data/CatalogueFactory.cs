@@ -9,6 +9,18 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep {
     public class CatalogueFactory {
 
+        public static bool IsCatalogUrl(Uri uri) {
+            if (System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrls"] != null){
+                var catalogBaseUrls = System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrls"].Split(',');
+                foreach (var catalogBaseUrl in catalogBaseUrls){
+                    if (uri.Host == new Uri(catalogBaseUrl).Host) return true;
+                }
+            } else {                
+                return uri.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Posts the index of the atom feed to.
         /// </summary>
