@@ -482,12 +482,12 @@ namespace Terradue.Tep {
                                 var nvc = HttpUtility.ParseQueryString(urib.Query);
 
                                 //case WPS3 endpoint does not support format=json
-                                if (urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host
+                                if (CatalogueFactory.IsCatalogUrl(urib.Uri)
                                     && !string.IsNullOrEmpty(context.GetConfigValue("wps3input-format"))) {
                                     nvc["format"] = context.GetConfigValue("wps3input-format");
                                 }
                                 //case WPS3 endpoint needs a specific downloadorigin
-                                if (urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host
+                                if (CatalogueFactory.IsCatalogUrl(urib.Uri)
                                     && !string.IsNullOrEmpty(context.GetConfigValue("wps3input-downloadorigin"))) {
                                     nvc["do"] = context.GetConfigValue("wps3input-downloadorigin");
                                 }

@@ -16,7 +16,6 @@ namespace Terradue.Tep {
 
         static System.Collections.Specialized.NameValueCollection AppSettings = System.Configuration.ConfigurationManager.AppSettings;
         public static string recastBaseUrl = AppSettings["RecastBaseUrl"];
-        public static string catalogBaseUrl = AppSettings["CatalogBaseUrl"];
         static string statusInProgress = "in progress";
         static string statusCompleted = "completed";
         static string statusError = "error";
@@ -249,7 +248,7 @@ namespace Terradue.Tep {
                                 newStatusLocation = GetWpsJobRecastDescribeUrl(hostname, workflow, runId);
                             } else {
                                 //case direct recast or catalog response
-                                if (url.Host == new Uri(recastBaseUrl).Host || url.Host == new Uri(catalogBaseUrl).Host) {
+                                if (url.Host == new Uri(recastBaseUrl).Host || CatalogueFactory.IsCatalogUrl(url)) {
                                     log.DebugFormat("Recasting (DIRECT) job {0} - url = {1}", wpsjob.Identifier, resultUrl);
                                     wpsjob.StatusLocation = resultUrl;
                                     wpsjob.Status = WpsJobStatus.STAGED;

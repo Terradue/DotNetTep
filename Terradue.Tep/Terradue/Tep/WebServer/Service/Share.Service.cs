@@ -377,7 +377,7 @@ namespace Terradue.Tep.WebServer.Services {
                 } else if (resultType.Equals(EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword)) {
                     redirectUrl += "resultType=" + EntityType.GetEntityType(typeof(WpsProcessOffering)).Keyword;
                 } else {
-                    if (request.url.StartsWith(AppSettings["CatalogBaseUrl"]) || request.url.StartsWith(AppSettings["RecastBaseUrl"])) {
+                    if (CatalogueFactory.IsCatalogUrl(new Uri(request.url)) || request.url.StartsWith(AppSettings["RecastBaseUrl"])) {
                         redirectUrl += "resultType=" + "data";
                     } else {
                         try {

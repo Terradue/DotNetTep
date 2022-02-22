@@ -612,7 +612,7 @@ namespace Terradue.Tep {
 
             if (string.IsNullOrEmpty(this.StatusLocation)) {
                 this.StatusLocation = execResponse.statusLocation;
-                context.LogDebug(this, string.Format("job Id = {0} ; StatusLocation = {1}",this.Identifier, this.StatusLocation));
+                context.LogInfo(this, string.Format("job Id = {0} ; StatusLocation = {1}",this.Identifier, this.StatusLocation));
             }
 
             UpdateStatusFromExecuteResponse(execResponse);
@@ -1834,14 +1834,13 @@ namespace Terradue.Tep {
         /// </summary>
         /// <returns>The recast result count.</returns>
         private long GetOpenSearchableResultCount(string url) {
-            bool isCatalogUri = new Uri(url).Host == new Uri(ProductionResultHelper.catalogBaseUrl).Host;
             try {
                 var user = UserTep.FromId(context, this.OwnerId);
                 var apikey = user.GetSessionApiKey();
                 var t2userid = user.TerradueCloudUsername;            
                 OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)MasterCatalogue.OpenSearchFactorySettings.Clone();
                 // For Terradue resources, use the API key
-				if (isCatalogUri && !string.IsNullOrEmpty(apikey))
+				if (CatalogueFactory.IsCatalogUrl(new Uri(url)) && !string.IsNullOrEmpty(apikey))
 				{
                     specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
 				}
@@ -1919,7 +1918,7 @@ namespace Terradue.Tep {
                     if (!string.IsNullOrEmpty(p.Value))
                     {
                         var urib = new UriBuilder(p.Value);
-                        if (!(urib.Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["CatalogBaseUrl"]).Host)) continue;
+                        if (!CatalogueFactory.IsCatalogUrl(urib.Uri)) continue;
 
                         var query = HttpUtility.ParseQueryString(urib.Query);
                         query.Set("format", "atom");
