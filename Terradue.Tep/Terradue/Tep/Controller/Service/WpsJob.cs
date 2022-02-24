@@ -673,16 +673,16 @@ namespace Terradue.Tep {
             else if (response.Status.Item is ProcessSucceededType)
             {
                 if (IsResponseFromCoordinator(response)) this.Status = WpsJobStatus.COORDINATOR;
-                else {
-                    //check end time
-                    if (this.EndTime == DateTime.MinValue)
-                    {
-                        var endtime = response.Status.creationTime.ToUniversalTime();
-                        this.EndTime = endtime;
-                    }
+                else { 
                     //log event (job succeeded) - if was not already succeeded
                     if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
                     {
+                        //check end time
+                        if (this.EndTime == DateTime.MinValue)
+                        {
+                            var endtime = DateTime.UtcNow;
+                            this.EndTime = endtime;
+                        }
                         var message = "Job succeedeed";
                         try{
                             message = (response.Status.Item as ProcessSucceededType).Value;
@@ -692,6 +692,11 @@ namespace Terradue.Tep {
                     }
                     else
                     {
+                        if (this.EndTime == DateTime.MinValue)
+                        {
+                            var endtime = response.Status.creationTime.ToUniversalTime();
+                            this.EndTime = endtime;
+                        }
                         this.Status = WpsJobStatus.SUCCEEDED;
                     }
                 }                
@@ -701,6 +706,12 @@ namespace Terradue.Tep {
                 //log event (job failed) - if was not already failed
                 if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
                 {
+                    //check end time
+                    if (this.EndTime == DateTime.MinValue)
+                    {
+                        var endtime = DateTime.UtcNow;
+                        this.EndTime = endtime;
+                    }
                     var message = "Job failed";
                     try{
                         message = (response.Status.Item as ProcessFailedType).ExceptionReport.Exception[0].ExceptionText[0];
@@ -711,6 +722,11 @@ namespace Terradue.Tep {
                 }
                 else
                 {
+                    if (this.EndTime == DateTime.MinValue)
+                    {
+                        var endtime = response.Status.creationTime.ToUniversalTime();
+                        this.EndTime = endtime;
+                    }
                     this.Status = WpsJobStatus.FAILED;
                 }
             }
@@ -721,13 +737,6 @@ namespace Terradue.Tep {
 
             if (this.Status == WpsJobStatus.SUCCEEDED)
             {
-                //get job end time
-                try 
-                {
-                    var endtime = response.Status.creationTime.ToUniversalTime();
-                    if (this.EndTime == DateTime.MinValue && (this.CreatedTime.ToString() != endtime.ToString()) && this.CreatedTime < endtime) this.EndTime = endtime;
-                }
-                catch(Exception){}
 
                 //get job ows url
                 try
