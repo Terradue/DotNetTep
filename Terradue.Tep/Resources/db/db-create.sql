@@ -1,4 +1,4 @@
--- VERSION 1.4
+-- VERSION 1.5
 
 USE $MAIN$;
 
@@ -290,6 +290,7 @@ CREATE TABLE transaction (
 
 -- Adding Agent action...\
 INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`) VALUES ('wpsSynchro', 'Synchronize WPS', 'This action synchronize the wps providers stored in db', 'Terradue.Tep.Actions, Terradue.Tep', 'UpdateWpsProviders');
+INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`) VALUES ('monthlyJobReport', 'Create Monthly job Report', 'This action creates a job report every month', 'Terradue.Tep.Actions, Terradue.Tep', 'CreateJobMonthlyReport',0);
 -- RESULT
 
 -- Add community default role ... \
@@ -468,4 +469,9 @@ INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('
 
 -- Add wpsjob logs
 ALTER TABLE wpsjob ADD COLUMN `logs` TEXT NULL DEFAULT NULL;
+-- RESULT
+
+-- Add config
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-headerfile', 'string', 'agent job report headerfile', 'agent job report headerfile', "", '0');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-query', 'string', 'agent job report headerfile', 'agent job report headerfile', "", '0');
 -- RESULT
