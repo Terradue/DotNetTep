@@ -173,6 +173,9 @@ namespace Terradue.Tep.WebServer {
         
         [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<WebCommunityRoles>", IsRequired = false)]
         public List<WebCommunityRoles> Roles { get; set; }
+
+        [ApiMember(Name = "token", Description = "access token", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public String Token { get; set; }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.

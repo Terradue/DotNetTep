@@ -63,6 +63,10 @@ namespace Terradue.Tep.WebServer.Services {
                     context.LogError(this, e.Message, e);
                 }
                 result = new WebUserTep(context, user, false);
+                try{
+                    var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                    result.Token = cookie.Value;
+                }catch(Exception){}
                 context.Close();
             } catch (Exception e) {
 				context.LogError(this, e.Message, e);
