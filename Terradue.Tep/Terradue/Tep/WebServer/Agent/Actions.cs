@@ -198,7 +198,7 @@ namespace Terradue.Tep {
         /// Refreshs the wpjob result nb.
         /// </summary>
         /// <param name="context">Context.</param>
-        public static async void CreateJobMonthlyReport(IfyContext context) {
+        public static void CreateJobMonthlyReport(IfyContext context) {
 
             var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
             var enddateString = DateTime.Today.ToString("yyyy-MM");
