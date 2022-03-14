@@ -233,9 +233,11 @@ namespace Terradue.Tep.WebServer {
         }
 
         public List<WebCommunityRoles> GetUserCommunityRoles(IfyContext context, UserTep entity) { 
+            context.LogDebug(this, "GetUserCommunityRoles");
             var communityroles = new List<WebCommunityRoles>();
             try {
                 var communities = entity.GetUserCommunities();
+                context.LogDebug(this, string.Format("GetUserCommunityRoles - found {0} communities", communities.Count));
                 foreach (var community in communities) {
                     try {
                         var roles = entity.GetUserRoles(community);
@@ -262,6 +264,7 @@ namespace Terradue.Tep.WebServer {
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
             }
+            context.LogDebug(this, string.Format("GetUserCommunityRoles - found {0} communitiesRoles", communityroles.Count));
             return communityroles;
         }
             

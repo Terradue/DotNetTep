@@ -1262,10 +1262,12 @@ namespace Terradue.Tep {
             object[] queryParts = entityType.GetListQueryParts(context, this, UserId, null, condition);
             string sql = entityType.GetCountQuery(queryParts);
             if (context.ConsoleDebug) Console.WriteLine("SQL (COUNT): " + sql);
+            context.LogDebug(this, "ThematicCommunity - LoadRestricted - SQL(COUNT): " + sql);
             TotalResults = context.GetQueryLongIntegerValue(sql);
 
             sql = entityType.GetQuery(queryParts);
             if (context.ConsoleDebug) Console.WriteLine("SQL: " + sql);
+            context.LogDebug(this, "ThematicCommunity - LoadRestricted - SQL: " + sql);
 
             IDbConnection dbConnection = context.GetDbConnection();
             IDataReader reader = context.GetQueryResult(sql, dbConnection);
