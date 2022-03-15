@@ -70,7 +70,7 @@ namespace Terradue.Tep {
 
                 var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonurl);
                 context.LogDebug(this, string.Format("publish request to supervisor - json = {0}", json));
-
+                EventFactory.LogWpsJob(context, job, "Job published", "portal_job_publish");
                 try {
                     using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
                         streamWriter.Write(json);
@@ -91,7 +91,7 @@ namespace Terradue.Tep {
                     }
                 } catch (Exception e) {
                     context.LogError(job, "Error Create user product request to supervisor: " + e.Message);
-                }                
+                }                                                
             }
             return resultdescription;
         }
