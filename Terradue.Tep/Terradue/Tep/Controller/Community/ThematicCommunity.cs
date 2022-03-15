@@ -1262,22 +1262,39 @@ namespace Terradue.Tep {
             object[] queryParts = entityType.GetListQueryParts(context, this, UserId, null, condition);
             string sql = entityType.GetCountQuery(queryParts);
             if (context.ConsoleDebug) Console.WriteLine("SQL (COUNT): " + sql);
-            context.LogDebug(this, "ThematicCommunity - LoadRestricted - SQL(COUNT): " + sql);
+            // context.LogDebug(this, "ThematicCommunity - LoadRestricted - SQL(COUNT): " + sql);
             TotalResults = context.GetQueryLongIntegerValue(sql);
 
             sql = entityType.GetQuery(queryParts);
             if (context.ConsoleDebug) Console.WriteLine("SQL: " + sql);
-            context.LogDebug(this, "ThematicCommunity - LoadRestricted - SQL: " + sql);
-
+            // context.LogDebug(this, "ThematicCommunity - LoadRestricted - SQL: " + sql);
             IDbConnection dbConnection = context.GetDbConnection();
             IDataReader reader = context.GetQueryResult(sql, dbConnection);
             IsLoading = true;
+            var ids = new List<int>();
             while (reader.Read()) {
-                ThematicCommunity item = entityType.GetEntityInstance(context) as ThematicCommunity;
-                item.Load(entityType, reader, AccessLevel);
-                if (UserId != 0) item.UserId = UserId;
-                IncludeInternal(item);
+                if(reader.GetValue(0) != DBNull.Value)
+                    ids.Add(reader.GetInt32(0));
             }
+            foreach (var id in ids){
+                IncludeInternal(ThematicCommunity.FromId(context, id));
+            }
+
+            // while (reader.Read()) {
+            //     try{
+            //         context.LogDebug(this, "test3");
+            //         ThematicCommunity item = entityType.GetEntityInstance(context) as ThematicCommunity;
+            //         context.LogDebug(this, "test4");
+            //         item.Load(entityType, reader, AccessLevel);
+            //         context.LogDebug(this, "test5");
+            //         if (UserId != 0) item.UserId = UserId;
+            //         context.LogDebug(this, "test5");
+            //         IncludeInternal(item);
+            //         context.LogDebug(this, "test7");
+            //     }catch(Exception e){
+            //         context.LogError(this, e.Message);
+            //     }
+            // }
             IsLoading = false;
             context.CloseQueryResult(reader, dbConnection);
         }
