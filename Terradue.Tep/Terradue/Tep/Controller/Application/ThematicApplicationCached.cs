@@ -134,21 +134,27 @@ namespace Terradue.Tep
 
             if (parameters["admin"] != null && parameters["admin"] == "true")
             {
-                var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
-                if (wpsOverviews.Count > 0) result.ElementExtensions.Add("wps", "https://standards.terradue.com", wpsOverviews);
+                try{
+                    var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
+                    if (wpsOverviews.Count > 0) result.ElementExtensions.Add("wps", "https://standards.terradue.com", wpsOverviews);
+                }catch(Exception){}
 
-                var collOverviews = ThematicAppFactory.GetDataCollectionOverview(context, item);
-                if (collOverviews.Count > 0) result.ElementExtensions.Add("collection", "https://standards.terradue.com", collOverviews);
+                try{
+                    var collOverviews = ThematicAppFactory.GetDataCollectionOverview(context, item);
+                    if (collOverviews.Count > 0) result.ElementExtensions.Add("collection", "https://standards.terradue.com", collOverviews);
+                }catch(Exception){}
 
-                if (this.Domain != null){
-                    var community = ThematicCommunity.FromId(context, this.DomainId);
-                    var comOverview = new CommunityOverview {
-                        Identifier = community.Identifier,
-                        Title = community.Name, 
-                        Icon = community.IconUrl                        
-                    };
-                    result.ElementExtensions.Add("community", "https://standards.terradue.com", comOverview);
-                }
+                try{
+                    if (this.Domain != null){
+                        var community = ThematicCommunity.FromId(context, this.DomainId);
+                        var comOverview = new CommunityOverview {
+                            Identifier = community.Identifier,
+                            Title = community.Name, 
+                            Icon = community.IconUrl                        
+                        };
+                        result.ElementExtensions.Add("community", "https://standards.terradue.com", comOverview);
+                    }
+                }catch(Exception){}
             }
 
             return result;
