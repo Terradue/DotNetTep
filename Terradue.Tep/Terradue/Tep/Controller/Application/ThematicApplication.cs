@@ -30,10 +30,15 @@ This component uses extensively \ref OWSContext model to represent the dataset c
 */
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
+using System.Runtime.Serialization;
 using System.Web;
 using Terradue.OpenSearch;
+using Terradue.OpenSearch.Result;
 using Terradue.OpenSearch.Schema;
 using Terradue.Portal;
+using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
+using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep
 {
@@ -136,6 +141,243 @@ namespace Terradue.Tep
 
             return osd;
         }
+    }
+
+    public class ThematicAppFactory {
+        public static List<CollectionOverview> GetDataCollectionOverview(IfyContext context,IOpenSearchResultItem item){
+            var appUid = item.Identifier.Trim();
+            var appTitle = item.Title != null ? item.Title.Text.Trim() : appUid;
+            var appIconLink = item.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+            string appIcon = "";
+            if (appIconLink != null) appIcon = appIconLink.Uri.AbsoluteUri;
+            var offerings = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+            var offering = offerings.First(p => p.Code == "http://www.terradue.com/spec/owc/1.0/req/atom/opensearch");
+            return GetDataCollectionOverview(context, offering, appUid, appTitle, appIcon);
+        }
+        public static List<CollectionOverview> GetDataCollectionOverview(IfyContext context,OwsContextAtomEntry entry){
+            var appUid = GetExtensionFromFeed(entry,"identifier", "http://purl.org/dc/elements/1.1/");
+            var appTitle = entry.Title != null ? entry.Title.Text.Trim() : appUid;
+            var appIconLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+            string appIcon = "";
+            if (appIconLink != null) appIcon = appIconLink.Uri.AbsoluteUri;
+            var offerings = entry.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+            var offering = offerings.First(p => p.Code == "http://www.terradue.com/spec/owc/1.0/req/atom/opensearch");
+            return GetDataCollectionOverview(context, offering, appUid, appTitle, appIcon);
+        }
+        private static List<CollectionOverview> GetDataCollectionOverview(IfyContext context, OwcOffering offering, string appUid, string appTitle, string appIcon) {
+            List<CollectionOverview> collectionOverviews = new List<CollectionOverview>();
+            if (offering != null) {
+                if (offering.Operations != null) {
+                    foreach (var ops in offering.Operations) {
+                        if (ops.Any == null || ops.Any[0] == null || ops.Any[0].InnerText == null) continue;
+
+                        if (ops.Code == "ListSeries") {
+                            EntityList<Collection> collections = new EntityList<Collection>(context);
+                            Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                            var uri = new Uri(ops.Href);
+                            var nvc = HttpUtility.ParseQueryString(uri.Query);
+                            var resultColl = ose.Query(collections, nvc);
+                            foreach (var itemColl in resultColl.Items) {
+                                var itemCollIdTrim = itemColl.Identifier.Trim().Replace(" ", "");
+                                var any = ops.Any[0].InnerText.Trim();
+                                var anytrim = any.Replace(" ", "").Replace("*", itemCollIdTrim);
+                                any = any.Replace("*", itemColl.Identifier);
+                                var url = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                                url.Path = "/geobrowser/";
+                                url.Query = "id=" + appUid + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
+                                if (any != string.Empty) {
+                                    collectionOverviews.Add(new CollectionOverview {
+                                        Name = any,
+                                        App = new AppOverview {
+                                            Icon = appIcon ?? "",
+                                            Title = appTitle,
+                                            Uid = appUid
+                                        },
+                                        Url = url.Uri.AbsoluteUri
+                                    });
+                                }
+                            }
+                        } else {
+                            var any = ops.Any[0].InnerText.Trim();
+                            var anytrim = any.Replace(" ", "");
+                            var url = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                            url.Path = "/geobrowser/";
+                            url.Query = "id=" + appUid + "#!context=" + System.Web.HttpUtility.UrlEncode(anytrim);
+                            if (any != string.Empty) {
+                                collectionOverviews.Add(new CollectionOverview {
+                                    Name = any,
+                                    App = new AppOverview {
+                                        Icon = appIcon ?? "",
+                                        Title = appTitle,
+                                        Uid = appUid
+                                    },
+                                    Url = url.Uri.AbsoluteUri
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            return collectionOverviews;
+        }
+
+        public static string GetExtensionFromFeed(OwsContextAtomEntry entry, string extension, string ns){
+            string val = "";
+            var vals = entry.ElementExtensions.ReadElementExtensions<string>(extension, ns);
+            if (vals.Count > 0) val = vals[0];
+            return val;
+        }
+
+        public static List<WpsServiceOverview> GetWpsServiceOverviews(IfyContext context, IOpenSearchResultItem item){
+            var appUid = item.Identifier.Trim();
+            var appTitle = item.Title != null ? item.Title.Text.Trim() : appUid;
+            var appIconLink = item.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+            string appIcon = "";
+            if (appIconLink != null) appIcon = appIconLink.Uri.AbsoluteUri;
+            var offerings = item.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+            var offering = offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+            return GetWpsServiceOverview(context, offering, appUid, appTitle, appIcon);
+        }
+        public static List<WpsServiceOverview> GetWpsServiceOverviews(IfyContext context, OwsContextAtomEntry entry){
+            var appUid = GetExtensionFromFeed(entry,"identifier", "http://purl.org/dc/elements/1.1/");
+            var appTitle = entry.Title != null ? entry.Title.Text.Trim() : appUid;
+            var appIconLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+            string appIcon = "";
+            if (appIconLink != null) appIcon = appIconLink.Uri.AbsoluteUri;
+            var offerings = entry.ElementExtensions.ReadElementExtensions<OwcOffering>("offering", OwcNamespaces.Owc, new System.Xml.Serialization.XmlSerializer(typeof(OwcOffering)));
+            var offering = offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+            return GetWpsServiceOverview(context, offering, appUid, appTitle, appIcon);
+        }
+
+        private static List<WpsServiceOverview> GetWpsServiceOverview(IfyContext context, OwcOffering offering, string appUid, string appTitle, string appIcon) {
+            List<WpsServiceOverview> wpsOverviews = new List<WpsServiceOverview>();
+            if (offering != null) {
+                if (offering.Operations != null) {
+                    foreach (var ops in offering.Operations) {
+                        if (ops.Code == "ListProcess") {
+                            var href = ops.Href;
+                            //replace usernames in apps
+                            try {
+                                var user = UserTep.FromId(context, context.UserId);
+                                href = href.Replace("${USERNAME}", user.Username);
+                                href = href.Replace("${T2USERNAME}", user.TerradueCloudUsername);
+                                href = href.Replace("${T2APIKEY}", user.GetSessionApiKey());
+                            } catch (Exception e) {
+                                context.LogError(context, e.Message);
+                            }
+                            var uri = new Uri(href.Replace("file://", context.BaseUrl));
+                            var nvc = HttpUtility.ParseQueryString(uri.Query);
+                            nvc.Set("count", "100");
+                            Terradue.OpenSearch.Engine.OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
+                            var responseType = ose.GetExtensionByExtensionName("atom").GetTransformType();
+                            EntityList<WpsProcessOffering> wpsProcesses = new EntityList<WpsProcessOffering>(context);
+                            wpsProcesses.SetFilter("Available", "true");
+                            wpsProcesses.OpenSearchEngine = ose;
+                            wpsProcesses.Identifier = string.Format("servicewps-{0}", context.Username);
+
+                            CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+                            wpsOneProcesses.OpenSearchEngine = ose;
+
+                            wpsProcesses.Identifier = "service/wps";
+                            var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
+                            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
+                            IOpenSearchResultCollection osr = ose.Query(multiOSE, nvc, responseType);
+
+                            OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
+
+                            foreach (var itemWps in osr.Items) {
+                                string uid = "";
+                                var identifiers = itemWps.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/");
+                                if (identifiers.Count > 0) uid = identifiers[0];
+                                string description = "";
+                                if(itemWps.Content is TextSyndicationContent){
+                                    var content = itemWps.Content as TextSyndicationContent;
+                                    description = content.Text;
+                                }
+                                string version = "";
+                                var versions = itemWps.ElementExtensions.ReadElementExtensions<string>("version", "https://www.terradue.com/");
+                                if (versions.Count > 0) version = versions[0];
+                                var serviceUrl = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                                serviceUrl.Path = "/t2api/service/wps/search";
+                                serviceUrl.Query = "id=" + uid;
+                                var url = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                                url.Path = "t2api/share";
+                                url.Query = "url=" + HttpUtility.UrlEncode(serviceUrl.Uri.AbsoluteUri) + "&id=" + appUid;
+                                var icon = itemWps.Links.FirstOrDefault(l => l.RelationshipType == "icon");
+                                //entry.Links.Add(new SyndicationLink(new Uri(this.IconUrl), "icon", null, null, 0));
+                                wpsOverviews.Add(new WpsServiceOverview { 
+                                    Identifier = uid,
+                                    App = new AppOverview{
+                                        Icon = appIcon ?? "",
+                                        Title = appTitle,
+                                        Uid = appUid
+                                    },
+                                    Name = itemWps.Title != null ? itemWps.Title.Text : uid,
+                                    Description = description,
+                                    Version = version,
+                                    Url = url.Uri.AbsoluteUri,
+                                    Icon = icon != null ? icon.Uri.AbsoluteUri : ""
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            return wpsOverviews;
+        }
+    }
+
+     [DataContract]
+    public class AppOverview {
+        [DataMember]
+        public string Uid { get; set; }
+        [DataMember]
+        public string Title { get; set; }
+        [DataMember]
+        public string Icon { get; set; }
+    }
+
+    [DataContract]
+    public class CommunityOverview {
+        [DataMember]
+        public string Identifier { get; set; }
+        [DataMember]
+        public string Title { get; set; }
+        [DataMember]
+        public string Icon { get; set; }        
+    }
+    [DataContract]
+    public class CollectionOverview {
+        [DataMember]
+        public string Name { get; set; }
+        [DataMember]
+        public AppOverview App { get; set; }
+        [DataMember]
+        public string Url { get; set; }
+
+        public CollectionOverview() { }
+    }
+
+    [DataContract]
+    public class WpsServiceOverview {
+        [DataMember]
+        public string Identifier { get; set; }
+        [DataMember]
+        public string Name { get; set; }
+        [DataMember]
+        public string Description { get; set; }
+        [DataMember]
+        public string Version { get; set; }
+        [DataMember]
+        public AppOverview App { get; set; }
+        [DataMember]
+        public string Url { get; set; }
+        [DataMember]
+        public string Icon { get; set; }
+
+        public WpsServiceOverview() { }
     }
 }
 
