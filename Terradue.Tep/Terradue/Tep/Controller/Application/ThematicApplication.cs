@@ -299,6 +299,9 @@ namespace Terradue.Tep
                                 string version = "";
                                 var versions = itemWps.ElementExtensions.ReadElementExtensions<string>("version", "https://www.terradue.com/");
                                 if (versions.Count > 0) version = versions[0];
+                                string publisher = "";
+                                var publishers = itemWps.ElementExtensions.ReadElementExtensions<string>("publisher", "http://purl.org/dc/elements/1.1/");
+                                if (publishers.Count > 0) publisher = publishers[0];
                                 var serviceUrl = new UriBuilder(context.GetConfigValue("BaseUrl"));
                                 serviceUrl.Path = "/t2api/service/wps/search";
                                 serviceUrl.Query = "id=" + uid;
@@ -317,6 +320,7 @@ namespace Terradue.Tep
                                     Name = itemWps.Title != null ? itemWps.Title.Text : uid,
                                     Description = description,
                                     Version = version,
+                                    Provider = publisher,
                                     Url = url.Uri.AbsoluteUri,
                                     Icon = icon != null ? icon.Uri.AbsoluteUri : ""
                                 });
@@ -370,6 +374,8 @@ namespace Terradue.Tep
         public string Description { get; set; }
         [DataMember]
         public string Version { get; set; }
+        [DataMember]
+        public string Provider { get; set; }
         [DataMember]
         public AppOverview App { get; set; }
         [DataMember]
