@@ -174,8 +174,11 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "roles", Description = "User accounting balance", ParameterType = "query", DataType = "List<WebCommunityRoles>", IsRequired = false)]
         public List<WebCommunityRoles> Roles { get; set; }
 
-        [ApiMember(Name = "token", Description = "access token", ParameterType = "query", DataType = "String", IsRequired = true)]
+        [ApiMember(Name = "token", Description = "sso token", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String Token { get; set; }
+
+        [ApiMember(Name = "token_expire", Description = "sso token expire", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public DateTime TokenExpire { get; set; }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.

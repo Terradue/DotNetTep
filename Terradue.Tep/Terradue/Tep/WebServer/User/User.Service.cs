@@ -61,11 +61,12 @@ namespace Terradue.Tep.WebServer.Services {
                     user.PrivateSanityCheck();//we do it here, because we do not want to do on each Load(), and we are sure users always pass by here
                 }catch(Exception e){
                     context.LogError(this, e.Message, e);
-                }
+                }                
                 result = new WebUserTep(context, user, false);
                 try{
                     var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     result.Token = cookie.Value;
+                    result.TokenExpire = cookie.Expire;
                 }catch(Exception){}
                 context.Close();
             } catch (Exception e) {
