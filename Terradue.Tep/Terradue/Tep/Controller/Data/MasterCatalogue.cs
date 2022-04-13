@@ -256,14 +256,20 @@ namespace Terradue.Tep {
             newOse.RegisterExtension(aosee);
             FeatureCollectionOpenSearchEngineExtension ngosee = new FeatureCollectionOpenSearchEngineExtension();
             newOse.RegisterExtension(ngosee);
-            // RdfOpenSearchEngineExtension rosee = new RdfOpenSearchEngineExtension();
-            // newOse.RegisterExtension(rosee);
 
-            NameValueCollection nvc = new NameValueCollection();
-            nvc.Add("SlidingExpiration", "30");
-            searchCache = new OpenSearchMemoryCache("cache", nvc);
-            newOse.RegisterPreSearchFilter(searchCache.TryReplaceWithCacheRequest);
-            newOse.RegisterPostSearchFilter(searchCache.CacheResponse);
+            var slidingExpiration = "30";
+            
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["Opensearch.Cache.SlidingExpiration"])){
+                slidingExpiration = System.Configuration.ConfigurationManager.AppSettings["Opensearch.Cache.SlidingExpiration"];
+            }
+             
+            if(slidingExpiration != "0"){            
+                NameValueCollection nvc = new NameValueCollection();
+                nvc.Add("SlidingExpiration", slidingExpiration);
+                searchCache = new OpenSearchMemoryCache("cache", nvc);
+                newOse.RegisterPreSearchFilter(searchCache.TryReplaceWithCacheRequest);
+                newOse.RegisterPostSearchFilter(searchCache.CacheResponse);
+            }
             return newOse;
         }
 
