@@ -1,4 +1,4 @@
--- VERSION 1.5
+-- VERSION 1.6
 
 USE $MAIN$;
 
@@ -476,4 +476,5 @@ ALTER TABLE wpsjob ADD COLUMN `logs` TEXT NULL DEFAULT NULL;
 -- Add config
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-headerfile', 'string', 'agent job report headerfile', 'agent job report headerfile', "", '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-query', 'string', 'agent job report headerfile', 'agent job report headerfile', "", '0');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('ellip.editor-url', 'string', 'ellip.editor-url', 'ellip.editor-url', "https://ellip.terradue.com/#infohubs/geobrowser-apps-editor/id", '0');
 -- RESULT
