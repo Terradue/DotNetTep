@@ -155,6 +155,10 @@ namespace Terradue.Tep
                         result.ElementExtensions.Add("community", "https://standards.terradue.com", comOverview);
                     }
                 }catch(Exception){}
+                try{                    
+                    var editorUrl = string.Format("{0}/{1}/{2}", context.GetConfigValue("ellip.editor-url"), this.Index, this.UId);
+                    result.Links.Add(new SyndicationLink(new Uri(editorUrl), "related", "geobrowser editor", "application/html",0));                    
+                }catch(Exception){}
             }
 
             return result;
