@@ -198,6 +198,54 @@ namespace Terradue.Tep {
         /// Refreshs the wpjob result nb.
         /// </summary>
         /// <param name="context">Context.</param>
+        // public static void CreateJobMonthlyReport(IfyContext context) {
+
+        //     var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
+        //     var enddateString = DateTime.Today.ToString("yyyy-MM");
+        //     var monthString = DateTime.Today.ToString("MMMM");
+
+        //     context.WriteInfo(string.Format("CreateJobMonthlyReport ({0}) - {1} -> {2}", monthString, startdateString, enddateString));
+
+        //     //generate new file
+        //     var csv = new System.Text.StringBuilder();
+        //     var csvHeader = new System.Text.StringBuilder();
+        //     var csvBody = new System.Text.StringBuilder();
+        //     string path = AppDomain.CurrentDomain.BaseDirectory;
+        //     if (!path.EndsWith("/")) path += "/";
+        //     var header = context.GetConfigValue("agent-jobreport-headerfile");
+        //     if(string.IsNullOrEmpty(header)) return;
+        //     var headerLength = header.Split(',').Length + 1;
+        //     csvHeader.Append(header);
+        //     csvHeader.Length --;
+        //     csvHeader.Append(Environment.NewLine);            
+
+        //     //read sql from file
+        //     var sql = context.GetConfigValue("agent-jobreport-query");
+        //     if(string.IsNullOrEmpty(sql)) return;
+        //     sql = sql.Replace("$(STARTDATE)",startdateString);
+        //     sql = sql.Replace("$(ENDDATE)",enddateString);
+        //     if(!sql.StartsWith("SELECT")) return;
+
+        //     System.Data.IDbConnection dbConnection = context.GetDbConnection();
+        //     System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
+        //     while (reader.Read()) {
+        //         for(int i=0;i<headerLength;i++){
+        //             if (reader.GetValue(i) != DBNull.Value)
+        //                 csvBody.Append(reader.GetString(i));
+        //             else
+        //                 csvBody.Append("");
+        //             csvBody.Append(",");
+        //         }
+        //         csvBody.Length --;
+        //         csvBody.Append(Environment.NewLine);
+        //     }
+        //     context.CloseQueryResult(reader, dbConnection);            
+        //     csv.Append(csvHeader).Append(csvBody);
+
+        //     var filename = string.Format("{0}files/{1}-job-report-{2}.csv", path, context.GetConfigValue("siteNameShort"),startdateString);            
+        //     System.IO.File.WriteAllText(filename, csv.ToString());               
+        // }
+
         public static void CreateJobMonthlyReport(IfyContext context) {
 
             var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
@@ -214,32 +262,144 @@ namespace Terradue.Tep {
             if (!path.EndsWith("/")) path += "/";
             var header = context.GetConfigValue("agent-jobreport-headerfile");
             if(string.IsNullOrEmpty(header)) return;
-            var headerLength = header.Split(',').Length + 1;
+            var headers = header.Split(',');
+            var headerLength = headers.Length + 1;
             csvHeader.Append(header);
             csvHeader.Length --;
-            csvHeader.Append(Environment.NewLine);            
+            csvHeader.Append(Environment.NewLine);
 
-            //read sql from file
-            var sql = context.GetConfigValue("agent-jobreport-query");
-            if(string.IsNullOrEmpty(sql)) return;
-            sql = sql.Replace("$(STARTDATE)",startdateString);
-            sql = sql.Replace("$(ENDDATE)",enddateString);
-            if(!sql.StartsWith("SELECT")) return;
-
-            System.Data.IDbConnection dbConnection = context.GetDbConnection();
-            System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
-            while (reader.Read()) {
-                for(int i=0;i<headerLength;i++){
-                    if (reader.GetValue(i) != DBNull.Value)
-                        csvBody.Append(reader.GetString(i));
-                    else
-                        csvBody.Append("");
-                    csvBody.Append(",");
+            string sql = String.Format("SELECT id from wpsjob WHERE created_time > '{0}' AND created_time < '{1}';", startdateString, enddateString);
+            var ids = context.GetQueryIntegerValues(sql);
+            
+            List<WpsJob> jobs = new List<WpsJob>();
+            foreach (int id in ids) {
+                var job = WpsJob.FromId(context, id);
+                var user = job.Owner;
+                bool registration = false;
+                if (headers != null && headerLength != 0){
+                    foreach (var h in headers) {
+                        switch(h){
+                            //user part
+                            case "usr_email":
+                                csvBody.Append(user != null ? user.Email : "").Append(",");
+                                break;
+                            case "usr_username":
+                                csvBody.Append(user != null ? user.Username : "").Append(",");                                
+                                break;
+                            case "usr_level":
+                                var level = "";
+                                if(user != null){
+                                    switch(user.Level){
+                                        case 0:
+                                            level = "visitor";
+                                        break;
+                                        case 1:
+                                            level = "member";
+                                        break;
+                                        case 2:
+                                            level = "stakeholder";
+                                        break;
+                                        case 4:
+                                            level = "administrator";
+                                        break;                                    
+                                    }                
+                                }            
+                                csvBody.Append(level).Append(",");                                
+                                break;
+                            case "usr_affiliation":
+                                csvBody.Append(user != null ? user.Affiliation : "").Append(",");                                
+                                break;
+                            case "usr_creation":
+                                if(user != null && !registration){ 
+                                    user.LoadRegistrationInfo();
+                                    registration = true;
+                                }
+                                csvBody.Append(user != null ? user.RegistrationDate.ToString("yyyy-MM-ddTHH:mm:ss") : "").Append(",");
+                                break;
+                            case "usr_login":
+                                if(user != null && !registration){ 
+                                    user.LoadRegistrationInfo();
+                                    registration = true;
+                                }
+                                csvBody.Append(user != null ? user.GetLastLoginDate().ToString("yyyy-MM-ddTHH:mm:ss") : "").Append(",");
+                                break;                                                        
+                            //wpsjob part
+                            case "job_id":
+                                csvBody.Append(job.Id).Append(",");
+                            break;
+                            case "job_identifier":
+                                csvBody.Append(job.Identifier).Append(",");
+                            break;
+                            case "job_status_url":
+                                csvBody.Append(job.StatusLocation).Append(",");
+                                break;
+                            case "job_status":
+                                csvBody.Append((int)job.Status).Append(",");
+                                break;
+                            case "job_store_url":
+                                csvBody.Append(job.StatusLocation.Replace("https://recast.terradue.com/t2api/describe/","https://store.terradue.com/")).Append(",");
+                                break;
+                            case "job_creation":
+                                csvBody.Append(job.CreatedTime.ToString("yyyy-MM-ddTHH:mm:ss")).Append(",");
+                                break;
+                            case "job_end":
+                                csvBody.Append(job.EndTime != DateTime.MinValue ? job.EndTime.ToString("yyyy-MM-ddTHH:mm:ss") : "").Append(",");
+                                break;
+                            case "job_nbinput":
+                                int totalDataProcessed = 0;
+                                if (job.Parameters != null) {
+                                    foreach (var parameter in job.Parameters) {
+                                        if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {
+                                            var url = parameter.Value;
+                                            totalDataProcessed++;
+                                        }
+                                    }
+                                }
+                                csvBody.Append(totalDataProcessed).Append(",");
+                                break;
+                            case "job_shared":
+                                csvBody.Append((job.IsPrivate()?"false":"true")).Append(",");
+                                break;                            
+                            case "job_wps":
+                                if (!string.IsNullOrEmpty(job.WpsName))
+                                    csvBody.Append(job.WpsName.Replace(",", "\\,")).Append(",");
+                                else {
+                                    string wpsname = "";
+                                    try {
+                                        WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
+                                        wpsname = wps.Name;
+                                    } catch (Exception) {
+                                        wpsname = job.ProcessId;
+                                    }
+                                    csvBody.Append(wpsname.Replace(",", "\\,")).Append(",");
+                                }
+                                break;
+                            case "job_duration":
+                                var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;
+                                csvBody.Append(processingTime).Append(",");
+                                break;
+                            case "job_app":
+                                csvBody.Append(job.AppIdentifier).Append(",");
+                                break;
+                            case "job_stack_name":                
+                                var stack = "";
+                                if(job.Parameters != null){
+                                    foreach(var p in job.Parameters){
+                                        if(p.Key == "stack_name") stack = p.Value;                                        
+                                    }
+                                }
+                                csvBody.Append(stack).Append(",");
+                                break;
+                            case "na":
+                                csvBody.Append("na").Append(",");
+                                break;
+                            default:
+                                csvBody.Append(",");
+                                break;                                    
+                        }
+                    }
                 }
-                csvBody.Length --;
-                csvBody.Append(Environment.NewLine);
             }
-            context.CloseQueryResult(reader, dbConnection);            
             csv.Append(csvHeader).Append(csvBody);
 
             var filename = string.Format("{0}files/{1}-job-report-{2}.csv", path, context.GetConfigValue("siteNameShort"),startdateString);            
