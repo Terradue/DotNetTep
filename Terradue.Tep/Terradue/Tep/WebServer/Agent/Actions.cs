@@ -203,9 +203,7 @@ namespace Terradue.Tep {
             if(string.IsNullOrEmpty(header)) return;
             var headers = header.Split(',');
             var headerLength = headers.Length + 1;
-            csvHeader.Append(header);
-            csvHeader.Length --;
-            csvHeader.Append(Environment.NewLine);
+            csvHeader.Append(header);            
 
             string sql = String.Format("SELECT id from wpsjob WHERE created_time > '{0}' AND created_time < '{1}';", startdateString, enddateString);
             var ids = context.GetQueryIntegerValues(sql);
@@ -337,12 +335,12 @@ namespace Terradue.Tep {
                             default:
                                 csvBody.Append(",");
                                 break;                                    
-                        }
-                        csvBody.Append(Environment.NewLine);
+                        }                        
                     }
                 }
+                csvBody.Append(Environment.NewLine);
             }
-            csv.Append(csvHeader).Append(csvBody);
+            csv.Append(csvHeader).Append(Environment.NewLine).Append(csvBody);
 
             var filename = string.Format("{0}/{1}-monthly-job-report-{2}.csv", context.GetConfigValue("path.files"), context.GetConfigValue("siteNameShort"),startdateString);            
             System.IO.File.WriteAllText(filename, csv.ToString());               
