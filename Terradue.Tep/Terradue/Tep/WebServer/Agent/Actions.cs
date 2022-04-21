@@ -187,58 +187,6 @@ namespace Terradue.Tep {
         /**********************************************************************/
         /**********************************************************************/
 
-        /// <summary>
-        /// Refreshs the wpjob result nb.
-        /// </summary>
-        /// <param name="context">Context.</param>
-        // public static void CreateJobMonthlyReport(IfyContext context) {
-
-        //     var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
-        //     var enddateString = DateTime.Today.ToString("yyyy-MM");
-        //     var monthString = DateTime.Today.ToString("MMMM");
-
-        //     context.WriteInfo(string.Format("CreateJobMonthlyReport ({0}) - {1} -> {2}", monthString, startdateString, enddateString));
-
-        //     //generate new file
-        //     var csv = new System.Text.StringBuilder();
-        //     var csvHeader = new System.Text.StringBuilder();
-        //     var csvBody = new System.Text.StringBuilder();
-        //     string path = AppDomain.CurrentDomain.BaseDirectory;
-        //     if (!path.EndsWith("/")) path += "/";
-        //     var header = context.GetConfigValue("agent-jobreport-headerfile");
-        //     if(string.IsNullOrEmpty(header)) return;
-        //     var headerLength = header.Split(',').Length + 1;
-        //     csvHeader.Append(header);
-        //     csvHeader.Length --;
-        //     csvHeader.Append(Environment.NewLine);            
-
-        //     //read sql from file
-        //     var sql = context.GetConfigValue("agent-jobreport-query");
-        //     if(string.IsNullOrEmpty(sql)) return;
-        //     sql = sql.Replace("$(STARTDATE)",startdateString);
-        //     sql = sql.Replace("$(ENDDATE)",enddateString);
-        //     if(!sql.StartsWith("SELECT")) return;
-
-        //     System.Data.IDbConnection dbConnection = context.GetDbConnection();
-        //     System.Data.IDataReader reader = context.GetQueryResult(sql, dbConnection);
-        //     while (reader.Read()) {
-        //         for(int i=0;i<headerLength;i++){
-        //             if (reader.GetValue(i) != DBNull.Value)
-        //                 csvBody.Append(reader.GetString(i));
-        //             else
-        //                 csvBody.Append("");
-        //             csvBody.Append(",");
-        //         }
-        //         csvBody.Length --;
-        //         csvBody.Append(Environment.NewLine);
-        //     }
-        //     context.CloseQueryResult(reader, dbConnection);            
-        //     csv.Append(csvHeader).Append(csvBody);
-
-        //     var filename = string.Format("{0}files/{1}-job-report-{2}.csv", path, context.GetConfigValue("siteNameShort"),startdateString);            
-        //     System.IO.File.WriteAllText(filename, csv.ToString());               
-        // }
-
         public static void CreateJobMonthlyReport(IfyContext context) {
 
             var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
@@ -250,9 +198,7 @@ namespace Terradue.Tep {
             //generate new file
             var csv = new System.Text.StringBuilder();
             var csvHeader = new System.Text.StringBuilder();
-            var csvBody = new System.Text.StringBuilder();
-            string path = AppDomain.CurrentDomain.BaseDirectory;
-            if (!path.EndsWith("/")) path += "/";
+            var csvBody = new System.Text.StringBuilder();            
             var header = context.GetConfigValue("agent-jobreport-headerfile");
             if(string.IsNullOrEmpty(header)) return;
             var headers = header.Split(',');
@@ -397,7 +343,7 @@ namespace Terradue.Tep {
             }
             csv.Append(csvHeader).Append(csvBody);
 
-            var filename = string.Format("{0}files/{1}-job-report-{2}.csv", "", context.GetConfigValue("siteNameShort"),startdateString);            
+            var filename = string.Format("{0}/files/{1}-job-report-{2}.csv", "", context.GetConfigValue("siteNameShort"),startdateString);            
             System.IO.File.WriteAllText(filename, csv.ToString());               
         }
 
