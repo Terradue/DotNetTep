@@ -338,6 +338,7 @@ namespace Terradue.Tep {
                                 csvBody.Append(",");
                                 break;                                    
                         }
+                        csvBody.Append(Environment.NewLine);
                     }
                 }
             }
