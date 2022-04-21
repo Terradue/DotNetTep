@@ -250,7 +250,7 @@ namespace Terradue.Tep {
 
             var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
             var enddateString = DateTime.Today.ToString("yyyy-MM");
-            var monthString = DateTime.Today.ToString("MMMM");
+            var monthString = DateTime.Today.AddMonths(-1).ToString("MMMM");
 
             context.WriteInfo(string.Format("CreateJobMonthlyReport ({0}) - {1} -> {2}", monthString, startdateString, enddateString));
 
@@ -270,6 +270,8 @@ namespace Terradue.Tep {
 
             string sql = String.Format("SELECT id from wpsjob WHERE created_time > '{0}' AND created_time < '{1}';", startdateString, enddateString);
             var ids = context.GetQueryIntegerValues(sql);
+
+            context.WriteInfo(string.Format("CreateJobMonthlyReport {0} jobs found", ids.Length));
             
             List<WpsJob> jobs = new List<WpsJob>();
             foreach (int id in ids) {
