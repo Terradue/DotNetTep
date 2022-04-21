@@ -50,6 +50,9 @@ namespace Terradue.Tep.WebServer.Services {
     [Route("/reports", "GET", Summary = "GET existing reports", Notes = "")]
     public class ReportsGetRequest : IReturn<List<string>>{}
 
+    [Route("/reports/job/monthly", "GET", Summary = "GET existing reports", Notes = "")]
+    public class ReportsGetMonthlyJobRequest : IReturn<List<string>>{}
+
     [Route("/report", "DELETE", Summary = "GET report", Notes = "")]
     public class ReportDeleteRequest : IReturn<WebResponseBool>{
         [ApiMember(Name = "filename", Description = "filename", ParameterType = "query", DataType = "string", IsRequired = true)]
@@ -135,6 +138,30 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return result;
         }
+        public object Get(ReportsGetMonthlyJobRequest request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<string> result = new List<string>();
+            try {
+                context.Open();
+                context.LogInfo(this,string.Format("/reports/job/monthly GET"));
+
+                string path = AppDomain.CurrentDomain.BaseDirectory;
+                if(!path.EndsWith("/")) path += "/";
+
+                context.LogDebug(this, path);
+                result = System.IO.Directory.GetFiles(path + "files",string.Format("{0}-monthly-job-report-*.csv", context.GetConfigValue("siteNameShort"))).ToList();
+                result = result.ConvertAll(f => f.Substring(f.LastIndexOf("/") + 1));
+
+                context.LogInfo(this,string.Format("Get list of Reports"));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }        
 
         public object Get(ReportGetRequest request){
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);

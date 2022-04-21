@@ -343,7 +343,7 @@ namespace Terradue.Tep {
             }
             csv.Append(csvHeader).Append(csvBody);
 
-            var filename = string.Format("{0}/{1}-job-report-{2}.csv", context.GetConfigValue("path.files"), context.GetConfigValue("siteNameShort"),startdateString);            
+            var filename = string.Format("{0}/{1}-monthly-job-report-{2}.csv", context.GetConfigValue("path.files"), context.GetConfigValue("siteNameShort"),startdateString);            
             System.IO.File.WriteAllText(filename, csv.ToString());               
         }
 
