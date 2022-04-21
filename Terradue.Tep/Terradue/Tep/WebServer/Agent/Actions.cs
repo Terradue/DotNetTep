@@ -1,14 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Xml;
 using OpenGis.Wps;
-using ServiceStack.ServiceHost;
 using Terradue.Portal;
-using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
-using Terradue.ServiceModel.Syndication;
-using Terradue.Tep.WebServer;
-using Terradue.WebService.Model;
 
 namespace Terradue.Tep {
     public class Actions {
@@ -404,7 +397,7 @@ namespace Terradue.Tep {
             }
             csv.Append(csvHeader).Append(csvBody);
 
-            var filename = string.Format("{0}files/{1}-job-report-{2}.csv", path, context.GetConfigValue("siteNameShort"),startdateString);            
+            var filename = string.Format("{0}files/{1}-job-report-{2}.csv", "", context.GetConfigValue("siteNameShort"),startdateString);            
             System.IO.File.WriteAllText(filename, csv.ToString());               
         }
 
