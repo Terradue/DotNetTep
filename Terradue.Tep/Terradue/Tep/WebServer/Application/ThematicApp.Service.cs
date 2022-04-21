@@ -192,6 +192,11 @@ namespace Terradue.Tep.WebServer.Services {
                 OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(appsCached, result);
             
 			} else {
+
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["Opensearch.Cache.SlidingExpiration"])
+                    && System.Configuration.ConfigurationManager.AppSettings["Opensearch.Cache.SlidingExpiration"] != "0"){
+                    MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
+                }
                 
 				var apps = new EntityList<DataPackage>(context);
 				apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
