@@ -582,6 +582,7 @@ namespace Terradue.Tep {
                     sa.Name = job.WpsName;
                     sa.Version = job.WpsVersion;                    
                     sa.NbInputs = totalDataProcessed;
+                    sa.AppId = job.AppIdentifier;
                     sa.Succeeded = job.Status == WpsJobStatus.SUCCEEDED || job.Status == WpsJobStatus.STAGED ? 1 : 0;
                     sa.Failed = job.Status == WpsJobStatus.FAILED ? 1 : 0;
                     sa.Ongoing = job.Status == WpsJobStatus.ACCEPTED || job.Status == WpsJobStatus.STARTED ? 1 : 0;
@@ -688,6 +689,7 @@ namespace Terradue.Tep {
         public string Name {get;set;}
         public string Icon {get;set;}
         public string Version {get;set;}
+        public string AppId {get;set;}
         public int Succeeded {get;set;}
         public int Failed {get;set;}
         public int Ongoing {get;set;}

@@ -184,6 +184,8 @@ namespace Terradue.Tep.WebServer {
         public string Name { get; set; }
         [ApiMember(Name="Version", Description = "Name", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string Version { get; set; }
+        [ApiMember(Name="AppId", Description = "App Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string AppId { get; set; }
         [ApiMember(Name="Icon", Description = "Name", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string Icon { get; set; }
         [ApiMember(Name="NbInputs", Description = "Nb inputs", ParameterType = "path", DataType = "int", IsRequired = false)]
@@ -197,6 +199,7 @@ namespace Terradue.Tep.WebServer {
             this.Version = entity.Version;
             this.Icon = entity.Icon;
             this.NbInputs = entity.NbInputs;
+            this.AppId = entity.AppId;
         }
     }
 }
