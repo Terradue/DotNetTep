@@ -231,7 +231,11 @@ namespace Terradue.Tep {
                 result.CreationTime = DateTime.UtcNow;
                 result.DomainId = user.Domain.Id;
                 result.Kind = KINDRESOURCESETUSER;
-                result.Store();
+                try{
+                    result.Store();
+                }catch(Exception e){
+                    context.LogError(user, e.Message);
+                }
             }
             return result;
         }

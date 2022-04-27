@@ -116,6 +116,12 @@ namespace Terradue.Tep {
         public bool AnalyseJobs { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="T:Terradue.Tep.Analytics"/> analyse services.
+        /// </summary>
+        /// <value><c>true</c> if analyse services; otherwise, <c>false</c>.</value>
+        public bool AnalyseServices { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this <see cref="T:Terradue.Tep.Analytics"/> analyse data packages.
         /// </summary>
         /// <value><c>true</c> if analyse data packages; otherwise, <c>false</c>.</value>
@@ -140,6 +146,12 @@ namespace Terradue.Tep {
         public List<KeyValuePair<string,int>> TopServices { get; set; }
 
         /// <summary>
+        /// Gets or sets the services used.
+        /// </summary>
+        /// <value>The services.</value>
+        public List<ServiceAnalytic> Services { get; set; }
+
+        /// <summary>
         /// Gets or sets the available data collections.
         /// </summary>
         /// <value>The available data collections.</value>
@@ -158,6 +170,7 @@ namespace Terradue.Tep {
             this.AnalyseJobs = true;
             this.AnalyseDataPackages = true;
             this.AnalyseCollections = true;
+            this.AnalyseServices = true;
             this.SkipIds = new List<int> { 0 };
         }
 
@@ -181,6 +194,7 @@ namespace Terradue.Tep {
             this.AnalyseJobs = true;
             this.AnalyseDataPackages = true;
             this.AnalyseCollections = true;
+            this.AnalyseServices = true;
             this.SkipIds = new List<int>();
         }
 
@@ -197,7 +211,7 @@ namespace Terradue.Tep {
 				if (Entity is UserTep) {
 					var user = Entity as UserTep;
 					AddUserAnalytics(user);
-                    TopServices = GetTopUsedServices(Context.GetConfigIntegerValue("analytics_nbtopusedservices"), new List<int>{user.Id});
+                    // TopServices = GetTopUsedServices(Context.GetConfigIntegerValue("analytics_nbtopusedservices"), new List<int>{user.Id});
                     IconUrl = user.GetAvatar();
                 } else if (Entity is Domain || Entity is ThematicCommunity) {
 					var domain = Entity as Domain;
@@ -285,6 +299,11 @@ namespace Terradue.Tep {
                 WpsJobSharedPublicCount += GetWpsJobsSharedPublicForUser(userId, StartDate, EndDate);
                 WpsJobSharedRestrictedCount += GetWpsJobsSharedRestrictedForUser(userId, StartDate, EndDate);
                 WpsJobSharedPrivateCount = Math.Max(0,WpsJobSubmittedCount - WpsJobSharedPublicCount - WpsJobSharedRestrictedCount);
+            }
+
+            //services analytics
+            if(this.AnalyseServices){
+                Services = GetServices(StartDate, EndDate, new List<int>{user.Id});
             }
         }
 
@@ -520,6 +539,65 @@ namespace Terradue.Tep {
             return result;
         }
 
+        public List<ServiceAnalytic> GetServices(string startdate, string enddate, List<int> userIds = null) {
+            List<ServiceAnalytic> services = new List<ServiceAnalytic>();
+            EntityList<WpsJob> jobs = new EntityList<WpsJob>(this.Context);
+            jobs.SetFilter("CreatedTime",string.Format("[{0},{1}]", startdate, enddate));
+            jobs.SetFilter("Status",(int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);
+            jobs.Load();
+            foreach(var job in jobs.GetItemsAsList()){
+                bool exists = false;
+                int totalDataProcessed = 0;
+                if (job.Parameters != null) {
+                    foreach (var parameter in job.Parameters) {
+                        if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {
+                            var url = parameter.Value;
+                            totalDataProcessed++;
+                        }
+                    }
+                }
+                foreach(var service in services){
+                    if(service.Name == job.WpsName && service.Version == job.WpsVersion){
+                        exists = true;
+                        switch(job.Status){
+                            case WpsJobStatus.SUCCEEDED:
+                            case WpsJobStatus.STAGED:
+                                service.Succeeded ++;
+                                break;
+                            case WpsJobStatus.FAILED:
+                                service.Failed ++;
+                                break;
+                            case WpsJobStatus.ACCEPTED:
+                            case WpsJobStatus.PAUSED:
+                            case WpsJobStatus.STARTED:
+                                service.Ongoing ++;
+                                break;
+                        }
+                        service.NbInputs += totalDataProcessed;
+                    }
+                }
+                if(!exists){                         
+                    var sa = new ServiceAnalytic();
+                    sa.Identifier = job.ProcessId;
+                    sa.Name = job.WpsName;
+                    sa.Version = job.WpsVersion;                    
+                    sa.NbInputs = totalDataProcessed;
+                    sa.AppId = job.AppIdentifier;
+                    sa.Succeeded = job.Status == WpsJobStatus.SUCCEEDED || job.Status == WpsJobStatus.STAGED ? 1 : 0;
+                    sa.Failed = job.Status == WpsJobStatus.FAILED ? 1 : 0;
+                    sa.Ongoing = job.Status == WpsJobStatus.ACCEPTED || job.Status == WpsJobStatus.STARTED ? 1 : 0;
+                    try{
+                        sa.Icon = job.Process.IconUrl;
+                    }catch(Exception e){                        
+                        Context.LogError(this, e.Message);
+                    }                                        
+                    services.Add(sa);
+                }
+
+            }
+            return services;
+        }
+
         public List<KeyValuePair<string, string>> LoadAvailableDataCollections() {
             ObjectCache cache = MemoryCache.Default;
 
@@ -602,5 +680,22 @@ namespace Terradue.Tep {
             }
             return result;
         }
+    }
+
+    /***********************************************************************************************/
+
+    public class ServiceAnalytic{
+        public string Identifier {get;set;}
+        public string Name {get;set;}
+        public string Icon {get;set;}
+        public string Version {get;set;}
+        public string AppId {get;set;}
+        public int Succeeded {get;set;}
+        public int Failed {get;set;}
+        public int Ongoing {get;set;}
+        public int NbInputs {get;set;}
+
+        public ServiceAnalytic(){}
+
     }
 }
