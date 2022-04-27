@@ -17,7 +17,19 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/analytics/user/current GET"));
 
                 Analytics analytics = new Analytics(context, UserTep.FromId(context, context.UserId));
-                analytics.Load();
+                analytics.AnalyseCollections = false;
+                analytics.AnalyseDataPackages = false;
+                analytics.AnalyseJobs = false;
+                analytics.AnalyseServices = false;
+                switch(request.type){
+                    case "service":
+                        analytics.AnalyseServices = true;
+                    break;
+                    default:
+                        analytics.AnalyseJobs = true;
+                    break;
+                }
+                analytics.Load(request.startdate, request.enddate);
 
                 result = new WebAnalytics(analytics);
 
