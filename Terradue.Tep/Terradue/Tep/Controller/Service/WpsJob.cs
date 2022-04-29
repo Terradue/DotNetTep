@@ -608,7 +608,8 @@ namespace Terradue.Tep {
             context.LogDebug(this, string.Format("Update job from execute response"));
 
             //get remote identifier
-            this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(execResponse.statusLocation.ToLower());
+            if(string.IsNullOrEmpty(this.RemoteIdentifier))
+                this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(execResponse.statusLocation.ToLower());
 
             if (string.IsNullOrEmpty(this.StatusLocation)) {
                 this.StatusLocation = execResponse.statusLocation;
@@ -641,6 +642,10 @@ namespace Terradue.Tep {
                     identifier = identifier.Substring(identifier.LastIndexOf("pywps-") + 6);
                     identifier = identifier.Substring(0, identifier.LastIndexOf(".xml"));
                 }
+                //case Production Center
+                else if (uri.AbsoluteUri.Contains("zoo") && !string.IsNullOrEmpty(nvc["DataInputs"]) && nvc["DataInputs"].StartsWith("sid=")) {
+                    identifier = nvc["DataInputs"].Replace("sid=","");
+                }
                 //case WPS 3.0.0 (ADES)
                 else {
                     var r = new System.Text.RegularExpressions.Regex(@"^.*\/watchjob\/processes\/(?<process>[a-zA-Z0-9_\-]+)\/jobs\/(?<runid>[a-zA-Z0-9_\-]+)");
@@ -648,7 +653,7 @@ namespace Terradue.Tep {
                     if (m.Success) {
                         identifier = m.Result("${runid}");
                     }
-                }
+                }                
             }
             context.LogDebug(this, string.Format("identifier = " + identifier));
             return identifier;
