@@ -544,6 +544,7 @@ namespace Terradue.Tep {
             EntityList<WpsJob> jobs = new EntityList<WpsJob>(this.Context);
             jobs.SetFilter("CreatedTime",string.Format("[{0},{1}]", startdate, enddate));
             jobs.SetFilter("Status",(int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);
+            jobs.SetFilter("OwnerId",string.Join(",",userIds));
             jobs.Load();
             foreach(var job in jobs.GetItemsAsList()){
                 bool exists = false;
