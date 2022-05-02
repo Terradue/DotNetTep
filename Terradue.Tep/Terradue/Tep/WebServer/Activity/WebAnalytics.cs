@@ -13,8 +13,38 @@ namespace Terradue.Tep.WebServer {
 
         [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string enddate { get; set; }
-        [ApiMember(Name = "type", Description = "analytics type", ParameterType = "query", DataType = "string", IsRequired = false)]
-        public string type { get; set; }
+    }
+
+    [Route("/analytics/service/user/current", "GET", Summary = "GET analytics services for current user", Notes = "")]
+    public class AnalyticsServicesCurrentUserRequestTep : IReturn<WebAnalytics>{
+        [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string startdate { get; set; }
+
+        [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string enddate { get; set; }
+    }
+    [Route("/analytics/service/community/{Identifier}", "GET", Summary = "GET analytics services for community", Notes = "")]
+    public class AnalyticsServicesCommunityRequestTep : IReturn<WebAnalytics>{
+        [ApiMember(Name = "identifier", Description = "user Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string Identifier { get; set; }
+        [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string startdate { get; set; }
+
+        [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string enddate { get; set; }
+        [ApiMember(Name = "usernames", Description = "usernames", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Usernames { get; set; }
+    }
+
+    [Route("/analytics/service/user/{Identifier}", "GET", Summary = "GET analytics services for user", Notes = "")]
+    public class AnalyticsServicesUserRequestTep : IReturn<WebAnalytics>{
+        [ApiMember(Name = "identifier", Description = "user Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
+        public string Identifier { get; set; }
+        [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string startdate { get; set; }
+
+        [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string enddate { get; set; }
     }
 
     [Route("/analytics", "GET", Summary = "GET analytics for current user", Notes = "")]
@@ -78,9 +108,6 @@ namespace Terradue.Tep.WebServer {
 
         [ApiMember(Name = "TopServices", Description = "Top services used", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
         public List<WebKeyValue> TopServices { get; set; }
-
-        [ApiMember(Name = "TopServices", Description = "Top services used", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
-        public List<WebAnalyticsService> Services { get; set; }
 
         [ApiMember(Name = "AvailableDataCollections", Description = "Available Data Collections", ParameterType = "path", DataType = "List<WebKeyValue>", IsRequired = false)]
         public List<WebKeyValue> AvailableDataCollections { get; set; }
@@ -167,11 +194,6 @@ namespace Terradue.Tep.WebServer {
                 foreach (var kv in entity.AvailableDataCollections) {
                     this.AvailableDataCollections.Insert(0, new WebKeyValue(kv.Key, kv.Value));
                 }
-            }
-
-            if(entity.Services != null){
-                this.Services = new List<WebAnalyticsService>();
-                foreach(var s in entity.Services) this.Services.Add(new WebAnalyticsService(s));
             }
         }
     }
