@@ -980,6 +980,7 @@ namespace Terradue.Tep {
                         if (resultlink.StartsWith("s3:"))
                             s3link = resultlink;
                         else {
+                            context.LogDebug(this, string.Format("Get s3link from result link: {0}", resultlink));
                             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(resultlink);
                             webRequest.Method = "GET";
                             webRequest.Accept = "application/json";
@@ -990,6 +991,7 @@ namespace Terradue.Tep {
                                     var result = streamReader.ReadToEnd();
                                     var res = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
                                     s3link = res.StacCatalogUri;
+                                    context.LogDebug(this, string.Format("s3link: {0}", s3link));
                                 }
                             }
 
