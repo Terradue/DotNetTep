@@ -75,6 +75,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.LogInfo(this,string.Format("/job/wps/search GET"));
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
+
             wpsjobs.AddSort("Id", SortDirection.Descending);
             wpsjobs.IncludeOwnerFieldsInSearch = true;
 
@@ -86,6 +87,14 @@ namespace Terradue.Tep.WebServer.Services {
 
             if(qs["visibility"] != null && qs["visibility"] != "all"){
                 wpsjobs.AccessLevel = EntityAccessLevel.Privilege;
+            }
+
+            if (!string.IsNullOrEmpty (qs["Key"])) {
+                try{
+                    UserTep user = UserTep.FromApiKey (context, qs["Key"]);
+                    wpsjobs.UserId = user.Id;
+                    context.AccessLevel = EntityAccessLevel.Privilege;
+                }catch(Exception){}
             }
 
             if (string.IsNullOrEmpty(qs["id"]) && string.IsNullOrEmpty(qs["uid"]) && string.IsNullOrEmpty(qs["archivestatus"]))
