@@ -498,23 +498,27 @@ namespace Terradue.Tep {
         /// <returns>The users.</returns>
         public List<UserTep> GetUsers(){
             List<UserTep> users = new List<UserTep>();
+            var ids = GetUsersIds();
+            foreach(var id in ids){
+                users.Add(UserTep.FromId(context, id));
+            }
 
-			var roles = new EntityList<Role>(context);
+            return users;
+        }
+
+        public List<int> GetUsersIds(){
+            List<int> ids = new List<int>();
+            var roles = new EntityList<Role>(context);
 			roles.Load();
 
 			foreach (var role in roles) {
 				if (role.Identifier != RoleTep.PENDING) {
 					var usersIds = role.GetUsers(this.Id).ToList();
-					if (usersIds.Count > 0) {
-						foreach (var usrId in usersIds) {
-							var user = UserTep.FromId(context, usrId);
-							users.Add(user);
-						}
-					}
-				}
-			}
-
-            return users;
+                    foreach(var id in usersIds) 
+                        if(!ids.Contains(id)) ids.Add(id);
+                }
+            }
+            return ids;
         }
 
         public void SyncExistingUsersAdd(string syncIdentifier) {

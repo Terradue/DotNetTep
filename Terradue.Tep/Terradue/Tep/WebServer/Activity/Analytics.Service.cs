@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
 
@@ -19,16 +20,8 @@ namespace Terradue.Tep.WebServer.Services {
                 Analytics analytics = new Analytics(context, UserTep.FromId(context, context.UserId));
                 analytics.AnalyseCollections = false;
                 analytics.AnalyseDataPackages = false;
-                analytics.AnalyseJobs = false;
-                analytics.AnalyseServices = false;
-                switch(request.type){
-                    case "service":
-                        analytics.AnalyseServices = true;
-                    break;
-                    default:
-                        analytics.AnalyseJobs = true;
-                    break;
-                }
+                analytics.AnalyseJobs = true;
+                analytics.AnalyseServices = false;                
                 analytics.Load(request.startdate, request.enddate);
 
                 result = new WebAnalytics(analytics);
@@ -59,7 +52,7 @@ namespace Terradue.Tep.WebServer.Services {
                         analytics.Load(request.startdate, request.enddate);
                         break;
                     case "community":
-                        analytics = new Analytics(context, ThematicCommunity.FromIdentifier(context, request.Identifier));
+                        analytics = new Analytics(context, ThematicCommunity.FromIdentifier(context, request.Identifier));                        
                         analytics.Load(request.startdate, request.enddate);
                         break;
                     case "group":
@@ -87,6 +80,85 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return result;
         }
+
+        public object Get(AnalyticsServicesCurrentUserRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var result = new List<WebAnalyticsService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/analytics/service/user/current GET"));
+
+                ServiceAnalytics analytics = new ServiceAnalytics(context);                
+                analytics.AddServices(request.startdate, request.enddate, context.UserId);
+                foreach(var service in analytics.Services) result.Add(new WebAnalyticsService(service));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Get(AnalyticsServicesCommunityRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var result = new List<WebAnalyticsService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/analytics/service/community/{0} GET", request.Identifier));
+
+                if(string.IsNullOrEmpty(request.Usernames)) return new List<WebAnalyticsService>();
+                var usernames = request.Usernames.Split(',');
+                var usernamesS = "'" + string.Join("','",usernames) + "'";
+                
+                string sql = string.Format("SELECT id FROM usr WHERE username IN ({0});", usernamesS);
+                var requestids = context.GetQueryIntegerValues(sql);
+
+                ServiceAnalytics analytics = new ServiceAnalytics(context);                
+                var community = ThematicCommunity.FromIdentifier(context, request.Identifier);
+                if(!community.CanUserManage(context.UserId)) return new List<WebAnalyticsService>();
+                var userids = community.GetUsersIds();
+
+                var ids = new List<int>();
+                foreach(var id in requestids)                                        
+                    if(userids.Contains(id))
+                        if(!ids.Contains(id)) ids.Add(id);
+                
+                analytics.AddServices(request.startdate, request.enddate, ids);
+                foreach(var service in analytics.Services) result.Add(new WebAnalyticsService(service));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Get(AnalyticsServicesUserRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new List<WebAnalyticsService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/analytics/service/user/{0} GET", request.Identifier));
+
+                ServiceAnalytics analytics = new ServiceAnalytics(context);   
+                var user = User.FromUsername(context, request.Identifier)             ;
+                analytics.AddServices(request.startdate, request.enddate, user.UserId);
+                foreach(var service in analytics.Services) result.Add(new WebAnalyticsService(service));
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        
 
     }
 }
