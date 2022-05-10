@@ -129,11 +129,8 @@ namespace Terradue.Tep.WebServer.Services {
             wpsProcesses.Identifier = "service/wps";
             var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
-            if (!string.IsNullOrEmpty(qs["cache"]) && qs["cache"] == "false"){
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["Opensearch.Cache.SlidingExpiration"])
-                    && System.Configuration.ConfigurationManager.AppSettings["Opensearch.Cache.SlidingExpiration"] != "0"){
-                    MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
-                }
+            if (!string.IsNullOrEmpty(qs["cache"]) && qs["cache"] == "false"){                
+                MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
             }
 
             var settings = MasterCatalogue.OpenSearchFactorySettings;
