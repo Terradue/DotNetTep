@@ -101,12 +101,12 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
-        public object Get(AnalyticsServicesCommunityRequestTep request) {
+        public object Put(AnalyticsServicesCommunityRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             var result = new List<WebAnalyticsService>();
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/analytics/service/community/{0} GET", request.Identifier));
+                context.LogInfo(this, string.Format("/analytics/service/community/{0} PUT", request.Identifier));
 
                 if(string.IsNullOrEmpty(request.Usernames)) return new List<WebAnalyticsService>();
                 var usernames = request.Usernames.Split(',');

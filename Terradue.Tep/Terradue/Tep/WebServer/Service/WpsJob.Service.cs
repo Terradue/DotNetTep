@@ -89,9 +89,9 @@ namespace Terradue.Tep.WebServer.Services {
                 wpsjobs.AccessLevel = EntityAccessLevel.Privilege;
             }
 
-            if (!string.IsNullOrEmpty (qs["Key"])) {
+            if (!string.IsNullOrEmpty (qs["key"])) {
                 try{
-                    UserTep user = UserTep.FromApiKey (context, qs["Key"]);
+                    UserTep user = UserTep.FromApiKey (context, qs["key"]);
                     wpsjobs.UserId = user.Id;
                     context.AccessLevel = EntityAccessLevel.Privilege;
                 }catch(Exception){}
