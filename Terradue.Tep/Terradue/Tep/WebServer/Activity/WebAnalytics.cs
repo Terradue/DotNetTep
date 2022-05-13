@@ -23,7 +23,7 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string enddate { get; set; }
     }
-    [Route("/analytics/service/community/{Identifier}", "GET", Summary = "GET analytics services for community", Notes = "")]
+    [Route("/analytics/service/community/{Identifier}", "PUT", Summary = "GET analytics services for community", Notes = "")]
     public class AnalyticsServicesCommunityRequestTep : IReturn<WebAnalytics>{
         [ApiMember(Name = "identifier", Description = "user Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
         public string Identifier { get; set; }
