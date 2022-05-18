@@ -1490,6 +1490,12 @@ namespace Terradue.Tep {
             NameValueCollection nvc = base.GetOpenSearchParameters();
             nvc.Add("basic", "{t2:basic?}");
             nvc.Add("appId", "{t2:appId?}");
+            nvc.Add("service", "{t2:service?}");
+            nvc.Add("provider", "{t2:provider?}");
+            nvc.Add("status", "{t2:status?}");
+            nvc.Add("archivestatus", "{t2:archivestatus?}");
+            nvc.Add("created", "{t2:created?}");
+            nvc.Add("correlatedTo", "{t2:correlatedTo?}");
             return nvc;
         }
 
