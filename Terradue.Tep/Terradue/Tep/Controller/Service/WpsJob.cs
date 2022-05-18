@@ -1495,6 +1495,7 @@ namespace Terradue.Tep {
             nvc.Add("status", "{t2:status?}");
             nvc.Add("archivestatus", "{t2:archivestatus?}");
             nvc.Add("created", "{t2:created?}");
+            nvc.Add("key", "{t2:key?}");
             nvc.Add("correlatedTo", "{t2:correlatedTo?}");
             return nvc;
         }

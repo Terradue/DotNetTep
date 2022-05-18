@@ -457,6 +457,14 @@ namespace Terradue.Tep {
             return osd;
         }
 
+        public override NameValueCollection GetOpenSearchParameters() {
+            NameValueCollection nvc = base.GetOpenSearchParameters();            
+            nvc.Add("type", "{t2:type?}");
+            nvc.Add("key", "{t2:key?}");
+            nvc.Add("correlatedTo", "{t2:correlatedTo?}");
+            return nvc;
+        }
+
         public override IOpenSearchable[] GetOpenSearchableArray() {
 
 			List<IOpenSearchable> osResources = new List<IOpenSearchable>(Resources.Count);
