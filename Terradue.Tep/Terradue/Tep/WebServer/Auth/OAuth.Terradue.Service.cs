@@ -127,7 +127,7 @@ namespace Terradue.Tep.WebServer.Services {
                     tokenresponse = client.AccessToken(request.Code);                    
                     DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, null, tokenresponse.expires_in);
                     DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token, null);
-                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, null);
+                    DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, null, tokenresponse.expires_in);
                 } catch (Exception e) {
                     DBCookie.DeleteDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     DBCookie.DeleteDBCookie(context, context.GetConfigValue("cookieID-token-refresh"));
@@ -149,7 +149,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-access"), tokenresponse.access_token, user.Username, tokenresponse.expires_in);
                 DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-refresh"), tokenresponse.refresh_token, user.Username);
-                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, user.Username);
+                DBCookie.StoreDBCookie(context, context.GetConfigValue("cookieID-token-id"), tokenresponse.id_token, user.Username, tokenresponse.expires_in);
 
                 redirect = context.GetConfigValue("dashboard_page");
                 if(string.IsNullOrEmpty(redirect)) redirect = context.GetConfigValue("BaseUrl");
