@@ -627,12 +627,18 @@ namespace Terradue.Tep {
         public void AddServices(string startdate, string enddate, int userId) {           
             AddServices(startdate, enddate, new List<int>{userId});
         } 
-        public void AddServices(string startdate, string enddate, List<int> userIds = null) {            
+        public void AddServices(string startdate, string enddate, List<int> userIds = null, List<string> apps = null) {            
             EntityList<WpsJob> jobs = new EntityList<WpsJob>(this._Context);
+            this._Context.LogDebug(this, "CreatedTime : " + string.Format("[{0},{1}]", startdate, enddate));
             jobs.SetFilter("CreatedTime",string.Format("[{0},{1}]", startdate, enddate));
+            this._Context.LogDebug(this, "Status : " + (int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);
             jobs.SetFilter("Status",(int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);
-            jobs.SetFilter("OwnerId",string.Join(",",userIds));
+            this._Context.LogDebug(this, "OwnerId : " + string.Join(",",userIds));
+            if(userIds != null) jobs.SetFilter("OwnerId",string.Join(",",userIds));
+            this._Context.LogDebug(this, "AppIdentifier : " + string.Join(",",apps));
+            if(apps != null) jobs.SetFilter("AppIdentifier",string.Join(",",apps));
             jobs.Load();
+            this._Context.LogDebug(this, "found " + jobs.Count + " jobs");
             foreach(var job in jobs.GetItemsAsList()){
                 bool exists = false;
                 int totalDataProcessed = 0;
@@ -645,7 +651,7 @@ namespace Terradue.Tep {
                     }
                 }
                 foreach(var service in Services){
-                    if(service.Name == job.WpsName && service.Version == job.WpsVersion){
+                    if(service.Name == job.WpsName && service.Version == job.WpsVersion && service.AppId == job.AppIdentifier){
                         exists = true;
                         switch(job.Status){
                             case WpsJobStatus.SUCCEEDED:

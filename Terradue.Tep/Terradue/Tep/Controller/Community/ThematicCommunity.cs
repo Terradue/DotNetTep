@@ -618,6 +618,15 @@ namespace Terradue.Tep {
             return app;
         }
 
+        public List<ThematicApplicationCached> GetThematicApplicationsCached() {
+            var apps = new EntityList<ThematicApplicationCached>(context);            
+            apps.SetFilter("DomainId", Id.ToString());
+            apps.Load();
+
+            var items = apps.GetItemsAsList();
+            return items;
+        }
+
         /// <summary>
         /// Gets the apps link.
         /// </summary>
