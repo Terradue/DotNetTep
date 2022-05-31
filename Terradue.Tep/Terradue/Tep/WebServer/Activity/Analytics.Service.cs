@@ -113,19 +113,31 @@ namespace Terradue.Tep.WebServer.Services {
                 var usernamesS = "'" + string.Join("','",usernames) + "'";
                 
                 string sql = string.Format("SELECT id FROM usr WHERE username IN ({0});", usernamesS);
+                context.LogDebug(this, sql);
                 var requestids = context.GetQueryIntegerValues(sql);
+                context.LogDebug(this, "found " + requestids.Length);
 
                 ServiceAnalytics analytics = new ServiceAnalytics(context);                
                 var community = ThematicCommunity.FromIdentifier(context, request.Identifier);
                 if(!community.CanUserManage(context.UserId)) return new List<WebAnalyticsService>();
                 var userids = community.GetUsersIds();
+                context.LogDebug(this, "found " + userids.Count);
 
                 var ids = new List<int>();
                 foreach(var id in requestids)                                        
                     if(userids.Contains(id))
                         if(!ids.Contains(id)) ids.Add(id);
+
+                context.LogDebug(this, ids.Count + " in common");
+
+                var apps = new List<string>();
+                var cachedapps = community.GetThematicApplicationsCached();
+                foreach(var app in cachedapps)
+                    apps.Add(app.UId);
+
+                context.LogDebug(this, "found " + apps.Count + " apps");                
                 
-                analytics.AddServices(request.startdate, request.enddate, ids);
+                analytics.AddServices(request.startdate, request.enddate, ids, apps);
                 foreach(var service in analytics.Services) result.Add(new WebAnalyticsService(service));
 
                 context.Close();
