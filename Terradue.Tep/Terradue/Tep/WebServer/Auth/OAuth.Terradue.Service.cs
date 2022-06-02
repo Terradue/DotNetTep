@@ -27,6 +27,21 @@ namespace Terradue.Tep.WebServer.Services {
     }
 
     [Route("/cb", "GET")]
+    public class CallBackRequest {
+        [ApiMember(Name = "code", Description = "oauth code", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Code { get; set; }
+
+        [ApiMember(Name = "state", Description = "oauth state", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string State { get; set; }
+
+        [ApiMember(Name = "ajax", Description = "ajax", ParameterType = "path", DataType = "bool", IsRequired = true)]
+        public bool ajax { get; set; }
+
+        [ApiMember(Name = "error", Description = "error", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string error { get; set; }
+    }
+
+    [Route("/oauth/cb", "GET")]
     public class OauthCallBackRequest {
         [ApiMember(Name = "code", Description = "oauth code", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Code { get; set; }
@@ -98,10 +113,10 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
 
-            return DoRedirect(redirect, false);
+            return OAuthUtils.DoRedirect(redirect, false);
         }
 
-        public object Get(OauthCallBackRequest request) {
+        public object Get(CallBackRequest request) {
 
             var redirect = "";
 
@@ -113,7 +128,7 @@ namespace Terradue.Tep.WebServer.Services {
                 if (!string.IsNullOrEmpty(request.error)) {
                     context.LogError(this, request.error);
                     context.EndSession();
-                    return DoRedirect(context.BaseUrl, false);
+                    return OAuthUtils.DoRedirect(context.BaseUrl, false);
                 }
 
                 Connect2IdClient client = new Connect2IdClient(context.GetConfigValue("sso-configUrl"));
@@ -165,7 +180,63 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            return DoRedirect(redirect, false);
+            return OAuthUtils.DoRedirect(redirect, false);
+        }
+
+        public object Get(OauthCallBackRequest request) {
+            TepWebContext context = new TepWebContext(PagePrivileges.EverybodyView);
+            HttpResult redirect = null;
+            User user = null;
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/oauth/cb GET"));
+
+                if (!string.IsNullOrEmpty(request.error)) {
+                    context.LogError(this, request.error);
+                    context.EndSession();
+                    var baseUrl = context.BaseUrl;
+                    context.Close();
+                    return OAuthUtils.DoRedirect(baseUrl, false);
+                }
+
+                context.LogDebug(this, string.Format("Get token from code"));
+                TepOauthAuthenticationType auth = new TepOauthAuthenticationType(context);          
+                var client = auth.Client;
+                var tokenResponse = client.AccessToken(request.Code);
+
+                context.LogDebug(this, string.Format("Get user profile"));
+                user = auth.GetUserProfile(context);
+
+                if (tokenResponse.access_token != null) client.StoreTokenAccess(tokenResponse.access_token, user.Username, tokenResponse.expires_in);
+                if (tokenResponse.refresh_token != null) client.StoreTokenRefresh(tokenResponse.refresh_token, user.Username);
+                if (tokenResponse.id_token != null) client.StoreTokenId(tokenResponse.id_token, user.Username, tokenResponse.expires_in);                
+
+                if (user == null) {
+                    context.LogError(this, string.Format("Error to load user"));
+                    var uri = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                    uri.Path = "/";
+                    uri.Query = "error=login";
+                    redirect = OAuthUtils.DoRedirect(uri.Uri.AbsoluteUri, false);
+                } else {
+                    context.LogDebug(this, string.Format("Loaded user '{0}'", user.Username));
+
+                    context.StartSession(auth, user);
+                    context.SetUserInformation(auth, user);
+
+                    if (string.IsNullOrEmpty(HttpContext.Current.Session["return_to"] as string))
+                        HttpContext.Current.Session["return_to"] = context.GetConfigValue("BaseUrl");
+
+                    redirect = OAuthUtils.DoRedirect(HttpContext.Current.Session["return_to"] as string, false);
+                }
+                HttpContext.Current.Session["return_to"] = null;
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message + " - " + e.StackTrace);
+                context.Close();
+                redirect = OAuthUtils.DoRedirect(context.GetConfigValue("BaseUrl"), false);
+            }
+            return redirect;
         }
 
         public object Delete(OauthLogoutRequest request) {
@@ -180,8 +251,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            if (request.redirect_uri != null) return DoRedirect(request.redirect_uri, request.ajax);
-            else return DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);
+            if (request.redirect_uri != null) return OAuthUtils.DoRedirect(request.redirect_uri, request.ajax);
+            else return OAuthUtils.DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);
         }
 
         public object Get(OauthLogoutRequest request) {
@@ -196,24 +267,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
                 throw e;
             }
-            if (request.redirect_uri != null) return DoRedirect(request.redirect_uri, request.ajax);
-            else return DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);
-        }
-
-        private HttpResult DoRedirect(string redirect, bool ajax) {
-            if (ajax) {
-                HttpResult redirectResponse = new HttpResult();
-                var location = HttpContext.Current.Response.Headers[HttpHeaders.Location];
-                if (string.IsNullOrEmpty(location) || !location.Equals(redirect))
-                    redirectResponse.Headers[HttpHeaders.Location] = redirect;
-                redirectResponse.StatusCode = System.Net.HttpStatusCode.NoContent;
-                return redirectResponse;
-            } else {
-                HttpResult redirectResponse = new HttpResult();
-                redirectResponse.Headers[HttpHeaders.Location] = redirect;
-                redirectResponse.StatusCode = System.Net.HttpStatusCode.Redirect;
-                return redirectResponse;
-            }
+            if (request.redirect_uri != null) return OAuthUtils.DoRedirect(request.redirect_uri, request.ajax);
+            else return OAuthUtils.DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);
         }
 
     }
