@@ -628,17 +628,12 @@ namespace Terradue.Tep {
             AddServices(startdate, enddate, new List<int>{userId});
         } 
         public void AddServices(string startdate, string enddate, List<int> userIds = null, List<string> apps = null) {            
-            EntityList<WpsJob> jobs = new EntityList<WpsJob>(this._Context);
-            this._Context.LogDebug(this, "CreatedTime : " + string.Format("[{0},{1}]", startdate, enddate));
-            jobs.SetFilter("CreatedTime",string.Format("[{0},{1}]", startdate, enddate));
-            this._Context.LogDebug(this, "Status : " + (int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);
-            jobs.SetFilter("Status",(int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);
-            this._Context.LogDebug(this, "OwnerId : " + string.Join(",",userIds));
-            if(userIds != null) jobs.SetFilter("OwnerId",string.Join(",",userIds));
-            this._Context.LogDebug(this, "AppIdentifier : " + string.Join(",",apps));
+            EntityList<WpsJob> jobs = new EntityList<WpsJob>(this._Context);            
+            jobs.SetFilter("CreatedTime",string.Format("[{0},{1}]", startdate, enddate));            
+            jobs.SetFilter("Status",(int)WpsJobStatus.SUCCEEDED + "," + (int)WpsJobStatus.STAGED);            
+            if(userIds != null) jobs.SetFilter("OwnerId",string.Join(",",userIds));            
             if(apps != null) jobs.SetFilter("AppIdentifier",string.Join(",",apps));
-            jobs.Load();
-            this._Context.LogDebug(this, "found " + jobs.Count + " jobs");
+            jobs.Load();            
             foreach(var job in jobs.GetItemsAsList()){
                 bool exists = false;
                 int totalDataProcessed = 0;
