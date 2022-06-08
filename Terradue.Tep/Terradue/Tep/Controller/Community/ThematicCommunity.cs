@@ -500,7 +500,8 @@ namespace Terradue.Tep {
                     string body = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailBody" : "CommunityRemoveEmailBody");
                     body = body.Replace("$(COMMUNITY)", this.Name);
                     body = body.Replace("$(REASON)", reason);
-                    body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));    
+                    body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));
+                    body = body.Replace("$(ASD_LINK)", context.GetConfigValue("asd_link"));
                     context.SendMail(emailFrom, emailTo, subject, body);
                 } catch (Exception e) {
                     context.LogError(this, e.Message);
