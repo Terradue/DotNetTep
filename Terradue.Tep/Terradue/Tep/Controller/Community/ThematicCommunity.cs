@@ -331,8 +331,9 @@ namespace Terradue.Tep {
             subject = subject.Replace("$(COMMUNITY)", this.Name);
             string body = context.GetConfigValue("CommunityJoinConfirmationEmailBody");
             body = body.Replace("$(COMMUNITY)", this.Name);
-            body = body.Replace("$(USERNAME)", user.Username);
+            body = body.Replace("$(ASD_LINK)", context.GetConfigValue("asd_link"));
             body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
+            body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));              
             context.SendMail(emailFrom, emailTo, subject, body);
         
             SyncUserAdd(user);            
@@ -369,6 +370,7 @@ namespace Terradue.Tep {
                     subject = subject.Replace("$(COMMUNITY)", this.Name);
                     string body = context.GetConfigValue("CommunityPendingEmailBody");
                     body = body.Replace("$(COMMUNITY)", this.Name);                    
+                    body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));                    
                     context.SendMail(emailFrom, emailTo, subject, body);
                 } catch (Exception e) {
                     context.LogError(this, e.Message);
@@ -498,6 +500,7 @@ namespace Terradue.Tep {
                     string body = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailBody" : "CommunityRemoveEmailSubject");
                     body = body.Replace("$(COMMUNITY)", this.Name);
                     body = body.Replace("$(REASON)", reason);
+                    body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));    
                     context.SendMail(emailFrom, emailTo, subject, body);
                 } catch (Exception e) {
                     context.LogError(this, e.Message);
