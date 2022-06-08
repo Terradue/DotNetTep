@@ -326,10 +326,10 @@ namespace Terradue.Tep {
 
             string emailTo = user.Email;
             string emailFrom = context.GetConfigValue("MailSenderAddress");
-            string subject = context.GetConfigValue("CommunityJoinConfirmationEmailSubject");
+            string subject = ispending ? context.GetConfigValue("CommunityPendingJoinConfirmationEmailSubject") : context.GetConfigValue("CommunityJoinConfirmationEmailSubject");
             subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
             subject = subject.Replace("$(COMMUNITY)", this.Name);
-            string body = context.GetConfigValue("CommunityJoinConfirmationEmailBody");
+            string body = ispending ? context.GetConfigValue("CommunityPendingJoinConfirmationEmailBody") : context.GetConfigValue("CommunityJoinConfirmationEmailBody");
             body = body.Replace("$(COMMUNITY)", this.Name);
             body = body.Replace("$(ASD_LINK)", context.GetConfigValue("asd_link"));
             body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
@@ -497,7 +497,7 @@ namespace Terradue.Tep {
                     string subject = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailSubject" : "CommunityRemoveEmailSubject");
                     subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
                     subject = subject.Replace("$(COMMUNITY)", this.Name);
-                    string body = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailBody" : "CommunityRemoveEmailSubject");
+                    string body = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailBody" : "CommunityRemoveEmailBody");
                     body = body.Replace("$(COMMUNITY)", this.Name);
                     body = body.Replace("$(REASON)", reason);
                     body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));    
