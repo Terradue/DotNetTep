@@ -324,20 +324,19 @@ namespace Terradue.Tep {
             //add new role
             role.GrantToUser(user, this);
 
-            if (ispending) {
-                string emailTo = user.Email;
-                string emailFrom = context.GetConfigValue("MailSenderAddress");
-                string subject = context.GetConfigValue("CommunityJoinConfirmationEmailSubject");
-                subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
-                subject = subject.Replace("$(COMMUNITY)", this.Name);
-                string body = context.GetConfigValue("CommunityJoinConfirmationEmailBody");
-                body = body.Replace("$(COMMUNITY)", this.Name);
-                body = body.Replace("$(USERNAME)", user.Username);
-                body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
-                context.SendMail(emailFrom, emailTo, subject, body);
-            } else {
-                SyncUserAdd(user);
-            }
+            string emailTo = user.Email;
+            string emailFrom = context.GetConfigValue("MailSenderAddress");
+            string subject = context.GetConfigValue("CommunityJoinConfirmationEmailSubject");
+            subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+            subject = subject.Replace("$(COMMUNITY)", this.Name);
+            string body = context.GetConfigValue("CommunityJoinConfirmationEmailBody");
+            body = body.Replace("$(COMMUNITY)", this.Name);
+            body = body.Replace("$(ASD_LINK)", context.GetConfigValue("asd_link"));
+            body = body.Replace("$(LINK)", context.GetConfigValue("CommunityDetailPageUrl") + this.Identifier);
+            body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));              
+            context.SendMail(emailFrom, emailTo, subject, body);
+        
+            SyncUserAdd(user);            
         }
 
         /// <summary>
@@ -361,6 +360,21 @@ namespace Terradue.Tep {
             } else {
                 //private communities, we add user in pending table and request manager to add him
                 this.SetUserAsTemporaryMember(user);
+
+                //automatic confirmation email about pending review sent to user
+                try {
+                    string emailTo = user.Email;
+                    string emailFrom = context.GetConfigValue("MailSenderAddress");
+                    string subject = context.GetConfigValue("CommunityPendingEmailSubject");
+                    subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
+                    subject = subject.Replace("$(COMMUNITY)", this.Name);
+                    string body = context.GetConfigValue("CommunityPendingEmailBody");
+                    body = body.Replace("$(COMMUNITY)", this.Name);                    
+                    body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));                    
+                    context.SendMail(emailFrom, emailTo, subject, body);
+                } catch (Exception e) {
+                    context.LogError(this, e.Message);
+                }
 
                 if(this.EmailNotification){
                     try {
@@ -466,22 +480,27 @@ namespace Terradue.Tep {
         public void RemoveUser(User user, string reason = null) {
             if (context.UserId != user.Id && !CanUserManage(context.UserId)) throw new UnauthorizedAccessException("Only owner can remove users");
 
+            bool isPending = IsUserPending(user.Id);
+
             //delete previous role(s)
             var uroles = Role.GetUserRolesForDomain(context, user.Id, this.Id);
             foreach (var r in uroles) r.RevokeFromUser(user, this);
 
-            context.LogInfo(this, string.Format("User {0} removed from community {1} (all roles revoked)", user.Username, this.Identifier));
-
+            context.LogInfo(this, 
+            isPending ? string.Format("Pending user {0} denied from community {1}", user.Username, this.Identifier)
+                      : string.Format("User {0} removed from community {1} (all roles revoked)", user.Username, this.Identifier));
+            
             if (!string.IsNullOrEmpty(reason)) {
                 try {
                     string emailTo = user.Email;
                     string emailFrom = context.GetConfigValue("MailSenderAddress");
-                    string subject = context.GetConfigValue("CommunityRemoveEmailSubject");
+                    string subject = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailSubject" : "CommunityRemoveEmailSubject");
                     subject = subject.Replace("$(SITENAME)", context.GetConfigValue("SiteName"));
                     subject = subject.Replace("$(COMMUNITY)", this.Name);
-                    string body = context.GetConfigValue("CommunityRemoveEmailBody");
+                    string body = context.GetConfigValue(isPending ? "CommunityPendingRemoveEmailBody" : "CommunityRemoveEmailSubject");
                     body = body.Replace("$(COMMUNITY)", this.Name);
                     body = body.Replace("$(REASON)", reason);
+                    body = body.Replace("$(SITENAME_SHORT)", context.GetConfigValue("SiteNameShort"));    
                     context.SendMail(emailFrom, emailTo, subject, body);
                 } catch (Exception e) {
                     context.LogError(this, e.Message);
