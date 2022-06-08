@@ -497,7 +497,7 @@ UPDATE config SET value='[$(SITENAME)] - You have been added to the community $(
 UPDATE config SET value='Dear user,\n\nyou are receiving this email because you are a registered $(SITENAME_SHORT) user with an active subscription.\n\nAccordingly to your Application Scenario $(ASD_LINK), you have been added by a $(SITENAME_SHORT) Content Authority as member of the community $(COMMUNITY).\nYou can access it directly from this link: $(LINK).\n\nBest Regards' WHERE name='CommunityJoinConfirmationEmailBody';
 
 UPDATE config SET value='[$(SITENAME)] - End of your access to the community $(COMMUNITY)' WHERE name='CommunityRemoveEmailSubject';
-UPDATE config SET value='Dear user,\n\nyou have been removed by a $(SITENAME_SHORT) Content Authority from the community $(COMMUNITY) for the following reason:\n $(REASON).\n\nYou can still access any public community on $(SITENAME_SHORT).\n\nAccess to processing services and to your past processing job results is conditioned by the status of your Application Scenario $(LINK).\n\nBest Regards' WHERE name='CommunityRemoveEmailBody';
+UPDATE config SET value='Dear user,\n\nyou have been removed by a $(SITENAME_SHORT) Content Authority from the community $(COMMUNITY) for the following reason:\n $(REASON).\n\nYou can still access any public community on $(SITENAME_SHORT).\n\nAccess to processing services and to your past processing job results is conditioned by the status of your Application Scenario $(ASD_LINK).\n\nBest Regards' WHERE name='CommunityRemoveEmailBody';
 
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('asd_link', 'string', 'ASD page link', 'ASD page link', 'https://geohazards-tep.eu/#!settings/asd', '0');
 -- RESULT
