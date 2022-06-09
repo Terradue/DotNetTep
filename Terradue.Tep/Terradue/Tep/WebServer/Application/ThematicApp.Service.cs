@@ -193,7 +193,7 @@ namespace Terradue.Tep.WebServer.Services {
             
 			} else {
 
-                MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
+                if(MasterCatalogue.SearchCache != null) MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
                 
 				var apps = new EntityList<DataPackage>(context);
 				apps.SetFilter("Kind", ThematicApplication.KINDRESOURCESETAPPS.ToString());
