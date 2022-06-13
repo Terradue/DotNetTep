@@ -66,7 +66,8 @@ namespace Terradue.Tep.WebServer.Services {
                 try{
                     var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                     result.Token = cookie.Value;
-                    result.TokenExpire = cookie.Expire;
+                    TimeSpan span = cookie.Expire.Subtract(DateTime.UtcNow);
+                    result.TokenExpire = span.TotalSeconds;                    
                 }catch(Exception){}
                 context.Close();
             } catch (Exception e) {

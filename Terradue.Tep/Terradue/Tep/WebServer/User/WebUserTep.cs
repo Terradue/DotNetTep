@@ -177,8 +177,8 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "token", Description = "sso token", ParameterType = "query", DataType = "String", IsRequired = true)]
         public String Token { get; set; }
 
-        [ApiMember(Name = "token_expire", Description = "sso token expire", ParameterType = "query", DataType = "String", IsRequired = true)]
-        public DateTime TokenExpire { get; set; }
+        [ApiMember(Name = "token_expire", Description = "sso token expire (seconds)", ParameterType = "query", DataType = "double", IsRequired = true)]
+        public double TokenExpire { get; set; }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
