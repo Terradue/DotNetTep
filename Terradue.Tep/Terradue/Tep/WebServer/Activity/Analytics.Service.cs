@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
 
@@ -140,6 +141,36 @@ namespace Terradue.Tep.WebServer.Services {
                 analytics.AddServices(request.startdate, request.enddate, ids, apps);
                 foreach(var service in analytics.Services) result.Add(new WebAnalyticsService(service));
 
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(AnalyticsAsdRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var result = new List<WebAnalyticsService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/analytics/asd/{0} PUT", request.Id));
+
+                if(string.IsNullOrEmpty(request.Usernames)) return new List<WebAnalyticsService>();
+                var usernames = request.Usernames.Split(',');
+                var usernamesS = "'" + string.Join("','",usernames) + "'";
+                
+                string sql = string.Format("SELECT id FROM usr WHERE username IN ({0});", usernamesS);
+                context.LogDebug(this, sql);
+                var requestids = context.GetQueryIntegerValues(sql);
+                context.LogDebug(this, "found " + requestids.Length);
+
+                if(requestids.Length > 0){
+                    ServiceAnalytics analytics = new ServiceAnalytics(context);                                    
+                    analytics.AddServices(request.startdate, request.enddate, requestids.ToList());
+                    foreach(var service in analytics.Services) result.Add(new WebAnalyticsService(service));
+                }
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
