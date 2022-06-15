@@ -36,6 +36,19 @@ namespace Terradue.Tep.WebServer {
         public string Usernames { get; set; }
     }
 
+    [Route("/analytics/asd/{Id}", "PUT", Summary = "GET analytics for asd", Notes = "")]
+    public class AnalyticsAsdRequestTep : IReturn<WebAnalytics>{
+        [ApiMember(Name = "id", Description = "asd Identifier", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string Id { get; set; }
+        [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string startdate { get; set; }
+
+        [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string enddate { get; set; }
+        [ApiMember(Name = "usernames", Description = "usernames", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Usernames { get; set; }
+    }
+
     [Route("/analytics/service/user/{Identifier}", "GET", Summary = "GET analytics services for user", Notes = "")]
     public class AnalyticsServicesUserRequestTep : IReturn<WebAnalytics>{
         [ApiMember(Name = "identifier", Description = "user Identifier", ParameterType = "path", DataType = "string", IsRequired = false)]
