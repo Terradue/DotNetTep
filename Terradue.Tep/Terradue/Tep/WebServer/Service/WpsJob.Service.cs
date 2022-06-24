@@ -292,8 +292,8 @@ namespace Terradue.Tep.WebServer.Services {
 
             context.LogInfo(this,string.Format("/job/wps POST Id='{0}'",job.Id));
             if(isnew){
-                context.LogDebug(this,string.Format("WpsJob '{0}' - '{1}' created",job.Identifier, job.Name));
-                EventFactory.LogWpsJob(context, job, "Job created");
+                context.LogDebug(this,string.Format("WpsJob '{0}' - '{1}' created",job.Identifier, job.Name));                
+                System.Threading.Tasks.Task.Run(() => EventFactory.LogWpsJob(context, job, "Job created"));                
             } else {
                 context.LogDebug(this,string.Format("WpsJob '{0}' - '{1}' title updated",job.Identifier, job.Name));
             }
