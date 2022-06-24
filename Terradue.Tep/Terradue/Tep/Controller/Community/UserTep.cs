@@ -123,15 +123,19 @@ namespace Terradue.Tep {
             set;
         }
 
-        private TransactionFactory TransactionFactory;
+        private TransactionFactory _transactionFactory;
+        private TransactionFactory TransactionFactory {
+            get {
+                if(_transactionFactory == null) _transactionFactory = new TransactionFactory(context);
+                return _transactionFactory;
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
         /// </summary>
         /// <param name="context">Context.</param>
-        public UserTep(IfyContext context) : base(context) {
-            TransactionFactory = new TransactionFactory(context);
-        }
+        public UserTep(IfyContext context) : base(context) {}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
