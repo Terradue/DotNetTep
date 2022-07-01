@@ -63,10 +63,10 @@ namespace Terradue.Tep.WebServer.Services {
     public class GetJobsReportingRequest : IReturn<string> {
         
         [ApiMember(Name = "startdate", Description = "start date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
-        public DateTime startdate { get; set; }
+        public string startdate { get; set; }
 
         [ApiMember(Name = "enddate", Description = "end date", ParameterType = "query", DataType = "datetime", IsRequired = false)]
-        public DateTime enddate { get; set; }
+        public string enddate { get; set; }
         
         [ApiMember(Name = "filename", Description = "filename", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string filename { get; set; }
@@ -1142,15 +1142,17 @@ namespace Terradue.Tep.WebServer.Services {
         public object Get(GetJobsReportingRequest request){
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
 
-            var startdate = request.startdate.ToString("yyyy-MM-dd");
-            var enddate = request.enddate.ToString("yyyy-MM-dd");
+            // var startdate = request.startdate.ToString("yyyy-MM-dd");
+            // var enddate = request.enddate.ToString("yyyy-MM-dd");
 
             try {
                 context.Open();
                 context.LogInfo(this,string.Format("/report/jobs GET startdate='{0}',enddate='{1}'", request.startdate, request.enddate));
 
+                if (string.IsNullOrEmpty(request.filename)) 
+                    request.filename = string.Format("{0}-monthly-job-report-{1}-{2}", context.GetConfigValue("siteNameShort"),request.startdate,request.enddate);
                 var filename = string.Format("{0}/{1}.csv", context.GetConfigValue("path.files"), request.filename);
-                WebServer.Services.ReportServiceTep.GetJobReport(context, filename, startdate, enddate);
+                WebServer.Services.ReportServiceTep.GetJobReport(context, filename, request.startdate, request.enddate);
 
                 context.Close();
 
