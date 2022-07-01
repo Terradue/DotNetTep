@@ -188,10 +188,11 @@ namespace Terradue.Tep {
         /**********************************************************************/
 
         public static void CreateJobMonthlyReport(IfyContext context) {
-
-            var startdateString = DateTime.Today.AddMonths(-1).ToString("yyyy-MM");
-            var enddateString = DateTime.Today.ToString("yyyy-MM");
-            var monthString = DateTime.Today.AddMonths(-1).ToString("MMMM");
+            var lastmonthdate = DateTime.Today.AddMonths(-1);
+            var startdateString = lastmonthdate.ToString("yyyy-MM");
+            var lastday = DateTime.DaysInMonth(lastmonthdate.Year, lastmonthdate.Month);
+            var enddateString = string.Format("{0}-{1}",lastmonthdate.Year, lastday);
+            var monthString = lastmonthdate.ToString("MMMM");
 
             context.WriteInfo(string.Format("CreateJobMonthlyReport ({0}) - {1} -> {2}", monthString, startdateString, enddateString));
 
