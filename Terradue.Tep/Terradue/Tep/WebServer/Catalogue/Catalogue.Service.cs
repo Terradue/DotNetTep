@@ -325,6 +325,8 @@ namespace Terradue.Tep.WebServer.Services
                 var qs = new NameValueCollection(Request.QueryString);
                 foreach (var filter in datapackages.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
+                if(qs["visibility"] != null && qs["visibility"] != "all") datapackages.AccessLevel = EntityAccessLevel.Privilege;
+            
                 Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
                 result = ose.Query(datapackages, qs, type);
 
