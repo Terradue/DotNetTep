@@ -326,6 +326,10 @@ namespace Terradue.Tep.WebServer.Services
                 foreach (var filter in datapackages.FilterValues) qs.Add("t2-" + filter.Key.FieldName, filter.Value.ToString());
 
                 if(qs["visibility"] != null && qs["visibility"] != "all") datapackages.AccessLevel = EntityAccessLevel.Privilege;
+
+                if(context.UserLevel == UserLevel.Administrator && (qs["visibility"] == null || qs["visibility"] != "owned")){
+                    datapackages.SetFilter("Identifier", "!_index_*,!_series_*,!_products_*");
+                }
             
                 Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
                 result = ose.Query(datapackages, qs, type);
