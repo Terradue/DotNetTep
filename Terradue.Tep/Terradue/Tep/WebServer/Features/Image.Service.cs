@@ -47,7 +47,17 @@ namespace Terradue.Tep.WebServer.Services {
 
                 var imgpath = context.GetConfigValue ("path.img");                
                 var rootpath = imgpath.Substring(imgpath.LastIndexOf("/root") + 5);                                
-                result = System.IO.Directory.GetFiles(imgpath, !string.IsNullOrEmpty(request.q) ? "*" + request.q + "*" : "*").ToList();
+                // result = System.IO.Directory.GetFiles(imgpath, !string.IsNullOrEmpty(request.q) ? "*" + request.q + "*" : "*").ToList();
+                // result = result.ConvertAll(f => rootpath + "/" + f.Substring(f.LastIndexOf("/") + 1));
+
+                var allresult = System.IO.Directory.GetFiles(imgpath, "*").ToList();
+                if(!string.IsNullOrEmpty(request.q)){
+                    foreach(var f in allresult){
+                        var filename = f.Substring(f.LastIndexOf("/") + 1);
+                        if(filename.ToLower().Contains(request.q.ToLower())) result.Add(f);
+                    }
+                } else 
+                    result = allresult;
                 result = result.ConvertAll(f => rootpath + "/" + f.Substring(f.LastIndexOf("/") + 1));
 
                 context.Close();
