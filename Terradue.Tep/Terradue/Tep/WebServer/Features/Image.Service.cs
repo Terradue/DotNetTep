@@ -46,7 +46,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
 
                 var imgpath = context.GetConfigValue ("path.img");                
-                var rootpath = imgpath.Substring(imgpath.LastIndexOf("/root") + 5);                                
+                // var rootpath = imgpath.Substring(imgpath.LastIndexOf("/root") + 5);                                
                 // result = System.IO.Directory.GetFiles(imgpath, !string.IsNullOrEmpty(request.q) ? "*" + request.q + "*" : "*").ToList();
                 // result = result.ConvertAll(f => rootpath + "/" + f.Substring(f.LastIndexOf("/") + 1));
 
@@ -58,6 +58,8 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                 } else 
                     result = allresult;
+                
+                var rootpath = context.GetConfigValue("BaseUrl").TrimEnd('/') + "/" + imgpath.Substring(imgpath.LastIndexOf("/root/") + 6);                                ;
                 result = result.ConvertAll(f => rootpath + "/" + f.Substring(f.LastIndexOf("/") + 1));
 
                 context.Close();
