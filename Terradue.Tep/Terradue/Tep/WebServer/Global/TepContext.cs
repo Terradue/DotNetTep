@@ -36,7 +36,7 @@ namespace Terradue.Tep.WebServer {
                 System.Web.Configuration.WebConfigurationManager.OpenWebConfiguration(null);
             BaseUrl = rootWebConfig.AppSettings.Settings["BaseUrl"].Value;
 
-            HttpContext.Current.Session.Timeout = 1440;
+            // HttpContext.Current.Session.Timeout = 1440;
             this.DynamicDbConnectionsGlobal = true;
         }
 
@@ -50,16 +50,19 @@ namespace Terradue.Tep.WebServer {
             if (UserLevel == Terradue.Portal.UserLevel.Administrator) AccessLevel = EntityAccessLevel.Administrator;
             if (UserLevel > Terradue.Portal.UserLevel.Everybody) {
 
-                if (this.UserInformation != null && this.UserInformation.AuthenticationType is TepLdapAuthenticationType) {
+                if (!string.IsNullOrEmpty(this.UserInformation.AuthIdentifier)){
+                    var authT = AuthenticationType.FromIdentifier(this, this.UserInformation.AuthIdentifier);
+                    if (this.UserInformation != null && authT is TepLdapAuthenticationType) {
 
-                    //check the validity of access token
-                    try {
-                        var auth = new TepLdapAuthenticationType(this);
-                        auth.CheckRefresh();
-                    } catch (Exception e) {
-                        if (this.GetConfigBooleanValue("sso-notoken-endsession-enabled")) {
-                            LogError(this, e.Message);
-                            EndSession();//user token is not valid, we logout
+                        //check the validity of access token
+                        try {
+                            var auth = new TepLdapAuthenticationType(this);
+                            auth.CheckRefresh();
+                        } catch (Exception e) {
+                            if (this.GetConfigBooleanValue("sso-notoken-endsession-enabled")) {
+                                LogError(this, e.Message);
+                                EndSession();//user token is not valid, we logout
+                            }
                         }
                     }
                 }
