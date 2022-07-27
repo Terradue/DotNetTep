@@ -314,6 +314,7 @@ namespace Terradue.Tep.WebServer.Services
                     context.AccessLevel = EntityAccessLevel.Privilege;
                 }
                 datapackages.SetFilter("Kind", RemoteResourceSet.KINDRESOURCESETNORMAL.ToString());
+                datapackages.IncludeOwnerFieldsInSearch = true;
                
                 // Load the complete request
                 HttpRequest httpRequest = HttpContext.Current.Request;
@@ -327,7 +328,8 @@ namespace Terradue.Tep.WebServer.Services
 
                 if(qs["visibility"] != null && qs["visibility"] != "all") datapackages.AccessLevel = EntityAccessLevel.Privilege;
 
-                datapackages.SetFilter("Identifier", "!_index_*,!_series_*,!_products_*");                
+                if(qs["admin"] == null || qs["admin"] != "true")
+                    datapackages.SetFilter("Identifier", "!_index_*,!_series_*,!_products_*");
             
                 Type type = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
                 result = ose.Query(datapackages, qs, type);
