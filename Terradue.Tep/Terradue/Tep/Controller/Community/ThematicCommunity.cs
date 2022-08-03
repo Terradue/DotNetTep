@@ -845,38 +845,36 @@ namespace Terradue.Tep {
             }
             result.ElementExtensions.Add("overview", "https://standards.terradue.com", rolesOverview);
 
-            //we show these info only for owner and only for specific id view
-            if (!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) {
-                if (isJoined) {
-                    //get all apps info
-                    result = GetInfoFromApps(result, AppsLinks);
+            //we show these info only for member and only for specific id view
+            if (((!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) && isJoined) || (parameters["info"] != null && parameters["info"] == "all")) {                
+                //get all apps info
+                result = GetInfoFromApps(result, AppsLinks);
 
-                    if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
-                    var usersCommunity = new List<UserRole>();
-                    foreach (var role in roles) {
-                        //if (role.Identifier != RoleTep.PENDING) {
-                            var usersIds = role.GetUsers(this.Id).ToList();
-                            if (usersIds.Count > 0) {
-                                foreach (var usrId in usersIds) {
-                                    var user = UserTep.FromId(context, usrId);
-                                    usersCommunity.Add(new UserRole {
-                                        Username = user.Username,
-                                        Name = user.FirstName + " " + user.LastName,
-                                        Email = CanUserManage(context.UserId) ? (!string.IsNullOrEmpty(user.Email) ? user.Email : "") : "",
-                                        Affiliation = IsUserJoined(context.UserId) ? (!string.IsNullOrEmpty(user.Affiliation) ? user.Affiliation : "") : "",
-                                        Country = IsUserJoined(context.UserId) ? (!string.IsNullOrEmpty(user.Country) ? user.Country : "") : "",
-                                        Role = role.Name ?? role.Identifier,
-                                        RoleDescription = role.Description,
-                                        Status = IsUserPending(usrId) ? USERSTATUS_PENDING : USERSTATUS_JOINED,
-                                        Level = CanUserManage(context.UserId) ? user.Level : 0,
-                                        Avatar = user.GetAvatar()
-                                    });
-                                }
+                if (!string.IsNullOrEmpty(DiscussCategory)) result.ElementExtensions.Add("discussCategory", "https://standards.terradue.com", DiscussCategory);
+                var usersCommunity = new List<UserRole>();
+                foreach (var role in roles) {
+                    //if (role.Identifier != RoleTep.PENDING) {
+                        var usersIds = role.GetUsers(this.Id).ToList();
+                        if (usersIds.Count > 0) {
+                            foreach (var usrId in usersIds) {
+                                var user = UserTep.FromId(context, usrId);
+                                usersCommunity.Add(new UserRole {
+                                    Username = user.Username,
+                                    Name = user.FirstName + " " + user.LastName,
+                                    Email = CanUserManage(context.UserId) ? (!string.IsNullOrEmpty(user.Email) ? user.Email : "") : "",
+                                    Affiliation = IsUserJoined(context.UserId) ? (!string.IsNullOrEmpty(user.Affiliation) ? user.Affiliation : "") : "",
+                                    Country = IsUserJoined(context.UserId) ? (!string.IsNullOrEmpty(user.Country) ? user.Country : "") : "",
+                                    Role = role.Name ?? role.Identifier,
+                                    RoleDescription = role.Description,
+                                    Status = IsUserPending(usrId) ? USERSTATUS_PENDING : USERSTATUS_JOINED,
+                                    Level = CanUserManage(context.UserId) ? user.Level : 0,
+                                    Avatar = user.GetAvatar()
+                                });
                             }
-                        //}
-                    }
-                    result.ElementExtensions.Add("users", "https://standards.terradue.com", usersCommunity);
+                        }
+                    //}
                 }
+                result.ElementExtensions.Add("users", "https://standards.terradue.com", usersCommunity);                
             }
 
             return result;
