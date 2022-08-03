@@ -350,7 +350,9 @@ namespace Terradue.Tep
         [DataMember]
         public string Title { get; set; }
         [DataMember]
-        public string Icon { get; set; }        
+        public string Icon { get; set; }
+        [DataMember]
+        public string Status { get; set; }        
     }
     [DataContract]
     public class CollectionOverview {
@@ -358,6 +360,8 @@ namespace Terradue.Tep
         public string Name { get; set; }
         [DataMember]
         public AppOverview App { get; set; }
+        [DataMember]
+        public CommunityOverview Community { get; set; }
         [DataMember]
         public string Url { get; set; }
 
@@ -378,6 +382,8 @@ namespace Terradue.Tep
         public string Provider { get; set; }
         [DataMember]
         public AppOverview App { get; set; }
+        [DataMember]
+        public CommunityOverview Community { get; set; }
         [DataMember]
         public string Url { get; set; }
         [DataMember]

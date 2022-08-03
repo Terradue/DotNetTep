@@ -189,6 +189,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "identifiers", Description = "identifiers of the services", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
         public List<string> Identifiers { get; set; }
     }
+
+    [Route("/user/current/service/wps", "GET", Summary = "GET services", Notes = "")]
+    public class GetWpsServicesForCurrentUser{}
     
     [Route("/user/current/service/wps/sync", "GET", Summary = "GET refresh current user wps service", Notes = "")]
     public class CurrentUserWpsServiceSyncRequestTep: IReturn<WebResponseBool> { }

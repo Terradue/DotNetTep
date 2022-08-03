@@ -846,7 +846,7 @@ namespace Terradue.Tep {
             result.ElementExtensions.Add("overview", "https://standards.terradue.com", rolesOverview);
 
             //we show these info only for member and only for specific id view
-            if (((!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) && isJoined) || (parameters["info"] != null && parameters["info"] == "all")) {                
+            if (((!string.IsNullOrEmpty(parameters["uid"]) || !string.IsNullOrEmpty(parameters["id"])) && isJoined)) {                
                 //get all apps info
                 result = GetInfoFromApps(result, AppsLinks);
 
@@ -880,7 +880,7 @@ namespace Terradue.Tep {
             return result;
         }
 
-        private AtomItem GetInfoFromApps(AtomItem result, List<string> appsLinks){
+        public AtomItem GetInfoFromApps(AtomItem result, List<string> appsLinks, bool collection = true, bool wps = true){
             List<CollectionOverview> collectionsOverviews = new List<CollectionOverview>();
             List<WpsServiceOverview> wpssOverviews = new List<WpsServiceOverview>();
             if (appsLinks != null) {
@@ -891,13 +891,17 @@ namespace Terradue.Tep {
                         var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
                         foreach (IOpenSearchResultItem item in apps.Items) {
 
-                            //get data collections                            
-                            var collectionOverviews = ThematicAppFactory.GetDataCollectionOverview(context, item);
-                            collectionsOverviews.AddRange(collectionOverviews);
+                            if(collection){
+                                //get data collections                            
+                                var collectionOverviews = ThematicAppFactory.GetDataCollectionOverview(context, item);
+                                collectionsOverviews.AddRange(collectionOverviews);
+                            }
 
-                            //get wps services                            
-                            var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
-                            wpssOverviews.AddRange(wpsOverviews);
+                            if(wps){
+                                //get wps services                            
+                                var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
+                                wpssOverviews.AddRange(wpsOverviews);
+                            }
                         }
                     } catch (Exception e) {
                         context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + this.Name);

@@ -1208,6 +1208,51 @@ namespace Terradue.Tep.WebServer.Services {
             return result;
         }
 
+        public object Get(GetWpsServicesForCurrentUser request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+
+            List<WpsServiceOverview> wpssOverviews = new List<WpsServiceOverview>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/current/service/wps"));
+
+                //get all domain where user is a member
+                CommunityCollection domains = new CommunityCollection(context);                
+                domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
+                domains.Load();
+
+                foreach(var domain in domains){
+                    foreach (var appslink in domain.AppsLinks) {
+                        try {
+                            var settings = MasterCatalogue.OpenSearchFactorySettings;
+                            var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
+                            foreach (IOpenSearchResultItem item in apps.Items) {
+                                //get wps services                            
+                                var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
+                                foreach(var wps in wpsOverviews)
+                                    wps.Community = new CommunityOverview{
+                                        Identifier = domain.Identifier,
+                                        Title = domain.Name,
+                                        Icon = domain.IconUrl,
+                                        Status = domain.IsUserJoined(context.UserId) ? "joined" : ""
+                                    };
+                                wpssOverviews.AddRange(wpsOverviews);
+                            }
+                        } catch (Exception e) {
+                            context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + domain.Name);
+                        }
+                    }
+                }
+                
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return new HttpResult(wpssOverviews);
+        }
+
         private static OpenGis.Wps.WPSCapabilitiesType CreateGetCapabilititesTemplate(string baseUrl) {
             OpenGis.Wps.WPSCapabilitiesType capabilitites = new OpenGis.Wps.WPSCapabilitiesType();
 
