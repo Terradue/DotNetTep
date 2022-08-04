@@ -1220,14 +1220,26 @@ namespace Terradue.Tep.WebServer.Services {
                 CommunityCollection domains = new CommunityCollection(context);                
                 domains.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
                 domains.Load();
+                context.LogDebug(this, string.Format("domain loaded"));
 
                 foreach(var domain in domains){
-                    foreach (var appslink in domain.AppsLinks) {
-                        try {
-                            var settings = MasterCatalogue.OpenSearchFactorySettings;
-                            var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
-                            foreach (IOpenSearchResultItem item in apps.Items) {
+                    context.LogDebug(this, string.Format("domain " + domain.Identifier));
+
+                    var apps = new EntityList<ThematicApplicationCached>(context);
+                    apps.SetFilter("DomainId", domain.Id);
+                    apps.Load();
+                    context.LogDebug(this, string.Format("apps loaded"));
+                    var appsItems = apps.GetItemsAsList();
+                    context.LogDebug(this, string.Format("found " + appsItems.Count));
+                    foreach(var app in appsItems){
+                        var feed = app.Feed;
+                        if(feed == null) feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+                        if(feed != null){
+                            context.LogDebug(this, string.Format("feed not null - " + feed.Items.Count()));
+                            foreach (var item in feed.Items) {
+                                context.LogDebug(this, string.Format("get wps services"));
                                 //get wps services                            
+                                try{
                                 var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
                                 foreach(var wps in wpsOverviews)
                                     wps.Community = new CommunityOverview{
@@ -1237,12 +1249,37 @@ namespace Terradue.Tep.WebServer.Services {
                                         Status = domain.IsUserJoined(context.UserId) ? "joined" : ""
                                     };
                                 wpssOverviews.AddRange(wpsOverviews);
+                                }catch(Exception){}
                             }
-                        } catch (Exception e) {
-                            context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + domain.Name);
-                        }
+                        } else context.LogDebug(this, string.Format("feed null"));
                     }
+
+
+
+                    // foreach (var appslink in domain.AppsLinks) {
+                    //     context.LogDebug(this, string.Format(appslink));
+                    //     try {
+                    //         var settings = MasterCatalogue.OpenSearchFactorySettings;
+                    //         var apps = MasterCatalogue.OpenSearchEngine.Query(new GenericOpenSearchable(new OpenSearchUrl(appslink), settings), new NameValueCollection(), typeof(AtomFeed));
+                    //         foreach (IOpenSearchResultItem item in apps.Items) {
+                    //             context.LogDebug(this, string.Format("get wps services"));
+                    //             //get wps services                            
+                    //             var wpsOverviews = ThematicAppFactory.GetWpsServiceOverviews(context, item);
+                    //             foreach(var wps in wpsOverviews)
+                    //                 wps.Community = new CommunityOverview{
+                    //                     Identifier = domain.Identifier,
+                    //                     Title = domain.Name,
+                    //                     Icon = domain.IconUrl,
+                    //                     Status = domain.IsUserJoined(context.UserId) ? "joined" : ""
+                    //                 };
+                    //             wpssOverviews.AddRange(wpsOverviews);
+                    //         }
+                    //     } catch (Exception e) {
+                    //         context.LogError(this, e != null ? e.Message : "Error while getting thematic applications of community " + domain.Name);
+                    //     }
+                    // }
                 }
+                context.LogDebug(this, string.Format("done"));
                 
                 context.Close();
             } catch (Exception e) {
