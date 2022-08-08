@@ -292,7 +292,7 @@ namespace Terradue.Tep {
                 }
                 base.Store();
 
-                if (isNew && context.AccessLevel == EntityAccessLevel.Administrator) {
+                if (isNew && context.AccessLevel == EntityAccessLevel.Administrator && OwnerId != 0) {
                     var count = context.GetQueryIntegerValue(String.Format("SELECT count(*) FROM {3} WHERE id_{2}={0} AND id_usr={1};", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
                     if (count == 0)
                         context.Execute(String.Format("INSERT INTO {3} (id_{2}, id_usr) VALUES ({0}, {1});", Id, OwnerId, this.EntityType.PermissionSubjectTable.Name, this.EntityType.PermissionSubjectTable.PermissionTable));
