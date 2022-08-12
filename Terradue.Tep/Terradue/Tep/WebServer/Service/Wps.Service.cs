@@ -1690,7 +1690,90 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return new WebResponseBool(true);
         }
+
+        public object Get(GetWPSServiceTokens request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var tokens = new List<WebWpsToken>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{0}/token GET",request.Identifier));
+
+                EntityList<WpsToken> tokenList = new EntityList<WpsToken>(context);
+                tokenList.SetFilter("ServiceId", request.Identifier);
+                tokenList.Load();         
+                foreach(var item in tokenList.GetItemsAsList()){
+                    tokens.Add(new WebWpsToken(item));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return tokens;
+        }
                 
+        public object Post(PostWPSServiceToken request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new WebWpsToken();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{0}/token POST",request.ServiceIdentifier));
+
+                var token = request.ToEntity(context,null);
+                token.Store();
+
+                result = new WebWpsToken(token);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(PutWPSServiceToken request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new WebWpsToken();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{0}/token PUT",request.ServiceIdentifier));
+
+                var token = request.ToEntity(context,null);
+                token.Store();
+
+                result = new WebWpsToken(token);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Delete(DeleteWPSServiceToken request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new WebWpsToken();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/wps/token/{Id} DELETE",request.Id));
+
+                var token = WpsToken.FromId(context, request.Id);
+                token.Delete();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
     }
 
 }
