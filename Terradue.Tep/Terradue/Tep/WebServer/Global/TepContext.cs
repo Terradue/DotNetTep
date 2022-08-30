@@ -50,9 +50,9 @@ namespace Terradue.Tep.WebServer {
             if (UserLevel == Terradue.Portal.UserLevel.Administrator) AccessLevel = EntityAccessLevel.Administrator;
             if (UserLevel > Terradue.Portal.UserLevel.Everybody) {
 
-                if (!string.IsNullOrEmpty(this.UserInformation.AuthIdentifier)){
+                if (this.UserInformation != null && !string.IsNullOrEmpty(this.UserInformation.AuthIdentifier)){
                     var authT = AuthenticationType.FromIdentifier(this, this.UserInformation.AuthIdentifier);
-                    if (this.UserInformation != null && authT is TepLdapAuthenticationType) {
+                    if (authT is TepLdapAuthenticationType) {
 
                         //check the validity of access token
                         try {
