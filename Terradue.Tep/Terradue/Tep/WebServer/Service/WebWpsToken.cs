@@ -8,11 +8,20 @@ using Terradue.WebService.Model;
 namespace Terradue.Tep.WebServer {
 
 
-    [Route("/service/wps/{Identifier}/token", "GET", Summary = "GET a list of WPS services", Notes = "")]
+    [Route("/service/wps/{Identifier}/token", "GET", Summary = "GET a list of WPS tokens", Notes = "")]
     public class GetWPSServiceTokens : IReturn<List<WebWpsToken>> {
         [ApiMember(Name = "Identifier", Description = "Identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Identifier { get; set; }
     }
+
+    [Route("/user/{Username}/service/wps/token", "GET", Summary = "GET a list of WPS tokens", Notes = "")]
+    public class GetUserWpsTokens : IReturn<List<WebWpsToken>> {
+        [ApiMember(Name = "Username", Description = "Username", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Username { get; set; }
+    }
+
+    [Route("/user/current/service/wps/token", "GET", Summary = "GET a list of WPS tokens", Notes = "")]
+    public class GetCurrentUserWpsTokens : IReturn<List<WebWpsToken>> {}
 
     [Route("/service/wps/{ServiceIdentifier}/token", "POST", Summary = "GET a list of WPS services", Notes = "")]
     public class PostWPSServiceToken : WebWpsToken, IReturn<WebWpsToken> {}
@@ -51,6 +60,10 @@ namespace Terradue.Tep.WebServer {
         
         public WebWpsToken(WpsToken entity, IfyContext context = null) : base(entity) {
             this.ServiceId = entity.ServiceId;
+            if(context != null && this.ServiceId != 0 && string.IsNullOrEmpty(this.ServiceIdentifier)){
+                var service = WpsProcessOffering.FromId(context, this.ServiceId);
+                this.ServiceIdentifier = service.Identifier;
+            }
             this.UserId = entity.OwnerId;    
             this.Username = entity.Username;
             this.Groupname = entity.Groupname;

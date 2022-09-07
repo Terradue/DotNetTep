@@ -3,7 +3,7 @@ using Terradue.Portal;
 
 namespace Terradue.Tep
 {
-    [EntityTable("service_token", EntityTableConfiguration.Custom, HasOwnerReference = true)]
+    [EntityTable("service_token", EntityTableConfiguration.Custom, HasOwnerReference = true, IdentifierField = null)]
     /// <summary>
     /// A Wps token is used to process one input of a wps Job
     /// </summary>

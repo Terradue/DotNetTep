@@ -406,6 +406,25 @@ namespace Terradue.Tep.WebServer.Services {
 
                 wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
 
+                //calculate cost
+                if(user.Credit > 0){
+                    //get number of inputs in the job
+                    var totalDataProcessed = 0;
+                    foreach (var parameter in parameters) {
+                        if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
+                            totalDataProcessed++;
+                        }
+                    }
+                    //get cost of process
+                    var cost = totalDataProcessed * wps.Price;
+
+                    if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
+                    else {
+                        user.Credit -= cost;
+                        user.Store();
+                    }
+                }
+
                 //Check if we need to remove special fields
                 if (executeInput != null && executeInput.DataInputs != null) {
                     var tmpInputs = new List<InputType>();
@@ -1120,6 +1139,8 @@ namespace Terradue.Tep.WebServer.Services {
                 wpsNew.Commercial = wpsOld.Commercial;
                 wpsNew.Geometry = wpsOld.Geometry;
                 wpsNew.ValidationUrl = wpsOld.ValidationUrl;
+                wpsNew.TutorialUrl = wpsOld.TutorialUrl;
+                wpsNew.SpecUrl = wpsOld.SpecUrl;
                 wpsNew.TermsConditionsUrl = wpsOld.TermsConditionsUrl;
                 wpsNew.TermsConditionsText = wpsOld.TermsConditionsText;
                 wpsNew.Store();
@@ -1713,6 +1734,54 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return tokens;
         }
+
+        public object Get(GetUserWpsTokens request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var tokens = new List<WebWpsToken>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/{0}/token GET",request.Username));
+
+                var user = User.FromUsername(context, request.Username);
+
+                EntityList<WpsToken> tokenList = new EntityList<WpsToken>(context);
+                tokenList.SetFilter("OwnerId", user.Id);
+                tokenList.Load();         
+                foreach(var item in tokenList.GetItemsAsList()){
+                    tokens.Add(new WebWpsToken(item, context));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return tokens;
+        }        
+
+        public object Get(GetCurrentUserWpsTokens request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var tokens = new List<WebWpsToken>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/current/token GET"));                
+
+                EntityList<WpsToken> tokenList = new EntityList<WpsToken>(context);
+                tokenList.SetFilter("OwnerId", context.UserId);
+                tokenList.Load();         
+                foreach(var item in tokenList.GetItemsAsList()){
+                    tokens.Add(new WebWpsToken(item, context));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return tokens;
+        }        
                 
         public object Post(PostWPSServiceToken request){            
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
@@ -1761,7 +1830,7 @@ namespace Terradue.Tep.WebServer.Services {
             var result = new WebWpsToken();
             try {
                 context.Open();
-                context.LogInfo(this, string.Format("/wps/token/{Id} DELETE",request.Id));
+                context.LogInfo(this, string.Format("/wps/token/{0} DELETE",request.Id));
 
                 var token = WpsToken.FromId(context, request.Id);
                 token.Delete();

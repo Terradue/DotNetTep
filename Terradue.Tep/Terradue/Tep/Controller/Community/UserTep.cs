@@ -123,6 +123,16 @@ namespace Terradue.Tep {
             set;
         }
 
+        /// <summary>
+        /// Gets or sets the processing Credit.
+        /// </summary>
+        /// <value>The Credit.</value>
+        [EntityDataField("credit")]
+        public double Credit {
+            get;
+            set;
+        }
+
         private TransactionFactory _transactionFactory;
         private TransactionFactory TransactionFactory {
             get {
@@ -983,6 +993,7 @@ namespace Terradue.Tep {
 
             if (context.AccessLevel == EntityAccessLevel.Administrator || context.UserId == this.Id) {
                 result.Categories.Add(new SyndicationCategory("balance", null, GetAccountingBalance().ToString()));
+                result.Categories.Add(new SyndicationCategory("credit", null, this.Credit + ""));
                 result.ElementExtensions.Add("level", "https://www.terradue.com", this.Level);
                 result.ElementExtensions.Add("status", "https://www.terradue.com", this.AccountStatus);
                 if (string.IsNullOrEmpty(this.TerradueCloudUsername)) LoadCloudUsername();

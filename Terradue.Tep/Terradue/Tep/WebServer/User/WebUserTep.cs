@@ -179,6 +179,8 @@ namespace Terradue.Tep.WebServer {
 
         [ApiMember(Name = "token_expire", Description = "sso token expire (seconds)", ParameterType = "query", DataType = "double", IsRequired = true)]
         public double TokenExpire { get; set; }
+        [ApiMember(Name = "Credit", Description = "processing credits", ParameterType = "query", DataType = "double", IsRequired = true)]
+        public double Credit { get; set; }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
@@ -202,7 +204,7 @@ namespace Terradue.Tep.WebServer {
                 this.T2ProfileError = HttpContext.Current.Session["t2profileError"] as string;
                 if ((string.IsNullOrEmpty(entity.Affiliation) || string.IsNullOrEmpty(entity.Country) || string.IsNullOrEmpty(entity.FirstName) || string.IsNullOrEmpty(entity.LastName)))
                     this.T2ProfileError += (string.IsNullOrEmpty(this.T2ProfileError) ? "" : "\n" ) + "Profile not complete";
-                this.T2ApiKey = entity.GetSessionApiKey();
+                this.T2ApiKey = entity.GetSessionApiKey();                
             }
 
             if (context.UserId == entity.Id || context.UserLevel == UserLevel.Administrator){
@@ -213,12 +215,14 @@ namespace Terradue.Tep.WebServer {
 					if (entity.RegistrationDate == DateTime.MinValue) entity.LoadRegistrationInfo();
 					this.RegistrationDate = entity.RegistrationDate;
 				}
+                this.Credit = entity.Credit;
             } else {
                 this.Email = null;
                 this.Affiliation = null;
                 this.Level = 0;
                 this.AccountStatus = 0;
                 this.DomainId = null;
+                this.Credit = 0;
             }
 
         }
@@ -231,6 +235,7 @@ namespace Terradue.Tep.WebServer {
 		public UserTep ToEntity(IfyContext context, UserTep input) {
 			UserTep user = (input == null ? new UserTep(context) : input);
 			user = (UserTep)base.ToEntity(context, user);
+            user.Credit = this.Credit;
 
             return user;
         }

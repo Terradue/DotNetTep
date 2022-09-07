@@ -15,6 +15,15 @@ namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class WpsProcessOfferingTep : WpsProcessOffering {
 
+        private StoreService storeservice;
+        
+        public double Price {
+            get {
+                if (storeservice==null) storeservice = StoreService.FromWpsName(context, this.Name);
+                return storeservice != null ? storeservice.Price : 0;
+            }
+        }
+
         public WpsProcessOfferingTep(IfyContext context) : base(context) {
         }
 
@@ -36,6 +45,8 @@ namespace Terradue.Tep {
             newservice.Version = service.Version;
             newservice.IconUrl = service.IconUrl;
             newservice.ValidationUrl = service.ValidationUrl;
+            newservice.TutorialUrl = service.TutorialUrl;
+            newservice.SpecUrl = service.SpecUrl;
             newservice.TermsConditionsUrl = service.TermsConditionsUrl;
             newservice.TermsConditionsText = service.TermsConditionsText;
             newservice.Domain = service.Domain;
