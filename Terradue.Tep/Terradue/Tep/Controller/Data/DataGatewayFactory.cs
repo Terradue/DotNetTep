@@ -110,14 +110,18 @@ namespace Terradue.Tep
 
             urib.Path += string.Format("/api/{0}/", baseUri.Host);
 
-            HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(urib.Uri);
-            httpRequest.Headers.Add("X-JFrog-Art-Api", "AKCp2V68vr2SNikpe5FoXFoxDk2PwkZoRGXCWi56yUDDa4S4c5U1yi6qUJKZXYxP9imviGUwf");
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(urib.Uri);
+            request.Headers.Add("X-JFrog-Art-Api", "AKCp2V68vr2SNikpe5FoXFoxDk2PwkZoRGXCWi56yUDDa4S4c5U1yi6qUJKZXYxP9imviGUwf");
 
             try
             {
-                using (var resp = httpRequest.GetResponse())
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                .ContinueWith(task =>
                 {
-                }
+                    var httpResponse = (HttpWebResponse)task.Result;                            
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {

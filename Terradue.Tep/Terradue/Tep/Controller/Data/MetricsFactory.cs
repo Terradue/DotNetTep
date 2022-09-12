@@ -36,12 +36,18 @@ namespace Terradue.Tep {
                     streamWriter.Flush();
                     streamWriter.Close();
 
-                    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                    .ContinueWith(task =>
+                    {
+                        var httpResponse = (HttpWebResponse)task.Result;
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                        {
                             string result = streamReader.ReadToEnd();
-                            context.LogInfo(context, "Response from Metrics reporting system: " + result);
+                            context.LogInfo(context, "Response from Metrics reporting system: " + result);                                
                         }
-                    }
+                    }).ConfigureAwait(false).GetAwaiter().GetResult();                    
                 }
             }catch(Exception e) {
                 context.LogError(context, "Response from Metrics reporting system: " + e.Message);

@@ -487,33 +487,39 @@ namespace Terradue.Tep
                 try
                 {
                     HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
-                    using (var resp = httpRequest.GetResponse())
+                    var feed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse,httpRequest.EndGetResponse,null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;
+						using (var stream = httpResponse.GetResponseStream()) {							
+							try {
+								return GetOwsContextAtomFeed(stream);
+							} catch (Exception e) {
+								throw e;
+							}
+						}
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    if (feed.Items != null)
                     {
-                        using (var stream = resp.GetResponseStream())
+                        foreach (OwsContextAtomEntry item in feed.Items)
                         {
-                            var feed = GetOwsContextAtomFeed(stream);
-                            if (feed.Items != null)
+                            nbresults++;
+                            try
                             {
-                                foreach (OwsContextAtomEntry item in feed.Items)
+                                var appcached = CreateOrUpdateCachedApp(item, domainId, index);
+                                if (appcached != null)
                                 {
-                                    nbresults++;
-                                    try
-                                    {
-                                        var appcached = CreateOrUpdateCachedApp(item, domainId, index);
-                                        if (appcached != null)
-                                        {
-                                            upIds.Add(appcached.Id);
-                                            this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
-                                        }
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
-                                    }
+                                    upIds.Add(appcached.Id);
+                                    this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}' from '{1}'", appcached.UId, url));
                                 }
                             }
+                            catch (Exception e)
+                            {
+                                this.LogError(string.Format("ThematicAppCachedFactory -- {0} - {1}'", e.Message, e.StackTrace));
+                            }
                         }
-                    }
+                    }                        
                 }
                 catch (Exception e)
                 {
@@ -649,23 +655,31 @@ namespace Terradue.Tep
                 url = urib.Uri.AbsoluteUri;
 
                 HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
-                using (var resp = httpRequest.GetResponse())
+                var feed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse,
+                                                                       httpRequest.EndGetResponse,
+                                                                       null)
+                .ContinueWith(task =>
                 {
-                    using (var stream = resp.GetResponseStream())
-                    {
-                        var feed = GetOwsContextAtomFeed(stream);
-                        var entry = feed.Items.First();
-                        if (feed.Items != null && feed.Items.Count() == 1)
-                        {
-                            app.Feed = feed;
-                            app.TextFeed = GetOwsContextAtomFeedAsString(feed);
-                            app.Searchable = GetSearchableTextFromAtomEntry(entry);
-                            app.LastUpdate = entry.LastUpdatedTime.DateTime == DateTime.MinValue ? DateTime.UtcNow : entry.LastUpdatedTime.DateTime;
-                            app.Store();
-                            this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}'", app.UId));
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var stream = httpResponse.GetResponseStream()){
+                        try {
+                            return GetOwsContextAtomFeed(stream);
+                        } catch (Exception e) {
+                            throw e;
                         }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                        
+                var entry = feed.Items.First();
+                if (feed.Items != null && feed.Items.Count() == 1)
+                {
+                    app.Feed = feed;
+                    app.TextFeed = GetOwsContextAtomFeedAsString(feed);
+                    app.Searchable = GetSearchableTextFromAtomEntry(entry);
+                    app.LastUpdate = entry.LastUpdatedTime.DateTime == DateTime.MinValue ? DateTime.UtcNow : entry.LastUpdatedTime.DateTime;
+                    app.Store();
+                    this.LogInfo(string.Format("ThematicAppCachedFactory -- Cached '{0}'", app.UId));
+                }                
             }
         }
 
