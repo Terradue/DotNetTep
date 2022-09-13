@@ -70,12 +70,15 @@ namespace Terradue.Tep.WebServer.Services {
 
             string text = null;
             try{
-                using (var httpResponse = (HttpWebResponse)httprequest.GetResponse ()) {
+                text = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httprequest.BeginGetResponse,httprequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
                     using (var stream = httpResponse.GetResponseStream ()){
                         var reader = new StreamReader (stream, System.Text.Encoding.UTF8);
-                        text = reader.ReadToEnd ();
+                        return reader.ReadToEnd ();
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
                 return text;
             }catch(WebException e){
                 if (e.Response != null) {

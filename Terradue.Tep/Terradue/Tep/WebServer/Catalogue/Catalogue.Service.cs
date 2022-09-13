@@ -103,14 +103,17 @@ namespace Terradue.Tep.WebServer.Services
 					var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
                     urib.Query = string.Join("&", queryString);
 
-					HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urib.Uri.AbsoluteUri);
-                    using (var resp = httpRequest.GetResponse()) {
-                        using (var stream = resp.GetResponseStream()) {
-							StreamReader reader = new StreamReader(stream);
-                            result = reader.ReadToEnd();
-                        }
-                    }                
+                    HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urib.Uri.AbsoluteUri);
 
+                    result = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse,httpRequest.EndGetResponse,null)
+                    .ContinueWith(task =>
+                    {
+                        var httpResponse = (HttpWebResponse)task.Result;
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                        {
+                            return streamReader.ReadToEnd();                            
+                        }
+                    }).ConfigureAwait(false).GetAwaiter().GetResult();
 				}
 
 				context.Close();
