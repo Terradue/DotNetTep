@@ -140,13 +140,21 @@ namespace Terradue.Tep.Controller {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        var response = JsonSerializer.DeserializeFromString<KubectlPod>(result);
-                        return response;
+                        try {
+                            return JsonSerializer.DeserializeFromString<KubectlPod>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response;
             }
         }
 
@@ -192,13 +200,22 @@ namespace Terradue.Tep.Controller {
             webRequest.Headers["Authorization"] = "Bearer " + AppSettings["K8S_API_TOKEN"];
 
             try {
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        var response = JsonSerializer.DeserializeFromString<KubectlPod>(result);
-                        return response;
+                        try {
+                            return JsonSerializer.DeserializeFromString<KubectlPod>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response;
+                
             } catch (Exception) {
                 return null;
             }
@@ -227,13 +244,21 @@ namespace Terradue.Tep.Controller {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        response = JsonSerializer.DeserializeFromString<KubectlPod>(result);
-                        return response;
+                        try {
+                            return JsonSerializer.DeserializeFromString<KubectlPod>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response;
             }
         }
 
@@ -247,11 +272,15 @@ namespace Terradue.Tep.Controller {
             webRequest.Method = "DELETE";
             webRequest.Headers["Authorization"] = "Bearer " + AppSettings["K8S_API_TOKEN"];
 
-            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    string result = streamReader.ReadToEnd();
+            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                {
+                    string result = streamReader.ReadToEnd();                        
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();                
         }
 
         /// <summary>
@@ -266,13 +295,21 @@ namespace Terradue.Tep.Controller {
             webRequest.ContentType = "application/json";
             webRequest.Headers["Authorization"] = "Bearer " + AppSettings["K8S_API_TOKEN"];
 
-            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    string result = streamReader.ReadToEnd();
-                    var response = JsonSerializer.DeserializeFromString<KubectlPods>(result);
-                    return response;
-                }
-            }
+            var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
+                        string result = streamReader.ReadToEnd();
+                        try {
+                            return JsonSerializer.DeserializeFromString<KubectlPods>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response;
         }
 
         /// <summary>
@@ -343,13 +380,23 @@ namespace Terradue.Tep.Controller {
             using (var requestStream = webRequest.GetRequestStream()) {
                 requestStream.Write(data, 0, data.Length);
                 requestStream.Close();
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        var result = streamReader.ReadToEnd();
-                        var response = JsonSerializer.DeserializeFromString<GuacamoleTokenResponse>(result);
-                        token = response.authToken;
+
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
+                        string result = streamReader.ReadToEnd();
+                        try {
+                            return JsonSerializer.DeserializeFromString<GuacamoleTokenResponse>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                token = response.authToken;
+                
             }
             return token;
         }
@@ -373,11 +420,11 @@ namespace Terradue.Tep.Controller {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        string result = streamReader.ReadToEnd();
-                    }
-                }
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                }).ConfigureAwait(false).GetAwaiter().GetResult();                                
             }
         }
 
@@ -391,11 +438,11 @@ namespace Terradue.Tep.Controller {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Method = "DELETE";
 
-            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    string result = streamReader.ReadToEnd();
-                }
-            }
+            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;                
+            }).ConfigureAwait(false).GetAwaiter().GetResult();     
         }
 
         /// <summary>
@@ -410,10 +457,15 @@ namespace Terradue.Tep.Controller {
             webRequest.Method = "GET";
 
             try {
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
                     if (httpResponse.StatusCode == HttpStatusCode.OK) return true;
                     else return false;
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();     
+                return response;
+                
             } catch (Exception) {
                 return false;
             }
@@ -431,12 +483,21 @@ namespace Terradue.Tep.Controller {
             webRequest.Method = "GET";
 
             try {
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        return JsonSerializer.DeserializeFromString<Dictionary<string, GuacamoleConnection>>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<Dictionary<string, GuacamoleConnection>>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response;                
             } catch (Exception) {
                 return null;
             }
@@ -484,12 +545,21 @@ namespace Terradue.Tep.Controller {
             webRequest.Method = "GET";
 
             try {
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        return JsonSerializer.DeserializeFromString<GuacamoleConnection>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<GuacamoleConnection>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response;
             } catch (Exception) {
                 return null;
             }
@@ -544,13 +614,21 @@ namespace Terradue.Tep.Controller {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        var response = JsonSerializer.DeserializeFromString<GuacamoleConnection>(result);
-                        return response.identifier;
+                        try {
+                            return JsonSerializer.DeserializeFromString<GuacamoleConnection>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return response.identifier;
             }
         }
 
@@ -565,12 +643,11 @@ namespace Terradue.Tep.Controller {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Method = "DELETE";
 
-            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    string result = streamReader.ReadToEnd();
-                }
-            }
-
+            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;                
+            }).ConfigureAwait(false).GetAwaiter().GetResult();     
         }
 
         /// <summary>
@@ -584,13 +661,21 @@ namespace Terradue.Tep.Controller {
             webRequest.Method = "GET";
             webRequest.ContentType = "application/json";
 
-            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+            var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                {
                     string result = streamReader.ReadToEnd();
-                    var response = JsonSerializer.DeserializeFromString<GuacamoleUserPermission>(result);
-                    return response;
+                    try {
+                        return JsonSerializer.DeserializeFromString<GuacamoleUserPermission>(result);
+                    } catch (Exception e) {
+                        throw e;
+                    }
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
+            return response;
         }
 
         /// <summary>
@@ -653,11 +738,11 @@ namespace Terradue.Tep.Controller {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        string result = streamReader.ReadToEnd();
-                    }
-                }
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;                
+                }).ConfigureAwait(false).GetAwaiter().GetResult();     
             }
         }
 

@@ -42,12 +42,20 @@ namespace Terradue.Tep {
                 webRequest.Method = "GET";
                 webRequest.Accept = "application/json";
 
-                using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        var result = streamReader.ReadToEnd();
-                        wps3List = ServiceStack.Text.JsonSerializer.DeserializeFromString<List<Process>>(result);
+                wps3List = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
+                        string result = streamReader.ReadToEnd();
+                        try {
+                            return ServiceStack.Text.JsonSerializer.DeserializeFromString<List<Process>>(result);
+                        } catch (System.Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (wps3List != null)
                 {

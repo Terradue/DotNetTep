@@ -26,12 +26,21 @@ namespace Terradue.Tep {
             GeoserverStylesResponse response = null;
 
             try {
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        response = JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                
             } catch (Exception e) {
                 throw e;
             }
@@ -49,12 +58,21 @@ namespace Terradue.Tep {
             GeoserverStylesResponse response = null;
 
             try {
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        response = JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                
             } catch (Exception e) {
                 throw e;
             }
@@ -72,12 +90,21 @@ namespace Terradue.Tep {
             GeoserverStylesResponse response = null;
 
             try {
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        response = JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<GeoserverStylesResponse>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                
             } catch (Exception e) {
                 throw e;
             }
