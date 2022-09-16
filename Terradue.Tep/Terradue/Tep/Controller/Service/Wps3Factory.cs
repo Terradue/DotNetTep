@@ -85,6 +85,7 @@ namespace Terradue.Tep {
                             var httpResponse = (HttpWebResponse)task.Result;
                             using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                             {
+                                var result = streamReader.ReadToEnd();
                                 var location = httpResponse.Headers["Location"];
                                 if (!string.IsNullOrEmpty(location)) {
                                     context.LogDebug(this, "location = " + location);

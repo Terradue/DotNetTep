@@ -57,6 +57,9 @@ namespace Terradue.Tep {
         [EntityDataField("ows_url")]
         public string OwsUrl { get; set; }
 
+        [EntityDataField("stacitem_url")]
+        public string StacItemUrl { get; set; }
+
         [EntityDataField("status")]
         public WpsJobStatus Status { get; set; }
 
@@ -356,6 +359,7 @@ namespace Terradue.Tep {
             newjob.Identifier = Guid.NewGuid().ToString();
             newjob.StatusLocation = job.StatusLocation;
             newjob.OwsUrl = job.OwsUrl;
+            newjob.StacItemUrl = job.StacItemUrl;
             newjob.AppIdentifier = job.AppIdentifier;
             newjob.Status = job.Status;
             newjob.ArchiveStatus = job.ArchiveStatus;
@@ -1613,6 +1617,7 @@ namespace Terradue.Tep {
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             if (!string.IsNullOrEmpty(OwsUrl))result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(StacItemUrl))result.Links.Add(new SyndicationLink(new Uri(StacItemUrl), "alternate", "stac item", "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             Uri sharedUrlUsr = null, sharedUrlCommunity = null;
 
