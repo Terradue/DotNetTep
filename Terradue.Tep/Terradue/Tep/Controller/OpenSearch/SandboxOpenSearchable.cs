@@ -47,9 +47,15 @@ namespace Terradue.Tep.OpenSearch
                         //if url exists we replace the value
                         try {
                             var request = (HttpWebRequest)WebRequest.Create (replacementUrl);
-                            using (var response = (HttpWebResponse)request.GetResponse ()) {
-                                url = new OpenSearchUrl (replacementUrl);
-                            }
+                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                            .ContinueWith(task =>
+                            {
+                                var httpResponse = (HttpWebResponse)task.Result;
+                                using (var stream = httpResponse.GetResponseStream()) 
+                                {
+                                    url = new OpenSearchUrl (replacementUrl);
+                                }
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
                         } catch (Exception) { }
                     }
                 } else if (url.AbsolutePath.StartsWith ("/sbws/production/run")) { 

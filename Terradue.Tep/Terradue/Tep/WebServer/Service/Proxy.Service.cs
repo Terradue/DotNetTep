@@ -131,9 +131,16 @@ namespace Terradue.Tep.WebServer.Services
             OpenGis.Wps.ExecuteResponse execResponse = null;
             try {
                 context.LogDebug (this, string.Format ("Wps proxy - exec response requested - {0}", executeHttpRequest.Address.AbsoluteUri));
-                using (var response = executeHttpRequest.GetResponse ())
-                using (var stream = response.GetResponseStream ())
-                    execResponse = (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (stream);
+                execResponse = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(executeHttpRequest.BeginGetResponse,executeHttpRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var stream = httpResponse.GetResponseStream()) 
+                    {
+                        return (OpenGis.Wps.ExecuteResponse)new System.Xml.Serialization.XmlSerializer (typeof (OpenGis.Wps.ExecuteResponse)).Deserialize (stream);
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+
                 context.LogDebug (this, string.Format ("Wps proxy - exec response OK"));
             } catch (Exception e) {
                 context.LogError (this, e.Message, e);
@@ -220,16 +227,23 @@ namespace Terradue.Tep.WebServer.Services
         private AtomFeed CreateFeedForMetadata (HttpWebRequest atomRequest)
         {
             Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter ();
-            using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
-                using (var atomResponseStream = new MemoryStream ()) {
-                    using (var stream = atomResponse.GetResponseStream ())
+            using (var atomResponseStream = new MemoryStream ()) {
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(atomRequest.BeginGetResponse,atomRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var stream = httpResponse.GetResponseStream()) 
+                    {
                         stream.CopyTo (atomResponseStream);
-                    atomResponseStream.Seek (0, SeekOrigin.Begin);
-                    var sr = XmlReader.Create (atomResponseStream);
-                    atomFormatter.ReadFrom (sr);
-                    sr.Close ();
-                }
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                atomResponseStream.Seek (0, SeekOrigin.Begin);
+                var sr = XmlReader.Create (atomResponseStream);
+                atomFormatter.ReadFrom (sr);
+                sr.Close ();
             }
+            
             return new AtomFeed (atomFormatter.Feed);
         }
 
@@ -274,15 +288,21 @@ namespace Terradue.Tep.WebServer.Services
                     atomRequest.UserAgent = "Terradue TEP";
 
                     try {
-                        using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse ()) {
-                            using (var atomResponseStream = new MemoryStream ()) {
-                                using (var stream = atomResponse.GetResponseStream ())
+                        using (var atomResponseStream = new MemoryStream ()) {
+                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(atomRequest.BeginGetResponse,atomRequest.EndGetResponse,null)
+                            .ContinueWith(task =>
+                            {
+                                var httpResponse = (HttpWebResponse)task.Result;
+                                using (var stream = httpResponse.GetResponseStream()) 
+                                {
                                     stream.CopyTo (atomResponseStream);
-                                atomResponseStream.Seek (0, SeekOrigin.Begin);
-                                var sr = XmlReader.Create (atomResponseStream);
-                                atomFormatter.ReadFrom (sr);
-                                sr.Close ();
-                            }
+                                }
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                            atomResponseStream.Seek (0, SeekOrigin.Begin);
+                            var sr = XmlReader.Create (atomResponseStream);
+                            atomFormatter.ReadFrom (sr);
+                            sr.Close ();                            
                         }
                     } catch (Exception e) {
                         context.LogError(this, e.Message, e);

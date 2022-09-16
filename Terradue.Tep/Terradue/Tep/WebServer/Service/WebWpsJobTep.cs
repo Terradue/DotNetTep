@@ -154,6 +154,8 @@ namespace Terradue.Tep.WebServer {
         public string StatusLocation { get; set; }
         [ApiMember(Name = "OwsUrl", Description = "Ows url of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public string OwsUrl { get; set; }
+        [ApiMember(Name = "StacItemUrl", Description = "Stac item url of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
+        public string StacItemUrl { get; set; }
         [ApiMember(Name = "AppIdentifier", Description = "App Identifier of the job", ParameterType = "query", DataType = "String", IsRequired = true)]
         public string AppIdentifier { get; set; }
         [ApiMember(Name="CreatedTime", Description = "Created time of the job", ParameterType = "query", DataType = "DateTime", IsRequired = true)]
@@ -192,6 +194,7 @@ namespace Terradue.Tep.WebServer {
             this.WpsVersion = entity.WpsVersion;
             this.WpsName = entity.WpsName;
             this.OwsUrl = entity.OwsUrl;
+            this.StacItemUrl = entity.StacItemUrl;
             this.AppIdentifier = entity.AppIdentifier;
             this.ArchiveStatus = (int)entity.ArchiveStatus;
         }
@@ -221,6 +224,7 @@ namespace Terradue.Tep.WebServer {
             entity.WpsVersion = this.WpsVersion;
             entity.WpsName = this.WpsName;
             entity.OwsUrl = this.OwsUrl;
+            entity.StacItemUrl = this.StacItemUrl;
             entity.AppIdentifier = this.AppIdentifier;
             return entity;
         }

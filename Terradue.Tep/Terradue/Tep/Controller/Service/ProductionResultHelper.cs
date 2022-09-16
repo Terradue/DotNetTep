@@ -31,13 +31,17 @@ namespace Terradue.Tep {
 			request.Proxy = null;
 			request.Method = "GET";
 
-            RecastStatusResponse response;
-
-			using (var remoteWpsResponse = (HttpWebResponse)request.GetResponse()) {
-				using (var remotestream = remoteWpsResponse.GetResponseStream()) {
-                    response = (RecastStatusResponse)ServiceStack.Text.JsonSerializer.DeserializeFromStream<RecastStatusResponse>(remotestream);
-				}
-			}
+            RecastStatusResponse response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;
+                using (var remotestream = httpResponse.GetResponseStream())
+                {
+                    return (RecastStatusResponse)ServiceStack.Text.JsonSerializer.DeserializeFromStream<RecastStatusResponse>(remotestream);
+                }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
 
             return response;
 		}

@@ -57,6 +57,9 @@ namespace Terradue.Tep {
         [EntityDataField("ows_url")]
         public string OwsUrl { get; set; }
 
+        [EntityDataField("stacitem_url")]
+        public string StacItemUrl { get; set; }
+
         [EntityDataField("status")]
         public WpsJobStatus Status { get; set; }
 
@@ -282,11 +285,16 @@ namespace Terradue.Tep {
                 var urlb = new UriBuilder(string.Format("{0}/{1}/search?cat={2}", context.GetConfigValue("catalog-baseurl"), index, this.Identifier.Replace("-", "")));
                 OwsContextAtomFeed feed = null;
                 HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urlb.Uri.AbsoluteUri);
-                using (var resp = httpRequest.GetResponse()) {
-                    using (var stream = resp.GetResponseStream()) {
-                        feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+
+                feed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse,httpRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var stream = httpResponse.GetResponseStream()) {
+                        return ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+
                 if (feed != null) {
                     foreach (var item in feed.Items) {
                         identifier = ThematicAppCachedFactory.GetIdentifierFromFeed(item);
@@ -351,6 +359,7 @@ namespace Terradue.Tep {
             newjob.Identifier = Guid.NewGuid().ToString();
             newjob.StatusLocation = job.StatusLocation;
             newjob.OwsUrl = job.OwsUrl;
+            newjob.StacItemUrl = job.StacItemUrl;
             newjob.AppIdentifier = job.AppIdentifier;
             newjob.Status = job.Status;
             newjob.ArchiveStatus = job.ArchiveStatus;
@@ -422,7 +431,11 @@ namespace Terradue.Tep {
                             streamWriter.Flush();
                             streamWriter.Close();
 
-                            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {}
+                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                            .ContinueWith(task =>
+                            {
+                                var httpResponse = (HttpWebResponse)task.Result;
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
                     }
             } catch (Exception e) {
@@ -805,14 +818,20 @@ namespace Terradue.Tep {
                     int retries = 0;
                     while (retries++ < 5 && remoteWpsResponseString == null) {
                         try {
-                            using (HttpWebResponse httpWebResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
-                                using (Stream responseStream = httpWebResponse.GetResponseStream()) {
-                                    responseStream.CopyTo(remoteWpsResponseStream);
-                                }
-                                remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                                remoteWpsResponseString = new StreamReader(remoteWpsResponseStream).ReadToEnd();
-                                context.LogDebug(this, "Status response : " + remoteWpsResponseString);
+                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(executeHttpRequest.BeginGetResponse,executeHttpRequest.EndGetResponse,null)
+                            .ContinueWith(task =>
+                            {
+                            var httpResponse = (HttpWebResponse)task.Result;
+                            using (var stream = httpResponse.GetResponseStream()) 
+                            {
+                                stream.CopyTo(remoteWpsResponseStream);
                             }
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                            remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                            remoteWpsResponseString = new StreamReader(remoteWpsResponseStream).ReadToEnd();
+                            context.LogDebug(this, "Status response : " + remoteWpsResponseString);
+                            
                         } catch (System.Exception e) {
                             if (retries >= 5) throw e;
                             else System.Threading.Thread.Sleep(1000);
@@ -986,15 +1005,23 @@ namespace Terradue.Tep {
                             webRequest.Accept = "application/json";
                             webRequest.ContentType = "application/json";
 
-                            using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                                    var result = streamReader.ReadToEnd();
-                                    var res = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
-                                    s3link = res.StacCatalogUri;
-                                    context.LogDebug(this, string.Format("s3link: {0}", s3link));
+                            var res = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                            .ContinueWith(task =>
+                            {
+                                var httpResponse = (HttpWebResponse)task.Result;
+                                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                                {
+                                    string result = streamReader.ReadToEnd();
+                                    try {
+                                        return ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
+                                    } catch (Exception e) {
+                                        throw e;
+                                    }                                    
                                 }
-                            }
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
 
+                            s3link = res.StacCatalogUri;
+                            context.LogDebug(this, string.Format("s3link: {0}", s3link));
                         }                        
 
                         IWps3Factory wps3factory;
@@ -1212,12 +1239,17 @@ namespace Terradue.Tep {
                     httpRequest.Credentials = GetCredentials();
                     if (httpRequest.Credentials != null)
                         httpRequest.PreAuthenticate = true;
-                    using (var httpResp = httpRequest.GetResponse()) {
-                        using (var streamReader = new StreamReader(httpResp.GetResponseStream())) {
-                            feed = AtomFeed.Load(XmlReader.Create(streamReader));
-                            feed.Id = url;
+                    feed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse,httpRequest.EndGetResponse,null)
+                    .ContinueWith(task =>
+                    {
+                        var httpResponse = (HttpWebResponse)task.Result;
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                        {
+                            return AtomFeed.Load(XmlReader.Create(streamReader));
                         }
-                    }
+                    }).ConfigureAwait(false).GetAwaiter().GetResult();
+                    feed.Id = url;
+                    
                 } catch (Exception e) {
                     throw new ImpossibleSearchException("Ouput result_metadata found but impossible to load url : " + url + e.Message);
                 }
@@ -1228,9 +1260,9 @@ namespace Terradue.Tep {
             if (!string.IsNullOrEmpty(url)) {
                 AtomFeed feed = null;
                 try {
-                    HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(url);
-                    httpRequest.Credentials = GetCredentials();
-                    if (httpRequest.Credentials != null) httpRequest.PreAuthenticate = true;
+                    // HttpWebRequest httpRequest = (HttpWebRequest)HttpWebRequest.Create(url);
+                    // httpRequest.Credentials = GetCredentials();
+                    // if (httpRequest.Credentials != null) httpRequest.PreAuthenticate = true;
 
                     NetworkCredential credentials = GetCredentials();
                     var uri = new UriBuilder(url);
@@ -1240,15 +1272,21 @@ namespace Terradue.Tep {
 
                     Atom10FeedFormatter atomFormatter = new Atom10FeedFormatter();
                     try {
-                        using (var atomResponse = (HttpWebResponse)atomRequest.GetResponse()) {
-                            using (var atomResponseStream = new MemoryStream()) {
-                                using (var stream = atomResponse.GetResponseStream())
+                        using (var atomResponseStream = new MemoryStream()) {
+                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(atomRequest.BeginGetResponse,atomRequest.EndGetResponse,null)
+                            .ContinueWith(task =>
+                            {
+                                var httpResponse = (HttpWebResponse)task.Result;
+                                using (var stream = httpResponse.GetResponseStream()) 
+                                {
                                     stream.CopyTo(atomResponseStream);
-                                atomResponseStream.Seek(0, SeekOrigin.Begin);
-                                var sr = XmlReader.Create(atomResponseStream);
-                                atomFormatter.ReadFrom(sr);
-                                sr.Close();
-                            }
+                                }
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
+                        
+                            atomResponseStream.Seek(0, SeekOrigin.Begin);
+                            var sr = XmlReader.Create(atomResponseStream);
+                            atomFormatter.ReadFrom(sr);
+                            sr.Close();
                         }
                     } catch (Exception e) {
                         context.LogError(this, e.Message);
@@ -1323,12 +1361,16 @@ namespace Terradue.Tep {
             urlb.Query = string.Join("&", queryString);
             try {
                 HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(urlb.Uri.AbsoluteUri);
-                using (var resp = httpRequest.GetResponse()) {
-                    using (var stream = resp.GetResponseStream()) {
-                        feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
-                        entry = feed.Items.First();
+                feed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse,httpRequest.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var stream = httpResponse.GetResponseStream()) 
+                    {
+                        return ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                entry = feed.Items.First();                
             } catch (Exception e) {
                 context.LogError(this, e.Message);
                 return null;
@@ -1575,6 +1617,7 @@ namespace Terradue.Tep {
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             if (!string.IsNullOrEmpty(OwsUrl))result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(StacItemUrl))result.Links.Add(new SyndicationLink(new Uri(StacItemUrl), "alternate", "stac item", "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             Uri sharedUrlUsr = null, sharedUrlCommunity = null;
 
