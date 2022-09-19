@@ -1272,18 +1272,28 @@ namespace Terradue.Tep.WebServer.Services {
                                 csvBody.Append((job.IsPrivate()?"false":"true")).Append(",");
                                 break;                            
                             case "job_wps":
+                            string wpsname = "";
                                 if (!string.IsNullOrEmpty(job.WpsName))
-                                    csvBody.Append('"' + job.WpsName + '"').Append(",");
-                                else {
-                                    string wpsname = "";
+                                    wpsname = job.WpsName;                                    
+                                else {                                    
                                     try {
                                         WpsProcessOffering wps = CloudWpsFactory.GetWpsProcessOffering(context, job.ProcessId);
                                         wpsname = wps.Name;
                                     } catch (Exception) {
                                         wpsname = job.ProcessId;
-                                    }
-                                    csvBody.Append('"' + wpsname + '"').Append(",");
+                                    }                                    
                                 }
+                                if(job.Parameters != null){
+                                    bool tio = false;
+                                    foreach(var param in job.Parameters) {
+                                        if(param.Key == "do_invertion" && param.Value == "true"){
+                                            tio = true;
+                                            break;
+                                        }
+                                    }
+                                    if(tio) wpsname += "_TIO";
+                                }
+                                csvBody.Append('"' + wpsname + '"').Append(",");
                                 break;
                             case "job_duration":
                                 var processingTime = job.EndTime == DateTime.MinValue || job.EndTime < job.CreatedTime ? 0 : (job.EndTime - job.CreatedTime).Minutes;

@@ -205,10 +205,10 @@ namespace Terradue.Tep {
             var appIconLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
             if (appIconLink != null) wps.IconUrl = appIconLink.Uri.AbsoluteUri;
 
-            var tutorialLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "alternate" && l.Title == "tutorial");
+            var tutorialLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "alternate" && l.Title == "Service tutorial");
             if (tutorialLink != null) wps.TutorialUrl = tutorialLink.Uri.AbsoluteUri;
 
-            var specLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "alternate" && l.Title == "specification");
+            var specLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "alternate" && l.Title == "Service specification");
             if (specLink != null) wps.SpecUrl = specLink.Uri.AbsoluteUri;
 
             var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
