@@ -193,18 +193,10 @@ namespace Terradue.Tep {
 
 				string hostname = url.Host;
                 string workflow = "", runId = "";
-                string recaststatusurl = "", newStatusLocation = "", supervisorBaseUrl = "";
-                if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null)
-                    supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
+                string recaststatusurl = "", newStatusLocation = "";
 
-                //case url is supervisor status url
-                if(url.Host == new Uri(supervisorBaseUrl).Host){
-                    wpsjob.StatusLocation = resultUrl;
-					wpsjob.Status = WpsJobStatus.SUCCEEDED;
-					wpsjob.Store();
-                    return CreateExecuteResponseForSucceededWpsjob(context, wpsjob, execResponse);
                 //case url is recast describe url
-                } else if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
+                if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
 					wpsjob.StatusLocation = resultUrl;
 					wpsjob.Status = WpsJobStatus.STAGED;
 					wpsjob.Store();
