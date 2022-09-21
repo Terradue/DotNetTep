@@ -795,17 +795,18 @@ namespace Terradue.Tep {
 
             //create response
             OpenGis.Wps.ExecuteResponse execResponse = null;
-
+            
+            string locationHeader = null;
             using (var remoteWpsResponseStream = new MemoryStream()) {
                 context.LogDebug(this, string.Format(string.Format("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
                 string remoteWpsResponseString = null;
                 // HTTP request                                
-                try {
-                    
+                try {                    
                     int retries = 0;
                     while (retries++ < 5 && remoteWpsResponseString == null) {
                         try {
                             using (HttpWebResponse httpWebResponse = (HttpWebResponse)executeHttpRequest.GetResponse()) {
+                                locationHeader = httpWebResponse.Headers["Location"];
                                 using (Stream responseStream = httpWebResponse.GetResponseStream()) {
                                     responseStream.CopyTo(remoteWpsResponseStream);
                                 }
@@ -867,7 +868,23 @@ namespace Terradue.Tep {
                         var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromStream<IO.Swagger.Model.StatusInfo>(remoteWpsResponseStream);
                         context.LogDebug(this, "response is WPS 3.0.0");
                         return GetExecuteResponseFromWps3StatusInfo(statusInfo);
-                    } catch (Exception e1) {
+                    } catch (Exception e0) {
+                        try{
+                            context.LogDebug(this, "Deserialization (STAC ITEM)");
+                            remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromStream<StacItem>(remoteWpsResponseStream);
+                            var stacLink = stacItem.Links.First(l => l.Rel == "self");
+                            var descriptionLink = stacItem.Links.First(l => l.Rel == "alternate");
+                            
+                            if(descriptionLink != null){
+                                this.StatusLocation = descriptionLink.Href;
+                                this.StacItemUrl = stacLink.Href;
+                                this.Store();
+                            } else {
+                                this.StatusLocation = locationHeader;
+                            }
+                            
+                        }catch(Exception e1){
                         context.LogError(this, e1.Message);
                         // Maybe an exceptionReport
                         OpenGis.Wps.ExceptionReport exceptionReport = null;                        
