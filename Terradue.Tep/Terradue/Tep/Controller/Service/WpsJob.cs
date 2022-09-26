@@ -715,7 +715,8 @@ namespace Terradue.Tep {
                             var endtime = response.Status.creationTime.ToUniversalTime();
                             this.EndTime = endtime;
                         }
-                        this.Status = WpsJobStatus.SUCCEEDED;
+                        if (this.Status != WpsJobStatus.STAGED)
+                            this.Status = WpsJobStatus.SUCCEEDED;
                     }
                 }                
             }
@@ -806,15 +807,26 @@ namespace Terradue.Tep {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));
             }
 
+            // Supervisor case
+            string supervisorBaseUrl = "";
+            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null)
+                supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
+
+            //case url is supervisor status url
+            if(new Uri(StatusLocation).Host == new Uri(supervisorBaseUrl).Host){
+                var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+            }
+
             //create response
             OpenGis.Wps.ExecuteResponse execResponse = null;
-
+            
+            string locationHeader = null;
             using (var remoteWpsResponseStream = new MemoryStream()) {
                 context.LogDebug(this, string.Format(string.Format("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
                 string remoteWpsResponseString = null;
                 // HTTP request                                
-                try {
-                    
+                try {                    
                     int retries = 0;
                     while (retries++ < 5 && remoteWpsResponseString == null) {
                         try {
@@ -822,6 +834,7 @@ namespace Terradue.Tep {
                             .ContinueWith(task =>
                             {
                             var httpResponse = (HttpWebResponse)task.Result;
+                            locationHeader = httpResponse.Headers[HttpResponseHeader.ContentLocation];
                             using (var stream = httpResponse.GetResponseStream()) 
                             {
                                 stream.CopyTo(remoteWpsResponseStream);
@@ -884,9 +897,25 @@ namespace Terradue.Tep {
                         context.LogDebug(this, "Deserialization (WPS 3.0.0)");
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                         var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromStream<IO.Swagger.Model.StatusInfo>(remoteWpsResponseStream);
-                        context.LogDebug(this, "response is WPS 3.0.0");
-                        return GetExecuteResponseFromWps3StatusInfo(statusInfo);
-                    } catch (Exception e1) {
+                        if(statusInfo.JobID != null){
+                            context.LogDebug(this, "response is WPS 3.0.0");
+                            return GetExecuteResponseFromWps3StatusInfo(statusInfo);
+                        } else {
+                            context.LogDebug(this, "Deserialization (STAC ITEM)");                            
+                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(remoteWpsResponseString);
+                            var stacLink = stacItem.Links.First(l => l.Rel == "self");
+                            var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && l.Type == "application/opensearchdescription+xml");
+                            
+                            if(descriptionLink != null){
+                                this.StatusLocation = descriptionLink.Href;
+                                this.StacItemUrl = stacLink.Href;
+                                this.Status = WpsJobStatus.STAGED;
+                                this.Store();
+                                return GetExecuteResponseForSucceededJob();                            
+                            }                                         
+                            return GetExecuteResponseForPublishingJob();                            
+                        }
+                    } catch (Exception e1) {                        
                         context.LogError(this, e1.Message);
                         // Maybe an exceptionReport
                         OpenGis.Wps.ExceptionReport exceptionReport = null;                        
@@ -911,7 +940,7 @@ namespace Terradue.Tep {
                             }
                             context.LogError(this, errormsg);
                             return errormsg;
-                        }
+                        }                        
                     }
                 }
             }
@@ -938,6 +967,58 @@ namespace Terradue.Tep {
             }
 
             return jobresponse;
+        }
+
+        public ExecuteResponse GetExecuteResponseForSucceededJob(ExecuteResponse response = null){
+            WpsProcessOfferingTep wps = null;
+            try {
+                wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
+            }catch(Exception) {}
+            
+            if(response == null){
+                response = new ExecuteResponse();
+                response.statusLocation = this.StatusLocation;
+
+                var uri = new Uri(this.StatusLocation);
+                response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
+                response.Process = wps != null ? wps.ProcessBrief : null;
+                response.service = "WPS";
+                response.version = "3.0.0";
+            }
+
+            response.Status = new StatusType {
+                ItemElementName = ItemChoiceType.ProcessSucceeded,
+                Item = new ProcessSucceededType() { Value = "Job successful" },
+                creationTime = this.EndTime != DateTime.MinValue ? this.EndTime : this.CreatedTime
+            };            
+
+            return response;
+        }
+
+        public ExecuteResponse GetExecuteResponseForPublishingJob(ExecuteResponse response = null){
+            WpsProcessOfferingTep wps = null;
+            try {
+                wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
+            }catch(Exception) {}
+            
+            if(response == null){
+                response = new ExecuteResponse();
+                response.statusLocation = this.StatusLocation;
+
+                var uri = new Uri(this.StatusLocation);
+                response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
+                response.Process = wps != null ? wps.ProcessBrief : null;
+                response.service = "WPS";
+                response.version = "3.0.0";
+            }
+
+            response.Status = new StatusType {
+                ItemElementName = ItemChoiceType.ProcessStarted,
+                Item = new ProcessStartedType() { Value = "Job publishing", percentCompleted = "99" },
+                creationTime = this.CreatedTime
+            };
+
+            return response;
         }
 
         public object GetExecuteResponseFromWps3StatusInfo(IO.Swagger.Model.StatusInfo statusInfo) {
