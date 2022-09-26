@@ -204,7 +204,7 @@ namespace Terradue.Tep {
                 //case url is supervisor status url
                 if(url.Host == new Uri(supervisorBaseUrl).Host){
                     wpsjob.StatusLocation = resultUrl;
-					wpsjob.Status = WpsJobStatus.SUCCEEDED;
+					// wpsjob.Status = WpsJobStatus.SUCCEEDED;
 					wpsjob.Store();
                     return wpsjob.GetExecuteResponseForSucceededJob(execResponse);
                 //case url is recast describe url
