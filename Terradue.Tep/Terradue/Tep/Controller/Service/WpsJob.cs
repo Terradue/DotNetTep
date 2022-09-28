@@ -911,7 +911,7 @@ namespace Terradue.Tep {
                                 this.StacItemUrl = stacLink.Href;
                                 this.Status = WpsJobStatus.STAGED;
                                 this.Store();
-                                return GetExecuteResponseForSucceededJob();                            
+                                return GetExecuteResponseForStagedJob();                            
                             }                                         
                             return GetExecuteResponseForPublishingJob();                            
                         }
@@ -960,10 +960,10 @@ namespace Terradue.Tep {
                 var tFactory = new TransactionFactory(context);
                 tFactory.UpdateDepositTransactionFromEntityStatus(context, this, jobresponse);
             }
-            if (jobresponse is ExecuteResponse)
+            if (jobresponse is ExecuteResponse && this.Status != WpsJobStatus.STAGED)
             {
 
-                var execResponse = jobresponse as ExecuteResponse;
+                var execResponse = jobresponse as ExecuteResponse;               
                 this.UpdateStatusFromExecuteResponse(execResponse);
                 this.Store();
             }
@@ -994,6 +994,45 @@ namespace Terradue.Tep {
                 creationTime = this.EndTime != DateTime.MinValue ? this.EndTime : this.CreatedTime
             };            
 
+            return response;
+        }
+
+        public ExecuteResponse GetExecuteResponseForStagedJob(ExecuteResponse response = null){
+            WpsProcessOfferingTep wps = null;
+            try {
+                wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
+            }catch(Exception) {}
+            
+            if(response == null){
+                response = new ExecuteResponse();
+                response.statusLocation = this.StatusLocation;
+
+                var uri = new Uri(this.StatusLocation);
+                response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
+                response.Process = wps != null ? wps.ProcessBrief : null;
+                response.service = "WPS";
+                response.version = "3.0.0";
+            }
+
+            response.Status = new StatusType {
+                ItemElementName = ItemChoiceType.ProcessSucceeded,
+                Item = new ProcessSucceededType() { Value = "Job successful" },
+                creationTime = this.EndTime != DateTime.MinValue ? this.EndTime : this.CreatedTime
+            };            
+                        
+            response.ProcessOutputs = new List<OutputDataType> { };
+            response.ProcessOutputs.Add(new OutputDataType {
+                Identifier = new CodeType { Value = "result_osd" },
+                Item = new OpenGis.Wps.DataType {
+                    Item = new OpenGis.Wps.ComplexDataType {
+                        mimeType = "application/xml",
+                        Reference = new OutputReferenceType {
+                            href = this.StatusLocation,
+                            mimeType = "application/opensearchdescription+xml"
+                        }
+                    }
+                }
+            });
             return response;
         }
 
@@ -1142,6 +1181,15 @@ namespace Terradue.Tep {
                                 }
                             });
                         }
+
+                        //TODO: to improve
+                        //case url is supervisor status url                        
+                        try{
+                            if(new Uri(resultdescription).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host){
+                                this.StatusLocation = resultdescription;
+                                return GetExecuteResponseForPublishingJob();
+                            }
+                        } catch(Exception){}
                     }
                     break;
             }
