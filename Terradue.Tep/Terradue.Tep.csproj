@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Project ToolsVersion="Current" Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Library</OutputType>i
+    <OutputType>Library</OutputType>
     <RootNamespace>Terradue.Tep</RootNamespace>
     <AssemblyName>Terradue.Tep</AssemblyName>
     <TargetFrameworks>net472</TargetFrameworks>
@@ -12,7 +12,7 @@
     <PackageOutputPath>$(SolutionDir)\build</PackageOutputPath>
     <RestorePackagesPath>$(SolutionDir)\packages</RestorePackagesPath>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
-    <Version>1.20.3</Version>
+    <Version>1.20.4</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System"/>
