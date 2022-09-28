@@ -896,7 +896,7 @@ namespace Terradue.Tep {
                     try {
                         context.LogDebug(this, "Deserialization (WPS 3.0.0)");
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                        var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromStream<IO.Swagger.Model.StatusInfo>(remoteWpsResponseStream);
+                        var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromString<IO.Swagger.Model.StatusInfo>(remoteWpsResponseString);
                         if(statusInfo.JobID != null){
                             context.LogDebug(this, "response is WPS 3.0.0");
                             return GetExecuteResponseFromWps3StatusInfo(statusInfo);
@@ -933,11 +933,13 @@ namespace Terradue.Tep {
                             return exceptionReport;
                         } catch (Exception e2) {
                             context.LogError(this, e2.Message);
-                            remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
                             string errormsg = null;
-                            using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
-                                errormsg = reader.ReadToEnd();
-                            }
+                            if (remoteWpsResponseStream.CanSeek) {
+                                remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);                                
+                                using (StreamReader reader = new StreamReader(remoteWpsResponseStream)) {
+                                    errormsg = reader.ReadToEnd();
+                                }
+                            } else errormsg = remoteWpsResponseString;
                             context.LogError(this, errormsg);
                             return errormsg;
                         }                        
@@ -1086,22 +1088,26 @@ namespace Terradue.Tep {
                             webRequest.Accept = "application/json";
                             webRequest.ContentType = "application/json";
 
-                            var res = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
-                            .ContinueWith(task =>
-                            {
-                                var httpResponse = (HttpWebResponse)task.Result;
-                                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                            try{
+                                var res = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                                .ContinueWith(task =>
                                 {
-                                    string result = streamReader.ReadToEnd();
-                                    try {
-                                        return ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
-                                    } catch (Exception e) {
-                                        throw e;
-                                    }                                    
-                                }
-                            }).ConfigureAwait(false).GetAwaiter().GetResult();
+                                    var httpResponse = (HttpWebResponse)task.Result;
+                                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                                    {
+                                        string result = streamReader.ReadToEnd();
+                                        try {
+                                            return ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
+                                        } catch (Exception e) {
+                                            throw e;
+                                        }                                    
+                                    }
+                                }).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                            s3link = res.StacCatalogUri;
+                                s3link = res.StacCatalogUri;
+                            }catch(Exception e){
+                                context.LogError(this, string.Format("Not able to get result s3link from {0}", resultlink));    
+                            }
                             context.LogDebug(this, string.Format("s3link: {0}", s3link));
                         }                        
 
