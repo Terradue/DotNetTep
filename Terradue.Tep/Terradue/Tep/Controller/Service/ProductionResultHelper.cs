@@ -170,8 +170,8 @@ namespace Terradue.Tep {
                 wpsjob.Store();
                 return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
             }
-
-            if (wpsjob.Status != WpsJobStatus.SUCCEEDED) {
+            var supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
+            if (wpsjob.Status != WpsJobStatus.SUCCEEDED && (supervisorBaseUrl == null || new Uri(supervisorBaseUrl).Host != new Uri(wpsjob.StatusLocation).Host)) {
                 log.DebugFormat("GetWpsjobRecastResponse -- Status is not Succeeded");
                 return UpdateProcessOutputs(context, execResponse, wpsjob);
             }
@@ -197,12 +197,10 @@ namespace Terradue.Tep {
 
 				string hostname = url.Host;
                 string workflow = "", runId = "";
-                string recaststatusurl = "", newStatusLocation = "", supervisorBaseUrl = "";
-                if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null)
-                    supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
+                string recaststatusurl = "", newStatusLocation = "";                
 
                 //case url is supervisor status url
-                if(url.Host == new Uri(supervisorBaseUrl).Host){
+                if(supervisorBaseUrl != null && url.Host == new Uri(supervisorBaseUrl).Host){
                     wpsjob.StatusLocation = resultUrl;
 					// wpsjob.Status = WpsJobStatus.SUCCEEDED;
 					wpsjob.Store();
