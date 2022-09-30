@@ -37,6 +37,7 @@ namespace Terradue.Tep {
             newservice.IconUrl = service.IconUrl;
             newservice.ValidationUrl = service.ValidationUrl;
             newservice.TutorialUrl = service.TutorialUrl;
+            newservice.MediaUrl = service.MediaUrl;
             newservice.SpecUrl = service.SpecUrl;
             newservice.TermsConditionsUrl = service.TermsConditionsUrl;
             newservice.TermsConditionsText = service.TermsConditionsText;
@@ -210,6 +211,9 @@ namespace Terradue.Tep {
 
             var specLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "alternate" && l.Title == "Service specification");
             if (specLink != null) wps.SpecUrl = specLink.Uri.AbsoluteUri;
+
+            var mediaLink = entry.Links.FirstOrDefault(l => l.RelationshipType == "alternate" && l.Title == "Video tutorial");
+            if (mediaLink != null) wps.MediaUrl = mediaLink.Uri.AbsoluteUri;
 
             var operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ProcessDescription");
             var href = operation.Href;
