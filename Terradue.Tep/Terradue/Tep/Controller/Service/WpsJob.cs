@@ -910,6 +910,7 @@ namespace Terradue.Tep {
                                 this.StatusLocation = descriptionLink.Href;
                                 this.StacItemUrl = stacLink.Href;
                                 this.Status = WpsJobStatus.STAGED;
+                                this.EndTime = DateTime.UtcNow;
                                 this.Store();
                                 return GetExecuteResponseForStagedJob();                            
                             }                                         
