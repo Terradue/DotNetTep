@@ -60,6 +60,9 @@ namespace Terradue.Tep {
         [EntityDataField("stacitem_url")]
         public string StacItemUrl { get; set; }
 
+        [EntityDataField("share_url")]
+        public string ShareUrl { get; set; }
+
         [EntityDataField("status")]
         public WpsJobStatus Status { get; set; }
 
@@ -360,6 +363,7 @@ namespace Terradue.Tep {
             newjob.StatusLocation = job.StatusLocation;
             newjob.OwsUrl = job.OwsUrl;
             newjob.StacItemUrl = job.StacItemUrl;
+            newjob.ShareUrl = job.ShareUrl;
             newjob.AppIdentifier = job.AppIdentifier;
             newjob.Status = job.Status;
             newjob.ArchiveStatus = job.ArchiveStatus;
@@ -1692,7 +1696,7 @@ namespace Terradue.Tep {
         public override AtomItem ToAtomItem(NameValueCollection parameters) {
 
             bool ispublic = this.IsPublic();
-            var status = ispublic ? "public" : "private";
+            var status = ispublic ? WpsJobSharedStatus.PUBLIC : WpsJobSharedStatus.PRIVATE;
 
             string identifier = null;
             string name = (this.Name != null ? this.Name : this.Identifier);
@@ -1754,18 +1758,19 @@ namespace Terradue.Tep {
             result.Links.Add(new SyndicationLink(share, "via", name, "application/atom+xml", 0));
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             if (!string.IsNullOrEmpty(OwsUrl))result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
-            if (!string.IsNullOrEmpty(StacItemUrl))result.Links.Add(new SyndicationLink(new Uri(StacItemUrl), "alternate", "stac item", "application/atom+xml", 0));
+            if (!string.IsNullOrEmpty(StacItemUrl))result.Links.Add(new SyndicationLink(new Uri(StacItemUrl), "alternate", "stac item", "application/json", 0));
+            if (!string.IsNullOrEmpty(ShareUrl))result.Links.Add(new SyndicationLink(new Uri(ShareUrl), "alternate", "share url", "application/json", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             Uri sharedUrlUsr = null, sharedUrlCommunity = null;
 
             //if shared with users
             if (IsSharedToUser()) {
                 sharedUrlUsr = new Uri(string.Format("{0}/user/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
-                status = "restricted";
+                status = WpsJobSharedStatus.RESTRICTED;
             }
             if (IsSharedToCommunity()) {
                 sharedUrlCommunity = new Uri(string.Format("{0}/community/search?correlatedTo={1}", context.BaseUrl, HttpUtility.UrlEncode(id.AbsoluteUri)));
-                status = "restricted";
+                status = WpsJobSharedStatus.RESTRICTED;
             }
 
             //for owner only, we give the link to know with who the wpsjob is shared
@@ -2178,6 +2183,13 @@ namespace Terradue.Tep {
         NOT_ARCHIVED = 0, //wps job is not archived (it is available to user)
         TO_BE_ARCHIVED = 1, //wps job has to be archived (not available to users)
         ARCHIVED = 2 //wps job has been archived (not available to users)
+    }
+
+    public class WpsJobSharedStatus {
+        public const string PRIVATE = "private";
+        public const string SHARING = "sharing";
+        public const string RESTRICTED = "restricted";
+        public const string PUBLIC = "public";
     }
 
     [DataContract]
