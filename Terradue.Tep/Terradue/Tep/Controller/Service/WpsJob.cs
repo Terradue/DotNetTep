@@ -1795,6 +1795,16 @@ namespace Terradue.Tep {
             return result;
         }
 
+        public string GetShareStatus(){
+            if(this.IsPublic()) return WpsJobSharedStatus.PUBLIC;
+            
+            if (IsSharedToUser() || IsSharedToCommunity()) {
+                return WpsJobSharedStatus.RESTRICTED;
+            }
+
+            return WpsJobSharedStatus.PRIVATE;
+        }
+
         public string ExtractProviderContact(string contact) {
             if (!string.IsNullOrEmpty(contact)) {
                 if (contact.Contains("@")) {
