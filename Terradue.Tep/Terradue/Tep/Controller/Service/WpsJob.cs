@@ -414,9 +414,9 @@ namespace Terradue.Tep {
         public override void Delete() {
 
             try {
-                if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_CLEAN_URL"] != null) {
-                    HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_CLEAN_URL"]);
-                    webRequest.Method = "POST";
+                if (!string.IsNullOrEmpty(this.StacItemUrl)) {
+                    HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(this.StacItemUrl);
+                    webRequest.Method = "DELETE";
                     webRequest.Accept = "application/json";
                     webRequest.ContentType = "application/json";
                     if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
@@ -426,22 +426,13 @@ namespace Terradue.Tep {
 
                     context.LogDebug(this, "clean wps job request to supervisor - Identifier = " + this.RemoteIdentifier);
 
-                    var jsonId = new SupervisorDelete { type = "JobResults", identifier = this.RemoteIdentifier, async = true };
-                    var json = ServiceStack.Text.JsonSerializer.SerializeToString(jsonId);
-
-                
-                        using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
-                            streamWriter.Write(json);
-                            streamWriter.Flush();
-                            streamWriter.Close();
-
-                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
-                            .ContinueWith(task =>
-                            {
-                                var httpResponse = (HttpWebResponse)task.Result;
-                            }).ConfigureAwait(false).GetAwaiter().GetResult();
-                        }
-                    }
+                    System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,webRequest.EndGetResponse,null)
+                    .ContinueWith(task =>
+                    {
+                        var httpResponse = (HttpWebResponse)task.Result;
+                    }).ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                    
             } catch (Exception e) {
                 context.LogError(this, e.Message);
             }
