@@ -77,23 +77,29 @@ namespace Terradue.Tep {
                         streamWriter.Flush();
                         streamWriter.Close();
 
-                        using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+                        resultdescription = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                        webRequest.EndGetResponse,
+                                                                            null)
+                        .ContinueWith(task =>
+                        {
+                            var httpResponse = (HttpWebResponse)task.Result;
                             using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                             {
+                                var result = streamReader.ReadToEnd();
                                 var location = httpResponse.Headers["Location"];
-                                if (!string.IsNullOrEmpty(location))
-                                {
+                                if (!string.IsNullOrEmpty(location)) {
                                     context.LogDebug(this, "location = " + location);
-                                    resultdescription = new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
-                                }
+                                    return new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
+                                } else
+                                    return null;
                             }
-                        }
+                        }).ConfigureAwait(false).GetAwaiter().GetResult();
                     }
                 } catch (Exception e) {
                     context.LogError(job, "Error Create user product request to supervisor: " + e.Message);
                 }                                                
             }
-            return resultdescription;
+            return resultdescription ?? s3link;
         }
 
         // public string GetResultDescriptionFromS3Link(IfyContext context, WpsJob job, string s3link){

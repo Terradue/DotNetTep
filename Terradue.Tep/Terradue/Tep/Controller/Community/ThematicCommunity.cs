@@ -602,11 +602,13 @@ namespace Terradue.Tep {
                     streamWriter.Flush();
                     streamWriter.Close();
 
-                    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                            var result = streamReader.ReadToEnd();
-                        }
-                    }
+                    System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                       request.EndGetResponse,
+                                                                       null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;						
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
 
             } catch (Exception e) {

@@ -31,13 +31,17 @@ namespace Terradue.Tep {
 			request.Proxy = null;
 			request.Method = "GET";
 
-            RecastStatusResponse response;
-
-			using (var remoteWpsResponse = (HttpWebResponse)request.GetResponse()) {
-				using (var remotestream = remoteWpsResponse.GetResponseStream()) {
-                    response = (RecastStatusResponse)ServiceStack.Text.JsonSerializer.DeserializeFromStream<RecastStatusResponse>(remotestream);
-				}
-			}
+            RecastStatusResponse response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;
+                using (var remotestream = httpResponse.GetResponseStream())
+                {
+                    return (RecastStatusResponse)ServiceStack.Text.JsonSerializer.DeserializeFromStream<RecastStatusResponse>(remotestream);
+                }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
 
             return response;
 		}
@@ -166,8 +170,8 @@ namespace Terradue.Tep {
                 wpsjob.Store();
                 return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
             }
-
-            if (wpsjob.Status != WpsJobStatus.SUCCEEDED) {
+            var supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
+            if (wpsjob.Status != WpsJobStatus.SUCCEEDED && (supervisorBaseUrl == null || new Uri(supervisorBaseUrl).Host != new Uri(wpsjob.StatusLocation).Host)) {
                 log.DebugFormat("GetWpsjobRecastResponse -- Status is not Succeeded");
                 return UpdateProcessOutputs(context, execResponse, wpsjob);
             }
@@ -193,10 +197,16 @@ namespace Terradue.Tep {
 
 				string hostname = url.Host;
                 string workflow = "", runId = "";
-                string recaststatusurl = "", newStatusLocation = "";
+                string recaststatusurl = "", newStatusLocation = "";                
 
+                //case url is supervisor status url
+                if(supervisorBaseUrl != null && url.Host == new Uri(supervisorBaseUrl).Host){
+                    wpsjob.StatusLocation = resultUrl;
+					// wpsjob.Status = WpsJobStatus.SUCCEEDED;
+					wpsjob.Store();
+                    return wpsjob.GetExecuteResponseForSucceededJob(execResponse);
                 //case url is recast describe url
-                if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
+                } else if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
 					wpsjob.StatusLocation = resultUrl;
 					wpsjob.Status = WpsJobStatus.STAGED;
 					wpsjob.Store();

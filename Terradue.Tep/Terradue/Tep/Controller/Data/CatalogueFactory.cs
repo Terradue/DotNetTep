@@ -46,13 +46,19 @@ namespace Terradue.Tep {
             using (var stream = request.GetRequestStream()) {
                 feed.SerializeToStream(stream);
 
-                using (var response = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(response.GetResponseStream())) {
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                         string result = streamReader.ReadToEnd();
-                        context.LogDebug(context, "PostAtomFeedToIndex -- " + result);
+                        context.LogDebug(context, "PostAtomFeedToIndex -- " + result);                                
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
             }
+
             return true;
         }
 
@@ -77,12 +83,17 @@ namespace Terradue.Tep {
             request.PreAuthenticate = true;
             request.Credentials = new NetworkCredential(username, apikey);
 
-            using (var response = (HttpWebResponse)request.GetResponse()) {
-                using (var streamReader = new StreamReader(response.GetResponseStream())) {
+            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                    request.EndGetResponse,
+                                                                        null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse) task.Result;
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                     string result = streamReader.ReadToEnd();
-                    context.LogDebug(context, "DeleteEntryFromIndex -- " + result);
+                    context.LogDebug(context, "DeleteEntryFromIndex -- " + result);                                
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
 
             return true;
         }
@@ -132,13 +143,20 @@ namespace Terradue.Tep {
             using (var s = request.GetRequestStream()) {
                 stream.CopyTo(s);
 
-                using (var response = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(response.GetResponseStream())) {
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                         string result = streamReader.ReadToEnd();
-                        context.LogDebug(context, "PostStreamToIndex -- " + result);
+                        context.LogDebug(context, "PostStreamToIndex -- " + result);                                
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+            
             }
+
             return true;
         }
 
@@ -157,15 +175,21 @@ namespace Terradue.Tep {
             
 			bool result = false;
 			try {
-                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(url);
-                using (var resp = httpRequest.GetResponse()) {
-                    using (var stream = resp.GetResponseStream()) {
-						var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
-                        if (feed.Items != null) {
-                            foreach (OwsContextAtomEntry item in feed.Items) {
-								result = true;
-                            }
-                        }
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                var feed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var stream = httpResponse.GetResponseStream()) {
+                        return ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                if (feed.Items != null) {
+                    foreach (OwsContextAtomEntry item in feed.Items) {
+                        result = true;
                     }
                 }
             } catch (Exception e) {

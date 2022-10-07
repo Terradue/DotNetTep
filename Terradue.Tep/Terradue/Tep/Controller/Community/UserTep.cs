@@ -371,19 +371,29 @@ namespace Terradue.Tep {
                     request.Method = "GET";
                     request.ContentType = "application/json";
                     request.Accept = "application/json";
-                    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                            var result = streamReader.ReadToEnd();
-                            var info = JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
-                            if (this.TerradueCloudUsername != info.Username) {//we update only if it changed
-                                this.TerradueCloudUsername = info.Username;
-                                this.StoreCloudUsername();
-                            }
-                            context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
-                            SetSessionApikey(info.ApiKey);
-                            this.Store();
-                        }
+                    var info = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                       request.EndGetResponse,
+                                                                       null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;
+						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+							string result = streamReader.ReadToEnd();
+							try {
+								return JsonSerializer.DeserializeFromString<WebT2ssoUserInfo>(result);
+							} catch (Exception e) {
+								throw e;
+							}
+						}
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
+    
+                    if (this.TerradueCloudUsername != info.Username) {//we update only if it changed
+                        this.TerradueCloudUsername = info.Username;
+                        this.StoreCloudUsername();
                     }
+                    context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                    SetSessionApikey(info.ApiKey);
+                    this.Store();
                 } else {
                     var apikey = GetSessionApiKey();
                     if (apikey == null){
@@ -410,14 +420,24 @@ namespace Terradue.Tep {
             request.Accept = "application/json";
             request.Proxy = null;
 
-            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+            var apikey = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                       request.EndGetResponse,
+                                                                       null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse) task.Result;
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    string apikey = streamReader.ReadToEnd();
-                    apikey = apikey.Trim('"');                    
-                    context.LogDebug(this, "Found Terradue API Key for user '" + this.TerradueCloudUsername + "'");
-                    return apikey;
+                    string result = streamReader.ReadToEnd();
+                    try {
+                        return result.Trim('"');
+                    } catch (Exception e) {
+                        throw e;
+                    }
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            context.LogDebug(this, "Found Terradue API Key for user '" + this.TerradueCloudUsername + "'");
+            return apikey;                
         }
 
         public void LoadProfileFromRemote() {
@@ -432,19 +452,25 @@ namespace Terradue.Tep {
             request.Accept = "application/json";
             request.Proxy = null;
 
-            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+            var json = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse) task.Result;
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    string json = streamReader.ReadToEnd();                    
-                    context.LogDebug(this, "Load T2 profile for user '" + this.TerradueCloudUsername + "' : " + json);
-                    var profileJson = JsonSerializer.DeserializeFromString<Dictionary<string, string>>(json);
-                    if (profileJson.ContainsKey("firstname") && !string.IsNullOrEmpty(profileJson["firstname"])) this.FirstName = profileJson["firstname"];
-                    if (profileJson.ContainsKey("lastname") && !string.IsNullOrEmpty(profileJson["lastname"])) this.LastName = profileJson["lastname"];
-                    if (profileJson.ContainsKey("affiliation_shortname") && !string.IsNullOrEmpty(profileJson["affiliation_shortname"])) this.Affiliation = profileJson["affiliation_shortname"];
-                    else if (profileJson.ContainsKey("affiliation") && !string.IsNullOrEmpty(profileJson["affiliation"])) this.Affiliation = profileJson["affiliation"];
-                    if (profileJson.ContainsKey("country") && !string.IsNullOrEmpty(profileJson["country"])) this.Country = profileJson["country"];
-                    this.Store();
+                    return streamReader.ReadToEnd();                    
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            context.LogDebug(this, "Load T2 profile for user '" + this.TerradueCloudUsername + "' : " + json);
+            var profileJson = JsonSerializer.DeserializeFromString<Dictionary<string, string>>(json);
+            if (profileJson.ContainsKey("firstname") && !string.IsNullOrEmpty(profileJson["firstname"])) this.FirstName = profileJson["firstname"];
+            if (profileJson.ContainsKey("lastname") && !string.IsNullOrEmpty(profileJson["lastname"])) this.LastName = profileJson["lastname"];
+            if (profileJson.ContainsKey("affiliation_shortname") && !string.IsNullOrEmpty(profileJson["affiliation_shortname"])) this.Affiliation = profileJson["affiliation_shortname"];
+            else if (profileJson.ContainsKey("affiliation") && !string.IsNullOrEmpty(profileJson["affiliation"])) this.Affiliation = profileJson["affiliation"];
+            if (profileJson.ContainsKey("country") && !string.IsNullOrEmpty(profileJson["country"])) this.Country = profileJson["country"];
+            this.Store();
         }
 
         /// <summary>
@@ -489,13 +515,21 @@ namespace Terradue.Tep {
             request.Method = "GET";
             request.ContentType = "application/json";
             request.Accept = "application/json";
-            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+            var username = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse) task.Result;
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    this.TerradueCloudUsername = streamReader.ReadToEnd();
-                    this.StoreCloudUsername();
-                    context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
+                    return streamReader.ReadToEnd();
+                    
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();            
+
+            this.TerradueCloudUsername = username;
+            this.StoreCloudUsername();
+            context.LogDebug(this, "Found Terradue Cloud Username : " + this.TerradueCloudUsername);
         }
 
         /// <summary>
@@ -516,12 +550,21 @@ namespace Terradue.Tep {
                 request.Accept = "application/json";
                 request.Proxy = null;
 
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+                hasnotebooks = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse) task.Result;
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        var s = streamReader.ReadToEnd();
-                        hasnotebooks = s.Trim('"') == "true";
+                        string result = streamReader.ReadToEnd();
+                        try {                            
+                            return result.Trim('"') == "true";
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();               
             }catch(Exception e){
                 context.LogError(this, e.Message, e);
             }
@@ -607,15 +650,25 @@ namespace Terradue.Tep {
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {//TODO in case of error
-                        var result = streamReader.ReadToEnd();
-                        User resUser = ServiceStack.Text.JsonSerializer.DeserializeFromString<User>(result);
-                        this.TerradueCloudUsername = resUser.Username;
-                        context.LogDebug(this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
-                        this.StoreCloudUsername();
+                User resUser = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        string result = streamReader.ReadToEnd();
+                        try {
+                            return ServiceStack.Text.JsonSerializer.DeserializeFromString<User>(result);                                    
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                this.TerradueCloudUsername = resUser.Username;
+                context.LogDebug(this, "Terradue Cloud Account created : " + this.TerradueCloudUsername);
+                this.StoreCloudUsername();                    
             }
         }
 
@@ -830,13 +883,22 @@ namespace Terradue.Tep {
             request.Accept = "application/json";
             request.Proxy = null;
 
-            using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
+            this.SshPubKey = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,
+                                                                        request.EndGetResponse,
+                                                                            null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse) task.Result;
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    this.SshPubKey = streamReader.ReadToEnd();
-                    this.SshPubKey = this.SshPubKey.Replace("\"", "");
-                    context.LogDebug(this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
+                    string result = streamReader.ReadToEnd();
+                    try {
+                        return result.Replace("\"", "");;
+                    } catch (Exception e) {
+                        throw e;
+                    }
                 }
-            }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
+            context.LogDebug(this, "Terradue Cloud SSH pubkey found : " + this.SshPubKey);
         }
 
         /// <summary>

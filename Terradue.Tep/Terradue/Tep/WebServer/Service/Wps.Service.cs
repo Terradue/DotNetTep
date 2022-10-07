@@ -1140,6 +1140,7 @@ namespace Terradue.Tep.WebServer.Services {
                 wpsNew.Geometry = wpsOld.Geometry;
                 wpsNew.ValidationUrl = wpsOld.ValidationUrl;
                 wpsNew.TutorialUrl = wpsOld.TutorialUrl;
+                wpsNew.MediaUrl = wpsOld.MediaUrl;
                 wpsNew.SpecUrl = wpsOld.SpecUrl;
                 wpsNew.TermsConditionsUrl = wpsOld.TermsConditionsUrl;
                 wpsNew.TermsConditionsText = wpsOld.TermsConditionsText;

@@ -154,7 +154,13 @@ namespace Terradue.Tep {
 				using (var requestStream = webRequest.GetRequestStream()) {
 					requestStream.Write(data, 0, data.Length);
 					requestStream.Close();
-					webRequest.GetResponse();
+					System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                       webRequest.EndGetResponse,
+                                                                       null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;						
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
 				}
 			}catch(Exception e) {
 				Context.LogError(this, e.Message);
@@ -221,17 +227,27 @@ namespace Terradue.Tep {
 				requestStream.Write(data, 0, data.Length);
 				requestStream.Close();
 				try {
-					using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+					var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                       webRequest.EndGetResponse,
+                                                                       null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;
 						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-							var result = streamReader.ReadToEnd();
-							var response = JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
-							if (response.access_token != null) StoreTokenAccess(response.access_token, "", response.expires_in);
-							if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, "");
-							if (response.id_token != null) StoreTokenId(response.id_token, "", response.expires_in);
-							Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
-							return response;
+							string result = streamReader.ReadToEnd();
+							try {
+								return JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
+							} catch (Exception e) {
+								throw e;
+							}
 						}
-					}
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
+
+					if (response.access_token != null) StoreTokenAccess(response.access_token, "", response.expires_in);
+					if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, "");
+					if (response.id_token != null) StoreTokenId(response.id_token, "", response.expires_in);
+					Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
+					return response;						
 				} catch (Exception e) {
 					DeleteTokenAccess();
 					DeleteTokenRefresh();
@@ -270,20 +286,30 @@ namespace Terradue.Tep {
 				requestStream.Write(data, 0, data.Length);
 				requestStream.Close();
 				try {
-					using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+					var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                       webRequest.EndGetResponse,
+                                                                       null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;
 						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-							var result = streamReader.ReadToEnd();
-							var response = JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
-
-							if(store){
-								DBCookie.DeleteDBCookies(Context, HttpContext.Current.Session.SessionID);
-								StoreTokenAccess(response.access_token, username, response.expires_in);
-								StoreTokenRefresh(response.refresh_token, username);
-								if(!string.IsNullOrEmpty(response.id_token)) StoreTokenId(response.id_token, username, response.expires_in);
+							string result = streamReader.ReadToEnd();
+							try {
+								return JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
+							} catch (Exception e) {
+								throw e;
 							}
-							return response;
 						}
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
+					
+					if(store){
+						DBCookie.DeleteDBCookies(Context, HttpContext.Current.Session.SessionID);
+						StoreTokenAccess(response.access_token, username, response.expires_in);
+						StoreTokenRefresh(response.refresh_token, username);
+						if(!string.IsNullOrEmpty(response.id_token)) StoreTokenId(response.id_token, username, response.expires_in);
 					}
+					return response;
+						
 				} catch (Exception e) {
 					Context.LogError(this, "RefreshToken error : " + e.Message);
 					RevokeSessionCookies();					
@@ -307,13 +333,23 @@ namespace Terradue.Tep {
 			if (!string.IsNullOrEmpty(AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
 			webRequest.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
 
-			using (var httpResponse = (HttpWebResponse)webRequest.GetResponse()) {
+			user = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                       webRequest.EndGetResponse,
+                                                                       null)
+			.ContinueWith(task =>
+			{
+				var httpResponse = (HttpWebResponse) task.Result;
 				using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-					var result = streamReader.ReadToEnd();
-					user = JsonSerializer.DeserializeFromString<T>(result);
-					Context.LogInfo(this, result);
+					string result = streamReader.ReadToEnd();
+					try {
+						Context.LogInfo(this, result);
+						return JsonSerializer.DeserializeFromString<T>(result);
+					} catch (Exception e) {
+						throw e;
+					}
 				}
-			}
+			}).ConfigureAwait(false).GetAwaiter().GetResult();
+
 			return user;
 		}
 

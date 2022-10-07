@@ -12,8 +12,7 @@
     <PackageOutputPath>$(SolutionDir)\build</PackageOutputPath>
     <RestorePackagesPath>$(SolutionDir)\packages</RestorePackagesPath>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
-    <Version>1.19.1
-    </Version>
+    <Version>1.20.11</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System"/>
@@ -39,8 +38,8 @@
     <PackageReference Include="ServiceStack.OrmLite.SqlServer" Version="3.9.71"/>
     <PackageReference Include="ServiceStack.Redis" Version="3.9.71"/>
     <PackageReference Include="Terradue.Authentication" Version="2.0.1"/>
-    <PackageReference Include="Terradue.Portal" Version="2.12.5"/>
-    <PackageReference Include="Terradue.WebService.Model" Version="2.0.3"/>
+    <PackageReference Include="Terradue.Portal" Version="2.13.2"/>
+    <PackageReference Include="Terradue.WebService.Model" Version="2.0.4"/>
     <PackageReference Include="Terradue.OpenNebula" Version="2.0.0"/>
     <PackageReference Include="Terradue.Cloud" Version="1.3.5"/>
     <PackageReference Include="Terradue.News" Version="2.0.2"/>

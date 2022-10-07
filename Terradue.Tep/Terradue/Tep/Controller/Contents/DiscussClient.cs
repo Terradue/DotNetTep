@@ -68,12 +68,21 @@ namespace Terradue.Tep {
             request.Proxy = null;
 
             try {
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                categories = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        categories = JsonSerializer.DeserializeFromString<DiscourseCategoryList>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<DiscourseCategoryList>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                
             } catch (Exception e) {
                 throw e;
             }
@@ -102,12 +111,21 @@ namespace Terradue.Tep {
             request.Proxy = null;
 
             try {
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                siteInfo = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
                         string result = streamReader.ReadToEnd();
-                        siteInfo = JsonSerializer.DeserializeFromString<DiscourseSiteInfo>(result);
+                        try {
+                            return JsonSerializer.DeserializeFromString<DiscourseSiteInfo>(result);
+                        } catch (Exception e) {
+                            throw e;
+                        }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                
             } catch (Exception e) {
                 throw e;
             }
@@ -138,16 +156,20 @@ namespace Terradue.Tep {
                 requestStream.Write(data, 0, data.Length);
                 requestStream.Close();
 
-                using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        var result = streamReader.ReadToEnd();
+                response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) 
+                    {
+                        string result = streamReader.ReadToEnd();
                         try {
-                            response = JsonSerializer.DeserializeFromString<PostTopicResponse>(result);
+                            return JsonSerializer.DeserializeFromString<PostTopicResponse>(result);
                         } catch (Exception e) {
                             throw e;
                         }
                     }
-                }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             return response;
         }

@@ -284,38 +284,46 @@ namespace Terradue.Tep {
                     streamWriter.Flush();
                     streamWriter.Close();
 
-                    using (var httpResponse = (HttpWebResponse)request.GetResponse()) {
-                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                            string result = streamReader.ReadToEnd();
-                            var etResponse = JsonSerializer.DeserializeFromString<ElasticTransactionSearchResponse>(result);
-                            var userBuckets = etResponse.aggregations.user.buckets[0].account_ref.buckets;
-                            foreach (var bucket in userBuckets) {
-                                var identifier = bucket.key;
+                    var etResponse = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(request.BeginGetResponse,request.EndGetResponse,null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;
+						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+							string result = streamReader.ReadToEnd();
+							try {
+								return JsonSerializer.DeserializeFromString<ElasticTransactionSearchResponse>(result);
+							} catch (Exception e) {
+								throw e;
+							}
+						}
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                                try{
-                                    //get job and service
-                                    var job = WpsJob.FromIdentifier(context, identifier);
-                                    var entityservice = job.Process.Provider;
-                                    double balance = 0;
-                                    foreach (var qBucket in bucket.quantities.quantity.buckets) {
-                                        //calculate balance
-                                        if (!string.IsNullOrEmpty(qBucket.key) && qBucket.total != null) {
-                                            balance += Rates.GetBalanceFromRate(context, entityservice, qBucket.key, qBucket.total.value);
-                                        }
-                                    }
-                                    var transaction = new Transaction(context);
-                                    transaction.Entity = job;
-                                    transaction.OwnerId = job.OwnerId;
-                                    transaction.Identifier = identifier;
-                                    transaction.LogTime = DateTime.UtcNow;
-                                    transaction.ProviderId = entityservice.OwnerId;
-                                    transaction.Balance = balance;
-                                    transaction.Kind = TransactionKind.Debit;
-                                    transactions.Add(transaction);
-                                } catch (Exception e) {
-                                    context.LogError(this, e.Message);
+                    var userBuckets = etResponse.aggregations.user.buckets[0].account_ref.buckets;
+                    foreach (var bucket in userBuckets) {
+                        var identifier = bucket.key;
+
+                        try{
+                            //get job and service
+                            var job = WpsJob.FromIdentifier(context, identifier);
+                            var entityservice = job.Process.Provider;
+                            double balance = 0;
+                            foreach (var qBucket in bucket.quantities.quantity.buckets) {
+                                //calculate balance
+                                if (!string.IsNullOrEmpty(qBucket.key) && qBucket.total != null) {
+                                    balance += Rates.GetBalanceFromRate(context, entityservice, qBucket.key, qBucket.total.value);
                                 }
                             }
+                            var transaction = new Transaction(context);
+                            transaction.Entity = job;
+                            transaction.OwnerId = job.OwnerId;
+                            transaction.Identifier = identifier;
+                            transaction.LogTime = DateTime.UtcNow;
+                            transaction.ProviderId = entityservice.OwnerId;
+                            transaction.Balance = balance;
+                            transaction.Kind = TransactionKind.Debit;
+                            transactions.Add(transaction);
+                        } catch (Exception e) {
+                            context.LogError(this, e.Message);
                         }
                     }
                 }

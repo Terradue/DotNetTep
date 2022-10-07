@@ -94,6 +94,8 @@ CREATE TABLE wpsjob (
     archive_status int NOT NULL DEFAULT 0 COMMENT 'Wps job archive status',
     status_url varchar(400) NOT NULL COMMENT 'Wps job status url',
     ows_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps job ows url',
+    stacitem_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps Stac Item url',
+    share_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps Share url',
     app_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Wps job app identifier',
     created_time datetime NOT NULL COMMENT 'Wps created date',
     access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
