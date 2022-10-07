@@ -1,4 +1,4 @@
--- VERSION 1.6.2
+-- VERSION 1.7
 
 USE $MAIN$;
 
@@ -513,7 +513,8 @@ CREATE TABLE IF NOT EXISTS service_store (
     pack varchar(100) NOT NULL COMMENT 'service pack',
     level varchar(200) NOT NULL COMMENT 'service level',
     link varchar(200) NULL DEFAULT NULL COMMENT 'service link',
-    price DOUBLE NOT NULL DEFAULT 0 COMMENT 'service price'.
+    price DOUBLE NOT NULL DEFAULT 0 COMMENT 'service price',
+    price_input DOUBLE NOT NULL DEFAULT 0 COMMENT 'service price per input',
     -- tag varchar(500) NULL DEFAULT NULL COMMENT 'service tag',
     icon_url varchar(300) NULL DEFAULT NULL COMMENT 'service icon url',
     apps varchar(400) NULL DEFAULT NULL COMMENT 'service apps',

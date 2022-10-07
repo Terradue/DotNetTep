@@ -36,6 +36,9 @@ namespace Terradue.Tep {
         [EntityDataField("price")]
         public double Price { get; set; }
 
+        [EntityDataField("price_input")]
+        public double PriceInput { get; set; }
+
         public StoreService(IfyContext context) : base(context) {}
 
         public override string GetIdentifyingConditionSql() {

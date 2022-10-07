@@ -4,6 +4,7 @@ USE $MAIN$;
 
 -- Add service price
 ALTER TABLE service_store ADD COLUMN `price` DOUBLE 0 DEFAULT 0;
+ALTER TABLE service_store ADD COLUMN `price_input` DOUBLE 0 DEFAULT 0;
 -- RESULT
 
 -- Add table asd

@@ -24,6 +24,13 @@ namespace Terradue.Tep {
             }
         }
 
+        public double PriceInput {
+            get {
+                if (storeservice==null) storeservice = StoreService.FromWpsName(context, this.Name);
+                return storeservice != null ? storeservice.PriceInput : 0;
+            }
+        }
+
         public WpsProcessOfferingTep(IfyContext context) : base(context) {
         }
 

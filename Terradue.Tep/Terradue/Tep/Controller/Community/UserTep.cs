@@ -20,6 +20,7 @@ using ServiceStack.Text;
 using System.Security.Cryptography;
 using System.Runtime.Serialization;
 using System.Runtime.Caching;
+using Terradue.Portal.Urf;
 
 namespace Terradue.Tep {
 
@@ -139,6 +140,34 @@ namespace Terradue.Tep {
                 if(_transactionFactory == null) _transactionFactory = new TransactionFactory(context);
                 return _transactionFactory;
             }
+        }
+
+        public string LoadASDs()
+        {
+            string asds;
+            if (string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
+            if (string.IsNullOrEmpty(this.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
+
+            var url = string.Format("{0}?token={1}&username={2}&request=urf",
+                                context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                context.GetConfigValue("t2portal-safe-token"),
+                                this.TerradueCloudUsername);
+
+            HttpWebRequest t2request = (HttpWebRequest)WebRequest.Create(url);
+            t2request.Method = "GET";
+            t2request.ContentType = "application/json";
+            t2request.Accept = "application/json";
+            t2request.Proxy = null;
+
+            using (var httpResponse = (HttpWebResponse)t2request.GetResponse()) {
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                    asds = streamReader.ReadToEnd();
+                }
+            }
+
+            List<List<Urf>> urfs = new List<List<Urf>>();
+
+            return asds;
         }
 
         /// <summary>
