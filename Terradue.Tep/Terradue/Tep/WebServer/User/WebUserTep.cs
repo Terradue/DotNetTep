@@ -178,9 +178,7 @@ namespace Terradue.Tep.WebServer {
         public String Token { get; set; }
 
         [ApiMember(Name = "token_expire", Description = "sso token expire (seconds)", ParameterType = "query", DataType = "double", IsRequired = true)]
-        public double TokenExpire { get; set; }
-        [ApiMember(Name = "Credit", Description = "processing credits", ParameterType = "query", DataType = "double", IsRequired = true)]
-        public double Credit { get; set; }
+        public double TokenExpire { get; set; }        
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
@@ -214,15 +212,13 @@ namespace Terradue.Tep.WebServer {
 				if (context.UserLevel == UserLevel.Administrator) {
 					if (entity.RegistrationDate == DateTime.MinValue) entity.LoadRegistrationInfo();
 					this.RegistrationDate = entity.RegistrationDate;
-				}
-                this.Credit = entity.Credit;
+				}                
             } else {
                 this.Email = null;
                 this.Affiliation = null;
                 this.Level = 0;
                 this.AccountStatus = 0;
                 this.DomainId = null;
-                this.Credit = 0;
             }
 
         }
@@ -234,8 +230,7 @@ namespace Terradue.Tep.WebServer {
         /// <param name="context">Context.</param>
 		public UserTep ToEntity(IfyContext context, UserTep input) {
 			UserTep user = (input == null ? new UserTep(context) : input);
-			user = (UserTep)base.ToEntity(context, user);
-            user.Credit = this.Credit;
+			user = (UserTep)base.ToEntity(context, user);            
 
             return user;
         }

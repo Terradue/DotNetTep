@@ -46,23 +46,7 @@ namespace Terradue.Tep.WebServer.Services {
                 if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) usr.LoadCloudUsername();
                 if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
 
-                var url = string.Format("{0}?token={1}&username={2}&request=urf",
-                                    context.GetConfigValue("t2portal-usrinfo-endpoint"),
-                                    context.GetConfigValue("t2portal-safe-token"),
-                                    usr.TerradueCloudUsername);
-
-                HttpWebRequest t2request = (HttpWebRequest)WebRequest.Create(url);
-                t2request.Method = "GET";
-                t2request.ContentType = "application/json";
-                t2request.Accept = "application/json";
-                t2request.Proxy = null;
-
-                using (var httpResponse = (HttpWebResponse)t2request.GetResponse()) {
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        var json = streamReader.ReadToEnd();
-                        urfs = JsonSerializer.DeserializeFromString<List<List<Urf>>>(json);
-                    }
-                }
+                urfs = usr.LoadASDs();
                 
             } catch (Exception e) {
                 context.LogError(this, e.Message);
@@ -75,7 +59,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetUserURFsRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
-            string urfs = null;
+            List<List<Urf>> urfs = null;
             try {
                 context.LogInfo(this, string.Format("/user/{0}/urf GET", request.id));
                 context.Open();
@@ -89,8 +73,7 @@ namespace Terradue.Tep.WebServer.Services {
             }
 
             context.Close();
-            return urfs;
-
+            return new HttpResult(urfs);
         }
 
     }

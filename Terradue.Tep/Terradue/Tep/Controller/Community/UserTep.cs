@@ -124,14 +124,10 @@ namespace Terradue.Tep {
             set;
         }
 
-        /// <summary>
-        /// Gets or sets the processing Credit.
-        /// </summary>
-        /// <value>The Credit.</value>
-        [EntityDataField("credit")]
         public double Credit {
-            get;
-            set;
+            get {
+                return this.GetCredit();
+            }            
         }
 
         private TransactionFactory _transactionFactory;
@@ -142,9 +138,8 @@ namespace Terradue.Tep {
             }
         }
 
-        public string LoadASDs()
-        {
-            string asds;
+        public List<List<Urf>> LoadASDs()
+        {            
             if (string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
             if (string.IsNullOrEmpty(this.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
 
@@ -158,16 +153,87 @@ namespace Terradue.Tep {
             t2request.ContentType = "application/json";
             t2request.Accept = "application/json";
             t2request.Proxy = null;
+            
+            var urfs = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(t2request.BeginGetResponse,
+                                                                       t2request.EndGetResponse,
+                                                                       null)
+            .ContinueWith(task =>
+            {
+                try{
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        string result = streamReader.ReadToEnd();                    
+                        return JsonSerializer.DeserializeFromString<List<List<Urf>>>(result);                    
+                    }
+                }catch(Exception e){
+                    throw e;
+                }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
 
-            using (var httpResponse = (HttpWebResponse)t2request.GetResponse()) {
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                    asds = streamReader.ReadToEnd();
+            if(urfs != null){
+                foreach (var urf in urfs) {
+                    if(urf.Count > 0){
+                        var asd = urf[0];
+                        //check if urf already stored in DB
+                        var dburfs = new EntityList<ASD>(context);
+                        dburfs.SetFilter("Identifier", asd.UrfInformation.Identifier);
+                        dburfs.Load();
+                        var items = dburfs.GetItemsAsList();
+                        if(items.Count == 0){
+                            //not stored in DB
+                            var asdToStore = ASD.FromURF(context, asd);
+                            asdToStore.Store();
+                        } else {                            
+                            var dbasd = items[0];
+                            //check if credit updated
+                            if(asd.UrfInformation.Credit != dbasd.CreditTotal){
+                                dbasd.CreditTotal = asd.UrfInformation.Credit;
+                                dbasd.Store();
+                            }
+                            //check if status updated
+                            if(asd.UrfInformation.Status != dbasd.Status){
+                                dbasd.CreditTotal = asd.UrfInformation.Credit;
+                                dbasd.Store();
+                            }
+                            asd.UrfInformation.Credit = dbasd.CreditRemaining;
+                        }
+                    }
                 }
             }
 
-            List<List<Urf>> urfs = new List<List<Urf>>();
+            return urfs;
+        }
 
-            return asds;
+        public double GetCredit(){
+            double credit=0;
+            
+            var dburfs = ASD.FromUsr(context, this.Id);            
+            foreach(var item in dburfs){
+                if(item.Status == UrfStatus.Activated)
+                    credit += item.CreditRemaining;
+            }
+            
+            return credit;
+        }
+
+        public void UseCredit(WpsJob job, double cost){
+            var dburfs = ASD.FromUsr(context, this.Id);
+            foreach(var item in dburfs){                
+                var remaining = item.CreditRemaining;
+                if(remaining > 0){
+                    if(remaining >= cost){
+                        item.CreditUsed += cost;
+                        item.Store();
+                        ASDTransactionFactory.CreateTransaction(context, this.Id, item, job, cost);
+                        break;
+                    } else {
+                        item.CreditUsed = item.CreditTotal;
+                        item.Store();
+                        cost -= remaining;
+                        ASDTransactionFactory.CreateTransaction(context, this.Id, item, job, remaining);
+                    }
+                }
+            }
         }
 
         /// <summary>

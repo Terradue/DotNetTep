@@ -396,6 +396,8 @@ namespace Terradue.Tep.WebServer.Services {
             var stream = new System.IO.MemoryStream();
             WpsJob wpsjob = null;
 
+            double cost = 0;
+
             try{
                 var user = UserTep.FromId(context, context.UserId);
                 var parameters = WpsJob.BuildWpsJobParameters(context, executeInput);
@@ -406,25 +408,18 @@ namespace Terradue.Tep.WebServer.Services {
 
                 wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
 
-                //calculate cost
-                if(user.Credit > 0){
-                    //get number of inputs in the job
-                    var totalDataProcessed = 0;
-                    foreach (var parameter in parameters) {
-                        if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
-                            totalDataProcessed++;
-                        }
-                    }
-                    //get cost of process
-                    var cost = totalDataProcessed * wps.Price;
-
-                    if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
-                    else {
-                        user.Credit -= cost;
-                        user.Store();
+                //calculate cost                
+                //get number of inputs in the job
+                var totalDataProcessed = 0;
+                foreach (var parameter in parameters) {
+                    if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
+                        totalDataProcessed++;
                     }
                 }
-
+                //get cost of process
+                cost = totalDataProcessed * wps.Price;
+                if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
+                
                 //Check if we need to remove special fields
                 if (executeInput != null && executeInput.DataInputs != null) {
                     var tmpInputs = new List<InputType>();
@@ -569,6 +564,12 @@ namespace Terradue.Tep.WebServer.Services {
                         //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
+                        //credit has been used
+                        if(cost > 0){
+                            user.UseCredit(wpsjob, cost);
+                            user.Store();
+                        }
+
                         if (!(executeResponse is ExecuteResponse) 
                             || ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType)
                             || string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) return HandleWrongExecuteResponse(context, executeResponse);
@@ -591,6 +592,12 @@ namespace Terradue.Tep.WebServer.Services {
                     //case is not quotable
                     //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                     executeResponse = wps.Execute(executeInput);
+
+                    //credit has been used
+                    if(cost > 0){
+                        user.UseCredit(wpsjob, cost);
+                        user.Store();
+                    }
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
