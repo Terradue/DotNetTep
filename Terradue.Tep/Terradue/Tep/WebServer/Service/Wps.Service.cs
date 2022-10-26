@@ -849,6 +849,14 @@ namespace Terradue.Tep.WebServer.Services {
                 wps.Name = request.Name;
                 wps.Description = request.Description;
                 wps.Url = request.Url;
+                wps.IconUrl = request.IconUrl;
+                wps.ValidationUrl = request.ValidationUrl;
+                wps.SpecUrl = request.SpecUrl;
+                wps.MediaUrl = request.MediaUrl;
+                wps.TutorialUrl = request.TutorialUrl;
+                wps.PublishType = request.PublishType;
+                wps.PublishUrl = request.PublishUrl;
+
                 wps.Provider = wpsProvider;
                 wps.Store();
 
@@ -884,6 +892,10 @@ namespace Terradue.Tep.WebServer.Services {
                         urib.Path += "/" + wps.RemoteIdentifier;
                         url = urib.Uri.AbsoluteUri;
                     }
+                    //for WPS3 services, we use publish
+                    if(string.IsNullOrEmpty(wps.PublishType)) wps.PublishType = System.Configuration.ConfigurationManager.AppSettings["DEFAULT_PUBLISH_TYPE"];
+                    if(string.IsNullOrEmpty(wps.PublishUrl)) wps.PublishUrl = System.Configuration.ConfigurationManager.AppSettings["DEFAULT_PUBLISH_URL"];
+                    
                 } else {
                     if (!url.ToLower().Contains("describeprocess"))
                     {

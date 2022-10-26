@@ -218,6 +218,18 @@ namespace Terradue.Tep {
             }
         }
 
+        public string PublishUrl {
+            get {
+                return (Process != null && !string.IsNullOrEmpty(Process.PublishUrl)) ? Process.PublishUrl : null;
+            }
+        }
+
+        public string PublishType {
+            get {
+                return (Process != null && !string.IsNullOrEmpty(Process.PublishType)) ? Process.PublishType : null;
+            }
+        }
+
         /// <summary>
         /// Publish the job to the catalogue index
         /// </summary>
@@ -420,7 +432,7 @@ namespace Terradue.Tep {
                     webRequest.Accept = "application/json";
                     webRequest.ContentType = "application/json";
                     if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
-                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;                
+                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;                
                     webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
                     webRequest.Timeout = 10000;
 
@@ -807,9 +819,9 @@ namespace Terradue.Tep {
             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null)
                 supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
 
-            //case url is supervisor status url
+            //case url is terrapi/supervisor status url (means publish is ongoing)
             if(new Uri(StatusLocation).Host == new Uri(supervisorBaseUrl).Host){
-                var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
                 executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
             }
 
@@ -956,15 +968,132 @@ namespace Terradue.Tep {
                 var tFactory = new TransactionFactory(context);
                 tFactory.UpdateDepositTransactionFromEntityStatus(context, this, jobresponse);
             }
+
+            //case we need to publish
+            if(this.Status == WpsJobStatus.SUCCEEDED){                
+                if(!string.IsNullOrEmpty(this.PublishType) && !string.IsNullOrEmpty(this.PublishUrl)){
+                    //if status url is still recast, we should publish to terrapi
+                    string recastBaseUrl = System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"];
+                    if(new Uri(this.StatusLocation).Host == new Uri(recastBaseUrl).Host){
+                        this.Publish(this.PublishUrl, this.PublishType);
+                        return GetExecuteResponseForPublishingJob();
+                    }
+                }
+            }
+
             if (jobresponse is ExecuteResponse && this.Status != WpsJobStatus.STAGED)
             {
-
                 var execResponse = jobresponse as ExecuteResponse;               
                 this.UpdateStatusFromExecuteResponse(execResponse);
                 this.Store();
             }
 
             return jobresponse;
+        }
+
+        public string AuthBasicHeader { 
+            get {
+                string authBasicHeader = null;
+                try {
+                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_FIXED_AUTH_HEADER"])){
+                        authBasicHeader = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_FIXED_AUTH_HEADER"];
+                    } else {
+                        var apikey = this.Owner.LoadApiKeyFromRemote();
+                        authBasicHeader = "Basic " + Convert.ToBase64String(System.Text.Encoding.Default.GetBytes(this.Owner.Username + ":" + apikey));
+                    }
+                }catch(Exception e) {
+                    context.LogError(this, "Error get apikey : " + e.Message);
+                }
+                return authBasicHeader;
+            }
+        }
+
+        public Uri ShareUri { 
+            get {
+                return this.GetJobShareUri(this.AppIdentifier);
+            }
+        }
+
+        public void Publish(string url, string type){
+            
+            if(url.Contains("{USER}")) url = url.Replace("{USER}", this.Owner.Username);
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);            
+
+            var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
+            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
+            webRequest.Timeout = 10000;
+            webRequest.Method = "POST";
+            webRequest.ContentType = "application/json";
+
+            context.LogDebug(this, string.Format("publish request to {0} - type = {1}", url, type));
+            
+            PublishConfiguration PublishConfig = System.Configuration.ConfigurationManager.GetSection("PublishConfiguration") as PublishConfiguration;
+            if(PublishConfig.Types == null){
+                context.LogError(this, "Enable to publish - no type defined in config");
+                return;
+            }
+
+            var templateFileConfig = PublishConfig.Types[type];
+            if(templateFileConfig == null || string.IsNullOrEmpty(templateFileConfig.Value)){
+                context.LogError(this, "Enable to publish - no type defined for service");
+                return;
+            }
+            var templateFile = templateFileConfig.Value;
+
+            string template = File.ReadAllText(templateFile);
+            string json = "";
+            try{
+                // json = template.ReplaceMacro<WpsJob>("job", this);
+                json = GetPublishJson(template);
+            }catch(Exception e){
+                context.LogError(this, e.StackTrace);
+                throw e;
+            }
+
+            context.LogDebug(this, string.Format("publish request body - {0}", json));
+            EventFactory.LogWpsJob(context, this, "Job published", "portal_job_publish");
+            
+            try {
+                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream())) {
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                    streamWriter.Close();
+                    
+                    var resultdescription = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                            webRequest.EndGetResponse,
+                                                                null)
+                    .ContinueWith(task =>
+                    {
+                        var httpResponse = (HttpWebResponse)task.Result;
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                        {
+                            var result = streamReader.ReadToEnd();
+                            var location = httpResponse.Headers["Location"];
+                            if (!string.IsNullOrEmpty(location)) {
+                                context.LogDebug(this, "location = " + location);
+                                return new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
+                            } else
+                                return null;
+                        }
+                    }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    this.StatusLocation = resultdescription;
+                    this.Store();
+                }
+            } catch (Exception e) {
+                context.LogError(this, "Error in publish request: " + e.Message);
+            }                      
+        }
+
+        private string GetPublishJson(string template){
+            template = template.Replace("${job.StatusLocation}", this.StatusLocation);
+            template = template.Replace("${job.Owner.TerradueCloudUsername}", this.Owner.TerradueCloudUsername);
+            template = template.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
+            template = template.Replace("${job.AppIdentifier}", this.AppIdentifier);
+            template = template.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri.AbsoluteUri);
+            return template;   
         }
 
         public ExecuteResponse GetExecuteResponseForSucceededJob(ExecuteResponse response = null){
@@ -2108,7 +2237,7 @@ namespace Terradue.Tep {
             var stacItems = new List<Stac.StacItem>();
             string token = "";
             try{
-                token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
+                token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
             }catch(Exception){}
             var credentials = new NetworkCredential(this.Owner.Username, token);                    
             var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
@@ -2227,6 +2356,31 @@ namespace Terradue.Tep {
     public class CoordinatorDataResponse {
         [DataMember]
         public List<CoordinatorsId> coordinatorsId { get; set; }
+    }
+
+    [DataContract]
+    public class TimeSeriesImportAndPublishRequest
+    {
+        [DataMember(Name = "url")]        
+        public string Url { get; set; }
+
+        [DataMember(Name = "workspace_id")]
+        public string WorkspaceId { get; set; }
+
+        [DataMember(Name = "catalog_id")]
+        public string CatalogId { get; set; }
+
+        [DataMember(Name = "additional_links")]
+        public List<StacLink> AdditionalLinks { get; set; }
+
+        [DataMember(Name = "collection")]
+        public string Collection { get; set; }
+
+        [DataMember(Name = "asset_filters")]
+        public List<string> AssetFilters { get; set; }
+
+        [DataMember(Name = "path")]
+        public string Path { get; set; }
     }
 }
 

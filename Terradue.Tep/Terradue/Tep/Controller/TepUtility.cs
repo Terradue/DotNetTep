@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Net;
+using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace Terradue.Tep {
     public class TepUtility {
@@ -51,6 +53,19 @@ namespace Terradue.Tep {
                     return new WebProxy(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"]);
             } else
                 return null;
+        }
+    }
+
+     public static class TemplateExtensions
+    {
+        public static string ReplaceMacro<T>(this string template, string key, T obj)
+        {
+            return Regex.Replace(template, @"\${(?<exp>[^}]+)}", match =>
+            {
+                var p = Expression.Parameter(typeof(T), key);
+                var e = System.Linq.Dynamic.Core.DynamicExpressionParser.ParseLambda( new[] { p }, typeof(object), match.Groups["exp"].Value);
+                return (e.Compile().DynamicInvoke(obj) ?? "").ToString();
+            });
         }
     }
 }

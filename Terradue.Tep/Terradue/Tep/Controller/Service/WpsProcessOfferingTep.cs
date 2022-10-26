@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -8,13 +9,15 @@ using System.Web;
 using IO.Swagger.Model;
 using OpenGis.Wps;
 using Terradue.OpenSearch;
+using Terradue.OpenSearch.Result;
 using Terradue.Portal;
 using Terradue.ServiceModel.Ogc.Owc.AtomEncoding;
+using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class WpsProcessOfferingTep : WpsProcessOffering {
-
+        
         public WpsProcessOfferingTep(IfyContext context) : base(context) {
         }
 
@@ -48,6 +51,8 @@ namespace Terradue.Tep {
             newservice.Commercial = service.Commercial;
             newservice.Provider = service.Provider;
             newservice.Geometry = service.Geometry;
+            newservice.PublishUrl = service.PublishUrl;
+            newservice.PublishType = service.PublishType;
             return newservice;
         }
 
@@ -307,6 +312,10 @@ namespace Terradue.Tep {
             process.Description = wps3.Process.Abstract ?? wps3.Process.Title;
             process.Version = wps3.Process.Version;
             process.Url = describeProcessUrl;
+
+            //for WPS3 services, we use publish
+            process.PublishType = System.Configuration.ConfigurationManager.AppSettings["DEFAULT_PUBLISH_TYPE"];
+            process.PublishUrl = System.Configuration.ConfigurationManager.AppSettings["DEFAULT_PUBLISH_URL"];
 
             return process;
         }
