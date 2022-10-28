@@ -264,8 +264,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Close();
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
-                context.Close();
-                throw e;
+                context.Close();                
             }
             if (request.redirect_uri != null) return OAuthUtils.DoRedirect(request.redirect_uri, request.ajax);
             else return OAuthUtils.DoRedirect(context.GetConfigValue("BaseUrl"), request.ajax);

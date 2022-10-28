@@ -148,10 +148,18 @@ namespace Terradue.Tep {
         }
 
         public override void EndExternalSession(IfyWebContext context, HttpRequest request, HttpResponse response) {
-            base.EndExternalSession(context, request, response);
-            HttpContext.Current.Session["t2apikey"] = null;
-            HttpContext.Current.Session["t2loading"] = null;
-            HttpContext.Current.Session["t2profileError"] = null;
+            try{
+                base.EndExternalSession(context, request, response);
+            }catch(Exception e){
+                context.LogError(this, e.Message);
+            }
+            try{
+                HttpContext.Current.Session["t2apikey"] = null;
+                HttpContext.Current.Session["t2loading"] = null;
+                HttpContext.Current.Session["t2profileError"] = null;
+            }catch(Exception e){
+                context.LogError(this, e.Message);
+            }
         }
     }
 }
