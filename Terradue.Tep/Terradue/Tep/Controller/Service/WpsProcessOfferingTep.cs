@@ -58,7 +58,7 @@ namespace Terradue.Tep {
                 httpRequest.Method = "POST";
                 httpRequest.Accept = "application/json";
                 httpRequest.ContentType = "application/json";
-                httpRequest.Timeout = 10000;
+                httpRequest.Timeout = 180000; // 3min, especially for SBAS assertions
 
                 using (var streamWriter = new StreamWriter(httpRequest.GetRequestStream())) {
                     streamWriter.Write(json);
