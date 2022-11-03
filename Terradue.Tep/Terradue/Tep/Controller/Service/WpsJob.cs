@@ -803,12 +803,8 @@ namespace Terradue.Tep {
             }
 
             // Supervisor case
-            string supervisorBaseUrl = "";
-            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null)
-                supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
-
             //case url is supervisor status url
-            if(new Uri(StatusLocation).Host == new Uri(supervisorBaseUrl).Host){
+            if(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host){
                 var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_COOKIE_TOKEN_ACCESS"]).Value;
                 executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
             }
@@ -1181,7 +1177,7 @@ namespace Terradue.Tep {
                         //TODO: to improve
                         //case url is supervisor status url                        
                         try{
-                            if(new Uri(resultdescription).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host){
+                            if(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(resultdescription).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host){
                                 this.StatusLocation = resultdescription;
                                 return GetExecuteResponseForPublishingJob();
                             }
