@@ -814,13 +814,8 @@ namespace Terradue.Tep {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));
             }
 
-            // Supervisor case
-            string supervisorBaseUrl = "";
-            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null)
-                supervisorBaseUrl = System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"];
-
             //case url is terrapi/supervisor status url (means publish is ongoing)
-            if(new Uri(StatusLocation).Host == new Uri(supervisorBaseUrl).Host){
+            if(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host){
                 var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
                 executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
             }
@@ -1089,10 +1084,13 @@ namespace Terradue.Tep {
 
         private string GetPublishJson(string template){
             template = template.Replace("${job.StatusLocation}", this.StatusLocation);
-            template = template.Replace("${job.Owner.TerradueCloudUsername}", this.Owner.TerradueCloudUsername);
+            template = template.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
             template = template.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
             template = template.Replace("${job.AppIdentifier}", this.AppIdentifier);
-            template = template.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri.AbsoluteUri);
+            template = template.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri != null ? this.ShareUri.AbsoluteUri : "");
+            template = template.Replace("${job.Process.Name}", this.Process != null ? this.Process.Name : this.ProcessId);
+            template = template.Replace("${job.RemoteIdentifier}", this.RemoteIdentifier);
+
             return template;   
         }
 
