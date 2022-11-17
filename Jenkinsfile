@@ -34,9 +34,6 @@ pipeline {
       }
     }
     stage('Publish NuGet') {
-      when {
-        branch 'master'
-      }
       steps {
         withCredentials([string(credentialsId: 'nuget_token', variable: 'NUGET_TOKEN')]) {
           echo 'Deploying'
