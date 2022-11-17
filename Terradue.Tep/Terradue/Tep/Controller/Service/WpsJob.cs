@@ -974,7 +974,8 @@ namespace Terradue.Tep {
                         var outputs = wps.GetOutputs(this.StatusLocation);
                         var urib = new UriBuilder(this.Provider.BaseUrl);
                         var wfoutput = outputs.outputs.First(o => o.id == "wf_outputs");
-                        urib.Path = urib.Path.Substring(0, urib.Path.IndexOf("/", 1)) + wfoutput.value.href;
+                         // urib.Path = urib.Path.Substring(0, urib.Path.IndexOf("/", 1)) + wfoutput.value.href;
+                        urib.Path = wfoutput.value.href;
                         var resultlink = urib.Uri.AbsoluteUri;
                         string s3link = null;
                         if (resultlink.StartsWith("s3:"))
