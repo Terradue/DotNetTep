@@ -969,7 +969,7 @@ namespace Terradue.Tep {
                 if(!string.IsNullOrEmpty(this.PublishType) && !string.IsNullOrEmpty(this.PublishUrl)){
                     //if status url is still recast, we should publish to terrapi
                     string recastBaseUrl = System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"];
-                    if(new Uri(this.StatusLocation).Host == new Uri(recastBaseUrl).Host){
+                    if(!string.IsNullOrEmpty(recastBaseUrl) && new Uri(this.StatusLocation).Host == new Uri(recastBaseUrl).Host){
                         this.Publish(this.PublishUrl, this.PublishType);
                         return GetExecuteResponseForPublishingJob();
                     }
@@ -1083,7 +1083,12 @@ namespace Terradue.Tep {
         }
 
         private string GetPublishJson(string template){
-            template = template.Replace("${job.StatusLocation}", this.StatusLocation);
+            var location = this.StatusLocation;
+            if(!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(this.StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
+                location = this.StatusLocation.Replace("/describe","/search");
+            else if(CatalogueFactory.IsCatalogUrl(new Uri(this.StatusLocation)))
+                location = this.StatusLocation.Replace("/description","/search");
+            template = template.Replace("${job.StatusLocation}", location);
             template = template.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
             template = template.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
             template = template.Replace("${job.AppIdentifier}", this.AppIdentifier);
