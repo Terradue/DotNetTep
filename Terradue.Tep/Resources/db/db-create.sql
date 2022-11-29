@@ -1,4 +1,4 @@
--- VERSION 1.6.4
+-- VERSION 1.6.5
 
 USE $MAIN$;
 
@@ -502,4 +502,9 @@ UPDATE config SET value='[$(SITENAME)] - End of your access to the community $(C
 UPDATE config SET value='Dear user,\n\nyou have been removed by a $(SITENAME_SHORT) Content Authority from the community $(COMMUNITY) for the following reason:\n $(REASON).\n\nYou can still access any public community on $(SITENAME_SHORT).\n\nAccess to processing services and to your past processing job results is conditioned by the status of your Application Scenario $(ASD_LINK).\n\nBest Regards' WHERE name='CommunityRemoveEmailBody';
 
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('asd_link', 'string', 'ASD page link', 'ASD page link', 'https://geohazards-tep.eu/#!settings/asd', '0');
+-- RESULT
+
+-- Add service publish
+ALTER TABLE service ADD COLUMN `publish_url` varchar(200) NULL DEFAULT NULL COMMENT 'service publish url';
+ALTER TABLE service ADD COLUMN `publish_type` varchar(50) NULL DEFAULT NULL COMMENT 'service publish type';
 -- RESULT

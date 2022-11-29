@@ -14,11 +14,11 @@ namespace Terradue.Tep {
             AddItemName = "add",
             ClearItemsName = "clear",
             RemoveItemName = "remove")]
-        public EventLogCollection Settings
+        public ConfigurationCollection Settings
         {
             get
             {
-                return (EventLogCollection)base["Settings"];
+                return (ConfigurationCollection)base["Settings"];
             }
         }
 
@@ -27,16 +27,16 @@ namespace Terradue.Tep {
             AddItemName = "add",
             ClearItemsName = "clear",
             RemoveItemName = "remove")]
-        public EventLogCollection Missions
+        public ConfigurationCollection Missions
         {
             get
             {
-                return (EventLogCollection)base["Missions"];
+                return (ConfigurationCollection)base["Missions"];
             }
         }
     }
 
-     public class EventLogElementConfiguration : ConfigurationElement {
+     public class ElementConfiguration : ConfigurationElement {
 
         [ConfigurationProperty("key", IsRequired = true, IsKey = true)]
         public string Key {
@@ -59,16 +59,16 @@ namespace Terradue.Tep {
         }
     }
 
-    public class EventLogCollection : ConfigurationElementCollection
+    public class ConfigurationCollection : ConfigurationElementCollection
     {
-        public EventLogCollection(){}
+        public ConfigurationCollection(){}
 
-        public new EventLogElementConfiguration this[string key]
+        public new ElementConfiguration this[string key]
         {
-        get { return (EventLogElementConfiguration)BaseGet(key); }      
+        get { return (ElementConfiguration)BaseGet(key); }      
         }
 
-        public void Add(EventLogElementConfiguration config)
+        public void Add(ElementConfiguration config)
         {
         BaseAdd(config);
         }
@@ -80,15 +80,15 @@ namespace Terradue.Tep {
 
         protected override ConfigurationElement CreateNewElement()
         {
-        return new EventLogElementConfiguration();
+        return new ElementConfiguration();
         }
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-        return ((EventLogElementConfiguration) element).Key;
+        return ((ElementConfiguration) element).Key;
         }
 
-        public void Remove(EventLogElementConfiguration config)
+        public void Remove(ElementConfiguration config)
         {
         BaseRemove(config.Key);
         }

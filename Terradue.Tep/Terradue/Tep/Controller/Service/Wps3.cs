@@ -253,6 +253,9 @@ namespace Terradue.Tep {
         [DataMember(Name = "id")]
         public string Id { get; set; }
 
+        [DataMember(Name = "status")]
+        public string Status { get; set; }
+
         [DataMember(Name = "stac_version")]
         public string StacVersion { get; set; }
 

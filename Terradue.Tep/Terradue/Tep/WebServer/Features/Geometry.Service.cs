@@ -11,6 +11,7 @@ using Terradue.Portal;
 using Terradue.WebService.Model;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using Terradue.Stars.Geometry.Wkt;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -20,6 +21,9 @@ namespace Terradue.Tep.WebServer.Services {
 
         [ApiMember(Name = "points", Description = "Points", ParameterType = "path", DataType = "int", IsRequired = true)]
         public int points { get; set; }
+
+        [ApiMember(Name = "format", Description = "format", ParameterType = "path", DataType = "string", IsRequired = true)]
+        public string format { get; set; }
     }
 
     [Route("/geometry/shp/{Points}", "POST", Summary = "POST geometry to be converted as WKT")]
@@ -63,6 +67,9 @@ namespace Terradue.Tep.WebServer.Services {
                     var segments = base.Request.PathInfo.Split(new[] { '/' },
                                                                StringSplitOptions.RemoveEmptyEntries);
                     request.points = System.Int32.Parse(segments[segments.Count() - 1]);
+                }
+                if(string.IsNullOrEmpty(request.format) && base.Request.QueryString != null && base.Request.QueryString["format"] != null){
+                    request.format = base.Request.QueryString["format"];
                 }
 
                 var points = request.points > 0 ? request.points : 3000;
@@ -115,8 +122,12 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
 
-            if (!string.IsNullOrEmpty(wkt)) return new WebResponseString(wkt);
-            else throw new Exception("Unable to get WKT");
+            if (!string.IsNullOrEmpty(wkt)){
+                if(request.format == "geojson") 
+                    return new WebResponseString(WktToGeoJson(wkt));
+                else 
+                    return new WebResponseString(wkt);
+            }else throw new Exception("Unable to get WKT");
         }
 
 
@@ -353,6 +364,23 @@ namespace Terradue.Tep.WebServer.Services {
                 wkt = finalgeometry.AsText();
             }
             return wkt;
+        }
+
+        private string WktToGeoJson(string wkt){
+            var geometry = WktExtensions.WktToGeometry(wkt);
+            return GetJson(geometry);
+        }
+
+        private string GetJson(object geometry){
+            var serializer = new JsonSerializer {NullValueHandling = NullValueHandling.Ignore};
+            string jsonouts;
+
+            using (StringWriter sw = new StringWriter())
+            using (JsonTextWriter jw = new JsonTextWriter(sw)) {
+                serializer.Serialize(jw, geometry);
+                jsonouts = sw.ToString();
+            }
+            return jsonouts;
         }
     }
 
