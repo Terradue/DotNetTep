@@ -405,7 +405,7 @@ namespace Terradue.Tep
                             //we update title/description/icon
                             pDB.Name = pR.Name;
                             pDB.Description = pR.Description;
-                            pDB.IconUrl = pR.IconUrl;
+                            pDB.IconUrl = pR.IconUrl;                            
                             pDB.Store();
                         }
                     }
