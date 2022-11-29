@@ -68,7 +68,7 @@ namespace Terradue.Tep
 
             //always update session cookies in case of EULA update
             var idTokenCookie = Client.LoadTokenId();
-            Client.StoreSessionCookies(idTokenCookie.Value, idTokenCookie.Expire);
+            CookiesFactory.StoreSessionCookies(context, idTokenCookie.Value, idTokenCookie.Expire);
         }
         
         /// <summary>
