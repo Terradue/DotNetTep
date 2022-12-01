@@ -247,6 +247,14 @@ namespace Terradue.Tep {
 					if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, "");
 					if (response.id_token != null) StoreTokenId(response.id_token, "", response.expires_in);
 					Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
+
+					if (System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] == "true")
+					{
+						var cookie = DBCookie.LoadDBCookie(Context, COOKIE_TOKEN_ACCESS);
+						var kfact = new KeycloackFactory(Context);
+						kfact.GetExchangeToken(cookie.Value);
+					}
+
 					return response;						
 				} catch (Exception e) {
 					DeleteTokenAccess();

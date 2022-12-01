@@ -20,6 +20,9 @@ namespace Terradue.Tep {
         
         public OauthTokenResponse GetExchangeToken(string token){
 
+			var cookie = LoadTokenAccess();
+			if(cookie != null && cookie.Expire > DateTime.UtcNow) return new OauthTokenResponse();
+
             string client_id = System.Configuration.ConfigurationManager.AppSettings["keycloack_client_id"];
             string client_secret = System.Configuration.ConfigurationManager.AppSettings["keycloack_client_secret"];
             string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloack_subject_issuer"];
@@ -59,9 +62,9 @@ namespace Terradue.Tep {
                         }
                     }).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                    if (response.access_token != null) StoreTokenAccess(response.access_token, "", response.expires_in);
-                    if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, "");
-                    if (response.id_token != null) StoreTokenId(response.id_token, "", response.expires_in);
+                    if (response.access_token != null) StoreTokenAccess(response.access_token, Context.Username, response.expires_in);
+                    if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, Context.Username);
+                    if (response.id_token != null) StoreTokenId(response.id_token, Context.Username, response.expires_in);
                     Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
                     return response;						
                 } catch (Exception e) {
