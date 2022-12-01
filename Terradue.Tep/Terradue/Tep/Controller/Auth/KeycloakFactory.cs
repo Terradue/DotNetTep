@@ -25,7 +25,7 @@ namespace Terradue.Tep {
             string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloack_subject_issuer"];
             string url = System.Configuration.ConfigurationManager.AppSettings["keycloack_token_endpoint"];
 
-            Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID);        
+            Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID);
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Method = "POST";
             webRequest.ContentType = "application/x-www-form-urlencoded";
