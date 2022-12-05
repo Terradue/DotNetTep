@@ -71,7 +71,7 @@ namespace Terradue.Tep {
                     DeleteTokenAccess();
                     DeleteTokenRefresh();
                     DeleteTokenId();
-                    throw e;
+                    throw new Exception("Internal token exchange error");
                 }
             }
         }
