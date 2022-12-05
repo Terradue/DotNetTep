@@ -966,7 +966,7 @@ namespace Terradue.Tep
                 try
                 {
                     int retries = 0;
-                    while (retries++ < 5 && remoteWpsResponseString == null)
+                        while (retries++ < 5 && remoteWpsResponseString == null)
                     {
                         try
                         {
@@ -1070,7 +1070,7 @@ namespace Terradue.Tep
                             if (descriptionLink != null)
                             {
                                 this.StatusLocation = descriptionLink.Href;
-                                this.StacItemUrl = stacLink.Href;
+                                if(stacLink != null) this.StacItemUrl = stacLink.Href;
                                 this.Status = WpsJobStatus.STAGED;
                                 this.EndTime = DateTime.UtcNow;
                                 this.Store();
