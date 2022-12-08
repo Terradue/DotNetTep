@@ -1298,7 +1298,7 @@ namespace Terradue.Tep
                     using (var streamReader = new StreamReader(we.Response.GetResponseStream()))
                     {
                         var result = streamReader.ReadToEnd();
-                        context.LogError(this, "error pubish: " + result);
+                        context.LogError(this, "error publish: " + result);
                     }
                 }
             }

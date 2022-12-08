@@ -23,6 +23,9 @@ namespace Terradue.Tep {
     public class ValueDefinition {
         [DataMember(Name = "anyValue")]
         public bool AnyValue { get; set; }
+        
+        [DataMember(Name = "allowedValues")]
+        public List<string> AllowedValues { get; set; }
     }
 
     public class LiteralDataDomain {
