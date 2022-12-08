@@ -331,6 +331,16 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         /// <param name="wpsjob">Wpsjob.</param>
         public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response){
+            if (!string.IsNullOrEmpty(wpsjob.PublishType) && !string.IsNullOrEmpty(wpsjob.PublishUrl))
+            {
+                //if status url is still recast, we should publish to terrapi
+                string recastBaseUrl = AppSettings["RecastBaseUrl"];
+                if (!string.IsNullOrEmpty(recastBaseUrl) && new Uri(wpsjob.StatusLocation).Host == new Uri(recastBaseUrl).Host)
+                {
+                    wpsjob.Publish(wpsjob.PublishUrl, wpsjob.PublishType);
+                    return wpsjob.GetExecuteResponseForPublishingJob();
+                }
+            }
             if (response == null){
                 response = new ExecuteResponse();
                 response.Status = new StatusType { 

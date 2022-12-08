@@ -406,6 +406,7 @@ namespace Terradue.Tep {
                     if (literaldomain.DataType != null) input.LiteralData.DataType = new DomainMetadataType { Value = literaldomain.DataType.Name, reference = literaldomain.DataType.Reference };
                     if (literaldomain.Uom != null) input.LiteralData.UOMs = new SupportedUOMsType { Default = new SupportedUOMsTypeDefault { UOM = new DomainMetadataType { Value = literaldomain.Uom.Name, reference = literaldomain.Uom.Reference } } };
                     if (literaldomain.DefaultValue != null) input.LiteralData.DefaultValue = literaldomain.DefaultValue;
+                    if (literaldomain.ValueDefinition?.AllowedValues != null) input.LiteralData.AllowedValues = literaldomain.ValueDefinition.AllowedValues.ConvertAll(str => (object)str);
                     //if (literaldomain.ValueDefinition != null) input.LiteralData.AnyValue = new ServiceModel.Ogc.Ows11.AnyValue { AnyValue =  }
                 }
                 description.DataInputs.Add(input);
