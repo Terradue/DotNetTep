@@ -68,10 +68,12 @@ namespace Terradue.Tep.WebServer.Services {
                     TimeSpan span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = span.TotalSeconds;
                     if(result.TokenExpire < 0){
-                        var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                        var kfact = new KeycloackFactory(context);
-                        kfact.GetExchangeToken(cookie2.Value);
-                        cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+                        try{
+                            var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                            var kfact = new KeycloackFactory(context);
+                            kfact.GetExchangeToken(cookie2.Value);
+                            cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+                        }catch(Exception e){}
                     }
                     result.Token = cookie.Value;
                     span = cookie.Expire.Subtract(DateTime.UtcNow);
