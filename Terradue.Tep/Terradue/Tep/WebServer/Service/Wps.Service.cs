@@ -262,6 +262,7 @@ namespace Terradue.Tep.WebServer.Services {
                             descResponse = WpsFactory.DescribeProcessCleanup(context, descResponse);
                             System.Xml.Serialization.XmlSerializerNamespaces ns = new System.Xml.Serialization.XmlSerializerNamespaces();
                             ns.Add("wps", "http://www.opengis.net/wps/1.0.0");
+                            ns.Add("ows","http://www.opengis.net/ows/1.1");
                             new System.Xml.Serialization.XmlSerializer(typeof(OpenGis.Wps.ProcessDescriptions)).Serialize(stream, descResponse, ns);
                             return new HttpResult(stream, "application/xml");
                         } else {
