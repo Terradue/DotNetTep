@@ -942,16 +942,13 @@ namespace Terradue.Tep
             //TODO: case of several terrapi urls
             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
             {
-                // var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                // executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
-
-                var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                var kfact = new KeycloackFactory(context);
-                kfact.GetExchangeToken(cookie.Value);
-                var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
-
-                //TODO: check refresh
+                try{
+                    var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                    var kfact = new KeycloackFactory(context);
+                    kfact.GetExchangeToken(cookie.Value);
+                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
+                    executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+                }catch(Exception e){}
             }
 
             //create response
@@ -1212,10 +1209,12 @@ namespace Terradue.Tep
             {
                 if (string.IsNullOrEmpty(access_token) || access_token_cookie.Expire < DateTime.UtcNow)
                 {
-                    var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                    var kfact = new KeycloackFactory(context);
-                    kfact.GetExchangeToken(cookie.Value);
-                    access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
+                    try{
+                        var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                        var kfact = new KeycloackFactory(context);
+                        kfact.GetExchangeToken(cookie.Value);
+                        access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
+                    }catch(Exception e){}
                 }
             }
             webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
