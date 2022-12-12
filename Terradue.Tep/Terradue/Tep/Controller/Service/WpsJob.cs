@@ -1196,7 +1196,7 @@ namespace Terradue.Tep
             }
         }
 
-        public void Publish(string url, string type)
+        public void Publish(string url, string type, string statuslocation = null)
         {
 
             //current user needs to be the ownwer
@@ -1247,8 +1247,20 @@ namespace Terradue.Tep
             string json = "";
             try
             {
-                // json = template.ReplaceMacro<WpsJob>("job", this);
-                json = GetPublishJson(template);
+                // json = template.ReplaceMacro<WpsJob>("job", this);                
+
+                if(string.IsNullOrEmpty(statuslocation)) statuslocation = this.StatusLocation;
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(this.StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
+                    statuslocation = this.StatusLocation.Replace("/describe", "/search");
+                else if (CatalogueFactory.IsCatalogUrl(new Uri(this.StatusLocation)))
+                    statuslocation = this.StatusLocation.Replace("/description", "/search");
+                json = json.Replace("${job.StatusLocation}", statuslocation);
+                json = json.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
+                json = json.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
+                json = json.Replace("${job.AppIdentifier}", this.AppIdentifier);
+                json = json.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri != null ? this.ShareUri.AbsoluteUri : "");
+                json = json.Replace("${job.Process.Name}", this.Process != null ? this.Process.Name : this.ProcessId);
+                json = json.Replace("${job.RemoteIdentifier}", this.RemoteIdentifier);
             }
             catch (Exception e)
             {
@@ -1286,9 +1298,11 @@ namespace Terradue.Tep
                                 return null;
                         }
                     }).ConfigureAwait(false).GetAwaiter().GetResult();
-
-                    this.StatusLocation = resultdescription;
-                    this.Store();
+                                        
+                    if(!string.IsNullOrEmpty(resultdescription)){
+                        this.StatusLocation = resultdescription;
+                        this.Store();
+                    }
                 }
             }
             catch (Exception e)
@@ -1304,24 +1318,6 @@ namespace Terradue.Tep
                     }
                 }
             }
-        }
-
-        private string GetPublishJson(string template)
-        {
-            var location = this.StatusLocation;
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(this.StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
-                location = this.StatusLocation.Replace("/describe", "/search");
-            else if (CatalogueFactory.IsCatalogUrl(new Uri(this.StatusLocation)))
-                location = this.StatusLocation.Replace("/description", "/search");
-            template = template.Replace("${job.StatusLocation}", location);
-            template = template.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
-            template = template.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
-            template = template.Replace("${job.AppIdentifier}", this.AppIdentifier);
-            template = template.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri != null ? this.ShareUri.AbsoluteUri : "");
-            template = template.Replace("${job.Process.Name}", this.Process != null ? this.Process.Name : this.ProcessId);
-            template = template.Replace("${job.RemoteIdentifier}", this.RemoteIdentifier);
-
-            return template;
         }
 
         public ExecuteResponse GetExecuteResponseForSucceededJob(ExecuteResponse response = null)
