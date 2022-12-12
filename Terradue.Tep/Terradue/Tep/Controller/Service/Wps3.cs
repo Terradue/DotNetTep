@@ -162,6 +162,9 @@ namespace Terradue.Tep {
     public class StacItemResult {
         [DataMember(Name = "StacCatalogUri")]
         public string StacCatalogUri { get; set; }
+
+        [DataMember(Name = "s3_catalog_output")]
+        public string S3CatalogOutput { get; set; }
     }
 
     public class SupervisorPublish {
