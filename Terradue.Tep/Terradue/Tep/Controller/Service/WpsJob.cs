@@ -1527,7 +1527,8 @@ namespace Terradue.Tep
                                     }
                                 }).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                                s3link = res.StacCatalogUri;
+                                if(!string.IsNullOrEmpty(res.StacCatalogUri)) s3link = res.StacCatalogUri;
+                                else if(!string.IsNullOrEmpty(res.S3CatalogOutput)) s3link = res.S3CatalogOutput;
                             }
                             catch (Exception e)
                             {
