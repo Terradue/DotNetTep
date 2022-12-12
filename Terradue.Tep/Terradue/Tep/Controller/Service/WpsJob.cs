@@ -1244,7 +1244,7 @@ namespace Terradue.Tep
             var templateFile = templateFileConfig.Value;
 
             string template = File.ReadAllText(templateFile);
-            string json = "";
+            string json = template;
             try
             {
                 // json = template.ReplaceMacro<WpsJob>("job", this);                
