@@ -1250,10 +1250,10 @@ namespace Terradue.Tep
                 // json = template.ReplaceMacro<WpsJob>("job", this);                
 
                 if(string.IsNullOrEmpty(statuslocation)) statuslocation = this.StatusLocation;
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(this.StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
-                    statuslocation = this.StatusLocation.Replace("/describe", "/search");
-                else if (CatalogueFactory.IsCatalogUrl(new Uri(this.StatusLocation)))
-                    statuslocation = this.StatusLocation.Replace("/description", "/search");
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(statuslocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
+                    statuslocation = statuslocation.Replace("/describe", "/search");
+                else if (CatalogueFactory.IsCatalogUrl(new Uri(statuslocation)))
+                    statuslocation = statuslocation.Replace("/description", "/search");
                 json = json.Replace("${job.StatusLocation}", statuslocation);
                 json = json.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
                 json = json.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
