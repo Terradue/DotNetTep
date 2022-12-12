@@ -1199,6 +1199,9 @@ namespace Terradue.Tep
         public void Publish(string url, string type)
         {
 
+            //current user needs to be the ownwer
+            if(context.UserId != this.Owner.Id) return;
+
             if (url.Contains("{USER}")) url = url.Replace("{USER}", this.Owner.Username);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
