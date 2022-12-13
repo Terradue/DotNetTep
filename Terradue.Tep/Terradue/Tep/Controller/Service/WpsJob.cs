@@ -253,8 +253,12 @@ namespace Terradue.Tep
         public string PublishUrl
         {
             get
-            {
-                return (Process != null && !string.IsNullOrEmpty(Process.PublishUrl)) ? Process.PublishUrl : null;
+            {                
+                try {
+                    return (Process != null && !string.IsNullOrEmpty(Process.PublishUrl)) ? Process.PublishUrl : null;
+                } catch(Exception e) {
+                    return null;
+                }
             }
         }
 
@@ -262,7 +266,11 @@ namespace Terradue.Tep
         {
             get
             {
-                return (Process != null && !string.IsNullOrEmpty(Process.PublishType)) ? Process.PublishType : null;
+                try {
+                    return (Process != null && !string.IsNullOrEmpty(Process.PublishType)) ? Process.PublishType : null;
+                } catch(Exception e) {
+                    return null;
+                }
             }
         }
 

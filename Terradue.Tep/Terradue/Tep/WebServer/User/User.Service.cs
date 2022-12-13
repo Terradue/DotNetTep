@@ -63,11 +63,11 @@ namespace Terradue.Tep.WebServer.Services {
                     context.LogError(this, e.Message, e);
                 }                
                 result = new WebUserTep(context, user, false);
-                try{
+                try{                    
                     var cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
                     TimeSpan span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = span.TotalSeconds;
-                    if(result.TokenExpire < 0){
+                    if(result.TokenExpire < 0 && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] == "true"){                    
                         try{
                             var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                             var kfact = new KeycloackFactory(context);
