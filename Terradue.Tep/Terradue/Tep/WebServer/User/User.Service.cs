@@ -77,7 +77,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                     result.Token = cookie.Value;
                     span = cookie.Expire.Subtract(DateTime.UtcNow);
-                    result.TokenExpire = span.TotalSeconds;                    
+                    result.TokenExpire = Math.Min(result.TokenExpire, span.TotalSeconds);
                 }catch(Exception){}
                 context.Close();
             } catch (Exception e) {
