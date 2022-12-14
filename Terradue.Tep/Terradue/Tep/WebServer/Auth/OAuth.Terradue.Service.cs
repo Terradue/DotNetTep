@@ -199,8 +199,8 @@ namespace Terradue.Tep.WebServer.Services {
                     return OAuthUtils.DoRedirect(baseUrl, false);
                 }
 
-                context.LogDebug(this, string.Format("Get token from code"));
-                TepOauthAuthenticationType auth = new TepOauthAuthenticationType(context);          
+                context.LogDebug(this, string.Format("Get token from code"));                                
+                var auth = (TepOauthAuthenticationType)IfyWebContext.GetAuthenticationType(typeof(TepOauthAuthenticationType));
                 var client = auth.Client;
                 var tokenResponse = client.AccessToken(request.Code);
 
