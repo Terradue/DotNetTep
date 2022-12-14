@@ -52,12 +52,17 @@ namespace Terradue.Tep.WebServer {
 
                 if (!string.IsNullOrEmpty(this.UserInformation.AuthIdentifier)){
                     var authT = AuthenticationType.FromIdentifier(this, this.UserInformation.AuthIdentifier);
-                    if (this.UserInformation != null && authT is TepLdapAuthenticationType) {
+                    if (this.UserInformation != null && (authT is TepLdapAuthenticationType || authT is TepOauthAuthenticationType)) {
 
                         //check the validity of access token
                         try {
-                            var auth = new TepLdapAuthenticationType(this);
-                            auth.CheckRefresh();
+                            if(authT is TepLdapAuthenticationType){
+                                var auth = new TepLdapAuthenticationType(this);
+                                auth.CheckRefresh();
+                            } else if(authT is TepOauthAuthenticationType){
+                                var auth = new TepOauthAuthenticationType(this);
+                                auth.CheckRefresh();
+                            }
                         } catch (Exception e) {
                             if (this.GetConfigBooleanValue("sso-notoken-endsession-enabled")) {
                                 LogError(this, e.Message);
