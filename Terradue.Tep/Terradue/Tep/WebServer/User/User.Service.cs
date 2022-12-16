@@ -67,18 +67,22 @@ namespace Terradue.Tep.WebServer.Services {
                     var cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
                     TimeSpan span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = span.TotalSeconds;
-                    if(result.TokenExpire < 0 && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] == "true"){                    
+                    if(result.TokenExpire < context.GetConfigIntegerValue("AccessTokenExpireMinutes") && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] == "true"){                    
                         try{
                             var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                            var kfact = new KeycloackFactory(context);
+                            var kfact = new KeycloakFactory(context);
                             kfact.GetExchangeToken(cookie2.Value);
                             cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-                        }catch(Exception e){}
+                        }catch(Exception e){
+                            context.LogError(this, e.Message, e);    
+                        }
                     }
                     result.Token = cookie.Value;
                     span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = Math.Min(result.TokenExpire, span.TotalSeconds);
-                }catch(Exception){}
+                }catch(Exception e){
+                    context.LogError(this, e.Message, e);    
+                }
                 context.Close();
             } catch (Exception e) {
 				context.LogError(this, e.Message, e);
