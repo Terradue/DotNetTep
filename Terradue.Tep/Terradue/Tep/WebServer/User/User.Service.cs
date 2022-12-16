@@ -67,7 +67,7 @@ namespace Terradue.Tep.WebServer.Services {
                     var cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
                     TimeSpan span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = span.TotalSeconds;
-                    if(result.TokenExpire < context.GetConfigIntegerValue("AccessTokenExpireMinutes") && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] == "true"){                    
+                    if(result.TokenExpire < context.GetConfigIntegerValue("AccessTokenExpireMinutes") && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true"){                    
                         try{
                             var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
                             var kfact = new KeycloakFactory(context);

@@ -29,7 +29,7 @@ namespace Terradue.Tep {
             string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloak_subject_issuer"];
             string url = System.Configuration.ConfigurationManager.AppSettings["keycloak_token_endpoint"];
 
-            Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID + " - expire at " + cookie.Expire.ToString("o"));
+            Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID + " - expire at " + cookie.Expire.ToString());
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Method = "POST";
             webRequest.ContentType = "application/x-www-form-urlencoded";
