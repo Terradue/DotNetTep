@@ -952,7 +952,7 @@ namespace Terradue.Tep
             {
                 try{
                     var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                    var kfact = new KeycloackFactory(context);
+                    var kfact = new KeycloakFactory(context);
                     kfact.GetExchangeToken(cookie.Value);
                     var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
                     executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
@@ -1216,13 +1216,13 @@ namespace Terradue.Tep
 
             var access_token_cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
             var access_token = access_token_cookie != null ? access_token_cookie.Value : "";
-            if (System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloack_exchange"] == "true")
+            if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
             {
                 if (string.IsNullOrEmpty(access_token) || access_token_cookie.Expire < DateTime.UtcNow)
                 {
                     try{
                         var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                        var kfact = new KeycloackFactory(context);
+                        var kfact = new KeycloakFactory(context);
                         kfact.GetExchangeToken(cookie.Value);
                         access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
                     }catch(Exception e){}

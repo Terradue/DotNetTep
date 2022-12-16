@@ -7,28 +7,29 @@ using Terradue.Ldap;
 using Terradue.Portal;
 
 namespace Terradue.Tep {
-    public class KeycloackFactory {
+    public class KeycloakFactory {
 
         IfyContext Context;
         public static string COOKIE_TOKEN_ACCESS = "KEYCLOAK_token_access";
 		public static string COOKIE_TOKEN_REFRESH = "KEYCLOAK_token_refresh";
 		public static string COOKIE_TOKEN_ID = "KEYCLOAK_token_id";
        
-        public KeycloackFactory(IfyContext context){
+        public KeycloakFactory(IfyContext context){
             Context = context;
         }
         
         public OauthTokenResponse GetExchangeToken(string token){
 
-			var cookie = LoadTokenAccess();
-			if(cookie != null && cookie.Expire > DateTime.UtcNow) return new OauthTokenResponse();
+			var cookie = LoadTokenAccess();			
+			var cookiesSeconds = cookie != null ? cookie.Expire.Subtract(DateTime.UtcNow).TotalSeconds : 0;
+			if(cookie != null && cookiesSeconds > Context.GetConfigIntegerValue("AccessTokenExpireMinutes")) return new OauthTokenResponse();
 
-            string client_id = System.Configuration.ConfigurationManager.AppSettings["keycloack_client_id"];
-            string client_secret = System.Configuration.ConfigurationManager.AppSettings["keycloack_client_secret"];
-            string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloack_subject_issuer"];
-            string url = System.Configuration.ConfigurationManager.AppSettings["keycloack_token_endpoint"];
+            string client_id = System.Configuration.ConfigurationManager.AppSettings["keycloak_client_id"];
+            string client_secret = System.Configuration.ConfigurationManager.AppSettings["keycloak_client_secret"];
+            string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloak_subject_issuer"];
+            string url = System.Configuration.ConfigurationManager.AppSettings["keycloak_token_endpoint"];
 
-            Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID);
+            Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID + " - expire at " + cookie.Expire.ToString());
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Method = "POST";
             webRequest.ContentType = "application/x-www-form-urlencoded";
