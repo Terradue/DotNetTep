@@ -53,13 +53,15 @@ namespace Terradue.Tep.WebServer {
                 if (!string.IsNullOrEmpty(this.UserInformation.AuthIdentifier)){
                     var authT = AuthenticationType.FromIdentifier(this, this.UserInformation.AuthIdentifier);
                     if (this.UserInformation != null && (authT is TepLdapAuthenticationType || authT is TepOauthAuthenticationType)) {
-
+                        LogDebug(this, "check the validity of access token");
                         //check the validity of access token
                         try {
                             if(authT is TepLdapAuthenticationType){
+                                LogDebug(this, "check the validity of access token -- TepLdapAuthenticationType");
                                 var auth = new TepLdapAuthenticationType(this);
                                 auth.CheckRefresh();
                             } else if(authT is TepOauthAuthenticationType){
+                                LogDebug(this, "check the validity of access token -- TepOauthAuthenticationType");
                                 var auth = new TepOauthAuthenticationType(this);
                                 auth.CheckRefresh();
                             }
