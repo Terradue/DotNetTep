@@ -57,12 +57,14 @@ namespace Terradue.Tep
         /// </summary>
         /// <returns></returns>
         public void CheckRefresh() {
+            context.LogDebug(this, string.Format("CheckRefresh : load access token"));
             var accessCookie = Client.LoadTokenAccess();
             TimeSpan span = accessCookie.Expire.Subtract(DateTime.UtcNow);
             if (span.TotalMinutes < context.GetConfigIntegerValue("AccessTokenExpireMinutes")) {
                 context.LogDebug(this, string.Format("CheckRefresh : {0} minutes remaining", span.TotalMinutes));
                 var refreshCookie = Client.LoadTokenRefresh();
                 var refreshToken = refreshCookie.Value;
+                context.LogDebug(this, string.Format("CheckRefresh : load refresh token"));
                 Client.RefreshToken(refreshToken, refreshCookie.Username);
             }
 
