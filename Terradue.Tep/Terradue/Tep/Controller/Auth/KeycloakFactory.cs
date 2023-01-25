@@ -20,6 +20,9 @@ namespace Terradue.Tep {
         
         public OauthTokenResponse GetExchangeToken(string token){
 
+			if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == null || 
+				System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != "true") return null;
+
 			var cookie = LoadTokenAccess();			
 			var cookiesSeconds = cookie != null ? cookie.Expire.Subtract(DateTime.UtcNow).TotalSeconds : 0;
 			if(cookie != null && cookiesSeconds > Context.GetConfigIntegerValue("AccessTokenExpireMinutes")) return new OauthTokenResponse();
