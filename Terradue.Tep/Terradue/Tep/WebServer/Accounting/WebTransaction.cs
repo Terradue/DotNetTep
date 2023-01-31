@@ -72,6 +72,10 @@ namespace Terradue.Tep.WebServer {
         }
 
     }
+
+
+    /*************************************************************/
+    public class WebTransactionASD {}
 }
 
 

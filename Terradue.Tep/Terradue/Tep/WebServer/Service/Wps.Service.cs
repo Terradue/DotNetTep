@@ -397,6 +397,8 @@ namespace Terradue.Tep.WebServer.Services {
             var stream = new System.IO.MemoryStream();
             WpsJob wpsjob = null;
 
+            double cost = 0;
+
             try{
                 var user = UserTep.FromId(context, context.UserId);
                 var parameters = WpsJob.BuildWpsJobParameters(context, executeInput);
@@ -407,6 +409,18 @@ namespace Terradue.Tep.WebServer.Services {
 
                 wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
 
+                //calculate cost                
+                //get number of inputs in the job
+                var totalDataProcessed = 0;
+                foreach (var parameter in parameters) {
+                    if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
+                        totalDataProcessed++;
+                    }
+                }
+                //get cost of process
+                cost = totalDataProcessed * wps.Price;
+                if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
+                
                 //Check if we need to remove special fields
                 if (executeInput != null && executeInput.DataInputs != null) {
                     var tmpInputs = new List<InputType>();
@@ -551,6 +565,12 @@ namespace Terradue.Tep.WebServer.Services {
                         //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
+                        //credit has been used
+                        if(cost > 0){
+                            user.UseCredit(wpsjob, cost);
+                            user.Store();
+                        }
+
                         if (!(executeResponse is ExecuteResponse) 
                             || ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType)
                             || string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) return HandleWrongExecuteResponse(context, executeResponse);
@@ -573,6 +593,12 @@ namespace Terradue.Tep.WebServer.Services {
                     //case is not quotable
                     //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                     executeResponse = wps.Execute(executeInput);
+
+                    //credit has been used
+                    if(cost > 0){
+                        user.UseCredit(wpsjob, cost);
+                        user.Store();
+                    }
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
@@ -1706,7 +1732,138 @@ namespace Terradue.Tep.WebServer.Services {
             }
             return new WebResponseBool(true);
         }
+
+        public object Get(GetWPSServiceTokens request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var tokens = new List<WebWpsToken>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{0}/token GET",request.Identifier));
+
+                EntityList<WpsToken> tokenList = new EntityList<WpsToken>(context);
+                tokenList.SetFilter("ServiceId", request.Identifier);
+                tokenList.Load();         
+                foreach(var item in tokenList.GetItemsAsList()){
+                    tokens.Add(new WebWpsToken(item));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return tokens;
+        }
+
+        public object Get(GetUserWpsTokens request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var tokens = new List<WebWpsToken>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/{0}/token GET",request.Username));
+
+                var user = User.FromUsername(context, request.Username);
+
+                EntityList<WpsToken> tokenList = new EntityList<WpsToken>(context);
+                tokenList.SetFilter("OwnerId", user.Id);
+                tokenList.Load();         
+                foreach(var item in tokenList.GetItemsAsList()){
+                    tokens.Add(new WebWpsToken(item, context));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return tokens;
+        }        
+
+        public object Get(GetCurrentUserWpsTokens request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
+            var tokens = new List<WebWpsToken>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/user/current/token GET"));                
+
+                EntityList<WpsToken> tokenList = new EntityList<WpsToken>(context);
+                tokenList.SetFilter("OwnerId", context.UserId);
+                tokenList.Load();         
+                foreach(var item in tokenList.GetItemsAsList()){
+                    tokens.Add(new WebWpsToken(item, context));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return tokens;
+        }        
                 
+        public object Post(PostWPSServiceToken request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new WebWpsToken();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{0}/token POST",request.ServiceIdentifier));
+
+                var token = request.ToEntity(context,null);
+                token.Store();
+
+                result = new WebWpsToken(token);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Put(PutWPSServiceToken request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new WebWpsToken();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/service/wps/{0}/token PUT",request.ServiceIdentifier));
+
+                var token = request.ToEntity(context,null);
+                token.Store();
+
+                result = new WebWpsToken(token);
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
+
+        public object Delete(DeleteWPSServiceToken request){            
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var result = new WebWpsToken();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/wps/token/{0} DELETE",request.Id));
+
+                var token = WpsToken.FromId(context, request.Id);
+                token.Delete();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return new WebResponseBool(true);
+        }
     }
 
 }

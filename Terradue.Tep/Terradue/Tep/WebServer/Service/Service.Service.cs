@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -9,6 +10,7 @@ using Terradue.OpenSearch;
 using Terradue.OpenSearch.Engine;
 using Terradue.OpenSearch.Result;
 using Terradue.Portal;
+using Terradue.Tep.Services;
 using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
@@ -253,6 +255,160 @@ namespace Terradue.Tep.WebServer.Services {
                 throw e;
             }
             return new HttpResult("", HttpStatusCode.OK);
+        }
+
+        public object Get(GetServiceStoreRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            List<WebStoreService> result = new List<WebStoreService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore GET"));
+
+                EntityList<StoreService> services = new EntityList<StoreService>(context);
+                services.AddSort("Name");
+                services.Load();
+
+                foreach (StoreService s in services) {
+                    result.Add(new WebStoreService(s));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Post(PostServiceStoreRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<WebStoreService> result = new List<WebStoreService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore POST"));
+
+                StoreService s = request.ToEntity(context, new StoreService(context));
+                s.Store();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Put(PutServiceStoreRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<WebStoreService> result = new List<WebStoreService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore PUT - id="+request.Id));
+
+                StoreService s = request.ToEntity(context, StoreService.FromId(context, request.Id));
+                s.Store();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Delete(DeleteServiceStoreRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            List<WebStoreService> result = new List<WebStoreService>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore DELETE - id=" + request.Id));
+
+                StoreService s = StoreService.FromId(context, request.Id);
+                s.Delete();
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Get(GetServiceStoreConfigRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.EverybodyView);
+            List<KeyValuePair<string,string>> result = new List<KeyValuePair<string,string>>();
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore/config GET"));
+
+                string path = AppDomain.CurrentDomain.BaseDirectory;
+                if(!path.EndsWith("/")) path += "/";
+                using (StreamReader r = new StreamReader(path + "files/web_store_packs.json")){
+                    string json = r.ReadToEnd();
+                    result.Add(new KeyValuePair<string, string>("packs",json));
+                }
+
+                using (StreamReader r = new StreamReader(path + "files/web_store_subpacks.json")){
+                    string json = r.ReadToEnd();
+                    result.Add(new KeyValuePair<string, string>("subpacks",json));
+                }
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return result;
+        }
+
+        public object Post(PostServiceStorePacksConfigRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);            
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore/config/packs POST"));
+
+                string path = AppDomain.CurrentDomain.BaseDirectory;
+                if(!path.EndsWith("/")) path += "/";
+                File.WriteAllText(path + "files/web_store_packs.json", request.Packs);                
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return new WebResponseBool(true);
+        }
+
+        public object Post(PostServiceStoreSubpacksConfigRequestTep request){
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);            
+            try {
+                context.Open();
+                context.LogInfo(this, string.Format("/servicestore/config/subpacks POST"));
+
+                string path = AppDomain.CurrentDomain.BaseDirectory;
+                if(!path.EndsWith("/")) path += "/";
+                File.WriteAllText(path + "files/web_store_subpacks.json", request.Subpacks);                
+
+                context.Close();
+            } catch (Exception e) {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+
+            return new WebResponseBool(true);
         }
 
     }
