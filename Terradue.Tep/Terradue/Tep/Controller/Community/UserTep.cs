@@ -138,7 +138,7 @@ namespace Terradue.Tep {
             }
         }
 
-        public List<List<Urf>> LoadASDs()
+        public List<List<UrfTep>> LoadASDs()
         {            
             if (string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
             if (string.IsNullOrEmpty(this.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
@@ -163,7 +163,7 @@ namespace Terradue.Tep {
                     var httpResponse = (HttpWebResponse) task.Result;
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
                         string result = streamReader.ReadToEnd();                    
-                        return JsonSerializer.DeserializeFromString<List<List<Urf>>>(result);                    
+                        return JsonSerializer.DeserializeFromString<List<List<UrfTep>>>(result);                    
                     }
                 }catch(Exception e){
                     throw e;
@@ -171,8 +171,8 @@ namespace Terradue.Tep {
             }).ConfigureAwait(false).GetAwaiter().GetResult();
 
             if(urfs != null){
-                foreach (var urf in urfs) {
-                    if(urf.Count > 0){
+                foreach (var urf in urfs) {                    
+                    if(urf.Count > 0){                        
                         var asd = urf[0];
                         //check if urf already stored in DB
                         var dburfs = new EntityList<ASD>(context);
@@ -195,7 +195,8 @@ namespace Terradue.Tep {
                                 dbasd.CreditTotal = asd.UrfInformation.Credit;
                                 dbasd.Store();
                             }
-                            asd.UrfInformation.Credit = dbasd.CreditRemaining;
+                            asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
+                            asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
                         }
                     }
                 }

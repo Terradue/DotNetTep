@@ -82,7 +82,7 @@ namespace Terradue.Tep.WebServer {
     [Route("/user/transaction/{id}", "GET", Summary = "GET the user transactions", Notes = "User is found from id")]
     public class UserGetTransactionRequestTep : IReturn<List<WebTransactionASD>> {
         [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int Id { get; set; }s
+        public int Id { get; set; }
     }
 
     [Route("/user", "PUT", Summary = "Update user", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]

@@ -37,7 +37,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetCurrentUserURFsRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
-            List<List<Urf>> urfs = null;
+            List<List<UrfTep>> urfs = null;
             try {
                 context.LogInfo(this, string.Format("/user/current/urf GET"));
                 context.Open();
@@ -59,7 +59,7 @@ namespace Terradue.Tep.WebServer.Services {
 
         public object Get(GetUserURFsRequestTep request) {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
-            List<List<Urf>> urfs = null;
+            List<List<UrfTep>> urfs = null;
             try {
                 context.LogInfo(this, string.Format("/user/{0}/urf GET", request.id));
                 context.Open();
