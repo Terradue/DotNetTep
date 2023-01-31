@@ -58,6 +58,14 @@ namespace Terradue.Tep.WebServer.Services {
                     json = json.Remove(json.Length - 1);
                     json += "," + "\"t2_authorization_bearer\":\"" + user.GetSessionApiKey() + "\"}";
                 }
+                if(!json.Contains("t2_username")){
+                    var user = UserTep.FromId(context, context.UserId);                                        
+                    if (string.IsNullOrEmpty(user.TerradueCloudUsername)) user.LoadCloudUsername();
+                    if (!string.IsNullOrEmpty(user.TerradueCloudUsername)){
+                        json = json.Remove(json.Length - 1);
+                        json += "," + "\"t2_username\":\"" + user.TerradueCloudUsername + "\"}";
+                    }
+                }
                 
                 response = service.ValidateResult(json);
             } catch (Exception e) {
