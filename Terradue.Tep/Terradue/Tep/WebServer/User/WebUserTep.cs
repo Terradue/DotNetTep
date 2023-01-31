@@ -79,6 +79,12 @@ namespace Terradue.Tep.WebServer {
         public string Identifier { get; set; }
     }
 
+    [Route("/user/transaction/{id}", "GET", Summary = "GET the user transactions", Notes = "User is found from id")]
+    public class UserGetTransactionRequestTep : IReturn<List<WebTransactionASD>> {
+        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int Id { get; set; }
+    }
+
     [Route("/user", "PUT", Summary = "Update user", Notes = "User is contained in the PUT data. Only non UMSSO data can be updated, e.g redmineApiKey or certField")]
     public class UserUpdateRequestTep : WebUserTep, IReturn<WebUserTep> {}
 
@@ -178,7 +184,7 @@ namespace Terradue.Tep.WebServer {
         public String Token { get; set; }
 
         [ApiMember(Name = "token_expire", Description = "sso token expire (seconds)", ParameterType = "query", DataType = "double", IsRequired = true)]
-        public double TokenExpire { get; set; }
+        public double TokenExpire { get; set; }        
         
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.WebUserTep"/> class.
@@ -202,7 +208,7 @@ namespace Terradue.Tep.WebServer {
                 this.T2ProfileError = HttpContext.Current.Session["t2profileError"] as string;
                 if ((string.IsNullOrEmpty(entity.Affiliation) || string.IsNullOrEmpty(entity.Country) || string.IsNullOrEmpty(entity.FirstName) || string.IsNullOrEmpty(entity.LastName)))
                     this.T2ProfileError += (string.IsNullOrEmpty(this.T2ProfileError) ? "" : "\n" ) + "Profile not complete";
-                this.T2ApiKey = entity.GetSessionApiKey();
+                this.T2ApiKey = entity.GetSessionApiKey();                
             }
 
             if (context.UserId == entity.Id || context.UserLevel == UserLevel.Administrator){
@@ -212,7 +218,7 @@ namespace Terradue.Tep.WebServer {
 				if (context.UserLevel == UserLevel.Administrator) {
 					if (entity.RegistrationDate == DateTime.MinValue) entity.LoadRegistrationInfo();
 					this.RegistrationDate = entity.RegistrationDate;
-				}
+				}                
             } else {
                 this.Email = null;
                 this.Affiliation = null;
@@ -230,7 +236,7 @@ namespace Terradue.Tep.WebServer {
         /// <param name="context">Context.</param>
 		public UserTep ToEntity(IfyContext context, UserTep input) {
 			UserTep user = (input == null ? new UserTep(context) : input);
-			user = (UserTep)base.ToEntity(context, user);
+			user = (UserTep)base.ToEntity(context, user);            
 
             return user;
         }

@@ -20,6 +20,7 @@ using ServiceStack.Text;
 using System.Security.Cryptography;
 using System.Runtime.Serialization;
 using System.Runtime.Caching;
+using Terradue.Portal.Urf;
 
 namespace Terradue.Tep {
 
@@ -123,11 +124,116 @@ namespace Terradue.Tep {
             set;
         }
 
+        public double Credit {
+            get {
+                return this.GetCredit();
+            }            
+        }
+
         private TransactionFactory _transactionFactory;
         private TransactionFactory TransactionFactory {
             get {
                 if(_transactionFactory == null) _transactionFactory = new TransactionFactory(context);
                 return _transactionFactory;
+            }
+        }
+
+        public List<List<UrfTep>> LoadASDs()
+        {            
+            if (string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
+            if (string.IsNullOrEmpty(this.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
+
+            var url = string.Format("{0}?token={1}&username={2}&request=urf",
+                                context.GetConfigValue("t2portal-usrinfo-endpoint"),
+                                context.GetConfigValue("t2portal-safe-token"),
+                                this.TerradueCloudUsername);
+
+            HttpWebRequest t2request = (HttpWebRequest)WebRequest.Create(url);
+            t2request.Method = "GET";
+            t2request.ContentType = "application/json";
+            t2request.Accept = "application/json";
+            t2request.Proxy = null;
+            
+            var urfs = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(t2request.BeginGetResponse,
+                                                                       t2request.EndGetResponse,
+                                                                       null)
+            .ContinueWith(task =>
+            {
+                try{
+                    var httpResponse = (HttpWebResponse) task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+                        string result = streamReader.ReadToEnd();                    
+                        return JsonSerializer.DeserializeFromString<List<List<UrfTep>>>(result);                    
+                    }
+                }catch(Exception e){
+                    throw e;
+                }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            if(urfs != null){
+                foreach (var urf in urfs) {                    
+                    if(urf.Count > 0){                        
+                        var asd = urf[0];
+                        //check if urf already stored in DB
+                        var dburfs = new EntityList<ASD>(context);
+                        dburfs.SetFilter("Identifier", asd.UrfInformation.Identifier);
+                        dburfs.Load();
+                        var items = dburfs.GetItemsAsList();
+                        if(items.Count == 0){
+                            //not stored in DB
+                            var asdToStore = ASD.FromURF(context, asd);
+                            asdToStore.Store();
+                        } else {                            
+                            var dbasd = items[0];
+                            //check if credit updated
+                            if(asd.UrfInformation.Credit != dbasd.CreditTotal){
+                                dbasd.CreditTotal = asd.UrfInformation.Credit;
+                                dbasd.Store();
+                            }
+                            //check if status updated
+                            if(asd.UrfInformation.Status != dbasd.Status){
+                                dbasd.CreditTotal = asd.UrfInformation.Credit;
+                                dbasd.Store();
+                            }
+                            asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
+                            asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
+                        }
+                    }
+                }
+            }
+
+            return urfs;
+        }
+
+        public double GetCredit(){
+            double credit=0;
+            
+            var dburfs = ASD.FromUsr(context, this.Id);            
+            foreach(var item in dburfs){
+                if(item.Status == UrfStatus.Activated)
+                    credit += item.CreditRemaining;
+            }
+            
+            return credit;
+        }
+
+        public void UseCredit(WpsJob job, double cost){
+            var dburfs = ASD.FromUsr(context, this.Id);
+            foreach(var item in dburfs){                
+                var remaining = item.CreditRemaining;
+                if(remaining > 0){
+                    if(remaining >= cost){
+                        item.CreditUsed += cost;
+                        item.Store();
+                        ASDTransactionFactory.CreateTransaction(context, this.Id, item, job, cost);
+                        break;
+                    } else {
+                        item.CreditUsed = item.CreditTotal;
+                        item.Store();
+                        cost -= remaining;
+                        ASDTransactionFactory.CreateTransaction(context, this.Id, item, job, remaining);
+                    }
+                }
             }
         }
 
@@ -1045,6 +1151,7 @@ namespace Terradue.Tep {
 
             if (context.AccessLevel == EntityAccessLevel.Administrator || context.UserId == this.Id) {
                 result.Categories.Add(new SyndicationCategory("balance", null, GetAccountingBalance().ToString()));
+                result.Categories.Add(new SyndicationCategory("credit", null, this.Credit + ""));
                 result.ElementExtensions.Add("level", "https://www.terradue.com", this.Level);
                 result.ElementExtensions.Add("status", "https://www.terradue.com", this.AccountStatus);
                 if (string.IsNullOrEmpty(this.TerradueCloudUsername)) LoadCloudUsername();

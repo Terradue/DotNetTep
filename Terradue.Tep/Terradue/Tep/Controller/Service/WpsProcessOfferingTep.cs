@@ -17,7 +17,22 @@ using Terradue.ServiceModel.Syndication;
 namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
     public class WpsProcessOfferingTep : WpsProcessOffering {
+        private StoreService storeservice;
         
+        public double Price {
+            get {
+                if (storeservice==null) storeservice = StoreService.FromWpsName(context, this.Name);
+                return storeservice != null ? storeservice.Price : 0;
+            }
+        }
+
+        public double PriceInput {
+            get {
+                if (storeservice==null) storeservice = StoreService.FromWpsName(context, this.Name);
+                return storeservice != null ? storeservice.PriceInput : 0;
+            }
+        }
+
         public WpsProcessOfferingTep(IfyContext context) : base(context) {
         }
 
