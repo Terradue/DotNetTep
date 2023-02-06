@@ -22,6 +22,7 @@ namespace Terradue.Tep {
         }
 
         public string GetResultDescriptionFromS3Link(IfyContext context, WpsJob job, string s3link){
+            context.LogDebug(this, string.Format("GetResultDescriptionFromS3Link"));
             if(!string.IsNullOrEmpty(job.PublishType) && !string.IsNullOrEmpty(job.PublishUrl)){                                
                 job.Publish(job.PublishUrl, job.PublishType, s3link);
                 return job.StatusLocation;

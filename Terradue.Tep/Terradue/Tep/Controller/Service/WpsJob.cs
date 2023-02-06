@@ -1207,6 +1207,8 @@ namespace Terradue.Tep
         public void Publish(string url, string type, string statuslocation = null)
         {
 
+            context.LogDebug(this, string.Format("Publish"));
+
             //current user needs to be the ownwer
             if(context.UserId != this.Owner.Id) return;
 
@@ -1579,6 +1581,12 @@ namespace Terradue.Tep
                                     }
                                 }
                             });
+                        }
+
+                        if (this.EndTime == DateTime.MinValue)
+                        {
+                            var endtime = DateTime.UtcNow;
+                            this.EndTime = endtime;
                         }
 
                         //TODO: to improve
