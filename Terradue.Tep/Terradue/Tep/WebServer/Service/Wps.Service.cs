@@ -417,17 +417,20 @@ namespace Terradue.Tep.WebServer.Services {
 
                 wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
 
-                //calculate cost                
-                //get number of inputs in the job
-                var totalDataProcessed = 0;
-                foreach (var parameter in parameters) {
-                    if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
-                        totalDataProcessed++;
+                var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
+                if(payPerUseEnabled){
+                    //calculate cost                
+                    //get number of inputs in the job
+                    var totalDataProcessed = 0;
+                    foreach (var parameter in parameters) {
+                        if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
+                            totalDataProcessed++;
+                        }
                     }
+                    //get cost of process
+                    cost = totalDataProcessed * wps.Price;
+                    if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
                 }
-                //get cost of process
-                cost = totalDataProcessed * wps.Price;
-                if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
                 
                 //Check if we need to remove special fields
                 if (executeInput != null && executeInput.DataInputs != null) {
@@ -574,7 +577,7 @@ namespace Terradue.Tep.WebServer.Services {
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
                         //credit has been used
-                        if(cost > 0){
+                        if(payPerUseEnabled && cost > 0){
                             user.UseCredit(wpsjob, cost);
                             user.Store();
                         }
@@ -603,7 +606,7 @@ namespace Terradue.Tep.WebServer.Services {
                     executeResponse = wps.Execute(executeInput);
 
                     //credit has been used
-                    if(cost > 0){
+                    if(payPerUseEnabled && cost > 0){
                         user.UseCredit(wpsjob, cost);
                         user.Store();
                     }
@@ -699,7 +702,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 //load job from request identifier
                 WpsJob wpsjob = WpsJob.FromIdentifier(context, request.Id);
-                context.LogDebug(this,string.Format("Get Job {0} status info",wpsjob.Identifier));
+                context.LogDebug(this,string.Format("Get Job {0} status info ({1})",wpsjob.Identifier,wpsjob.StringStatus));
                 ExecuteResponse execResponse = null;
 
                 //update nbresult if not set
