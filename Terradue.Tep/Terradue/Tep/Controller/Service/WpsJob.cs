@@ -1077,7 +1077,7 @@ namespace Terradue.Tep
                                 this.StatusLocation = descriptionLink.Href;
                                 if(stacLink != null) this.StacItemUrl = stacLink.Href;
                                 this.Status = WpsJobStatus.STAGED;
-                                this.EndTime = DateTime.UtcNow;
+                                // this.EndTime = DateTime.UtcNow;
                                 this.Store();
                                 return GetExecuteResponseForStagedJob();
                             }
@@ -1498,6 +1498,7 @@ namespace Terradue.Tep
                         Item = new ProcessSucceededType() { Value = statusInfo.Message },
                         creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
                     };
+                    this.EndTime = response.Status.creationTime;
                     if (wps != null)
                     {
                         var outputs = wps.GetOutputs(this.StatusLocation);
@@ -1581,12 +1582,6 @@ namespace Terradue.Tep
                                     }
                                 }
                             });
-                        }
-
-                        if (this.EndTime == DateTime.MinValue)
-                        {
-                            var endtime = DateTime.UtcNow;
-                            this.EndTime = endtime;
                         }
 
                         //TODO: to improve
