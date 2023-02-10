@@ -1494,8 +1494,10 @@ namespace Terradue.Tep
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Successful:
                     response.Status = new StatusType
                     {
-                        ItemElementName = ItemChoiceType.ProcessSucceeded,
-                        Item = new ProcessSucceededType() { Value = statusInfo.Message },
+                        // ItemElementName = ItemChoiceType.ProcessSucceeded,
+                        ItemElementName = ItemChoiceType.ProcessStarted,
+                        Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = "99" },
+                        // Item = new ProcessSucceededType() { Value = statusInfo.Message },
                         creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
                     };
                     this.EndTime = response.Status.creationTime;
