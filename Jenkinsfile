@@ -3,7 +3,7 @@ pipeline {
   environment {
       CONFIGURATION = getConfiguration(env.BRANCH_NAME)
   }
-  agent { node { label 'centos7-mono4' } }
+  agent { node { label 'docker' } }
   stages {
     stage('Init') {
       steps {
