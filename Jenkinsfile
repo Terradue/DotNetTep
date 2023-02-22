@@ -1,61 +1,66 @@
-
 pipeline {
+  agent { node { label 'docker' } }
   environment {
+      VERSION_LIB = getVersionFromCsProj('Terradue.Tep/Terradue.Tep.csproj')
+      VERSION_TYPE = getTypeOfVersion(env.BRANCH_NAME)
       CONFIGURATION = getConfiguration(env.BRANCH_NAME)
   }
-  agent { node { label 'docker' } }
   stages {
-    stage('Init') {
-      steps {
-        sh 'rm -rf packges */bin build'
-        sh 'mkdir -p build'
-        sh 'ls -la'
+    stage('.Net Core') {
+      agent { 
+          dockerfile {
+            additionalBuildArgs '-t dotnet/sdk-mono:6.0'
+          }
       }
-    }
-    stage('Build & Publish'){
-      agent { node { label 'centos7-mono4' } }
+      environment {
+        DOTNET_CLI_HOME = "/tmp/DOTNET_CLI_HOME"
+      }
       stages {
-        stage('Build') {
+        stage("Build & Test") {
           steps {
-            echo "The library will be build in ${env.CONFIGURATION}"
-            sh "msbuild /t:build /p:Configuration=${env.CONFIGURATION} /restore:True"
-          }
-        }
-        stage('Test'){
-          when {
-            branch 'test'
-          }
-          steps {
-            sh 'mono packages/nunit.consolerunner/3.10.0/tools/nunit3-console.exe *.Test/bin/*/net4*/*.Test.dll'
-            nunit(testResultsPattern: 'TestResult.xml')
-          }
-        }
-        stage('Package') {
-          steps {
-            sh "msbuild /t:pack /p:Configuration=${env.CONFIGURATION}"
-            sh 'cat */obj/*/*.nuspec'           
+            echo "Build .NET application"
+            sh "dotnet restore ./"
+            sh "dotnet build -c ${env.CONFIGURATION} --no-restore ./"
+            sh "dotnet test -c ${env.CONFIGURATION} --no-build --no-restore ./"
           }
         }
         stage('Publish NuGet') {
-          when {
-            branch 'master'
+          when{
+            branch pattern: "(release\\/[\\d.]+|master)", comparator: "REGEXP"
           }
           steps {
             withCredentials([string(credentialsId: 'nuget_token', variable: 'NUGET_TOKEN')]) {
-              echo 'Deploying'
-              sh "nuget push build/Terradue.Tep*.nupkg -ApiKey ${NUGET_TOKEN} -SkipDuplicate -Source https://www.nuget.org/api/v2/package"          
+              sh "dotnet pack Terradue.Tep/Terradue.Tep.csproj -c ${env.CONFIGURATION} -o publish"
+              sh "dotnet nuget push publish/*.nupkg --skip-duplicate -k $NUGET_TOKEN -s https://api.nuget.org/v3/index.json"
             }
-          }        
+          }
         }
       }
     }
   }
 }
 
+def getTypeOfVersion(branchName) {
+  def matcher = (branchName =~ /(v[\d.]+|release\/[\d.]+|master)/)
+  if (matcher.matches())
+    return ""
+  
+  return "dev"
+}
+
 def getConfiguration(branchName) {
-  def matcher = (branchName =~ /master/)
+  def matcher = (branchName =~ /(release\/[\d.]+|master)/)
   if (matcher.matches())
     return "Release"
   
   return "Debug"
+}
+
+def getVersionFromCsProj (csProjFilePath){
+  def file = readFile(csProjFilePath) 
+  def xml = new XmlSlurper().parseText(file)
+  def suffix = ""
+  if ( xml.PropertyGroup.VersionSuffix[0].text() != "" )
+    suffix = "-" + xml.PropertyGroup.VersionSuffix[0].text()
+  return xml.PropertyGroup.Version[0].text() + suffix
 }
