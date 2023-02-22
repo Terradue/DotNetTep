@@ -8,8 +8,11 @@ pipeline {
   stages {
     stage('.Net Core') {
       agent { 
-          dockerfile {
-            additionalBuildArgs '-t dotnet/sdk-mono:6.0'
+          withCredentials([string(credentialsId: 'jenkins_api_token_repository', variable: 'JENKINS_API_TOKEN')]) {
+            dockerfile {
+              additionalBuildArgs '-t dotnet/sdk-mono:6.0'
+              additionalBuildArgs "--build-arg JENKINS_API_TOKEN=${env.JENKINS_API_TOKEN}"
+            }
           }
       }
       environment {

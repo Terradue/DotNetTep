@@ -14,3 +14,5 @@ RUN rm -rf /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt && \
     rm -rf /etc/ssl/certs/DST_Root_CA_X3.pem && \
     update-ca-certificates && \
     /etc/ca-certificates/update.d/mono-keystore
+
+RUN nuget sources add -Source https://repository.terradue.com/artifactory/api/nuget/nuget-release -Name t2 -UserName jenkins -Password $JENKINS_API_TOKEN
