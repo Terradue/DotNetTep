@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y gnupg ca-certificates && \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
     echo "deb https://download.mono-project.com/repo/ubuntu stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list && \
     apt-get update && \
-    apt-get install -y mono-devel nuget && \
+    apt-get install -y mono-devel && \
     rm -rf /var/lib/apt/lists/*
 
 # Workaround for BoringSSL issue
@@ -15,4 +15,4 @@ RUN rm -rf /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt && \
     update-ca-certificates && \
     /etc/ca-certificates/update.d/mono-keystore
 
-RUN nuget sources add -Source https://repository.terradue.com/artifactory/api/nuget/nuget-release -Name t2 -UserName jenkins -Password $JENKINS_API_TOKEN
+RUN dotnet nuget add source https://repository.terradue.com/artifactory/api/nuget/nuget-release --name t2 --username jenkins --password $JENKINS_API_TOKEN
