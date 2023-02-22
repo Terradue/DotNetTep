@@ -10,7 +10,7 @@ pipeline {
     stage('.Net Core') {
       agent {           
           dockerfile {
-            additionalBuildArgs '-t dotnet/sdk-mono:6.0'
+            additionalBuildArgs '-t dotnet/sdk-mono-tep:6.0'
             additionalBuildArgs "--build-arg JENKINS_API_TOKEN=${env.JENKINS_API_TOKEN}"
           }
       }
