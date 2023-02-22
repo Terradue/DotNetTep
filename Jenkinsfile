@@ -4,15 +4,14 @@ pipeline {
       VERSION_LIB = getVersionFromCsProj('Terradue.Tep/Terradue.Tep.csproj')
       VERSION_TYPE = getTypeOfVersion(env.BRANCH_NAME)
       CONFIGURATION = getConfiguration(env.BRANCH_NAME)
+      JENKINS_API_TOKEN = credentials('jenkins_api_token_repository')      
   }
   stages {
     stage('.Net Core') {
-      agent { 
-          withCredentials([string(credentialsId: 'jenkins_api_token_repository', variable: 'JENKINS_API_TOKEN')]) {
-            dockerfile {
-              additionalBuildArgs '-t dotnet/sdk-mono:6.0'
-              additionalBuildArgs "--build-arg JENKINS_API_TOKEN=${env.JENKINS_API_TOKEN}"
-            }
+      agent {           
+          dockerfile {
+            additionalBuildArgs '-t dotnet/sdk-mono:6.0'
+            additionalBuildArgs "--build-arg JENKINS_API_TOKEN=${env.JENKINS_API_TOKEN}"
           }
       }
       environment {
