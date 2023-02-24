@@ -3,12 +3,13 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0
 ARG JENKINS_API_TOKEN
 
 # Install mono
-RUN apt-get update && apt-get install -y gnupg ca-certificates && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
-    echo "deb https://download.mono-project.com/repo/ubuntu stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list && \
-    apt-get update && \
-    apt-get install -y mono-devel && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt install -y gnupg ca-certificates
+RUN gpg --keyserver hkps://keyserver.ubuntu.com --recv 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN gpg --export 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF | tee /usr/share/keyrings/mono.gpg >/dev/null
+RUN gpg --batch --yes --delete-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb [signed-by=/usr/share/keyrings/mono.gpg] https://download.mono-project.com/repo/ubuntu stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+RUN apt update
+RUN apt install -y mono-devel
 
 # Workaround for BoringSSL issue
 # https://github.com/duplicati/duplicati/issues/4721
