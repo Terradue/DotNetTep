@@ -20,6 +20,7 @@ pipeline {
         stage("Build & Test") {
           steps {
             echo "Build .NET application"
+            sh "dotnet nuget add source https://repository.terradue.com/artifactory/api/nuget/nuget-release --name t2 --username jenkins --password ${env.JENKINS_API_TOKEN} --store-password-in-clear-text"
             sh "dotnet restore ./"
             sh "dotnet build -c ${env.CONFIGURATION} --no-restore ./"
             sh "dotnet test -c ${env.CONFIGURATION} --no-build --no-restore ./"
