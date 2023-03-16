@@ -815,6 +815,8 @@ namespace Terradue.Tep
                 this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
             }
 
+            if (this.Status == WpsJobStatus.PUBLISHING) return;
+
             //check execute response status
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
@@ -926,7 +928,125 @@ namespace Terradue.Tep
         /// <returns>The execute response.</returns>
         public object GetStatusLocationContent()
         {
+            switch(this.Status){                 
+                case WpsJobStatus.PUBLISHING:
+                    return this.LoadExecuteResponseForPublishingWpsjob();
+                case WpsJobStatus.SUCCEEDED:
+                    //case we need to publish
+                    if (this.Status == WpsJobStatus.SUCCEEDED && !string.IsNullOrEmpty(this.PublishType) && !string.IsNullOrEmpty(this.PublishUrl))
+                    {
+                        //if status url is still recast, we should publish to terrapi
+                        string recastBaseUrl = System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"];
+                        if (!string.IsNullOrEmpty(recastBaseUrl) && new Uri(this.StatusLocation).Host == new Uri(recastBaseUrl).Host)
+                        {
+                            this.Publish(this.PublishUrl, this.PublishType);
+                            return ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(this);
+                        }
+                    }
+                break;
+                default:
+                break;
+            }
 
+            return this.LoadExecuteResponseForRunningWpsjob();
+        }
+
+        public object LoadExecuteResponseForPublishingWpsjob(){
+            //Create Web request
+            HttpWebRequest executeHttpRequest;
+            if (Provider != null)
+                executeHttpRequest = Provider.CreateWebRequest(StatusLocation);
+            else
+            {
+                // if credentials in the status URL
+                NetworkCredential credentials = GetCredentials();
+                executeHttpRequest = WpsProvider.CreateWebRequest(StatusLocation, credentials, context.Username);
+                if (credentials != null)
+                    executeHttpRequest.PreAuthenticate = true;
+            }
+
+            //case url is terrapi/supervisor status url (means publish is ongoing)
+            //TODO: case of several terrapi urls
+            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
+            {
+                try{
+                    var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                    var kfact = new KeycloakFactory(context);
+                    kfact.GetExchangeToken(cookie.Value);
+                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
+                    executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+                }catch(Exception e){}
+            }
+
+            //create response
+            OpenGis.Wps.ExecuteResponse execResponse = null;
+
+            string locationHeader = null;
+            using (var remoteWpsResponseStream = new MemoryStream())
+            {
+                context.LogDebug(this, string.Format(string.Format("Status url = {0}", executeHttpRequest.RequestUri != null ? executeHttpRequest.RequestUri.AbsoluteUri : "")));
+                string remoteWpsResponseString = null;
+                // HTTP request                                
+                try
+                {
+                    int retries = 0;
+                        while (retries++ < 5 && remoteWpsResponseString == null)
+                    {
+                        try
+                        {
+                            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(executeHttpRequest.BeginGetResponse, executeHttpRequest.EndGetResponse, null)
+                            .ContinueWith(task =>
+                            {
+                                var httpResponse = (HttpWebResponse)task.Result;
+                                locationHeader = httpResponse.Headers[HttpResponseHeader.ContentLocation];
+                                using (var stream = httpResponse.GetResponseStream())
+                                {
+                                    stream.CopyTo(remoteWpsResponseStream);
+                                }
+                            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                            remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
+                            remoteWpsResponseString = new StreamReader(remoteWpsResponseStream).ReadToEnd();
+                            context.LogDebug(this, "Status response : " + remoteWpsResponseString);
+
+                        }
+                        catch (System.Exception e)
+                        {
+                            if (retries >= 5) throw e;
+                            else System.Threading.Thread.Sleep(1000);
+                        }
+                    }
+                }
+                catch (WebException we)
+                {
+                    context.LogError(this, string.Format(we.Message));
+                    throw new WpsProxyException("Error proxying Status location", we);
+                }
+                catch (Exception e)
+                {
+                    context.LogError(this, string.Format(e.Message));
+                }
+
+                // Deserialization
+                context.LogDebug(this, "Deserialization (STAC ITEM)");
+                var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(remoteWpsResponseString);
+                var stacLink = stacItem.Links.FirstOrDefault(l => l.Rel == "self");
+                var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
+
+                if (descriptionLink != null)
+                {
+                    this.StatusLocation = descriptionLink.Href;
+                    if(stacLink != null) this.StacItemUrl = stacLink.Href;
+                    this.Status = WpsJobStatus.STAGED;
+                    // this.EndTime = DateTime.UtcNow;
+                    this.Store();
+                    return GetExecuteResponseForStagedJob();
+                }
+                return ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(this);                    
+            }    
+        }
+
+        public object LoadExecuteResponseForRunningWpsjob(){
             //Create Web request
             HttpWebRequest executeHttpRequest;
             if (Provider != null)
@@ -944,19 +1064,6 @@ namespace Terradue.Tep
             if (StatusLocation.Contains("gpod.eo.esa.int"))
             {
                 executeHttpRequest.Headers.Add("X-UserID", context.GetConfigValue("GpodWpsUser"));
-            }
-
-            //case url is terrapi/supervisor status url (means publish is ongoing)
-            //TODO: case of several terrapi urls
-            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
-            {
-                try{
-                    var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                    var kfact = new KeycloakFactory(context);
-                    kfact.GetExchangeToken(cookie.Value);
-                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                    executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
-                }catch(Exception e){}
             }
 
             //create response
@@ -1059,30 +1166,9 @@ namespace Terradue.Tep
                     {
                         context.LogDebug(this, "Deserialization (WPS 3.0.0)");
                         remoteWpsResponseStream.Seek(0, SeekOrigin.Begin);
-                        var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromString<IO.Swagger.Model.StatusInfo>(remoteWpsResponseString);
-                        if (statusInfo.JobID != null)
-                        {
-                            context.LogDebug(this, "response is WPS 3.0.0");
-                            return GetExecuteResponseFromWps3StatusInfo(statusInfo);
-                        }
-                        else
-                        {
-                            context.LogDebug(this, "Deserialization (STAC ITEM)");
-                            var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(remoteWpsResponseString);
-                            var stacLink = stacItem.Links.FirstOrDefault(l => l.Rel == "self");
-                            var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
-
-                            if (descriptionLink != null)
-                            {
-                                this.StatusLocation = descriptionLink.Href;
-                                if(stacLink != null) this.StacItemUrl = stacLink.Href;
-                                this.Status = WpsJobStatus.STAGED;
-                                // this.EndTime = DateTime.UtcNow;
-                                this.Store();
-                                return GetExecuteResponseForStagedJob();
-                            }
-                            return GetExecuteResponseForPublishingJob();
-                        }
+                        var statusInfo = ServiceStack.Text.JsonSerializer.DeserializeFromString<IO.Swagger.Model.StatusInfo>(remoteWpsResponseString);                        
+                        context.LogDebug(this, "response is WPS 3.0.0");
+                        return GetExecuteResponseFromWps3StatusInfo(statusInfo);                    
                     }
                     catch (Exception e1)
                     {
@@ -1125,7 +1211,7 @@ namespace Terradue.Tep
                         }
                     }
                 }
-            }
+            }        
         }
 
         public object UpdateStatus()
@@ -1144,21 +1230,6 @@ namespace Terradue.Tep
             {
                 var tFactory = new TransactionFactory(context);
                 tFactory.UpdateDepositTransactionFromEntityStatus(context, this, jobresponse);
-            }
-
-            //case we need to publish
-            if (this.Status == WpsJobStatus.SUCCEEDED)
-            {
-                if (!string.IsNullOrEmpty(this.PublishType) && !string.IsNullOrEmpty(this.PublishUrl))
-                {
-                    //if status url is still recast, we should publish to terrapi
-                    string recastBaseUrl = System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"];
-                    if (!string.IsNullOrEmpty(recastBaseUrl) && new Uri(this.StatusLocation).Host == new Uri(recastBaseUrl).Host)
-                    {
-                        this.Publish(this.PublishUrl, this.PublishType);
-                        return GetExecuteResponseForPublishingJob();
-                    }
-                }
             }
 
             if (jobresponse is ExecuteResponse && this.Status != WpsJobStatus.STAGED)
@@ -1409,37 +1480,6 @@ namespace Terradue.Tep
             return response;
         }
 
-        public ExecuteResponse GetExecuteResponseForPublishingJob(ExecuteResponse response = null)
-        {
-            WpsProcessOfferingTep wps = null;
-            try
-            {
-                wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
-            }
-            catch (Exception) { }
-
-            if (response == null)
-            {
-                response = new ExecuteResponse();
-                response.statusLocation = this.StatusLocation;
-
-                var uri = new Uri(this.StatusLocation);
-                response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
-                response.Process = wps != null ? wps.ProcessBrief : null;
-                response.service = "WPS";
-                response.version = "3.0.0";
-            }
-
-            response.Status = new StatusType
-            {
-                ItemElementName = ItemChoiceType.ProcessStarted,
-                Item = new ProcessStartedType() { Value = "Job publishing", percentCompleted = "99" },
-                creationTime = this.CreatedTime
-            };
-
-            return response;
-        }
-
         public object GetExecuteResponseFromWps3StatusInfo(IO.Swagger.Model.StatusInfo statusInfo)
         {
 
@@ -1500,6 +1540,7 @@ namespace Terradue.Tep
                         // Item = new ProcessSucceededType() { Value = statusInfo.Message },
                         creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
                     };
+                    this.Status = WpsJobStatus.PUBLISHING;
                     this.EndTime = response.Status.creationTime;
                     if (wps != null)
                     {
@@ -1593,7 +1634,7 @@ namespace Terradue.Tep
                             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(resultdescription).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
                             {
                                 this.StatusLocation = resultdescription;
-                                return GetExecuteResponseForPublishingJob();
+                                return ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(this);
                             }
                         }
                         catch (Exception) { }
@@ -2736,7 +2777,8 @@ namespace Terradue.Tep
         SUCCEEDED = 4, //wps job is succeeded
         STAGED = 5, //wps job has been staged on store
         FAILED = 6, //wps job has failed
-        COORDINATOR = 7 //wps job is a coordinator
+        PUBLISHING = 7, //wps job is a coordinator
+        COORDINATOR = 8 //wps job is a coordinator
     }
 
     /// <summary>

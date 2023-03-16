@@ -330,17 +330,7 @@ namespace Terradue.Tep {
         /// <returns>The execute response for staged wpsjob.</returns>
         /// <param name="context">Context.</param>
         /// <param name="wpsjob">Wpsjob.</param>
-        public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response){
-            if (!string.IsNullOrEmpty(wpsjob.PublishType) && !string.IsNullOrEmpty(wpsjob.PublishUrl))
-            {
-                //if status url is still recast, we should publish to terrapi
-                string recastBaseUrl = AppSettings["RecastBaseUrl"];
-                if (!string.IsNullOrEmpty(recastBaseUrl) && new Uri(wpsjob.StatusLocation).Host == new Uri(recastBaseUrl).Host)
-                {
-                    wpsjob.Publish(wpsjob.PublishUrl, wpsjob.PublishType);
-                    return wpsjob.GetExecuteResponseForPublishingJob();
-                }
-            }
+        public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response){            
             if (response == null){
                 response = new ExecuteResponse();
                 response.Status = new StatusType { 
@@ -352,26 +342,6 @@ namespace Terradue.Tep {
                 };
             }
 
-            var statusurl = wpsjob.StatusLocation;
-            var url = new Uri(statusurl);
-            var searchableUrls = JsonSerializer.DeserializeFromString<List<string>>(AppSettings["OpenSearchableUrls"]);
-            if (searchableUrls == null || searchableUrls.Count == 0) {
-                searchableUrls = new List<string>();
-                searchableUrls.Add(recastBaseUrl);//in case appsettings not set
-            }
-            var recognizedHost = false;
-            foreach(var u in searchableUrls) {
-                if (new Uri(u).Host == url.Host) recognizedHost = true;
-            }
-            bool statusNotOpensearchable = 
-				!recognizedHost &&
-				!statusurl.Contains("/search") &&
-				!statusurl.Contains("/description");
-            context.LogDebug(wpsjob, string.Format("Status url {0} is opensearchable : {1}", statusurl, statusNotOpensearchable ? "false" : "true"));
-			if (statusNotOpensearchable) {
-                statusurl = context.BaseUrl + "/job/wps/" + wpsjob.Identifier + "/products/description";
-            }
-
             response.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
             response.serviceInstance = context.BaseUrl + "/wps/WebProcessingService?REQUEST=GetCapabilities&SERVICE=WPS";
 			response.ProcessOutputs = new List<OutputDataType> { };
@@ -381,7 +351,7 @@ namespace Terradue.Tep {
 					Item = new ComplexDataType {
 						mimeType = "application/xml",
 						Reference = new OutputReferenceType {
-                            href = statusurl,
+                            href = wpsjob.StatusLocation,
 							mimeType = "application/opensearchdescription+xml"
 						}
 					}
@@ -437,6 +407,26 @@ namespace Terradue.Tep {
             response.Status = new StatusType {
                 ItemElementName = ItemChoiceType.ProcessFailed,
                 Item = new ProcessFailedType { ExceptionReport = exceptionReport },
+                creationTime = wpsjob.CreatedTime
+            };
+            return response;
+        }
+
+        public static ExecuteResponse CreateExecuteResponseForPublishingWpsjob(WpsJob wpsjob){
+            ExecuteResponse response = new ExecuteResponse();
+            response.statusLocation = wpsjob.StatusLocation;
+
+            var uri = new Uri(wpsjob.StatusLocation);
+            response.serviceInstance = string.Format("{0}://{1}/", uri.Scheme, uri.Host);
+            response.service = "WPS";
+            response.version = "1.0.0";
+
+            var exceptionReport = new ExceptionReport {
+                Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { wpsjob.Logs } } }
+            };
+            response.Status = new StatusType {
+                ItemElementName = ItemChoiceType.ProcessStarted,
+                Item = new ProcessStartedType() { Value = "Job publishing", percentCompleted = "99" },
                 creationTime = wpsjob.CreatedTime
             };
             return response;
