@@ -330,7 +330,7 @@ namespace Terradue.Tep {
         /// <returns>The execute response for staged wpsjob.</returns>
         /// <param name="context">Context.</param>
         /// <param name="wpsjob">Wpsjob.</param>
-        public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response){            
+        public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response = null){            
             if (response == null){
                 response = new ExecuteResponse();
                 response.Status = new StatusType { 

@@ -927,8 +927,12 @@ namespace Terradue.Tep
         /// </summary>
         /// <returns>The execute response.</returns>
         public object GetStatusLocationContent()
-        {
+        {           
             switch(this.Status){                 
+                case WpsJobStatus.FAILED:
+                    return ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(this);
+                case WpsJobStatus.STAGED:
+                    return ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, this);
                 case WpsJobStatus.PUBLISHING:
                     return this.LoadExecuteResponseForPublishingWpsjob();
                 case WpsJobStatus.SUCCEEDED:
@@ -946,6 +950,17 @@ namespace Terradue.Tep
                 break;
                 default:
                 break;
+            }
+
+            if (context.GetConfigIntegerValue("JobMaxDuration") > 0) {
+                TimeSpan span = this.CreatedTime.Subtract(DateTime.UtcNow);
+                if (span.TotalHours > context.GetConfigIntegerValue("JobMaxDuration")) {
+                    context.LogDebug(this, string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration")));
+                    this.Status = WpsJobStatus.FAILED;
+                    this.Logs = string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration"));
+                    this.Store();                    
+                    return ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(this);
+                }
             }
 
             return this.LoadExecuteResponseForRunningWpsjob();
