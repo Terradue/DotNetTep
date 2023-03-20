@@ -21,14 +21,20 @@ namespace Terradue.Tep {
         
         public double Price {
             get {
-                if (storeservice==null) storeservice = StoreService.FromWpsName(context, this.Name);
+                if (storeservice==null)
+                    try{
+                        storeservice = StoreService.FromWpsName(context, this.Name);
+                    }catch(System.Exception) {}
                 return storeservice != null ? storeservice.Price : 0;
             }
         }
 
         public double PriceInput {
             get {
-                if (storeservice==null) storeservice = StoreService.FromWpsName(context, this.Name);
+                if (storeservice==null)
+                    try{
+                        storeservice = StoreService.FromWpsName(context, this.Name);
+                    }catch(System.Exception) {}                
                 return storeservice != null ? storeservice.PriceInput : 0;
             }
         }
