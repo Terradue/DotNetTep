@@ -1,4 +1,4 @@
--- VERSION 1.7
+-- VERSION 1.7.1
 
 USE $MAIN$;
 
@@ -504,11 +504,6 @@ UPDATE config SET value='Dear user,\n\nyou have been removed by a $(SITENAME_SHO
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('asd_link', 'string', 'ASD page link', 'ASD page link', 'https://geohazards-tep.eu/#!settings/asd', '0');
 -- RESULT
 
-<<<<<<< HEAD
--- Add service publish
-ALTER TABLE service ADD COLUMN `publish_url` varchar(200) NULL DEFAULT NULL COMMENT 'service publish url';
-ALTER TABLE service ADD COLUMN `publish_type` varchar(50) NULL DEFAULT NULL COMMENT 'service publish type';
-=======
 -- Add table service_store
 CREATE TABLE IF NOT EXISTS service_store (
     id int unsigned NOT NULL auto_increment,
@@ -553,5 +548,8 @@ CREATE TABLE asd_perm (
     CONSTRAINT fk_asd_perm_asd FOREIGN KEY (id_asd) REFERENCES asd(id) ON DELETE CASCADE,
     CONSTRAINT fk_asd_perm_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE    
 ) Engine=InnoDB COMMENT 'User permissions on asd';
->>>>>>> feature/ESAGEPSW-698
+-- RESULT
+
+-- Add config
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('JobMaxDuration', 'int', 'JobMaxDuration', 'JobMaxDuration', 0, '0');
 -- RESULT
