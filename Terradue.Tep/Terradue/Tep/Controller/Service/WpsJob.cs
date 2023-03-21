@@ -953,7 +953,7 @@ namespace Terradue.Tep
             }
 
             if (context.GetConfigIntegerValue("JobMaxDuration") > 0) {
-                TimeSpan span = this.CreatedTime.Subtract(DateTime.UtcNow);
+                TimeSpan span = DateTime.UtcNow.Subtract(this.CreatedTime);
                 if (span.TotalHours > context.GetConfigIntegerValue("JobMaxDuration")) {
                     context.LogDebug(this, string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration")));
                     this.Status = WpsJobStatus.FAILED;
