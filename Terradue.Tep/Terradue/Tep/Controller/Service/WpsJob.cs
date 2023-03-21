@@ -958,7 +958,8 @@ namespace Terradue.Tep
                     context.LogDebug(this, string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration")));
                     this.Status = WpsJobStatus.FAILED;
                     this.Logs = string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration"));
-                    this.Store();                    
+                    this.Store();              
+                    EventFactory.LogWpsJob(this.context, this, this.Logs);      
                     return ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(this);
                 }
             }
