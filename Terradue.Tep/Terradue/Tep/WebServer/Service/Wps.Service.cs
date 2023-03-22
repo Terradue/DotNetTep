@@ -1639,7 +1639,7 @@ namespace Terradue.Tep.WebServer.Services {
         }
 
         public object Get(WpsServiceAllTagsRequestTep request) {
-            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            var context = TepWebContext.GetWebContext(PagePrivileges.UserView);
             List<string> tags = new List<string>();
             try {
                 context.Open();
