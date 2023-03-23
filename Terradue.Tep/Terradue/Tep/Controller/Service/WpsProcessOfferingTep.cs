@@ -251,6 +251,15 @@ namespace Terradue.Tep {
             operation = wpsOffering.Operations.FirstOrDefault(o => o.Code == "ValidateProcess");
             if (operation != null) wps.ValidationUrl = operation.Href;
 
+            //get tags from categories
+            var tagsCat = entry.Categories.Where(c => c.Label == "tag");
+            if(tagsCat != null){
+                var tags = tagsCat.Select(c => c.Name).ToList();
+                if(tags != null){
+                    foreach(var tag in tags) wps.AddTag(tag);
+                }
+            }
+
             return wps;
         }
 

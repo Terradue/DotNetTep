@@ -387,7 +387,7 @@ namespace Terradue.Tep
                 foreach (var p in remoteProcesses)
                 {
                     p.Domain = domain;
-                    p.Tags = wpsTags;
+                    if(!string.IsNullOrEmpty(wpsTags)) p.AddTag(wpsTags);
                     p.Available = true;
                 }
 
