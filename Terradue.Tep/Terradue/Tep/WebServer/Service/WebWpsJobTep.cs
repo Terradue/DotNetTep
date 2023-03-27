@@ -114,6 +114,9 @@ namespace Terradue.Tep.WebServer {
 
         [ApiMember(Name = "appId", Description = "id of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string AppId { get; set; }
+
+        [ApiMember(Name = "email", Description = "email of the user", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public string Email { get; set; }
     }
 
     [Route("/job/wps/{jobId}/nbresults", "PUT", Summary = "PUT nbresult of job", Notes = "")]
