@@ -94,6 +94,23 @@ namespace Terradue.Tep
             return asds;
         }
 
+        public void AddPermissions(Urf urf)
+        {   
+            var deleteSql = String.Format("DELETE FROM asd_perm WHERE id_asd={0};", this.Id);            
+            context.LogDebug(this, deleteSql);                
+            context.Execute(deleteSql);
+            
+            foreach(var contact in urf.UrfInformation.Contacts){
+                var usr = User.FromEmail(context, contact.ContactEmail);        
+                context.LogDebug(this, string.Format("Add usr perm for ASD {0} : {1} - {2}", this.Id, contact.ContactEmail, usr.Id));                
+                if(usr.Id != 0){
+                    var insertSql = String.Format("INSERT INTO asd_perm (id_asd,id_usr) VALUES ({0},{1});", this.Id, usr.Id);
+                    context.LogDebug(this, insertSql);                
+                    context.Execute(insertSql);
+                }
+            }
+        }
+
         public List<User> GetUsers(){
             var users = new List<User>();
             if(this.OwnerId != 0) users.Add(User.FromId(this.context, this.OwnerId));
