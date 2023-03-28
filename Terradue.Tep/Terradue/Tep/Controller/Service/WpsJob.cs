@@ -957,7 +957,7 @@ namespace Terradue.Tep
                 if (span.TotalHours > context.GetConfigIntegerValue("JobMaxDuration")) {
                     context.LogDebug(this, string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration")));
                     this.Status = WpsJobStatus.FAILED;
-                    this.Logs = string.Format("Job has reached the max duration ({0} hours)", context.GetConfigIntegerValue("JobMaxDuration"));
+                    this.Logs = string.Format("The job has failed (max duration exceeded). Please contact the support team.");
                     this.Store();              
                     EventFactory.LogWpsJob(this.context, this, this.Logs);      
                     return ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(this);
