@@ -183,6 +183,7 @@ namespace Terradue.Tep {
                             //not stored in DB
                             var asdToStore = ASD.FromURF(context, asd);
                             asdToStore.Store();
+                            asdToStore.AddPermissions(asd);
                         } else {                            
                             var dbasd = items[0];
                             //check if credit updated
