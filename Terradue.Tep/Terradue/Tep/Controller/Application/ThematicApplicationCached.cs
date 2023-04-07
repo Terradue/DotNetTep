@@ -342,6 +342,7 @@ namespace Terradue.Tep
         /// <param name="domain"></param>
         public static void SyncWpsServices(IfyContext context, OwsContextAtomEntry entry, Domain domain = null)
         {
+            context.LogDebug(context, "SyncWpsServices");
             if (entry.Offerings == null) return;
 
             var offering = entry.Offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
@@ -391,6 +392,8 @@ namespace Terradue.Tep
                     p.Available = true;
                 }
 
+                context.LogDebug(context, "SyncWpsServices - found " + remoteProcesses.Count + " processes");
+
                 //store only new services (not already in DB)
                 foreach (WpsProcessOffering pR in remoteProcesses)
                 {
@@ -405,10 +408,14 @@ namespace Terradue.Tep
                             //we update title/description/icon
                             pDB.Name = pR.Name;
                             pDB.Description = pR.Description;
-                            pDB.IconUrl = pR.IconUrl;                            
+                            pDB.IconUrl = pR.IconUrl;
+                            pDB.Tags = pR.Tags;                            
                             pDB.Store();
+
+                            context.LogDebug(context, "SyncWpsServices - " + pR.Identifier + " - in DB - tags = " + pDB.Tags);
                         }
                     }
+                    context.LogDebug(context, "SyncWpsServices - " + pR.Identifier + " - NOT in DB - tags = " + pR.Tags);
                     if (!inDB) pR.Store();
                 }
 
