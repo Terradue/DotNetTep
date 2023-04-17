@@ -1294,7 +1294,7 @@ namespace Terradue.Tep
         public void Publish(string url, string type, string statuslocation = null)
         {
 
-            context.LogDebug(this, string.Format("Publish"));
+            context.LogDebug(this, string.Format("Publish"));            
 
             //current user needs to be the ownwer
             if(context.UserId != this.Owner.Id) return;
@@ -1396,10 +1396,16 @@ namespace Terradue.Tep
                         }
                     }).ConfigureAwait(false).GetAwaiter().GetResult();
                                         
+                    bool store = false;
                     if(!string.IsNullOrEmpty(resultdescription)){
                         this.StatusLocation = resultdescription;
-                        this.Store();
+                        store = true;
                     }
+                    if(this.Status != WpsJobStatus.PUBLISHING){
+                        this.Status = WpsJobStatus.PUBLISHING;
+                        store = true;
+                    }
+                    if(store) this.Store();
                 }
             }
             catch (Exception e)
