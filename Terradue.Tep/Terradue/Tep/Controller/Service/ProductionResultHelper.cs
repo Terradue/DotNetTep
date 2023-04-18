@@ -197,7 +197,7 @@ namespace Terradue.Tep {
 
 				string hostname = url.Host;
                 string workflow = "", runId = "";
-                string recaststatusurl = "", newStatusLocation = "";                
+                string recaststatusurl = "", newStatusLocation = "";
 
                 //case url is supervisor status url
                 if(supervisorBaseUrl != null && url.Host == new Uri(supervisorBaseUrl).Host){
@@ -207,10 +207,17 @@ namespace Terradue.Tep {
                     return wpsjob.GetExecuteResponseForSucceededJob(execResponse);
                 //case url is recast describe url
                 } else if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
-					wpsjob.StatusLocation = resultUrl;
-					wpsjob.Status = WpsJobStatus.STAGED;
-					wpsjob.Store();
-                    return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
+                    wpsjob.StatusLocation = resultUrl;
+                    if(!string.IsNullOrEmpty(wpsjob.PublishType) && !string.IsNullOrEmpty(wpsjob.PublishUrl)){
+                        wpsjob.Publish(wpsjob.PublishUrl, wpsjob.PublishType);
+                        wpsjob.Status = WpsJobStatus.PUBLISHING;
+                        wpsjob.Store();
+                        return CreateExecuteResponseForPublishingWpsjob(wpsjob);
+                    } else {
+					    wpsjob.Status = WpsJobStatus.STAGED;
+                        wpsjob.Store();
+                        return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
+                    }					
                 } else {
                     //case old sandboxes
     				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
