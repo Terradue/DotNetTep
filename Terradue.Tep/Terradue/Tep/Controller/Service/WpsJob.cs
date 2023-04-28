@@ -1570,7 +1570,7 @@ namespace Terradue.Tep
                     catch (Exception) { }
                     this.Status = WpsJobStatus.SUCCEEDED;
                     EventFactory.LogWpsJob(this.context, this, message);
-                    this.Status = WpsJobStatus.PUBLISHING;
+                    if (this.OwnerId != context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
                     this.EndTime = response.Status.creationTime;
                     if (wps != null)
                     {
