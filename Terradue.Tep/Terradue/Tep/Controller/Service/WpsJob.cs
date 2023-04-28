@@ -1562,7 +1562,15 @@ namespace Terradue.Tep
                         // Item = new ProcessSucceededType() { Value = statusInfo.Message },
                         creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
                     };
-                    this.Status = WpsJobStatus.PUBLISHING;
+                    var message = "Job succeedeed";
+                    try
+                    {
+                        message = (response.Status.Item as ProcessSucceededType).Value;
+                    }
+                    catch (Exception) { }
+                    this.Status = WpsJobStatus.SUCCEEDED;
+                    EventFactory.LogWpsJob(this.context, this, message);
+                    if (this.OwnerId != context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
                     this.EndTime = response.Status.creationTime;
                     if (wps != null)
                     {
