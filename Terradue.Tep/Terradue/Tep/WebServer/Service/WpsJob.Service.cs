@@ -770,6 +770,29 @@ namespace Terradue.Tep.WebServer.Services
             return result;
         }
 
+        public object Put(WpsJobUpdateStatusRequestTep request)
+        {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            WebWpsJobTep result;
+            try
+            {
+                context.Open();
+                context.LogInfo(this, string.Format("/job/wps/{{identifier}}/status PUT identifier='{0}', status={1}", request.JobId, request.Status));
+
+                WpsJob job = WpsJob.FromIdentifier(context, request.JobId);
+                job.Status = (WpsJobStatus)request.Status;
+                job.Store();
+                result = new WebWpsJobTep(job);
+                context.Close();
+            }
+            catch (Exception e)
+            {
+                context.LogError(this, e.Message, e);
+                context.Close();
+                throw e;
+            }
+            return result;
+        }
 
 
     }

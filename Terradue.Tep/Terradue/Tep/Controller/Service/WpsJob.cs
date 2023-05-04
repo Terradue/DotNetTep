@@ -937,7 +937,7 @@ namespace Terradue.Tep
                     return this.LoadExecuteResponseForPublishingWpsjob();
                 case WpsJobStatus.SUCCEEDED:
                     //case we need to publish
-                    if (this.Status == WpsJobStatus.SUCCEEDED && !string.IsNullOrEmpty(this.PublishType) && !string.IsNullOrEmpty(this.PublishUrl))
+                    if (!string.IsNullOrEmpty(this.PublishType) && !string.IsNullOrEmpty(this.PublishUrl))
                     {
                         //if status url is still recast, we should publish to terrapi
                         string recastBaseUrl = System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"];
