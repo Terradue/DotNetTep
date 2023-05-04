@@ -2606,6 +2606,8 @@ namespace Terradue.Tep
                         return "FAILED";
                     case WpsJobStatus.COORDINATOR:
                         return "COORDINATOR";
+                    case WpsJobStatus.PUBLISHING:
+                        return "PUBLISHING";
                     default:
                         return "";
                 }
@@ -2628,6 +2630,7 @@ namespace Terradue.Tep
                 case WpsJobStatus.ACCEPTED:
                 case WpsJobStatus.STARTED:
                 case WpsJobStatus.PAUSED:
+                case WpsJobStatus.PUBLISHING:
                     return;
                 case WpsJobStatus.FAILED:
                     nbresults = 0;
