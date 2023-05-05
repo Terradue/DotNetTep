@@ -1396,16 +1396,11 @@ namespace Terradue.Tep
                         }
                     }).ConfigureAwait(false).GetAwaiter().GetResult();
                                         
-                    bool store = false;
                     if(!string.IsNullOrEmpty(resultdescription)){
                         this.StatusLocation = resultdescription;
-                        store = true;
-                    }
-                    if(this.Status != WpsJobStatus.PUBLISHING){
                         this.Status = WpsJobStatus.PUBLISHING;
-                        store = true;
+                        this.Store();
                     }
-                    if(store) this.Store();
                 }
             }
             catch (Exception e)
@@ -1570,7 +1565,7 @@ namespace Terradue.Tep
                     catch (Exception) { }
                     this.Status = WpsJobStatus.SUCCEEDED;
                     EventFactory.LogWpsJob(this.context, this, message);
-                    if (this.OwnerId != context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
+                    if (this.OwnerId == context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
                     this.EndTime = response.Status.creationTime;
                     if (wps != null)
                     {

@@ -210,7 +210,6 @@ namespace Terradue.Tep {
                     wpsjob.StatusLocation = resultUrl;
                     if(!string.IsNullOrEmpty(wpsjob.PublishType) && !string.IsNullOrEmpty(wpsjob.PublishUrl)){
                         wpsjob.Publish(wpsjob.PublishUrl, wpsjob.PublishType);
-                        wpsjob.Status = WpsJobStatus.PUBLISHING;
                         wpsjob.Store();
                         return CreateExecuteResponseForPublishingWpsjob(wpsjob);
                     } else {
