@@ -296,6 +296,7 @@ namespace Terradue.Tep {
 				requestStream.Write(data, 0, data.Length);
 				requestStream.Close();
 				try {
+					Context.LogDebug(this, "RefreshToken debug url =  " + webRequest.RequestUri.AbsoluteUri);
 					var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
                                                                        webRequest.EndGetResponse,
                                                                        null)
@@ -304,6 +305,7 @@ namespace Terradue.Tep {
 						var httpResponse = (HttpWebResponse) task.Result;
 						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
 							string result = streamReader.ReadToEnd();
+							Context.LogDebug(this, "RefreshToken result =  " + result);
 							try {
 								return JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
 							} catch (Exception e) {

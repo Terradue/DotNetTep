@@ -80,6 +80,10 @@ namespace Terradue.Tep.WebServer.Services {
                     result.Token = cookie.Value;
                     span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = Math.Min(result.TokenExpire, span.TotalSeconds);
+
+                    //Temporary solution while all SSO/.Net sessions are not aligned
+                    var maxSeconds = context.GetConfigIntegerValue("AccessTokenMaxExpireMinutes");
+                    if(maxSeconds > 0) result.TokenExpire = Math.Min(result.TokenExpire, maxSeconds);
                 }catch(Exception e){
                     context.LogError(this, e.Message, e);    
                 }
