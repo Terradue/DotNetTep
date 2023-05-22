@@ -1,4 +1,4 @@
--- VERSION 1.7.1
+-- VERSION 1.7.2
 
 USE $MAIN$;
 
@@ -552,4 +552,5 @@ CREATE TABLE asd_perm (
 
 -- Add config
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('JobMaxDuration', 'int', 'JobMaxDuration', 'JobMaxDuration', 0, '0');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('AccessTokenMaxExpireSeconds', 'int', 'AccessTokenMaxExpireSeconds', 'AccessTokenMaxExpireSeconds', 0, '0');
 -- RESULT
