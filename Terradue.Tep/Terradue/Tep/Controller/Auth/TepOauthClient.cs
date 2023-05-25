@@ -140,13 +140,16 @@ namespace Terradue.Tep {
 
 		public void RevokeSessionCookies() {
 
+			var token = LoadTokenAccess().Value;
+			if(string.IsNullOrEmpty(token)) return;
+
 			HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(LogoutEndpoint);
 			webRequest.Method = "POST";
 			if (!string.IsNullOrEmpty(AppSettings["ProxyHost"])) webRequest.Proxy = GetWebRequestProxy();
 			webRequest.ContentType = "application/x-www-form-urlencoded";
 			webRequest.Headers["Authorization"] = GetBasicAuthenticationSecret();
 
-			var dataStr = string.Format("token={0}&token_type_hint=access_token", LoadTokenAccess().Value);
+			var dataStr = string.Format("token={0}&token_type_hint=access_token", token);
 			byte[] data = System.Text.Encoding.UTF8.GetBytes(dataStr);
 
 			webRequest.ContentLength = data.Length;
@@ -273,6 +276,12 @@ namespace Terradue.Tep {
 		/// <param name="token">Token.</param>
 		public OauthTokenResponse RefreshToken(string token, string username, bool store = true) {
 
+			if(string.IsNullOrEmpty(token)){
+				Context.LogError(this, "RefreshToken error : empty refresh token");
+				RevokeSessionCookies();					
+				throw new Exception("Empty refresh token");
+			}
+			
 			var scope = Scopes.Replace(",", "%20");
 			string url = string.Format("{0}", TokenEndpoint);
 			HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -314,11 +323,15 @@ namespace Terradue.Tep {
 						}
 					}).ConfigureAwait(false).GetAwaiter().GetResult();
 					
-					if(store){
-						DBCookie.DeleteDBCookies(Context, HttpContext.Current.Session.SessionID);
+					if(store){						
+						DeleteTokenAccess();
 						StoreTokenAccess(response.access_token, username, response.expires_in);
+						DeleteTokenRefresh();
 						StoreTokenRefresh(response.refresh_token, username);
-						if(!string.IsNullOrEmpty(response.id_token)) StoreTokenId(response.id_token, username, response.expires_in);
+						if(!string.IsNullOrEmpty(response.id_token)){
+							DeleteTokenId();
+							StoreTokenId(response.id_token, username, response.expires_in);
+						}
 					}
 					return response;
 						
@@ -338,6 +351,13 @@ namespace Terradue.Tep {
 		public T GetUserInfo<T>(string token) {
 
 			T user;
+
+			if(string.IsNullOrEmpty(token)){
+				Context.LogError(this, "GetUserInfo error : empty access token");
+				RevokeSessionCookies();					
+				throw new Exception("Empty access token, not able to get user info");
+			}
+
 			string url = string.Format("{0}", UserInfoEndpoint);
 			HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 			webRequest.Method = "GET";
