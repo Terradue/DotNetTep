@@ -94,16 +94,17 @@ namespace Terradue.Tep
 
             var session = refreshCookie.Session;
 
-            DBCookie.DeleteDBCookiesFromUsername(context, username);
-
             context.LogDebug(this, "StoreTokenAccess - " + session + " - " + username);
-			DBCookie.StoreDBCookie(context, session, TepOauthClient.COOKIE_TOKEN_ACCESS, tokenResponse.access_token, username, DateTime.UtcNow.AddSeconds(tokenResponse.expires_in));            
+			DBCookie.DeleteDBCookie(context, TepOauthClient.COOKIE_TOKEN_ACCESS);
+            DBCookie.StoreDBCookie(context, session, TepOauthClient.COOKIE_TOKEN_ACCESS, tokenResponse.access_token, username, DateTime.UtcNow.AddSeconds(tokenResponse.expires_in));            
 
 			context.LogDebug(this, "StoreTokenRefresh - " + session + " - " + username);
+            DBCookie.DeleteDBCookie(context, TepOauthClient.COOKIE_TOKEN_REFRESH);
 			DBCookie.StoreDBCookie(context, session, TepOauthClient.COOKIE_TOKEN_REFRESH, tokenResponse.refresh_token, username, DateTime.UtcNow.AddSeconds(tokenResponse.expires_in));
 
 			if(!string.IsNullOrEmpty(tokenResponse.id_token)) {
                 context.LogDebug(this, "StoreTokenId - " + session + " - " + username);
+                DBCookie.DeleteDBCookie(context, TepOauthClient.COOKIE_TOKEN_ID);
 			    DBCookie.StoreDBCookie(context, session, TepOauthClient.COOKIE_TOKEN_ID, tokenResponse.id_token, username, DateTime.UtcNow.AddSeconds(tokenResponse.expires_in));            
             }
         }

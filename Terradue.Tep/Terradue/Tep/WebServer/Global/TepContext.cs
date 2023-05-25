@@ -45,7 +45,7 @@ namespace Terradue.Tep.WebServer {
             return result;
         }
 
-        public override void Open (){
+        public override void Open (){            
             base.Open ();
             if (UserLevel == Terradue.Portal.UserLevel.Administrator) AccessLevel = EntityAccessLevel.Administrator;
             if (UserLevel > Terradue.Portal.UserLevel.Everybody) {

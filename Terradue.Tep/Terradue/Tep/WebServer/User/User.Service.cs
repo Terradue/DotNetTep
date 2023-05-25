@@ -67,23 +67,22 @@ namespace Terradue.Tep.WebServer.Services {
                     var cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
                     TimeSpan span = cookie.Expire.Subtract(DateTime.UtcNow);
                     result.TokenExpire = span.TotalSeconds;
-                    if(result.TokenExpire < context.GetConfigIntegerValue("AccessTokenExpireMinutes") && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true"){                    
-                        try{
-                            var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                            var kfact = new KeycloakFactory(context);
-                            kfact.GetExchangeToken(cookie2.Value);
-                            cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-                        }catch(Exception e){
-                            context.LogError(this, e.Message, e);    
+                    if(System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true"){                    
+                        var cookie2 = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                        span = cookie2.Expire.Subtract(DateTime.UtcNow);
+                        result.TokenExpire = Math.Min(result.TokenExpire, span.TotalSeconds);
+                        if(result.TokenExpire < context.GetConfigIntegerValue("AccessTokenExpireMinutes")){                    
+                            try{                                
+                                var kfact = new KeycloakFactory(context);
+                                kfact.GetExchangeToken(cookie2.Value);
+                                cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+                            }catch(Exception e){
+                                context.LogError(this, e.Message, e);    
+                            }
                         }
                     }
-                    result.Token = cookie.Value;
-                    span = cookie.Expire.Subtract(DateTime.UtcNow);
-                    result.TokenExpire = Math.Min(result.TokenExpire, span.TotalSeconds);
+                    result.Token = cookie.Value;                    
 
-                    //Temporary solution while all SSO/.Net sessions are not aligned
-                    var maxSeconds = context.GetConfigIntegerValue("AccessTokenMaxExpireSeconds");
-                    if(maxSeconds > 0) result.TokenExpire = Math.Min(result.TokenExpire, maxSeconds);
                 }catch(Exception e){
                     context.LogError(this, e.Message, e);    
                 }

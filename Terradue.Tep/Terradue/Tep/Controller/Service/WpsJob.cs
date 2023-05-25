@@ -54,7 +54,23 @@ namespace Terradue.Tep
 
         /// \xrefitem rmodp "RM-ODP" "RM-ODP Documentation"
         [EntityDataField("status_url")]
-        public string StatusLocation { get; set; }
+        public string StatusLocation { 
+            get { return statuslocation; }
+            set {
+                statuslocation = value;
+                if (StatusUrls == null) StatusUrls = "";
+                if (!string.IsNullOrEmpty(statuslocation) && !StatusUrls.Contains(statuslocation)){
+                    var urls = StatusUrls.Split(',').ToList<string>();
+                    urls.Add(statuslocation);                    
+                    StatusUrls = string.Join(",",urls);
+                    StatusUrls = StatusUrls.Trim(',');
+                }
+            }
+        }
+        private string statuslocation;
+
+        [EntityDataField("status_urls")]
+        public string StatusUrls { get; set; }
 
         [EntityDataField("ows_url")]
         public string OwsUrl { get; set; }
@@ -88,6 +104,9 @@ namespace Terradue.Tep
 
         [EntityDataField("logs")]
         public string Logs { get; set; }
+
+        [EntityDataField("publish_token")]
+        public string PublishToken { get; set; }
 
         [EntityDataField("access_key")]
         public string accesskey { get; protected set; }
@@ -490,6 +509,10 @@ namespace Terradue.Tep
                 {
                     //if error while getting Process, we skip the version
                 }
+            }
+            if (string.IsNullOrEmpty(this.PublishToken) && this.OwnerId == context.UserId){
+                var cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+                if(cookie != null && cookie.Value != null) this.PublishToken = cookie.Value;
             }
             base.Store();
             if (newjob && context.AccessLevel == EntityAccessLevel.Administrator)
@@ -1296,28 +1319,38 @@ namespace Terradue.Tep
 
             context.LogDebug(this, string.Format("Publish"));            
 
-            //current user needs to be the ownwer
-            if(context.UserId != this.Owner.Id) return;
+            string publish_token;
+
+            //if current user is the ownwer, we load the token
+            if(context.UserId == this.Owner.Id){
+                var publish_token_cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+                publish_token = publish_token_cookie != null ? publish_token_cookie.Value : "";
+
+                //in case the publish token was renewed from elsewhere
+                if (!string.IsNullOrEmpty(publish_token) && publish_token != this.PublishToken) this.PublishToken = publish_token;
+
+                if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
+                {
+                    if (string.IsNullOrEmpty(publish_token) || publish_token_cookie.Expire < DateTime.UtcNow)
+                    {
+                        try{
+                            var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
+                            var kfact = new KeycloakFactory(context);
+                            kfact.GetExchangeToken(cookie.Value);
+                            publish_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
+                            this.PublishToken = publish_token;
+                            this.Store();
+                        }catch(Exception e){}
+                    }
+                }
+                if (string.IsNullOrEmpty(publish_token) && !string.IsNullOrEmpty(this.PublishToken)) publish_token = this.PublishToken;
+            } else publish_token = this.PublishToken;
 
             if (url.Contains("{USER}")) url = url.Replace("{USER}", this.Owner.Username);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
-            var access_token_cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-            var access_token = access_token_cookie != null ? access_token_cookie.Value : "";
-            if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
-            {
-                if (string.IsNullOrEmpty(access_token) || access_token_cookie.Expire < DateTime.UtcNow)
-                {
-                    try{
-                        var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                        var kfact = new KeycloakFactory(context);
-                        kfact.GetExchangeToken(cookie.Value);
-                        access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                    }catch(Exception e){}
-                }
-            }
-            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + publish_token);
             if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
             webRequest.Timeout = 10000;
             webRequest.Method = "POST";
@@ -1565,8 +1598,8 @@ namespace Terradue.Tep
                     catch (Exception) { }
                     this.Status = WpsJobStatus.SUCCEEDED;
                     EventFactory.LogWpsJob(this.context, this, message);
-                    if (this.OwnerId == context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
-                    this.EndTime = response.Status.creationTime;
+                    // if (this.OwnerId == context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
+                    this.EndTime = response.Status.creationTime.ToUniversalTime();
                     if (wps != null)
                     {
                         var outputs = wps.GetOutputs(this.StatusLocation);

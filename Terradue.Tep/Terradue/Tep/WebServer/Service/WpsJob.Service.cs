@@ -324,7 +324,7 @@ namespace Terradue.Tep.WebServer.Services
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
-            bool isnew = request.Id == 0;
+            bool isnew = string.IsNullOrEmpty(request.Identifier);
             try
             {
                 job.Store();
@@ -341,7 +341,7 @@ namespace Terradue.Tep.WebServer.Services
                 throw e;
             }
 
-            context.LogInfo(this, string.Format("/job/wps POST Id='{0}'", job.Id));
+            context.LogInfo(this, string.Format("/job/wps POST Identifier='{0}'", job.Identifier));
             if (isnew)
             {
                 context.LogDebug(this, string.Format("WpsJob '{0}' - '{1}' created", job.Identifier, job.Name));
