@@ -251,15 +251,6 @@ namespace Terradue.Tep {
 					if (response.id_token != null) StoreTokenId(response.id_token, "", response.expires_in);
 					Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
 
-					try{
-						if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
-						{
-							var cookie = DBCookie.LoadDBCookie(Context, COOKIE_TOKEN_ACCESS);
-							var kfact = new KeycloakFactory(Context);
-							kfact.GetExchangeToken(cookie.Value);
-						}
-					}catch(Exception e){}
-
 					return response;						
 				} catch (Exception e) {
 					DeleteTokenAccess();

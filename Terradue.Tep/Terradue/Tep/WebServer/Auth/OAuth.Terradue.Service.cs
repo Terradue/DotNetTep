@@ -223,6 +223,14 @@ namespace Terradue.Tep.WebServer.Services {
                     context.StartSession(auth, user);
                     context.SetUserInformation(auth, user);
 
+                    try{
+						if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
+						{							
+							var kfact = new KeycloakFactory(context);
+							kfact.GetExchangeToken(tokenResponse.access_token);
+						}
+					}catch(Exception e){}
+
                     if (string.IsNullOrEmpty(HttpContext.Current.Session["return_to"] as string))
                         HttpContext.Current.Session["return_to"] = context.GetConfigValue("BaseUrl");
 
