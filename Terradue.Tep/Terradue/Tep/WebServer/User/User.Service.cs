@@ -74,7 +74,7 @@ namespace Terradue.Tep.WebServer.Services {
                         if(result.TokenExpire < context.GetConfigIntegerValue("AccessTokenExpireMinutes")){                    
                             try{                                
                                 var kfact = new KeycloakFactory(context);
-                                kfact.GetExchangeToken(cookie2.Value);
+                                kfact.RefreshToken(user.Username);
                                 cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
                             }catch(Exception e){
                                 context.LogError(this, e.Message, e);    

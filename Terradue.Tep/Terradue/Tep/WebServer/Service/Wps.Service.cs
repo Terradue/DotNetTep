@@ -714,9 +714,9 @@ namespace Terradue.Tep.WebServer.Services {
                 else if (wpsjob.Status == WpsJobStatus.FAILED){
                     execResponse = ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(wpsjob);
                 }
-                else if (wpsjob.Status == WpsJobStatus.PUBLISHING && wpsjob.OwnerId != context.UserId){
-                    execResponse = ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(wpsjob);
-                }
+                // else if (wpsjob.Status == WpsJobStatus.PUBLISHING && wpsjob.OwnerId != context.UserId){
+                //     execResponse = ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(wpsjob);
+                // }
                 else {
                     object jobresponse;
                     try {

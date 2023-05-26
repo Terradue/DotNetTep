@@ -80,6 +80,68 @@ namespace Terradue.Tep {
             }
         }
 
+		public OauthTokenResponse RefreshToken(string username) {
+
+			Context.LogDebug(this, "Keycloak refresh Token");
+
+			var token = LoadTokenRefresh();
+
+			if(string.IsNullOrEmpty(token.Value)){
+				Context.LogError(this, "Keycloak RefreshToken error : empty refresh token");
+				
+				throw new Exception("Empty refresh token");
+			}
+
+			string client_id = System.Configuration.ConfigurationManager.AppSettings["keycloak_client_id"];
+            string client_secret = System.Configuration.ConfigurationManager.AppSettings["keycloak_client_secret"];
+            string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloak_subject_issuer"];
+            string url = System.Configuration.ConfigurationManager.AppSettings["keycloak_token_endpoint"];
+			
+			HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
+			webRequest.Method = "POST";
+			webRequest.ContentType = "application/x-www-form-urlencoded";
+			
+			var dataStr = string.Format("grant_type=refresh_token&refresh_token={0}&client_id={1}&client_secret={2}", token.Value, client_id, client_secret);
+
+			byte[] data = System.Text.Encoding.UTF8.GetBytes(dataStr);
+			webRequest.ContentLength = data.Length;
+
+			using (var requestStream = webRequest.GetRequestStream()) {
+				requestStream.Write(data, 0, data.Length);
+				requestStream.Close();
+				try {
+					Context.LogDebug(this, "RefreshToken debug url =  " + webRequest.RequestUri.AbsoluteUri);
+					var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                       webRequest.EndGetResponse,
+                                                                       null)
+					.ContinueWith(task =>
+					{
+						var httpResponse = (HttpWebResponse) task.Result;
+						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
+							string result = streamReader.ReadToEnd();
+							Context.LogDebug(this, "RefreshToken result =  " + result);
+							try {
+								return JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
+							} catch (Exception e) {
+								throw e;
+							}
+						}
+					}).ConfigureAwait(false).GetAwaiter().GetResult();
+					
+					if (response.access_token != null) StoreTokenAccess(response.access_token, username, response.expires_in);
+                    if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, username);
+                    if (response.id_token != null) StoreTokenId(response.id_token, username, response.expires_in);
+                    Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
+                    
+					return response;
+						
+				} catch (Exception e) {
+					Context.LogError(this, "RefreshToken error : " + e.Message);					
+					throw e;
+				}
+			}
+		}
+
         /// <summary>
 		/// Loads the token access.
 		/// </summary>

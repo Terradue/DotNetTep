@@ -105,8 +105,11 @@ namespace Terradue.Tep
         [EntityDataField("logs")]
         public string Logs { get; set; }
 
-        [EntityDataField("publish_token")]
-        public string PublishToken { get; set; }
+        public string PublishToken { 
+            get {
+                return CookiesFactory.GetPublishToken(context, this.Owner);
+            }
+        }
 
         [EntityDataField("access_key")]
         public string accesskey { get; protected set; }
@@ -510,10 +513,6 @@ namespace Terradue.Tep
                     //if error while getting Process, we skip the version
                 }
             }
-            if (string.IsNullOrEmpty(this.PublishToken) && this.OwnerId == context.UserId){
-                var cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-                if(cookie != null && cookie.Value != null) this.PublishToken = cookie.Value;
-            }
             base.Store();
             if (newjob && context.AccessLevel == EntityAccessLevel.Administrator)
             {
@@ -534,9 +533,8 @@ namespace Terradue.Tep
                     webRequest.Method = "DELETE";
                     webRequest.Accept = "application/json";
                     webRequest.ContentType = "application/json";
-                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
-                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                    webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
+                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();                    
+                    webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + this.PublishToken);
                     webRequest.Timeout = 10000;
 
                     context.LogDebug(this, "clean wps job request to supervisor - Identifier = " + this.RemoteIdentifier);
@@ -1006,15 +1004,8 @@ namespace Terradue.Tep
 
             //case url is terrapi/supervisor status url (means publish is ongoing)
             //TODO: case of several terrapi urls
-            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
-            {
-                try{
-                    var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                    var kfact = new KeycloakFactory(context);
-                    kfact.GetExchangeToken(cookie.Value);
-                    var access_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                    executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + access_token);
-                }catch(Exception e){}
+            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(StatusLocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host) {
+                executeHttpRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + this.PublishToken);                
             }
 
             //create response
@@ -1318,39 +1309,11 @@ namespace Terradue.Tep
         {
 
             context.LogDebug(this, string.Format("Publish"));            
-
-            string publish_token;
-
-            //if current user is the ownwer, we load the token
-            if(context.UserId == this.Owner.Id){
-                var publish_token_cookie = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-                publish_token = publish_token_cookie != null ? publish_token_cookie.Value : "";
-
-                //in case the publish token was renewed from elsewhere
-                if (!string.IsNullOrEmpty(publish_token) && publish_token != this.PublishToken) this.PublishToken = publish_token;
-
-                if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
-                {
-                    if (string.IsNullOrEmpty(publish_token) || publish_token_cookie.Expire < DateTime.UtcNow)
-                    {
-                        try{
-                            var cookie = DBCookie.LoadDBCookie(context, context.GetConfigValue("cookieID-token-access"));
-                            var kfact = new KeycloakFactory(context);
-                            kfact.GetExchangeToken(cookie.Value);
-                            publish_token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-                            this.PublishToken = publish_token;
-                            this.Store();
-                        }catch(Exception e){}
-                    }
-                }
-                if (string.IsNullOrEmpty(publish_token) && !string.IsNullOrEmpty(this.PublishToken)) publish_token = this.PublishToken;
-            } else publish_token = this.PublishToken;
-
             if (url.Contains("{USER}")) url = url.Replace("{USER}", this.Owner.Username);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 
-            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + publish_token);
+            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + this.PublishToken);
             if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
             webRequest.Timeout = 10000;
             webRequest.Method = "POST";
@@ -2767,12 +2730,7 @@ namespace Terradue.Tep
         public List<Stac.StacItem> GetJobInputsStacItems()
         {
             var stacItems = new List<Stac.StacItem>();
-            string token = "";
-            try
-            {
-                token = DBCookie.LoadDBCookie(context, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]).Value;
-            }
-            catch (Exception) { }
+            string token = this.PublishToken;            
             var credentials = new NetworkCredential(this.Owner.Username, token);
             var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
             ServiceCollection services = new ServiceCollection();
