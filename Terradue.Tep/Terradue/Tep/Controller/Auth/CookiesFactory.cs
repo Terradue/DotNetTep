@@ -113,7 +113,7 @@ namespace Terradue.Tep {
 					context.LogDebug(context, "Publish Token (" + cookie.Expire.ToUniversalTime() + ") = " + cookie.Value);
 					return cookie.Value;
 				}
-				else return null;
+				else return accessCookie.Value;
 			} else return accessCookie.Value;
         }
     }

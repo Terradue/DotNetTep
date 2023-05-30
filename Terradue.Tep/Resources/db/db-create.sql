@@ -99,8 +99,7 @@ CREATE TABLE wpsjob (
     share_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps Share url',
     app_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Wps job app identifier',
     created_time datetime NOT NULL COMMENT 'Wps created date',
-    access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',
-    publish_token TEXT NOT NULL COMMENT 'Publish token',
+    access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',    
     CONSTRAINT pk_wpsjob PRIMARY KEY (id),
     CONSTRAINT fk_wpsjob_usr FOREIGN KEY (id_usr) REFERENCES usr(id) ON DELETE CASCADE,
     UNIQUE INDEX (identifier)
