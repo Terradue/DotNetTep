@@ -96,12 +96,13 @@ namespace Terradue.Tep {
             string client_secret = System.Configuration.ConfigurationManager.AppSettings["keycloak_client_secret"];
             string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloak_subject_issuer"];
             string url = System.Configuration.ConfigurationManager.AppSettings["keycloak_token_endpoint"];
+			string scope = System.Configuration.ConfigurationManager.AppSettings["keycloak_scope"];
 			
 			HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 			webRequest.Method = "POST";
 			webRequest.ContentType = "application/x-www-form-urlencoded";
 			
-			var dataStr = string.Format("grant_type=refresh_token&refresh_token={0}&client_id={1}&client_secret={2}", token.Value, client_id, client_secret);
+			var dataStr = string.Format("grant_type=refresh_token&refresh_token={0}&client_id={1}&client_secret={2}&scope={3}", token.Value, client_id, client_secret, scope);
 
 			byte[] data = System.Text.Encoding.UTF8.GetBytes(dataStr);
 			webRequest.ContentLength = data.Length;
