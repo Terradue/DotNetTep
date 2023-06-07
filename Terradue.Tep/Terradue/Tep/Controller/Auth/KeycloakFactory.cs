@@ -84,7 +84,7 @@ namespace Terradue.Tep {
 
 			Context.LogDebug(this, "Keycloak refresh Token");
 
-			var token = LoadTokenRefresh();
+			var token = LoadTokenRefresh(username);
 
 			if(string.IsNullOrEmpty(token.Value)){
 				Context.LogError(this, "Keycloak RefreshToken error : empty refresh token");
@@ -174,6 +174,10 @@ namespace Terradue.Tep {
 		/// <returns>The token refresh.</returns>
 		public DBCookie LoadTokenRefresh() {
 			return DBCookie.LoadDBCookie(Context, COOKIE_TOKEN_REFRESH);
+		}
+
+		public DBCookie LoadTokenRefresh(string username) {
+			return DBCookie.FromUsernameAndIdentifier(Context, username, COOKIE_TOKEN_REFRESH);
 		}
 
 		/// <summary>
