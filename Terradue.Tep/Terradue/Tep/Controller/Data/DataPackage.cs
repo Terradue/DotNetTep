@@ -489,7 +489,7 @@ namespace Terradue.Tep {
 			{
                 OpenSearchableFactorySettings specsettings = (OpenSearchableFactorySettings)settings.Clone();
                 // For Terradue resources, use the API key
-				if (res.Location.StartsWith(context.GetConfigValue("catalog-baseurl")) && !string.IsNullOrEmpty(apikey))
+				if (CatalogueFactory.IsCatalogUrl(new Uri(res.Location)) && !string.IsNullOrEmpty(apikey))                    
 				{
                     specsettings.Credentials = new System.Net.NetworkCredential(t2userid, apikey);
 				}
@@ -498,7 +498,7 @@ namespace Terradue.Tep {
                     try {
                         entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location), "application/atom+xml");
                     }catch(Exception e){
-						if (!res.Location.StartsWith(context.GetConfigValue("catalog-baseurl"))){
+                        if (!CatalogueFactory.IsCatalogUrl(new Uri(res.Location))){
 							try {
                                 entity = OpenSearchFactory.FindOpenSearchable(specsettings, new Uri(res.Location));
                             } catch (Exception ex) {
