@@ -162,6 +162,10 @@ namespace Terradue.Tep {
         public static ExecuteResponse GetWpsjobRecastResponse(IfyContext context, WpsJob wpsjob, ExecuteResponse execResponse = null) {
             log.DebugFormat("GetWpsjobRecastResponse");
 
+            if (wpsjob.Status == WpsJobStatus.STAGED) {
+                return ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
+            }
+
             if(wpsjob.Status == WpsJobStatus.COORDINATOR){
                 log.DebugFormat("GetWpsjobRecastResponse -- Status is Coordinator");
                 var resultUrl = WpsJob.GetResultUrl(execResponse);
