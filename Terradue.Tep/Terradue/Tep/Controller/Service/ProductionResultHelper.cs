@@ -432,11 +432,13 @@ namespace Terradue.Tep {
             };
             response.Status = new StatusType {
                 ItemElementName = ItemChoiceType.ProcessStarted,
-                Item = new ProcessStartedType() { Value = "Job publishing", percentCompleted = "99" },
+                Item = new ProcessStartedType() { Value = JOB_PUBLISHING_MESSAGE, percentCompleted = "99" },
                 creationTime = wpsjob.CreatedTime
             };
             return response;
         }
+
+        public static string JOB_PUBLISHING_MESSAGE = "Job publishing";
     }
 
 	[DataContract]

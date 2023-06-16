@@ -82,7 +82,16 @@ namespace Terradue.Tep
         public string ShareUrl { get; set; }
 
         [EntityDataField("status")]
-        public WpsJobStatus Status { get; set; }
+        public WpsJobStatus Status { 
+            get {
+                return status;
+            } 
+            set {
+                status = value;
+                context.LogDebug(this, string.Format("WPSJOB status SET to {0} -- owner = {1} ; current user = {2}", StringStatus, this.Owner != null ? this.Owner.Username : "", this.context.Username));
+            }
+        }
+        private WpsJobStatus status;
 
         [EntityDataField("archive_status")]
         public WpsJobArchiveStatus ArchiveStatus { get; set; }
@@ -841,7 +850,13 @@ namespace Terradue.Tep
             //check execute response status
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
-            else if (response.Status.Item is ProcessStartedType) this.Status = WpsJobStatus.STARTED;
+            else if (response.Status.Item is ProcessStartedType){                
+                var item = response.Status.Item as ProcessStartedType;
+                if (item.percentCompleted == "99" && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
+                    this.Status = WpsJobStatus.PUBLISHING;                
+                else 
+                    this.Status = WpsJobStatus.STARTED;
+            }
             else if (response.Status.Item is ProcessSucceededType)
             {
                 if (IsResponseFromCoordinator(response)) this.Status = WpsJobStatus.COORDINATOR;
