@@ -152,18 +152,52 @@ namespace Terradue.Tep
                 }
                 if (usrInfo == null) return null;
 
-                context.LogDebug(this, "Get user info  - sub = " + usrInfo.sub);
+                var username_field = context.GetConfigValue("sso_username_field");
+                if(string.IsNullOrEmpty(username_field)) username_field = "sub";
+                string username;
+
+                switch(username_field){
+                    case "email":
+                        username = usrInfo.email;
+                        break;
+                    case "screenname":
+                        username = usrInfo.screenname;
+                        break;
+                    case "name":
+                        username = usrInfo.name;
+                        break;
+                    case "preferred_username":
+                        username = usrInfo.preferred_username;
+                        break;
+                    case "given_name":
+                        username = usrInfo.given_name;
+                        break;
+                    case "family_name":
+                        username = usrInfo.family_name;
+                        break;
+                    case "userId":
+                        username = usrInfo.userId;
+                        break;
+                    case "sub":
+                        username = usrInfo.sub;
+                        break;
+                    default:
+                        username = usrInfo.sub;
+                        break;
+                }
+
+
+                context.LogDebug(this, "Get user info  - " + username_field + " = " + usrInfo.sub);
 
                 context.AccessLevel = EntityAccessLevel.Administrator;
 
                 //first try to get user from username
                 try {
-                    usr = User.FromUsername(context, usrInfo.screenname);
+                    usr = User.FromUsername(context, username);
                     usr.AccountStatus = AccountStatusType.Enabled;
                 } catch (Exception) {
                     try {
-                        usr = User.GetOrCreate(context, usrInfo.sub, authType);
-                        if (usr.Id ==0) usr.Username = usrInfo.preferred_username;
+                        usr = User.GetOrCreate(context, username, authType);                        
                         usr.AccountStatus = AccountStatusType.Enabled;
                     } catch (Exception e2) {
                         Client.RevokeSessionCookies();
@@ -175,11 +209,10 @@ namespace Terradue.Tep
                 //update user infos
                 if (!string.IsNullOrEmpty(usrInfo.given_name)) usr.FirstName = usrInfo.given_name;
                 if (!string.IsNullOrEmpty(usrInfo.email)) usr.Email = usrInfo.email;
-                if (!string.IsNullOrEmpty(usrInfo.family_name)) usr.LastName = usrInfo.family_name;
-                if (isnew && !string.IsNullOrEmpty(usrInfo.screenname)) usr.Username = usrInfo.screenname;
+                if (!string.IsNullOrEmpty(usrInfo.family_name)) usr.LastName = usrInfo.family_name;                
                 usr.Store();
 
-                if (isnew) usr.LinkToAuthenticationProvider(authType, usrInfo.sub);               
+                if (isnew) usr.LinkToAuthenticationProvider(authType, usrInfo.sub);
 
                 //roles
                 if (usrInfo.roles != null){
@@ -191,37 +224,6 @@ namespace Terradue.Tep
                     }
 
                     UserTep usrtep = UserTep.FromId(context, usr.Id);
-
-                    //Add role to domains
-                    // foreach(var rolestring in usrInfo.roles){
-                    //     var roleIdentifier = rolestring.Substring(rolestring.LastIndexOf("-") + 1);
-                    //     var domainIdentifier = rolestring.Substring(0,rolestring.LastIndexOf("-"));
-
-                    //     var domain = ActivationFactory.GetOrCreateDomainForActivation(context, domainIdentifier);
-                    //     var role = ActivationFactory.GetOrCreateRole(context, roleIdentifier);
-                    //     role.GrantToUser(usrtep.Id, domain.Id);
-                    // }
-
-                    //Remove role if user does not have it anymore                    
-                    // var communities = usrtep.GetUserCommunities();
-                    // foreach (var community in communities) {
-                    //     try {
-                    //         var roles = usrtep.GetUserRoles(community);
-                    //         if (roles.Count > 0) {                            
-                    //             foreach (var role in roles){
-                    //                 bool exists = false;
-                    //                 foreach(var rolestring in usrInfo.roles){
-                    //                     var roleIdentifier = rolestring.Substring(rolestring.LastIndexOf("-") + 1);
-                    //                     var domainIdentifier = rolestring.Substring(0,rolestring.LastIndexOf("-"));
-                    //                     if(community.Identifier == domainIdentifier && role.Identifier == roleIdentifier) exists = true;
-                    //                 }
-                    //                 if(!exists) role.RevokeFromUser(usr, community);
-                    //             }
-                    //         }
-                    //     } catch (Exception e) {
-                    //         context.LogError(this, e.Message);
-                    //     }                
-                    // }                
                 }
 
                 return usr;
