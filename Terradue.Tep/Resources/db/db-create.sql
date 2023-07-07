@@ -1,4 +1,4 @@
--- VERSION 1.7.3
+-- VERSION 1.7.4
 
 USE $MAIN$;
 
@@ -555,4 +555,5 @@ CREATE TABLE asd_perm (
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('JobMaxDuration', 'int', 'JobMaxDuration', 'JobMaxDuration', 0, '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('AccessTokenMaxExpireSeconds', 'int', 'AccessTokenMaxExpireSeconds', 'AccessTokenMaxExpireSeconds', 0, '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('sso_username_field', 'string', 'sso_username_field', 'sso_username_field', 'sub', '0');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('T2-sso-auth-identifier', 'string', 'T2-sso-auth-identifier', 'T2-sso-auth-identifier', 'ldap', '0');
 -- RESULT

@@ -394,6 +394,11 @@ namespace Terradue.Tep {
             GetPrivateDataPackageCatalogueProducts();
             GetPrivateDataPackageCatalogueSeries();
             GetPrivateThematicApp();
+
+            //stores also the T2 SSO username
+            if(!string.IsNullOrEmpty(context.GetConfigValue("T2-sso-auth-identifier"))){
+                context.Execute(String.Format("UPDATE usr_auth SET username='{0}' WHERE id_usr={1} AND id_auth=(SELECT id FROM auth WHERE identifier='{2}');", this.TerradueCloudUsername, this.Id, context.GetConfigValue("T2-sso-auth-identifier")));
+            }
         }
 
         /// <summary>
@@ -453,8 +458,8 @@ namespace Terradue.Tep {
 								throw e;
 							}
 						}
-					}).ConfigureAwait(false).GetAwaiter().GetResult();
-    
+					}).ConfigureAwait(false).GetAwaiter().GetResult();    
+                    
                     if (this.TerradueCloudUsername != info.Username) {//we update only if it changed
                         this.TerradueCloudUsername = info.Username;
                         this.StoreCloudUsername();
