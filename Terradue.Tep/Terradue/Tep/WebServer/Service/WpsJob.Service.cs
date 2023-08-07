@@ -324,7 +324,7 @@ namespace Terradue.Tep.WebServer.Services
             context.Open();
 
             WpsJob job = request.ToEntity(context, new WpsJob(context));
-            bool isnew = string.IsNullOrEmpty(request.Id);
+            bool isnew = request.Id == 0;
             try
             {
                 job.Store();
