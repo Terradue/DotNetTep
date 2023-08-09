@@ -189,6 +189,8 @@ namespace Terradue.Tep {
         public int ActivationId { get; set; }
         [JsonProperty("additional_links")]
         public List<SupervisorUserImportProductLink> AdditionalLinks { get; set; }
+        [JsonProperty("additional_properties")]
+        public List<SupervisorUserImportProductProperty> AdditionalProperties { get; set; }
     }
 
     public class SupervisorUserImportProductLink {
@@ -200,6 +202,13 @@ namespace Terradue.Tep {
         public string Title { get; set; }
         [JsonProperty("href")]
         public string Href { get; set; }
+    }
+
+    public class SupervisorUserImportProductProperty {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("value")]
+        public string Value { get; set; }
     }
 
     public class SupervisorDelete {
