@@ -230,6 +230,12 @@ namespace Terradue.Tep {
                 if (!permissions.Contains("r"))
                     permissions.Add("r");
                 permissionTarget.Principals.Users.Remove(user.Username);
+                //add only if user is not admin on store
+                if(!string.IsNullOrEmpty(user.Username)){
+                    SecurityUser artifactoryUser = storeBaseUrl.Security().GetUserDetails(user.Username);
+                    if (artifactoryUser == null || artifactoryUser.Admin)
+                        continue;
+                }
                 permissionTarget.Principals.Users.Add(user.Username, permissions);
             }
 
