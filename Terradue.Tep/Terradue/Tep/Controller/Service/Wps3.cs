@@ -190,7 +190,7 @@ namespace Terradue.Tep {
         [JsonProperty("additional_links")]
         public List<SupervisorUserImportProductLink> AdditionalLinks { get; set; }
         [JsonProperty("additional_properties")]
-        public List<SupervisorUserImportProductProperty> AdditionalProperties { get; set; }
+        public List<SupervisorUserImportProductProperty> Properties { get; set; }
     }
 
     public class SupervisorUserImportProductLink {
