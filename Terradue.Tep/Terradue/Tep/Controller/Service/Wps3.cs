@@ -189,7 +189,7 @@ namespace Terradue.Tep {
         public int ActivationId { get; set; }
         [JsonProperty("additional_links")]
         public List<SupervisorUserImportProductLink> AdditionalLinks { get; set; }
-        [JsonProperty("properties")]        
+        [JsonProperty("additional_properties")]        
         public Dictionary<string, object> AdditionalProperties { get; set; } = new Dictionary<string, object>();
     }
 
