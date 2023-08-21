@@ -341,7 +341,7 @@ namespace Terradue.Tep.WebServer.Services
                 throw e;
             }
 
-            context.LogInfo(this, string.Format("/job/wps POST Identifier='{0}'", job.Identifier));
+            context.LogInfo(this, string.Format("/job/wps POST Identifier='{0}', Id='{1}'", request.Identifier, request.Id));
             if (isnew)
             {
                 context.LogDebug(this, string.Format("WpsJob '{0}' - '{1}' created", job.Identifier, job.Name));
@@ -354,7 +354,7 @@ namespace Terradue.Tep.WebServer.Services
 
             EntityList<WpsJob> wpsjobs = new EntityList<WpsJob>(context);
             wpsjobs.ItemVisibility = EntityItemVisibility.OwnedOnly;
-            wpsjobs.Load();
+            // wpsjobs.Load();
 
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
 
