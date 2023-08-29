@@ -2745,51 +2745,57 @@ namespace Terradue.Tep
         public List<Stac.StacItem> GetJobInputsStacItems()
         {
             var stacItems = new List<Stac.StacItem>();
-            string token = this.PublishToken;            
-            var credentials = new NetworkCredential(this.Owner.Username, token);
-            var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
-            ServiceCollection services = new ServiceCollection();
-            services.AddLogging(builder => builder.AddConsole());
-            services.AddTransient<ITranslator, StacLinkTranslator>();
-            services.AddTransient<ITranslator, AtomToStacTranslator>();
-            services.AddTransient<ITranslator, DefaultStacTranslator>();
-            services.AddTransient<ICredentials, ConfigurationCredentialsManager>();
-            var sp = services.BuildServiceProvider();
-            foreach (var p in this.Parameters)
-            {
-                string osUrl = null;
-                try
+            try{
+                string token = this.PublishToken;            
+                var credentials = new NetworkCredential(this.Owner.Username, token);
+                var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
+                ServiceCollection services = new ServiceCollection();
+                services.AddLogging(builder => builder.AddConsole());
+                services.AddTransient<ITranslator, StacLinkTranslator>();
+                services.AddTransient<ITranslator, AtomToStacTranslator>();
+                services.AddTransient<ITranslator, DefaultStacTranslator>();
+                services.AddTransient<ICredentials, ConfigurationCredentialsManager>();
+                var sp = services.BuildServiceProvider();
+                foreach (var p in this.Parameters)
                 {
-                    if (!string.IsNullOrEmpty(p.Value))
-                    {
-                        var urib = new UriBuilder(p.Value);
-                        if (!CatalogueFactory.IsCatalogUrl(urib.Uri)) continue;
-
-                        var query = HttpUtility.ParseQueryString(urib.Query);
-                        query.Set("format", "atom");
-                        var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
-                        urib.Query = string.Join("&", queryString);
-                        osUrl = urib.Uri.AbsoluteUri;
-                    }
-                }
-                catch (Exception) { }
-
-                // add data input stac item
-                if (!string.IsNullOrEmpty(osUrl))
-                {
+                    string osUrl = null;
                     try
                     {
-                        var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
-                        var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
-                        var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
-                        var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
-                        stacItems.Add(stacNode.StacItem);
+                        if (!string.IsNullOrEmpty(p.Value))
+                        {
+                            var urib = new UriBuilder(p.Value);
+                            if (!CatalogueFactory.IsCatalogUrl(urib.Uri)) continue;
+
+                            var query = HttpUtility.ParseQueryString(urib.Query);
+                            query.Set("format", "atom");
+                            var queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                            urib.Query = string.Join("&", queryString);
+                            osUrl = urib.Uri.AbsoluteUri;
+                        }
                     }
-                    catch (Exception e)
+                    catch (Exception) { }
+
+                    // add data input stac item
+                    if (!string.IsNullOrEmpty(osUrl))
                     {
-                        context.LogError(this, "Log event stac item error : " + osUrl + " - " + e.Message);
+                        try
+                        {
+                            var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
+                            var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
+                            var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
+                            var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
+                            stacItems.Add(stacNode.StacItem);
+                        }
+                        catch (Exception e)
+                        {
+                            context.LogError(this, "Log event stac item error : " + osUrl + " - " + e.Message);
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                context.LogError(this, "GetJobInputsStacItems : " + e.Message);
             }
             return stacItems;
         }

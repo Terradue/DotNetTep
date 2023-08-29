@@ -182,8 +182,10 @@ namespace Terradue.Tep {
                 if (job.EndTime != DateTime.MinValue) durations.Add("from_end", ((int)(DateTime.UtcNow - job.EndTime).TotalSeconds));
 
                 var properties = GetJobBasicProperties(job);
-                var stacItems = job.GetJobInputsStacItems();
-                properties.Add("stac_items", stacItems);
+                try{
+                    var stacItems = job.GetJobInputsStacItems();
+                    properties.Add("stac_items", stacItems);
+                }catch(Exception){}
 
                 var logevent = new Event
                 {
