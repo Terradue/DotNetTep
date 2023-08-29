@@ -1073,19 +1073,25 @@ namespace Terradue.Tep
                 }
 
                 // Deserialization
-                context.LogDebug(this, "Deserialization (STAC ITEM)");
-                var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(remoteWpsResponseString);
-                var stacLink = stacItem.Links.FirstOrDefault(l => l.Rel == "self");
-                var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
+                if(!string.IsNullOrEmpty(remoteWpsResponseString)){
+                    context.LogDebug(this, "Deserialization (STAC ITEM)");
+                    try{
+                        var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(remoteWpsResponseString);
+                        var stacLink = stacItem.Links.FirstOrDefault(l => l.Rel == "self");
+                        var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
 
-                if (descriptionLink != null)
-                {
-                    this.StatusLocation = descriptionLink.Href;
-                    if(stacLink != null) this.StacItemUrl = stacLink.Href;
-                    this.Status = WpsJobStatus.STAGED;
-                    // this.EndTime = DateTime.UtcNow;
-                    this.Store();
-                    return GetExecuteResponseForStagedJob();
+                        if (descriptionLink != null)
+                        {
+                            this.StatusLocation = descriptionLink.Href;
+                            if(stacLink != null) this.StacItemUrl = stacLink.Href;
+                            this.Status = WpsJobStatus.STAGED;
+                            // this.EndTime = DateTime.UtcNow;
+                            this.Store();
+                            return GetExecuteResponseForStagedJob();
+                        }
+                    }catch(Exception e){
+                        context.LogError(this, e.Message);
+                    }
                 }
                 return ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(this);                    
             }    
