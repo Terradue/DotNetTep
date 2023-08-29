@@ -102,19 +102,23 @@ namespace Terradue.Tep {
 		}
 
         public static string GetPublishToken(IfyContext context, UserTep owner) {
-			context.LogDebug(context, "Get Publish Token for user "+ owner.Username);
-            var accessCookie = DBCookie.FromUsernameAndIdentifier(context, owner.Username, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-			context.LogDebug(context, "Publish Token (" + accessCookie.Expire.ToUniversalTime() + ") = " + accessCookie.Value);
-			if(accessCookie.Expire < DateTime.UtcNow){				
-				if(System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true"){                    					
-					var kfact = new KeycloakFactory(context);
-					kfact.RefreshToken(owner.Username);
-					var cookie = DBCookie.FromUsernameAndIdentifier(context, owner.Username, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
-					context.LogDebug(context, "Publish Token (" + cookie.Expire.ToUniversalTime() + ") = " + cookie.Value);
-					return cookie.Value;
-				}
-				else return accessCookie.Value;
-			} else return accessCookie.Value;
-        }
+			try{
+				context.LogDebug(context, "Get Publish Token for user "+ owner.Username);
+				var accessCookie = DBCookie.FromUsernameAndIdentifier(context, owner.Username, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+				context.LogDebug(context, "Publish Token (" + accessCookie.Expire.ToUniversalTime() + ") = " + accessCookie.Value);
+				if(accessCookie.Expire < DateTime.UtcNow){				
+					if(System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true"){                    					
+						var kfact = new KeycloakFactory(context);
+						kfact.RefreshToken(owner.Username);
+						var cookie = DBCookie.FromUsernameAndIdentifier(context, owner.Username, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
+						context.LogDebug(context, "Publish Token (" + cookie.Expire.ToUniversalTime() + ") = " + cookie.Value);
+						return cookie.Value;
+					}
+					else return accessCookie.Value;
+				} else return accessCookie.Value;
+			}catch(Exception){
+				return null;
+			}
+	    }
     }
 }
