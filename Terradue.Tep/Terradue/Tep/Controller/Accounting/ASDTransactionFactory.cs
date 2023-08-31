@@ -38,6 +38,15 @@ namespace Terradue.Tep {
             return transactions.GetItemsAsList();
         }
 
+        public List<Transaction> GetUserJobTransactionsForASD(int usrid, int asdid) {
+            EntityList<Transaction> transactions = new EntityList<Transaction>(context);            
+            transactions.SetFilter("OwnerId", usrid + "");
+            transactions.SetFilter("ProviderId", asdid + "");
+            transactions.SetFilter("EntityTypeId", EntityType.GetEntityType(new WpsJob(context).GetType()).Id);
+            transactions.Load();
+            return transactions.GetItemsAsList();
+        }
+
         public static void CreateTransaction(IfyContext context, int usrid, ASD asd, WpsJob job, double cost) {
             var transaction = new Transaction(context);
             transaction.OwnerId = usrid;

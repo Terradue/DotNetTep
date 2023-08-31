@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Web;
 using ServiceStack.Common.Web;
+using ServiceStack.FluentValidation;
 using ServiceStack.ServiceHost;
 using ServiceStack.ServiceInterface;
 using Terradue.OpenNebula;
@@ -736,6 +737,22 @@ namespace Terradue.Tep.WebServer.Services {
             context.Close();
             return true;   
         }
+
+        public object Get(UserGetTransactionJobForAsdRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            context.Open();
+            var usr = User.FromUsername(context, request.Identifier);            
+            var factory = new ASDTransactionFactory(context);
+            var transactions  =factory.GetUserJobTransactionsForASD(request.Id,request.Id);
+            var result = new List<WebTransaction>();
+            foreach(var transaction in transactions) {
+                result.Add(new WebTransaction(transaction));
+            }
+            context.Close();
+            return result;   
+        }
+
+        
 
     }
 }

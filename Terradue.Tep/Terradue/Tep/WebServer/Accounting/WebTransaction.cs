@@ -71,6 +71,14 @@ namespace Terradue.Tep.WebServer {
 
         }
 
+        public WebTransaction(Transaction entity){
+            this.Reference = entity.Identifier;
+            this.HumanReadableReference = entity.GetHumanReadableReference();
+            this.LogTime = entity.LogTime;
+            this.Balance = entity.Balance;
+            this.Kind = (int)entity.Kind;
+        }
+
     }
 
 
