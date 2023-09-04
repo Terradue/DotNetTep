@@ -743,7 +743,7 @@ namespace Terradue.Tep.WebServer.Services {
             context.Open();
             var usr = User.FromUsername(context, request.Identifier);            
             var factory = new ASDTransactionFactory(context);
-            var transactions  =factory.GetUserJobTransactionsForASD(request.Id,request.Id);
+            var transactions  = factory.GetUserJobTransactionsForASD(usr.Id,request.Id);
             var result = new List<WebTransaction>();
             foreach(var transaction in transactions) {
                 result.Add(new WebTransaction(transaction));

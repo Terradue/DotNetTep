@@ -70,7 +70,6 @@ namespace Terradue.Tep.WebServer {
 
 
     [Route("/user/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
-    [Route("/user/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
     public class UserGetUsageRequestTep : IReturn<List<KeyValuePair<string, string>>> {
         [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Id { get; set; }

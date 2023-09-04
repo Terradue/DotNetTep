@@ -14,6 +14,9 @@ namespace Terradue.Tep
         [EntityDataField("status")]
         public UrfStatus Status { get; set; }
 
+        [EntityDataField("negative_credit")]
+        public bool NegativeCredit { get; set; }
+
         [EntityDataField("credit_total")]
         public double CreditTotal { get; set; }
 

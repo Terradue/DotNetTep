@@ -171,6 +171,7 @@ namespace Terradue.Tep {
             }).ConfigureAwait(false).GetAwaiter().GetResult();
 
             if(urfs != null){
+                var factory = new ASDTransactionFactory(context);
                 foreach (var urf in urfs) {                    
                     if(urf.Count > 0){                        
                         var asd = urf[0];
@@ -191,13 +192,23 @@ namespace Terradue.Tep {
                                 dbasd.CreditTotal = asd.UrfInformation.Credit;
                                 dbasd.Store();
                             }
-                            //check if status updated
+                            //c je viens de penser qu'on peut aussi le faire au niveau GEP si on prefere (on peut rajouter un entree heck if status updated
                             if(asd.UrfInformation.Status != dbasd.Status){
                                 dbasd.CreditTotal = asd.UrfInformation.Credit;
                                 dbasd.Store();
                             }
+                            //check if negative balance allowed updated
+                            if(asd.UrfInformation.NegativeCredit != dbasd.NegativeCredit){
+                                dbasd.NegativeCredit = asd.UrfInformation.NegativeCredit;
+                                dbasd.Store();
+                            }
+
                             asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
                             asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
+
+                            //load jobs
+                            var transactions  = factory.GetServiceTransactionsForASD(dbasd.Id);
+                            asd.UrfCreditInformation.Transactions = transactions;
                         }
                     }
                 }
