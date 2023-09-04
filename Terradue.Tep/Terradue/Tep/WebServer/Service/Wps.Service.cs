@@ -429,7 +429,7 @@ namespace Terradue.Tep.WebServer.Services {
                     }
                     //get cost of process
                     cost = totalDataProcessed * wps.Price;
-                    if(cost > user.Credit) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
+                    if(cost > user.Credit && !user.HasNegativeCreditAllowed) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
                 }
                 
                 //Check if we need to remove special fields
