@@ -198,8 +198,8 @@ namespace Terradue.Tep {
                                 dbasd.Store();
                             }
                             //check if negative balance allowed updated
-                            if(asd.UrfInformation.NegativeCredit != dbasd.NegativeCredit){
-                                dbasd.NegativeCredit = asd.UrfInformation.NegativeCredit;
+                            if(asd.UrfInformation.Overspending != dbasd.Overspending){
+                                dbasd.Overspending = asd.UrfInformation.Overspending;
                                 dbasd.Store();
                             }
 
@@ -253,7 +253,7 @@ namespace Terradue.Tep {
             get {
                 var dburfs = ASD.FromUsr(context, this.Id);
                 foreach(var item in dburfs){                
-                    if(item.NegativeCredit) return true;
+                    if(item.OverspendingAllowed) return true;
                 }
                 return false;
             }
