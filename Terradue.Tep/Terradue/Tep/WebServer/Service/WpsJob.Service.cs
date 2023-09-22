@@ -346,6 +346,7 @@ namespace Terradue.Tep.WebServer.Services
             {
                 context.LogDebug(this, string.Format("WpsJob '{0}' - '{1}' created", job.Identifier, job.Name));
                 System.Threading.Tasks.Task.Run(() => EventFactory.LogWpsJob(context, job, "Job created"));
+                context.LogDebug(this, string.Format("Log event sent"));
             }
             else
             {

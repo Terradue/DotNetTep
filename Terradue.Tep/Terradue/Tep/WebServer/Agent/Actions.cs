@@ -199,5 +199,56 @@ namespace Terradue.Tep {
             WebServer.Services.ReportServiceTep.GetJobReport(context, filename, startdateString, enddateString);
         }
 
+        /**********************************************************************/
+
+        /**********************************************************************/
+        public static void MonthlyInactiveUserAlert(IfyContext context) {
+            var lastmonthdate = DateTime.Today.AddMonths(-1);
+            var date = lastmonthdate.ToString("yyyy-MM-dd");    
+
+            context.WriteInfo(string.Format("MonthlyInactiveUserAlert"));
+
+            //get users not actives in the last month
+            string sql = String.Format("SELECT id_usr FROM (SELECT id_usr, MAX(log_time) as lastlog FROM usrsession GROUP BY id_usr) as t1 WHERE t1.lastlog < '{0}';", date);
+            var ids = context.GetQueryIntegerValues(sql);
+
+            List<string> records = new List<string>();
+            
+            //for each user, get active ASD
+            foreach(var id in ids){
+                try {
+                    var asdlist = new Dictionary<string,string>();
+                    var usr = UserTep.FromId(context, id);
+                    var usrLink = string.Format("{0}/#!user/admin/{1}", context.GetConfigValue("BaseUrl"), usr.Username);
+                    var asds = ASD.FromUsr(context, id);
+                    foreach(var asd in asds){
+                        if(asd.Status == Portal.Urf.UrfStatus.Activated){
+                            if(!asdlist.ContainsKey(asd.Identifier))
+                                asdlist.Add(asd.Identifier, string.Format("ASD Identifier: {0} ({1}/{2} euros remaining", asd.Identifier, asd.CreditRemaining, asd.CreditTotal));
+                        }
+                    }
+                    
+                    if(asdlist.Count > 0){
+                        //add new record in report with
+                        var record = string.Format("{0} ({1})\nT2 Username: {2}\n",usr.Username, usrLink, usr.TerradueCloudUsername);
+                        foreach(var key in asdlist.Keys)
+                            record += asdlist[key] + "\n";
+                    
+                        context.WriteInfo(string.Format("Inactive user: {0}", usr.Username));
+                        records.Add(record);
+                    }
+                } catch(Exception e) {
+
+                }
+            }
+
+            var subject = context.GetConfigValue("MonthlyInactiveUserAlertSubject");
+            subject = subject.Replace("$(SITENAME)",context.GetConfigValue("SiteNameShort"));
+            var body = context.GetConfigValue("MonthlyInactiveUserAlertBody");
+            body = body.Replace("$(RECORDS)", string.Join("\n ", records));
+            context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
+        }
+
+
     }
 }
