@@ -2751,10 +2751,7 @@ namespace Terradue.Tep
         public List<Stac.StacItem> GetJobInputsStacItems()
         {
             var stacItems = new List<Stac.StacItem>();
-            try{
-                string token = this.PublishToken;            
-                var credentials = new NetworkCredential(this.Owner.Username, token);
-                var router = new Stars.Services.Model.Atom.AtomRouter(credentials);
+            try{                
                 ServiceCollection services = new ServiceCollection();
                 services.AddLogging(builder => builder.AddConsole());
                 services.AddTransient<ITranslator, StacLinkTranslator>();
@@ -2786,11 +2783,35 @@ namespace Terradue.Tep
                     {
                         try
                         {
+                            context.LogDebug(this, "Found os url -- " + osUrl);
+                            var currUser = UserTep.FromId(context, context.UserId);                            
+                            var osUri = new Uri(osUrl);
+                            var credentials = new NetworkCredential();
+                            CatalogConfiguration CatalogConfig = System.Configuration.ConfigurationManager.GetSection("CatalogConfiguration") as CatalogConfiguration;
+                            if (CatalogConfig != null && CatalogConfig.Catalogs != null){
+                                var accessType = CatalogConfig.Catalogs[osUri.Host];
+                                switch(accessType.Value){
+                                    case "t2_apikey":                                        
+                                        var tokenApikey = currUser.GetSessionApiKey();
+                                        context.LogDebug(this, "Using t2_apikey as token to access STAC item -- " + tokenApikey);
+                                        credentials = new NetworkCredential(currUser.Username, tokenApikey);
+                                        break;
+                                    case "publish_token":
+                                        var publishtoken = this.PublishToken;
+                                        context.LogDebug(this, "Using publish_token as token to access STAC item -- " + publishtoken);
+                                        credentials = new NetworkCredential(this.Owner.Username, publishtoken);
+                                        break;
+                                    default:
+                                        break;
+                                }                                 
+                            } else credentials = new NetworkCredential(this.Owner.Username, this.PublishToken);            
+
                             var atomFeed = AtomFeed.Load(XmlReader.Create(osUrl));
-                            var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, new Uri(osUrl), credentials);
+                            var item = new Stars.Services.Model.Atom.AtomItemNode(atomFeed.Items.First() as AtomItem, osUri, credentials);
                             var translatorManager = new TranslatorManager(sp.GetService<ILogger<TranslatorManager>>(), sp);
                             var stacNode = translatorManager.Translate<Stars.Services.Model.Stac.StacItemNode>(item).GetAwaiter().GetResult();
                             stacItems.Add(stacNode.StacItem);
+                            context.LogDebug(this, "STAC item added");
                         }
                         catch (Exception e)
                         {
