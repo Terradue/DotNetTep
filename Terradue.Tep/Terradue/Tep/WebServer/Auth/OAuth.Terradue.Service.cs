@@ -5,6 +5,8 @@ using Terradue.Ldap;
 using ServiceStack.Common.Web;
 using System.Web;
 using Terradue.Authentication.Ldap;
+using Terradue.OpenSearch.Sentinel.Data.Safe.Sentinel.S1.Level2.Product;
+using Terradue.Tep.Controller.Auth;
 
 namespace Terradue.Tep.WebServer.Services {
 
@@ -81,30 +83,39 @@ namespace Terradue.Tep.WebServer.Services {
             try {
                 context.Open();
                 context.LogInfo(this, "/login GET");
-                var client = new Connect2IdClient(context.GetConfigValue("sso-configUrl"));
-                client.SSOAuthEndpoint = context.GetConfigValue("sso-authEndpoint");
-                client.SSOApiClient = context.GetConfigValue("sso-clientId");
-                client.SSOApiSecret = context.GetConfigValue("sso-clientSecret");
-                client.SSOApiToken = context.GetConfigValue("sso-apiAccessToken");
 
-                if (!string.IsNullOrEmpty(request.return_to)) HttpContext.Current.Session["return_to"] = request.return_to;
+                //check if keycloak auth is enabled
+                var keycloakType = new KeycloakAuthenticationType(context);
+                var sql = String.Format("SELECT enabled FROM auth WHERE identifier='{0}';", keycloakType.Identifier);
+                if(context.GetQueryBooleanValue(sql)){
+                    var client = new KeycloakOauthClient(context);
+                    redirect = client.GetAuthorizationUrl();
+                } else {
+                    var client = new Connect2IdClient(context.GetConfigValue("sso-configUrl"));
+                    client.SSOAuthEndpoint = context.GetConfigValue("sso-authEndpoint");
+                    client.SSOApiClient = context.GetConfigValue("sso-clientId");
+                    client.SSOApiSecret = context.GetConfigValue("sso-clientSecret");
+                    client.SSOApiToken = context.GetConfigValue("sso-apiAccessToken");
 
-                var nonce = Guid.NewGuid().ToString();
-                HttpContext.Current.Session["oauth-nonce"] = nonce;
+                    if (!string.IsNullOrEmpty(request.return_to)) HttpContext.Current.Session["return_to"] = request.return_to;
 
-                var scope = context.GetConfigValue("sso-scopes").Replace(",", "%20");
-                var oauthEndpoint = context.GetConfigValue("oauth-authEndpoint");
-                redirect = string.Format("{0}{1}client_id={2}&response_type={3}&nonce={4}&state={5}&redirect_uri={6}&ajax={7}&scope={8}",
-                                         oauthEndpoint, 
-                                         oauthEndpoint.Contains("?") ? "&" : "?",
-                                         context.GetConfigValue("sso-clientId"),
-                                         "code",
-                                         nonce,
-                                         Guid.NewGuid().ToString(),
-                                         context.GetConfigValue("sso-callback"),
-                                         "false",
-                                         scope
-                                        );
+                    var nonce = Guid.NewGuid().ToString();
+                    HttpContext.Current.Session["oauth-nonce"] = nonce;
+
+                    var scope = context.GetConfigValue("sso-scopes").Replace(",", "%20");
+                    var oauthEndpoint = context.GetConfigValue("oauth-authEndpoint");
+                    redirect = string.Format("{0}{1}client_id={2}&response_type={3}&nonce={4}&state={5}&redirect_uri={6}&ajax={7}&scope={8}",
+                                            oauthEndpoint, 
+                                            oauthEndpoint.Contains("?") ? "&" : "?",
+                                            context.GetConfigValue("sso-clientId"),
+                                            "code",
+                                            nonce,
+                                            Guid.NewGuid().ToString(),
+                                            context.GetConfigValue("sso-callback"),
+                                            "false",
+                                            scope
+                                            );
+                }
 
                 context.Close();
             } catch (Exception e) {
