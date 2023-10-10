@@ -1,4 +1,4 @@
--- VERSION 1.7.5
+-- VERSION 1.7.6
 
 USE $MAIN$;
 
@@ -565,4 +565,8 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 
 -- Adding Agent action...\
 INSERT IGNORE INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`) VALUES ('inactiveUserReport', 'Report inactive users', 'This action report inactive users for the last month', 'Terradue.Tep.Actions, Terradue.Tep', 'MonthlyInactiveUserAlert',0);
+-- RESULT
+
+-- Add keycloak auth...\
+INSERT INTO auth (`identifier`, `name`, `description`, `type`, `enabled`, `activation_rule`, `normal_rule`, `refresh_period`) VALUES ('keycloak', 'keycloak authentication', 'keycloak authentication', 'Terradue.Tep.Controller.Auth.KeycloakAuthenticationType, Terradue.Tep.WebServer', '0', '2', '2', '0');
 -- RESULT
