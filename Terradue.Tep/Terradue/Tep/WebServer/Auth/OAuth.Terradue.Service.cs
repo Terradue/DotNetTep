@@ -84,8 +84,8 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this, "/login GET");
 
-                //check if keycloak auth is enabled
-                var keycloakType = new KeycloakAuthenticationType(context);
+                //check if keycloak auth is enabled                
+                var keycloakType = IfyWebContext.GetAuthenticationType(typeof(KeycloakAuthenticationType));
                 var sql = String.Format("SELECT enabled FROM auth WHERE identifier='{0}';", keycloakType.Identifier);
                 if(context.GetQueryBooleanValue(sql)){
                     var client = new KeycloakOauthClient(context);
