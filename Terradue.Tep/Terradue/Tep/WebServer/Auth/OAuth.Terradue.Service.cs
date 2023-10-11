@@ -4,11 +4,9 @@ using Terradue.Portal;
 using Terradue.Ldap;
 using ServiceStack.Common.Web;
 using System.Web;
-using Terradue.Authentication.Ldap;
-using Terradue.OpenSearch.Sentinel.Data.Safe.Sentinel.S1.Level2.Product;
-using Terradue.Tep.Controller.Auth;
 
-namespace Terradue.Tep.WebServer.Services {
+namespace Terradue.Tep.WebServer.Services
+{
 
     [Route("/oauth", "GET")]
     public class LoginRequest {
