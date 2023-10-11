@@ -42,7 +42,7 @@ namespace Terradue.Tep.WebServer.Services {
         [ApiMember(Name = "error", Description = "error", ParameterType = "path", DataType = "string", IsRequired = true)]
         public string error { get; set; }
     }
-
+    
     [Route("/oauth/cb", "GET")]
     public class OauthCallBackRequest {
         [ApiMember(Name = "code", Description = "oauth code", ParameterType = "query", DataType = "string", IsRequired = true)]
@@ -127,6 +127,7 @@ namespace Terradue.Tep.WebServer.Services {
             return OAuthUtils.DoRedirect(redirect, false);
         }
 
+        //TODO: to be dismissed
         public object Get(CallBackRequest request) {
 
             var redirect = "";
@@ -210,44 +211,87 @@ namespace Terradue.Tep.WebServer.Services {
                     return OAuthUtils.DoRedirect(baseUrl, false);
                 }
 
-                context.LogDebug(this, string.Format("Get token from code"));                                
-                var auth = (TepOauthAuthenticationType)IfyWebContext.GetAuthenticationType(typeof(TepOauthAuthenticationType));
-                var client = auth.Client;
-                var tokenResponse = client.AccessToken(request.Code);
+                //check if keycloak auth is enabled                
+                var keycloakType = (KeycloakAuthenticationType)IfyWebContext.GetAuthenticationType(typeof(KeycloakAuthenticationType));
+                var sql = String.Format("SELECT enabled FROM auth WHERE identifier='{0}';", keycloakType.Identifier);
+                if(context.GetQueryBooleanValue(sql)){
+                    var keycloakClient = new KeycloakOauthClient(context);
 
-                context.LogDebug(this, string.Format("Get user profile"));
-                user = auth.GetUserProfile(context);
+                    context.LogDebug(this, string.Format("Get token from code"));
+                    var tokenResponse = keycloakClient.AccessToken(request.Code);
+                    keycloakType.SetCLient(keycloakClient);
 
-                if (tokenResponse.access_token != null) client.StoreTokenAccess(tokenResponse.access_token, user.Username, tokenResponse.expires_in);
-                if (tokenResponse.refresh_token != null) client.StoreTokenRefresh(tokenResponse.refresh_token, user.Username);
-                if (tokenResponse.id_token != null) client.StoreTokenId(tokenResponse.id_token, user.Username, tokenResponse.expires_in);                
+                    context.LogDebug(this, string.Format("Get user profile"));
+                    user = keycloakType.GetUserProfile(context);
 
-                if (user == null) {
-                    context.LogError(this, string.Format("Error to load user"));
-                    var uri = new UriBuilder(context.GetConfigValue("BaseUrl"));
-                    uri.Path = "/";
-                    uri.Query = "error=login";
-                    redirect = OAuthUtils.DoRedirect(uri.Uri.AbsoluteUri, false);
+                    if (tokenResponse.access_token != null) keycloakClient.StoreTokenAccess(tokenResponse.access_token, user.Username, tokenResponse.expires_in);
+                    if (tokenResponse.refresh_token != null) keycloakClient.StoreTokenRefresh(tokenResponse.refresh_token, user.Username);
+                    if (tokenResponse.id_token != null) keycloakClient.StoreTokenId(tokenResponse.id_token, user.Username, tokenResponse.expires_in);                
+
+                    if (user == null) {
+                        context.LogError(this, string.Format("Error to load user"));
+                        var uri = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                        uri.Path = "/";
+                        uri.Query = "error=login";
+                        redirect = OAuthUtils.DoRedirect(uri.Uri.AbsoluteUri, false);
+                    } else {
+                        context.LogDebug(this, string.Format("Loaded user '{0}'", user.Username));
+                        context.LogDebug(this, string.Format("Starting session"));
+                        context.StartSession(keycloakType, user);
+                        context.LogDebug(this, string.Format("Session started"));
+                        context.SetUserInformation(keycloakType, user);
+                        context.LogDebug(this, string.Format("User Information set"));
+
+                        if (string.IsNullOrEmpty(HttpContext.Current.Session["return_to"] as string))
+                            HttpContext.Current.Session["return_to"] = context.GetConfigValue("BaseUrl");
+
+                        context.LogDebug(this, string.Format("Redirect to {0}", HttpContext.Current.Session["return_to"]));
+
+                        redirect = OAuthUtils.DoRedirect(HttpContext.Current.Session["return_to"] as string, false);
+                    }
+                    HttpContext.Current.Session["return_to"] = null;
+                    
                 } else {
-                    context.LogDebug(this, string.Format("Loaded user '{0}'", user.Username));
 
-                    context.StartSession(auth, user);
-                    context.SetUserInformation(auth, user);
+                    context.LogDebug(this, string.Format("Get token from code"));                                
+                    var auth = (TepOauthAuthenticationType)IfyWebContext.GetAuthenticationType(typeof(TepOauthAuthenticationType));
+                    var client = auth.Client;
+                    var tokenResponse = client.AccessToken(request.Code);
 
-                    try{
-						if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
-						{							
-							var kfact = new KeycloakFactory(context);
-							kfact.GetExchangeToken(tokenResponse.access_token);
-						}
-					}catch(Exception e){}
+                    context.LogDebug(this, string.Format("Get user profile"));
+                    user = auth.GetUserProfile(context);
 
-                    if (string.IsNullOrEmpty(HttpContext.Current.Session["return_to"] as string))
-                        HttpContext.Current.Session["return_to"] = context.GetConfigValue("BaseUrl");
+                    if (tokenResponse.access_token != null) client.StoreTokenAccess(tokenResponse.access_token, user.Username, tokenResponse.expires_in);
+                    if (tokenResponse.refresh_token != null) client.StoreTokenRefresh(tokenResponse.refresh_token, user.Username);
+                    if (tokenResponse.id_token != null) client.StoreTokenId(tokenResponse.id_token, user.Username, tokenResponse.expires_in);                
 
-                    redirect = OAuthUtils.DoRedirect(HttpContext.Current.Session["return_to"] as string, false);
+                    if (user == null) {
+                        context.LogError(this, string.Format("Error to load user"));
+                        var uri = new UriBuilder(context.GetConfigValue("BaseUrl"));
+                        uri.Path = "/";
+                        uri.Query = "error=login";
+                        redirect = OAuthUtils.DoRedirect(uri.Uri.AbsoluteUri, false);
+                    } else {
+                        context.LogDebug(this, string.Format("Loaded user '{0}'", user.Username));
+
+                        context.StartSession(auth, user);
+                        context.SetUserInformation(auth, user);
+
+                        try{
+                            if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
+                            {							
+                                var kfact = new KeycloakFactory(context);
+                                kfact.GetExchangeToken(tokenResponse.access_token);
+                            }
+                        }catch(Exception e){}
+
+                        if (string.IsNullOrEmpty(HttpContext.Current.Session["return_to"] as string))
+                            HttpContext.Current.Session["return_to"] = context.GetConfigValue("BaseUrl");
+
+                        redirect = OAuthUtils.DoRedirect(HttpContext.Current.Session["return_to"] as string, false);
+                    }
+                    HttpContext.Current.Session["return_to"] = null;
                 }
-                HttpContext.Current.Session["return_to"] = null;
 
                 context.Close();
             } catch (Exception e) {
