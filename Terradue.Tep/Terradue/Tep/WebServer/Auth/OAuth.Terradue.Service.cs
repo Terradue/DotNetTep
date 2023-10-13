@@ -202,7 +202,8 @@ namespace Terradue.Tep.WebServer.Services
                     context.LogDebug(this, string.Format("Loaded user '{0}'", user.Username));
 
                     context.StartSession(auth, user);
-                    context.SetUserInformation(auth, user);
+                    context.LogDebug(this, string.Format("Session started"));
+                    // context.SetUserInformation(auth, user);
 
                     try{
                         if (System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true")
@@ -216,6 +217,7 @@ namespace Terradue.Tep.WebServer.Services
                         HttpContext.Current.Session["return_to"] = context.GetConfigValue("BaseUrl");
 
                     redirect = OAuthUtils.DoRedirect(HttpContext.Current.Session["return_to"] as string, false);
+                    context.LogDebug(this, string.Format("redirect = '{0}'", redirect));
                 }
                 HttpContext.Current.Session["return_to"] = null;                
 
