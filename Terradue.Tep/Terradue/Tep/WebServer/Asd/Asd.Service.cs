@@ -1,18 +1,11 @@
 ﻿using ServiceStack.ServiceHost;
-using Terradue.Tep.WebServer;
 using System;
 using Terradue.Portal;
-using Terradue.WebService.Model;
-using System.IO;
-using ServiceStack.Text;
-using System.Net;
-using System.Web;
 using ServiceStack.Common.Web;
-using Terradue.Portal.Urf;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace Terradue.Tep.WebServer.Services {
+namespace Terradue.Tep.WebServer.Services
+{
 
     [Route("/user/current/urf", "GET", Summary = "create URF", Notes = "")]
     public class GetCurrentUserURFsRequestTep {}
@@ -42,9 +35,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.LogInfo(this, string.Format("/user/current/urf GET"));
                 context.Open();
 
-                var usr = UserTep.FromId(context, context.UserId);
-                if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) usr.LoadCloudUsername();
-                if (string.IsNullOrEmpty(usr.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
+                var usr = UserTep.FromId(context, context.UserId);                
 
                 urfs = usr.LoadASDs();
                 

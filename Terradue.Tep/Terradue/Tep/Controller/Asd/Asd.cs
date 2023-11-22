@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Terradue.Portal;
 using Terradue.Portal.Urf;
 
@@ -55,6 +56,14 @@ namespace Terradue.Tep
         {
             ASD result = new ASD(context);
             result.Id = id;
+            result.Load();
+            return result;
+        }
+
+        public static ASD FromIdentifier(IfyContext context, string identifier)
+        {
+            ASD result = new ASD(context);
+            result.Identifier = identifier;
             result.Load();
             return result;
         }
@@ -125,6 +134,21 @@ namespace Terradue.Tep
 
             return users;
         }
+    }
+
+    [DataContract]
+    public class ASDBasic {
+
+        [DataMember]
+        public int Id { get; set; }
+
+        [DataMember]
+        public string Identifier {get; set;}
+        
+        [DataMember]
+        public UrfContact[] Contacts { get; set; }
+
+        public ASDBasic(){}
     }
 }
 

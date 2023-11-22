@@ -143,66 +143,7 @@ namespace Terradue.Tep {
             if (string.IsNullOrEmpty(this.TerradueCloudUsername)) this.LoadCloudUsername();
             if (string.IsNullOrEmpty(this.TerradueCloudUsername)) throw new Exception("Impossible to get Terradue username");
 
-            var url = string.Format("{0}?token={1}&username={2}&request=urf",
-                                context.GetConfigValue("t2portal-usrinfo-endpoint"),
-                                context.GetConfigValue("t2portal-safe-token"),
-                                this.TerradueCloudUsername);
-
-            HttpWebRequest t2request = (HttpWebRequest)WebRequest.Create(url);
-            t2request.Method = "GET";
-            t2request.ContentType = "application/json";
-            t2request.Accept = "application/json";
-            t2request.Proxy = null;
-            
-            var urfs = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(t2request.BeginGetResponse,
-                                                                       t2request.EndGetResponse,
-                                                                       null)
-            .ContinueWith(task =>
-            {
-                try{
-                    var httpResponse = (HttpWebResponse) task.Result;
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
-                        string result = streamReader.ReadToEnd();                    
-                        return JsonSerializer.DeserializeFromString<List<List<UrfTep>>>(result);                    
-                    }
-                }catch(Exception e){
-                    throw e;
-                }
-            }).ConfigureAwait(false).GetAwaiter().GetResult();
-
-            if(urfs != null){
-                foreach (var urf in urfs) {                    
-                    if(urf.Count > 0){                        
-                        var asd = urf[0];
-                        //check if urf already stored in DB
-                        var dburfs = new EntityList<ASD>(context);
-                        dburfs.SetFilter("Identifier", asd.UrfInformation.Identifier);
-                        dburfs.Load();
-                        var items = dburfs.GetItemsAsList();
-                        if(items.Count == 0){
-                            //not stored in DB
-                            var asdToStore = ASD.FromURF(context, asd);
-                            asdToStore.Store();
-                            asdToStore.AddPermissions(asd);
-                        } else {                            
-                            var dbasd = items[0];
-                            //check if credit updated
-                            if(asd.UrfInformation.Credit != dbasd.CreditTotal){
-                                dbasd.CreditTotal = asd.UrfInformation.Credit;
-                                dbasd.Store();
-                            }
-                            //check if status updated
-                            if(asd.UrfInformation.Status != dbasd.Status){
-                                dbasd.CreditTotal = asd.UrfInformation.Credit;
-                                dbasd.Store();
-                            }
-                            asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
-                            asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
-                        }
-                    }
-                }
-            }
-
+            var urfs = ASDFactory.GetUserASDs(context, this);
             return urfs;
         }
 
@@ -419,7 +360,7 @@ namespace Terradue.Tep {
         /// <summary>
         /// Loads the terradue user info.
         /// </summary>
-        private void LoadTerradueUserInfo(){
+        public void LoadTerradueUserInfo(){
             context.LogDebug(this, "Loading Terradue info - " + this.Username);
 			if (HttpContext.Current != null && HttpContext.Current.Session != null) HttpContext.Current.Session["t2loading"] = "true";
 
