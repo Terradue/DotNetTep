@@ -124,7 +124,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open();
                 context.LogInfo(this,string.Format("/user/sso/{{Id}} GET Id='{0}'", request.Identifier));
                 UserTep user = UserTep.FromIdentifier(context, request.Identifier);
-                //user.FindTerradueCloudUsername();
+                user.LoadTerradueUserInfo();
                 result = new WebUserTep(context, user);
                 context.Close();
             } catch (Exception e) {

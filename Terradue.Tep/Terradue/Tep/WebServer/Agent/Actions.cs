@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using OpenGis.Wps;
 using Terradue.Portal;
 
@@ -208,47 +209,44 @@ namespace Terradue.Tep {
 
             context.WriteInfo(string.Format("MonthlyInactiveUserAlert"));
 
-            //get users not actives in the last month
-            string sql = String.Format("SELECT id_usr FROM (SELECT id_usr, MAX(log_time) as lastlog FROM usrsession GROUP BY id_usr) as t1 WHERE t1.lastlog < '{0}';", date);
-            var ids = context.GetQueryIntegerValues(sql);
+            //get users not actives in the last month (we only want user with level > 1)
+            string sql = String.Format("SELECT email FROM usr WHERE id IN (SELECT id_usr FROM (SELECT id_usr, MAX(log_time) as lastlog FROM usrsession GROUP BY id_usr) as t1 WHERE t1.lastlog < '{0}') AND level > 1;", date);
+            var emails = context.GetQueryStringValues(sql).ToList();
 
-            List<string> records = new List<string>();
+            var urfs = ASDFactory.GetActiveASDsFromUseremails(context, emails.ToList());            
+            var list = new Dictionary<string,string>();                    
             
-            //for each user, get active ASD
-            foreach(var id in ids){
-                try {
-                    var asdlist = new Dictionary<string,string>();
-                    var usr = UserTep.FromId(context, id);
-                    var usrLink = string.Format("{0}/#!user/admin/{1}", context.GetConfigValue("BaseUrl"), usr.Username);
-                    var asds = ASD.FromUsr(context, id);
-                    foreach(var asd in asds){
-                        if(asd.Status == Portal.Urf.UrfStatus.Activated){
-                            if(!asdlist.ContainsKey(asd.Identifier))
-                                asdlist.Add(asd.Identifier, string.Format("ASD Identifier: {0} ({1}/{2} euros remaining", asd.Identifier, asd.CreditRemaining, asd.CreditTotal));
+            foreach(var urf in urfs){
+                try{
+                    var asd = ASD.FromIdentifier(context, urf.Identifier);
+                    foreach(var urfusr in urf.Contacts){
+                        try{
+                            if(emails.Contains(urfusr.ContactEmail)){
+                                var usr = UserTep.FromIdentifier(context, urfusr.ContactEmail);
+                                var asdrecord = string.Format("/nASD Identifier: {0} ({1}/{2} euros remaining", asd.Identifier, asd.CreditRemaining, asd.CreditTotal);
+                                if(list[urfusr.ContactEmail] != null){
+                                    list[urfusr.ContactEmail] += asdrecord;
+                                } else {
+                                    var usrLink = string.Format("{0}/#!user/admin/{1}", context.GetConfigValue("BaseUrl"), usr.Username);                        
+                                    list[urfusr.ContactEmail] = string.Format("{0} ({1})\nT2 Username: {2}\n",usr.Username, usrLink, usr.TerradueCloudUsername);
+                                    list[urfusr.ContactEmail] += asdrecord;                                
+                                    context.WriteInfo(string.Format("Inactive user: {0}", usr.Username));
+                                }
+                            }        
+                        } catch(Exception e) {                            
+                            context.WriteError(string.Format("Unable to load user {0} for ASD {1} -- {2}", urfusr.ContactEmail, urf.Identifier, e.Message));
                         }
-                    }
-                    
-                    if(asdlist.Count > 0){
-                        //add new record in report with
-                        var record = string.Format("{0} ({1})\nT2 Username: {2}\n",usr.Username, usrLink, usr.TerradueCloudUsername);
-                        foreach(var key in asdlist.Keys)
-                            record += asdlist[key] + "\n";
-                    
-                        context.WriteInfo(string.Format("Inactive user: {0}", usr.Username));
-                        records.Add(record);
-                    }
-                } catch(Exception e) {
-
+                    }                
+                } catch(Exception e) {                    
+                    context.WriteError(string.Format("Unable to get ASD {0} -- {1}", urf.Identifier, e.Message));
                 }
             }
 
             var subject = context.GetConfigValue("MonthlyInactiveUserAlertSubject");
             subject = subject.Replace("$(SITENAME)",context.GetConfigValue("SiteNameShort"));
             var body = context.GetConfigValue("MonthlyInactiveUserAlertBody");
-            body = body.Replace("$(RECORDS)", string.Join("\n ", records));
+            body = body.Replace("$(RECORDS)", string.Join("\n ", list));
             context.SendMail(context.GetConfigValue("SmtpUsername"), context.GetConfigValue("SmtpUsername"), subject, body);
         }
-
-
     }
 }
