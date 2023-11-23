@@ -72,6 +72,8 @@ namespace Terradue.Tep {
                         process.Description = wps3.Abstract ?? wps3.Title;
                         process.Version = wps3.Version;
                         process.Url = new Uri(this.BaseUrl + "/" + wps3.Id).AbsoluteUri;
+                        process.PublishType = System.Configuration.ConfigurationManager.AppSettings["DEFAULT_PUBLISH_TYPE"];
+                        process.PublishUrl = System.Configuration.ConfigurationManager.AppSettings["DEFAULT_PUBLISH_URL"];
                         wpsProcessList.Add(process);
                     }
                 }
