@@ -223,7 +223,7 @@ namespace Terradue.Tep {
                         try{
                             if(emails.Contains(urfusr.ContactEmail)){
                                 var usr = UserTep.FromIdentifier(context, urfusr.ContactEmail);
-                                var asdrecord = string.Format("/nASD Identifier: {0} ({1}/{2} euros remaining", asd.Identifier, asd.CreditRemaining, asd.CreditTotal);
+                                var asdrecord = string.Format("/nASD Identifier: {0} ({1}/{2} euros remaining)", asd.Identifier, asd.CreditRemaining, asd.CreditTotal);
                                 if(list[urfusr.ContactEmail] != null){
                                     list[urfusr.ContactEmail] += asdrecord;
                                 } else {
