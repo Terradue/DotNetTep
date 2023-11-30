@@ -41,7 +41,7 @@ namespace Terradue.Tep.WebServer {
     [Route("/user/current/sso", "GET", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserGetCurrentSSORequestTep : IReturn<WebUserTep> {}
 
-    [Route("/user/sso/{id}", "GET", Summary = "GET the current user", Notes = "User is the current user")]
+    [Route("/user/sso/{identifier}", "GET", Summary = "GET the current user", Notes = "User is the current user")]
     public class UserGetSSORequestTep : IReturn<WebUserTep> {
         [ApiMember(Name = "identifier", Description = "User id", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Identifier { get; set; }
