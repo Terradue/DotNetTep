@@ -349,11 +349,10 @@ namespace Terradue.Tep {
         public virtual bool IsNeededTerradueUserInfo(){
             if (context.UserId != this.Id || context.UserId == 0) return false;
             if (AccountStatus != AccountStatusType.Enabled) return false;
-            if (Level < 2) return false; //User must be at least starter
+            // if (Level < 2) return false; //User must be at least starter
 			if (HttpContext.Current == null || HttpContext.Current.Session == null) return false;//if there is no Current context or session, we won't get the apikey
-			if (HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true") return false;//if loading the apikey, we cannot get it yet
-            var apikey = GetSessionApiKey();
-            if (TerradueCloudUsername == null || apikey == null) return true;
+			if (HttpContext.Current.Session["t2loading"] != null && HttpContext.Current.Session["t2loading"] as string == "true") return false;//if loading the apikey, we cannot get it yet            
+            if (TerradueCloudUsername == null || (Level > 1 && GetSessionApiKey() == null)) return true;
             else return false;
 		}
 
