@@ -122,7 +122,7 @@ namespace Terradue.Tep.WebServer.Services {
             var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
             try {
                 context.Open();
-                context.LogInfo(this,string.Format("/user/sso/{{Id}} GET Id='{0}'", request.Identifier));
+                context.LogInfo(this,string.Format("/user/sso/{0} GET", request.Identifier));
                 UserTep user = UserTep.FromIdentifier(context, request.Identifier);
                 user.LoadTerradueUserInfo();
                 result = new WebUserTep(context, user);
