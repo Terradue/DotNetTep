@@ -1,4 +1,4 @@
--- VERSION 1.7.5
+-- VERSION 1.7.6
 
 USE $MAIN$;
 
@@ -477,7 +477,7 @@ ALTER TABLE wpsjob ADD COLUMN `logs` TEXT NULL DEFAULT NULL;
 -- RESULT
 
 -- Add config
-INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-headerfile', 'string', 'agent job report headerfile', 'agent job report headerfile', "", '0');
+INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-headerfile', 'string', 'agent job report headerfile', 'agent job report headerfile', 'job_id,job_identifier,job_status,job_creation,job_store_url,job_nbinput,job_wps,job_shared,usr_username,usr_email,usr_affiliation,usr_level,usr_creation,usr_login,job_end,Prices,job_status_url,job_stack_name,job_app,job_title', '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('agent-jobreport-query', 'string', 'agent job report headerfile', 'agent job report headerfile', "", '0');
 INSERT IGNORE INTO config (name, type, caption, hint, value, optional) VALUES ('ellip.editor-url', 'string', 'ellip.editor-url', 'ellip.editor-url', "https://ellip.terradue.com/#infohubs/geobrowser-apps-editor/id", '0');
 INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('path.files', 'string', 'Tells the files directory path', 'Tells the files directory path', '/usr/local/gep/webserver/sites/gep/root/files', '1');

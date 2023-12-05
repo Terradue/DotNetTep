@@ -1241,6 +1241,9 @@ namespace Terradue.Tep.WebServer.Services {
                             case "job_identifier":
                                 csvBody.Append(job.Identifier).Append(",");
                             break;
+                            case "job_title":
+                                csvBody.Append(job.Name).Append(",");
+                            break;
                             case "job_status_url":
                                 csvBody.Append(job.StatusLocation).Append(",");
                                 break;
