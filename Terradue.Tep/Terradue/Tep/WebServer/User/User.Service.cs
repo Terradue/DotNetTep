@@ -449,7 +449,9 @@ namespace Terradue.Tep.WebServer.Services {
                 User user = User.FromId(context, request.Id);
                 try{
                     user.Domain.Delete();
-                }catch(Exception e){}
+                }catch(Exception e){
+                    context.LogError(this,e.Message);
+                }
                 user.Delete();
                 context.LogDebug(this,string.Format("User '{0}' has been deleted", user.Username));
                 context.Close();

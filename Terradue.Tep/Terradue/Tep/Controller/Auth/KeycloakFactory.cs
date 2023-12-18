@@ -31,6 +31,7 @@ namespace Terradue.Tep {
             string client_secret = System.Configuration.ConfigurationManager.AppSettings["keycloak_client_secret"];
             string subject_issuer = System.Configuration.ConfigurationManager.AppSettings["keycloak_subject_issuer"];
             string url = System.Configuration.ConfigurationManager.AppSettings["keycloak_token_endpoint"];
+			string scope = System.Configuration.ConfigurationManager.AppSettings["keycloak_scope"];
 
             Context.LogDebug(Context, "GetExchangeToken - " + HttpContext.Current.Session.SessionID + " - expire at " + cookie.Expire.ToString());
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -39,8 +40,8 @@ namespace Terradue.Tep {
 
             var dataStr = string.Format("client_id={0}&client_secret={1}" + 
                     "&grant_type=urn:ietf:params:oauth:grant-type:token-exchange&subject_token={2}&subject_issuer={3}" +
-                    "&subject_token_type=urn:ietf:params:oauth:token-type:access_token&audience={0}", 
-                    client_id, client_secret, token, subject_issuer);
+                    "&subject_token_type=urn:ietf:params:oauth:token-type:access_token&audience={0}&scope={4}", 
+                    client_id, client_secret, token, subject_issuer, scope);
 
             byte[] data = System.Text.Encoding.UTF8.GetBytes(dataStr);
 
