@@ -83,12 +83,12 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         public static void RefreshWpsjobStatus(IfyContext context) {
             var jobs = new EntityList<WpsJob>(context);
-            jobs.SetFilter("Status",(int)WpsJobStatus.ACCEPTED + "," + (int)WpsJobStatus.NONE + "," + (int)WpsJobStatus.PAUSED + "," + (int)WpsJobStatus.STARTED);
+            jobs.SetFilter("Status",(int)WpsJobStatus.ACCEPTED + "," + (int)WpsJobStatus.NONE + "," + (int)WpsJobStatus.PAUSED + "," + (int)WpsJobStatus.STARTED + "," + (int)WpsJobStatus.PUBLISHING);
             var jobsPoolSize = context.GetConfigIntegerValue("action-jobPoolSize");
             var maxDaysJobRefresh = context.GetConfigIntegerValue("action-maxDaysJobRefresh");
             jobs.ItemsPerPage = jobsPoolSize;
             jobs.Load();
-            context.WriteInfo(string.Format("RefreshWpjobStatus -- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
+            context.WriteInfo(string.Format("RefreshWpjobStatus --- found {0} jobs (total result = {1})", jobs.Count, jobs.TotalResults));
             foreach(var job in jobs){
                 string status = job.StringStatus;
                 if(job.Status != WpsJobStatus.FAILED && job.Status != WpsJobStatus.STAGED && job.Status != WpsJobStatus.COORDINATOR){
