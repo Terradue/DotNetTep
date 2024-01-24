@@ -739,6 +739,22 @@ namespace Terradue.Tep.WebServer.Services {
             return true;   
         }
 
+        public object Get(UserGetTransactionJobForAsdRequestTep request) {
+            var context = TepWebContext.GetWebContext(PagePrivileges.AdminOnly);
+            context.Open();
+            var usr = User.FromUsername(context, request.Identifier);            
+            var factory = new ASDTransactionFactory(context);
+            var transactions  = factory.GetUserJobTransactionsForASD(usr.Id,request.Id);
+            var result = new List<WebTransaction>();
+            foreach(var transaction in transactions) {
+                result.Add(new WebTransaction(transaction));
+            }
+            context.Close();
+            return result;   
+        }
+
+        
+
     }
 }
 

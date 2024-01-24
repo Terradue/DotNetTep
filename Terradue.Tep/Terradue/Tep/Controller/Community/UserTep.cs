@@ -179,6 +179,16 @@ namespace Terradue.Tep {
             }
         }
 
+        public bool HasNegativeCreditAllowed {
+            get {
+                var dburfs = ASD.FromUsr(context, this.Id);
+                foreach(var item in dburfs){                
+                    if(item.OverspendingAllowed) return true;
+                }
+                return false;
+            }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.Controller.UserTep"/> class.
         /// </summary>

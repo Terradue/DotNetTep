@@ -73,6 +73,11 @@ namespace Terradue.Tep {
                                 dbasd.CreditTotal = asd.UrfInformation.Credit;
                                 dbasd.Store();
                             }
+                            //check if overspending allowed updated
+                            if(asd.UrfInformation.Overspending != dbasd.Overspending){
+                                dbasd.Overspending = asd.UrfInformation.Overspending;
+                                dbasd.Store();
+                            }
                             asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
                             asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
                         }
