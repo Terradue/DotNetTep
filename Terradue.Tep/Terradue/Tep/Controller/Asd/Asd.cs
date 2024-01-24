@@ -15,6 +15,15 @@ namespace Terradue.Tep
         [EntityDataField("status")]
         public UrfStatus Status { get; set; }
 
+        [EntityDataField("overspending")]
+        public string Overspending { get; set; }
+
+        public bool OverspendingAllowed { 
+            get {
+                return !string.IsNullOrEmpty(this.Overspending);
+            }              
+        }
+
         [EntityDataField("credit_total")]
         public double CreditTotal { get; set; }
 

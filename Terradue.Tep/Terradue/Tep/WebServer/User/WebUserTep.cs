@@ -70,7 +70,6 @@ namespace Terradue.Tep.WebServer {
 
 
     [Route("/user/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
-    [Route("/user/usage", "GET", Summary = "GET the user usage", Notes = "User is found from id")]
     public class UserGetUsageRequestTep : IReturn<List<KeyValuePair<string, string>>> {
         [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Id { get; set; }
@@ -79,9 +78,11 @@ namespace Terradue.Tep.WebServer {
         public string Identifier { get; set; }
     }
 
-    [Route("/user/transaction/{id}", "GET", Summary = "GET the user transactions", Notes = "User is found from id")]
-    public class UserGetTransactionRequestTep : IReturn<List<WebTransactionASD>> {
-        [ApiMember(Name = "id", Description = "User id", ParameterType = "query", DataType = "int", IsRequired = true)]
+    [Route("/user/{identifier}/transaction/asd/{id}/job", "GET", Summary = "GET the user transactions (jobs)", Notes = "User is found from id")]
+    public class UserGetTransactionJobForAsdRequestTep : IReturn<List<WebTransaction>> {
+        [ApiMember(Name = "identifier", Description = "User identifier", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string Identifier { get; set; }
+         [ApiMember(Name = "id", Description = "ASD id", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int Id { get; set; }
     }
 
