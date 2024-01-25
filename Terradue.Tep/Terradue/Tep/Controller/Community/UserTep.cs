@@ -162,9 +162,9 @@ namespace Terradue.Tep {
         public void UseCredit(WpsJob job, double cost){
             var dburfs = ASD.FromUsr(context, this.Id);
             foreach(var item in dburfs){                
-                var remaining = item.CreditRemaining;
-                if(remaining > 0){
-                    if(remaining >= cost){
+                var remaining = item.CreditRemaining;                
+                if(item.OverspendingAllowed || remaining > 0){
+                    if(item.OverspendingAllowed || remaining >= cost){
                         item.CreditUsed += cost;
                         item.Store();
                         ASDTransactionFactory.CreateTransaction(context, this.Id, item, job, cost);

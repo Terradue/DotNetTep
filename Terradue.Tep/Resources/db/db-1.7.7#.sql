@@ -3,5 +3,5 @@ USE $MAIN$;
 /*****************************************************************************/
 
 -- Updatea asd table
-ALTER TABLE asd ADD COLUMN `overspending` boolean NOT NULL default false;
+ALTER TABLE asd ADD COLUMN `overspending` VARCHAR(500) NULL;
 -- RESULT
