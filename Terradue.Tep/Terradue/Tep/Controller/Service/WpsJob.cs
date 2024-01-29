@@ -1613,6 +1613,17 @@ namespace Terradue.Tep
                     }
                     catch (Exception) { }
                     this.Status = WpsJobStatus.SUCCEEDED;
+
+                    //credit has been used
+                    var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
+                    if(payPerUseEnabled){
+                        var cost = this.GetCost();
+                        if(cost > 0){
+                            this.Owner.UseCredit(this, cost);
+                            this.Owner.Store();
+                        }
+                    }
+
                     EventFactory.LogWpsJob(this.context, this, message);
                     // if (this.OwnerId == context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
                     this.EndTime = response.Status.creationTime.ToUniversalTime();

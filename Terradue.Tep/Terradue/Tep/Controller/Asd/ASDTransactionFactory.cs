@@ -102,6 +102,15 @@ namespace Terradue.Tep {
             if (transaction.EntityId == 0) transaction.EntityId = job.Id;
             transaction.Store();
         }
+
+        public static bool JobAlreadyExists(IfyContext context, WpsJob job)
+        {
+            EntityList<Transaction> transactions = new EntityList<Transaction>(context);                        
+            transactions.SetFilter("EntityId", job.Id);
+            transactions.Load();
+            var items = transactions.GetItemsAsList();
+            return items != null && items.Count > 0;
+        }
     }
 
     public class ASDTransaction {
