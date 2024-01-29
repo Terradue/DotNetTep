@@ -878,6 +878,17 @@ namespace Terradue.Tep
                         }
                         catch (Exception) { }
                         this.Status = WpsJobStatus.SUCCEEDED;
+
+                        //credit has been used
+                        var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
+                        if(payPerUseEnabled){
+                            var cost = this.GetCost();
+                            if(cost > 0){
+                                this.Owner.UseCredit(this, cost);
+                                this.Owner.Store();
+                            }
+                        }
+
                         EventFactory.LogWpsJob(this.context, this, message);
                     }
                     else
@@ -1263,6 +1274,27 @@ namespace Terradue.Tep
                     }
                 }
             }        
+        }
+
+        public double GetCost(){
+            //calculate cost                
+            //get number of inputs in the job
+            var totalDataProcessed = 0;
+            foreach (var parameter in this.Parameters) {
+                if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
+                    totalDataProcessed++;
+                }
+            }
+            double cost = 0;
+            //get cost of process
+            try
+            {
+                var wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
+                cost = totalDataProcessed * wps.Price;
+            }catch(Exception e){
+                context.LogError(this, "GetCost - " + e.Message);
+            }            
+            return cost;
         }
 
         public object UpdateStatus()

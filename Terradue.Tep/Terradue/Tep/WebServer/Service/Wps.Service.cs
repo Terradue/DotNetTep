@@ -419,16 +419,7 @@ namespace Terradue.Tep.WebServer.Services {
 
                 var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
                 if(payPerUseEnabled){
-                    //calculate cost                
-                    //get number of inputs in the job
-                    var totalDataProcessed = 0;
-                    foreach (var parameter in parameters) {
-                        if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
-                            totalDataProcessed++;
-                        }
-                    }
-                    //get cost of process
-                    cost = totalDataProcessed * wps.Price;
+                    cost = wpsjob.GetCost();
                     if(cost > user.Credit && !user.HasNegativeCreditAllowed) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", user.Credit, cost));
                 }
                 
@@ -576,12 +567,6 @@ namespace Terradue.Tep.WebServer.Services {
                         //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                         executeResponse = wps.Execute(executeInput, wpsjob.Identifier);
 
-                        //credit has been used
-                        if(payPerUseEnabled && cost > 0){
-                            user.UseCredit(wpsjob, cost);
-                            user.Store();
-                        }
-
                         if (!(executeResponse is ExecuteResponse) 
                             || ((executeResponse as ExecuteResponse).Status.Item is ProcessFailedType)
                             || string.IsNullOrEmpty((executeResponse as ExecuteResponse).statusLocation)) return HandleWrongExecuteResponse(context, executeResponse);
@@ -604,12 +589,6 @@ namespace Terradue.Tep.WebServer.Services {
                     //case is not quotable
                     //wpsjob = WpsJob.CreateJobFromExecuteInput(context, wps, executeInput, parameters);
                     executeResponse = wps.Execute(executeInput);
-
-                    //credit has been used
-                    if(payPerUseEnabled && cost > 0){
-                        user.UseCredit(wpsjob, cost);
-                        user.Store();
-                    }
 
                     if (!(executeResponse is ExecuteResponse)) return HandleWrongExecuteResponse(context, executeResponse);
 
