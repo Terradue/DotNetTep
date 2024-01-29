@@ -21,8 +21,10 @@ namespace Terradue.Tep
         public double CreditRemaining { get; set; }
         public double Credit { get; set; }
 
+        public List<ASDTransaction> Transactions { get; set; }
+
         public UrfCreditInformation(){
-            
+            Transactions = new List<ASDTransaction>();
         }
     }
 }

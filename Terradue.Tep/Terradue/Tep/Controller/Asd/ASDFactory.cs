@@ -30,6 +30,8 @@ namespace Terradue.Tep {
             t2request.ContentType = "application/json";
             t2request.Accept = "application/json";
             t2request.Proxy = null;
+
+            var factory = new ASDTransactionFactory(context);
             
             var urfs = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(t2request.BeginGetResponse,
                                                                        t2request.EndGetResponse,
@@ -80,6 +82,7 @@ namespace Terradue.Tep {
                             }
                             asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
                             asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
+                            asd.UrfCreditInformation.Transactions = factory.GetServiceTransactionsForASD(dbasd.Id);
                         }
                     }
                 }

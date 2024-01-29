@@ -56,30 +56,34 @@ namespace Terradue.Tep {
         }
 
         public List<ASDTransaction> GetServiceTransactionsForASD(int asdid) {
-            List<Transaction> transactions = GetJobTransactionsForASD(asdid);
             var result = new List<ASDTransaction>();
-
-            foreach(var transaction in transactions){
-                var job = WpsJob.FromIdentifier(context, transaction.Identifier);
-                bool exists = false;
-                foreach(var res in result){
-                    if(res.Name == job.WpsName){
-                        res.Balance += transaction.Balance;
-                        if(!res.Owners.Contains(job.Owner.Username)) res.Owners.Add(job.Owner.Username);
-                        exists = true;
-                        continue;
+            try{
+                List<Transaction> transactions = GetJobTransactionsForASD(asdid);
+            
+                foreach(var transaction in transactions){
+                    var job = WpsJob.FromIdentifier(context, transaction.Identifier);
+                    bool exists = false;
+                    foreach(var res in result){
+                        if(res.Name == job.WpsName){
+                            res.Balance += transaction.Balance;
+                            if(!res.Owners.Contains(job.Owner.Username)) res.Owners.Add(job.Owner.Username);
+                            exists = true;
+                            continue;
+                        }
+                    }
+                    if(!exists){
+                        var t = new ASDTransaction()
+                        {
+                            Identifier = job.ProcessId,
+                            Name = job.WpsName,
+                            Balance = transaction.Balance,
+                            Owners = new List<string>{job.Owner.Username}
+                        };
+                        result.Add(t);
                     }
                 }
-                if(!exists){
-                    var t = new ASDTransaction()
-                    {
-                        Identifier = job.ProcessId,
-                        Name = job.WpsName,
-                        Balance = transaction.Balance,
-                        Owners = new List<string>{job.Owner.Username}
-                    };
-                    result.Add(t);
-                }
+            }catch(Exception e){
+                context.LogError(this, e.Message);
             }
             return result;
         }
@@ -97,6 +101,15 @@ namespace Terradue.Tep {
             };
             if (transaction.EntityId == 0) transaction.EntityId = job.Id;
             transaction.Store();
+        }
+
+        public static bool JobAlreadyExists(IfyContext context, WpsJob job)
+        {
+            EntityList<Transaction> transactions = new EntityList<Transaction>(context);                        
+            transactions.SetFilter("EntityId", job.Id);
+            transactions.Load();
+            var items = transactions.GetItemsAsList();
+            return items != null && items.Count > 0;
         }
     }
 

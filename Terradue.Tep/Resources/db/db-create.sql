@@ -534,7 +534,7 @@ CREATE TABLE asd (
     name varchar(200) NOT NULL COMMENT 'asd name',    
     startdate datetime NOT NULL COMMENT 'asd start date',
     enddate datetime NOT NULL COMMENT 'asd end date',
-    overspending boolean NOT NULL DEFAULT false COMMENT 'Total asd credit',
+    overspending VARCHAR(500) NULL COMMENT 'overspending',
     credit int NOT NULL DEFAULT 0 COMMENT 'Total asd credit',
     used int NOT NULL DEFAULT 0 COMMENT 'asd credit used',
     CONSTRAINT pk_asd PRIMARY KEY (id),
