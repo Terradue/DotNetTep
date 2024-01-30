@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>    
     <!-- <ProjectReference Include="../../Terradue.Portal/Terradue.Portal/Terradue.Portal.csproj"/> -->
+    <ProjectReference Include="/tmp/Terradue.Portal/Terradue.Portal.csproj"/>  
   </ItemGroup>
   <ItemGroup>
     <None Include="$(ProjectDir)Resources\**\*" PackagePath="content/modules/tep" Pack="true"/>
