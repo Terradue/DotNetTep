@@ -61,7 +61,11 @@ namespace Terradue.Tep.Services {
         [ApiMember(Name = "WpsName", Description = "WpsName", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsName { get; set; }    
         [ApiMember(Name = "Price", Description = "Price", ParameterType = "query", DataType = "double", IsRequired = true)]
-        public double Price { get; set; }    
+        public double Price { get; set; }
+        [ApiMember(Name = "PriceType", Description = "PriceType", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int PriceType { get; set; } 
+        [ApiMember(Name = "MaxConcurrentInput", Description = "MaxConcurrentInput", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int MaxConcurrentInput { get; set; }    
 
 
         public WebStoreService() { }
@@ -77,6 +81,8 @@ namespace Terradue.Tep.Services {
             this.IconUrl = entity.IconUrl;
             this.Apps = entity.Apps;
             this.Price = entity.Price;
+            this.PriceType = (int)entity.PriceType;
+            this.MaxConcurrentInput = entity.MaxConcurrentInputs;
         }
 
         /// <summary>
@@ -100,6 +106,8 @@ namespace Terradue.Tep.Services {
             entity.IconUrl = this.IconUrl;
             entity.Apps = this.Apps;
             entity.Price = this.Price;
+            entity.PriceType = (PriceCalculKind)this.PriceType;
+            entity.MaxConcurrentInputs = this.MaxConcurrentInput;
             return entity;
         }
 

@@ -29,13 +29,23 @@ namespace Terradue.Tep {
             }
         }
 
-        public double PriceInput {
+        public PriceCalculKind PriceType {
             get {
                 if (storeservice==null)
                     try{
                         storeservice = StoreService.FromWpsName(context, this.Name);
                     }catch(System.Exception) {}                
-                return storeservice != null ? storeservice.PriceInput : 0;
+                return storeservice != null ? storeservice.PriceType : 0;
+            }
+        }
+
+        public int MaxConcurrentInput {
+            get {
+                if (storeservice==null)
+                    try{
+                        storeservice = StoreService.FromWpsName(context, this.Name);
+                    }catch(System.Exception) {}                
+                return storeservice != null ? storeservice.MaxConcurrentInputs : 0;
             }
         }
 

@@ -205,22 +205,22 @@ namespace Terradue.Tep
             }
         }
 
-        private WpsProcessOffering process { get; set; }
+        private WpsProcessOfferingTep process { get; set; }
 
         /// <summary>
         /// Get the Wps process associated to the job
         /// </summary>
         /// <value>The process service.</value>
         /// \xrefitem uml "UML" "UML Diagram"
-        public WpsProcessOffering Process
+        public WpsProcessOfferingTep Process
         {
             get
             {
                 if (process == null)
                 {
                     try
-                    {
-                        process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, ProcessId);
+                    {                        
+                        process = WpsProcessOfferingTep.FromIdentifier(context, ProcessId);                    
                     }
                     catch (Exception e)
                     {
@@ -1277,24 +1277,64 @@ namespace Terradue.Tep
         }
 
         public double GetCost(){
-            //calculate cost                
-            //get number of inputs in the job
+            double cost = 0;            
+
+            if(Process != null){
+
+                var totalDataProcessed = GetNbDataProductsInputs();
+
+                switch(Process.PriceType){
+                    case PriceCalculKind.None:
+                    break;
+                    case PriceCalculKind.PerInput:
+                        cost = totalDataProcessed * Process.Price;
+                        break;
+                    case PriceCalculKind.PerInputPair:
+                        cost = totalDataProcessed * Process.Price / 2;
+                    break;
+                    case PriceCalculKind.PerJob:
+                        cost = Process.Price;
+                    break;
+                    case PriceCalculKind.PerAcquisitionDate:
+                    break;
+                    default:
+                    break;
+                }
+            }
+
+            return cost;
+        }
+
+        public int GetNbDataProductsInputs(){
             var totalDataProcessed = 0;
             foreach (var parameter in this.Parameters) {
                 if (!string.IsNullOrEmpty(parameter.Value) && (parameter.Value.StartsWith("http://") || parameter.Value.StartsWith("https://"))) {                            
                     totalDataProcessed++;
                 }
             }
-            double cost = 0;
-            //get cost of process
-            try
-            {
-                var wps = WpsProcessOfferingTep.FromIdentifier(context, this.ProcessId);
-                cost = totalDataProcessed * wps.Price;
-            }catch(Exception e){
-                context.LogError(this, "GetCost - " + e.Message);
-            }            
-            return cost;
+            return totalDataProcessed;
+        }
+
+        public void CheckCanProcess(){
+            //Check if user has enough credit
+            var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
+            if(payPerUseEnabled){
+                var cost = this.GetCost();
+                if(cost > this.Owner.Credit && !this.Owner.HasNegativeCreditAllowed) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", this.Owner.Credit, cost));
+            }
+
+            //Check if user has enough concurrent input available
+            if(this.Process != null){
+                //get max concurrent inputs for the service
+                var maxinputs = this.Process.MaxConcurrentInput;
+                //get current concurrent inputs used for the service
+                try{                    
+                    var services = new EntityList<Service>(context);
+                    services.SetFilter("Name", this.Process.Name);
+                    services.SetFilter("Available",1);
+                    services.Load();
+                }catch(System.Exception) {}
+            }
         }
 
         public object UpdateStatus()
@@ -2345,8 +2385,8 @@ namespace Terradue.Tep
 
             try
             {
-                if (process == null) process = (WpsProcessOffering)WpsProcessOffering.FromIdentifier(context, this.ProcessId);
-                result.Categories.Add(new SyndicationCategory("process", null, process.Name));
+                if (Process != null)
+                    result.Categories.Add(new SyndicationCategory("process", null, Process.Name));
             }
             catch (Exception)
             {
