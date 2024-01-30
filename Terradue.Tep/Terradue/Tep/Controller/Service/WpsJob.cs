@@ -1320,20 +1320,22 @@ namespace Terradue.Tep
             var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
             if(payPerUseEnabled){
                 var cost = this.GetCost();
+                context.LogDebug(this, string.Format("Job {0} - cost = {1}", this.Identifier, cost));
                 if(cost > this.Owner.Credit && !this.Owner.HasNegativeCreditAllowed) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", this.Owner.Credit, cost));
             }
 
             //Check if user has enough concurrent input available
-            if(this.Process != null){
+            if(this.Process != null && this.Process.MaxConcurrentInput > 0){                
                 //get max concurrent inputs for the service
                 var maxinputs = this.Process.MaxConcurrentInput;
-                //get current concurrent inputs used for the service
-                try{                    
-                    var services = new EntityList<Service>(context);
-                    services.SetFilter("Name", this.Process.Name);
-                    services.SetFilter("Available",1);
-                    services.Load();
-                }catch(System.Exception) {}
+                context.LogDebug(this, string.Format("MaxConcurrentInputs for service '{0}' = {1}", this.Process.Name, this.Process.MaxConcurrentInput));
+                //get current concurrent inputs used for the service                    
+                var currentinputs = WpsProcessOfferingTep.GetUsedConcurrentInputs(context, this.Process.Name, this.Owner.Id);
+                var jobinputs = this.GetNbDataProductsInputs();
+                context.LogDebug(this, string.Format("Used ConcurrentInputs for service '{0}' = {1}", this.Process.Name, currentinputs));                
+                context.LogDebug(this, string.Format("NbInputs for the current job = {0}", jobinputs));                
+
+                if(currentinputs + jobinputs > maxinputs) throw new Exception(string.Format("Too many concurrent inputs already used. Please wait for job(s) completion."));
             }
         }
 

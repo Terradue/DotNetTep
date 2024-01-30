@@ -64,8 +64,8 @@ namespace Terradue.Tep.Services {
         public double Price { get; set; }
         [ApiMember(Name = "PriceType", Description = "PriceType", ParameterType = "query", DataType = "int", IsRequired = true)]
         public int PriceType { get; set; } 
-        [ApiMember(Name = "MaxConcurrentInput", Description = "MaxConcurrentInput", ParameterType = "query", DataType = "int", IsRequired = true)]
-        public int MaxConcurrentInput { get; set; }    
+        [ApiMember(Name = "MaxConcurrentInputs", Description = "MaxConcurrentInputs", ParameterType = "query", DataType = "int", IsRequired = true)]
+        public int MaxConcurrentInputs { get; set; }    
 
 
         public WebStoreService() { }
@@ -82,7 +82,7 @@ namespace Terradue.Tep.Services {
             this.Apps = entity.Apps;
             this.Price = entity.Price;
             this.PriceType = (int)entity.PriceType;
-            this.MaxConcurrentInput = entity.MaxConcurrentInputs;
+            this.MaxConcurrentInputs = entity.MaxConcurrentInputs;
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace Terradue.Tep.Services {
             entity.Apps = this.Apps;
             entity.Price = this.Price;
             entity.PriceType = (PriceCalculKind)this.PriceType;
-            entity.MaxConcurrentInputs = this.MaxConcurrentInput;
+            entity.MaxConcurrentInputs = this.MaxConcurrentInputs;
             return entity;
         }
 

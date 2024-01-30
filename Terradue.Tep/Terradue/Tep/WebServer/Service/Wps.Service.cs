@@ -130,20 +130,21 @@ namespace Terradue.Tep.WebServer.Services {
             wpsProcesses.AddSort("Name",SortDirection.Descending);
             wpsProcesses.AddSort("Version");
 
-            CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
-            wpsOneProcesses.OpenSearchEngine = ose;
+            // CloudWpsFactory wpsOneProcesses = new CloudWpsFactory(context);
+            // wpsOneProcesses.OpenSearchEngine = ose;
             //wpsProcesses.Identifier = wpsOneProcesses.Identifier;
 
             wpsProcesses.Identifier = "service/wps";
-            var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
+            // var entities = new List<IOpenSearchable> { wpsProcesses, wpsOneProcesses };
 
             if (!string.IsNullOrEmpty(qs["cache"]) && qs["cache"] == "false" && MasterCatalogue.SearchCache != null){                
                 MasterCatalogue.SearchCache.ClearCache(".*", DateTime.Now);
             }
 
             var settings = MasterCatalogue.OpenSearchFactorySettings;
-            MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
-            IOpenSearchResultCollection osr = ose.Query(multiOSE, qs, responseType);
+            // MultiGenericOpenSearchable multiOSE = new MultiGenericOpenSearchable(entities, settings);
+            // IOpenSearchResultCollection osr = ose.Query(multiOSE, qs, responseType);
+            IOpenSearchResultCollection osr = ose.Query(wpsProcesses, qs, responseType);
 
             OpenSearchFactory.ReplaceOpenSearchDescriptionLinks(wpsProcesses, osr);
 
@@ -158,7 +159,7 @@ namespace Terradue.Tep.WebServer.Services {
                 context.Open ();
                 context.LogInfo (this, string.Format ("/job/wps/description GET"));
 
-                EntityList<WpsProcessOffering> wpsservices = new EntityList<WpsProcessOffering> (context);
+                EntityList<WpsProcessOfferingTep> wpsservices = new EntityList<WpsProcessOfferingTep> (context);
                 wpsservices.OpenSearchEngine = MasterCatalogue.OpenSearchEngine;
 
                 OpenSearchDescription osd = wpsservices.GetOpenSearchDescription ();
