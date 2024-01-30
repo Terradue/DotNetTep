@@ -16,7 +16,7 @@ using Terradue.ServiceModel.Syndication;
 
 namespace Terradue.Tep {
     [EntityTable(null, EntityTableConfiguration.Custom, Storage = EntityTableStorage.Above, AllowsKeywordSearch = true)]
-    public class WpsProcessOfferingTep : WpsProcessOffering {
+    public class WpsProcessOfferingTep : WpsProcessOffering, IAtomizable {
         private StoreService storeservice;
         
         public double Price {
@@ -29,13 +29,23 @@ namespace Terradue.Tep {
             }
         }
 
-        public double PriceInput {
+        public PriceCalculKind PriceType {
             get {
                 if (storeservice==null)
                     try{
                         storeservice = StoreService.FromWpsName(context, this.Name);
                     }catch(System.Exception) {}                
-                return storeservice != null ? storeservice.PriceInput : 0;
+                return storeservice != null ? storeservice.PriceType : 0;
+            }
+        }
+
+        public int MaxConcurrentInput {
+            get {
+                if (storeservice==null)
+                    try{
+                        storeservice = StoreService.FromWpsName(context, this.Name);
+                    }catch(System.Exception) {}                
+                return storeservice != null ? storeservice.MaxConcurrentInputs : 0;
             }
         }
 
@@ -113,6 +123,43 @@ namespace Terradue.Tep {
                 context.LogError(this, e.Message, e);
                 throw e;
             }
+        }
+
+        public static int GetUsedConcurrentInputs(IfyContext context, string name, int id){
+            var jobs = new EntityList<WpsJob>(context);
+            jobs.SetFilter("WpsName", name);
+            jobs.SetFilter("OwnerId",id);                
+            jobs.SetFilter("Status",(int)WpsJobStatus.ACCEPTED + "," + (int)WpsJobStatus.NONE + "," + (int)WpsJobStatus.PAUSED + "," + (int)WpsJobStatus.STARTED + "," + (int)WpsJobStatus.PUBLISHING);
+            jobs.Load();
+
+            int currentinputs = 0;
+            foreach(var job in jobs.GetItemsAsList()){
+                currentinputs += job.GetNbDataProductsInputs();
+            }
+            return currentinputs;
+        }
+
+        public override AtomItem ToAtomItem(NameValueCollection parameters) {
+            context.LogDebug(this, "WpsProcessOfferingTep - ToAtomItem");
+            var entry = base.ToAtomItem(parameters);
+            context.LogDebug(this, "MaxConcurrentInput = " + MaxConcurrentInput);
+            if(this.MaxConcurrentInput > 0){
+                entry.ElementExtensions.Add("maxConcurrentInputs", "https://www.terradue.com/", this.MaxConcurrentInput);
+                try{
+                    var currentinputs = WpsProcessOfferingTep.GetUsedConcurrentInputs(context, this.Name, context.UserId);
+                    var slackConcurrentInputs = this.MaxConcurrentInput - currentinputs;
+                    entry.ElementExtensions.Add("slackConcurrentInputs", "https://www.terradue.com/", slackConcurrentInputs);
+                }catch(System.Exception e){
+                    context.LogError(this, e.Message);
+                }
+            }
+
+            return entry;
+        }
+
+        public new NameValueCollection GetOpenSearchParameters() {
+            NameValueCollection nvc = base.GetOpenSearchParameters();                        
+            return nvc;
         }
 
         /***********/

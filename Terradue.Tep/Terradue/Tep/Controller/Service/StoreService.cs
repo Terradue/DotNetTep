@@ -36,8 +36,11 @@ namespace Terradue.Tep {
         [EntityDataField("price")]
         public double Price { get; set; }
 
-        [EntityDataField("price_input")]
-        public double PriceInput { get; set; }
+        [EntityDataField("price_type")]
+        public PriceCalculKind PriceType { get; set; }
+
+        [EntityDataField("max_concurrent_inputs")]
+        public int MaxConcurrentInputs { get; set; }
 
         public StoreService(IfyContext context) : base(context) {}
 
@@ -65,5 +68,13 @@ namespace Terradue.Tep {
             base.Store();
         }
 
+    }
+
+    public enum PriceCalculKind { 
+        None = 0,
+        PerInput = 1,
+        PerInputPair = 2,
+        PerJob = 3,
+        PerAcquisitionDate = 4
     }
 }
