@@ -103,15 +103,19 @@ namespace Terradue.Tep {
 
         public static string GetPublishToken(IfyContext context, UserTep owner) {
 			try{
-				context.LogDebug(context, "Get Publish Token for user "+ owner.Username);
+				context.LogDebug(context, "Get Publish Token for user "+ owner.Username);				
 				var accessCookie = DBCookie.FromUsernameAndIdentifier(context, owner.Username, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
 				context.LogDebug(context, "Publish Token (" + accessCookie.Expire.ToUniversalTime() + ") = " + accessCookie.Value);
+				context.WriteInfo("Publish Token (" + accessCookie.Expire.ToUniversalTime() + ") = " + accessCookie.Value);
 				if(accessCookie.Expire < DateTime.UtcNow){				
+					context.WriteInfo("Token expired");
 					if(System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] != null && System.Configuration.ConfigurationManager.AppSettings["use_keycloak_exchange"] == "true"){                    					
+						context.WriteInfo("Refresh Token");
 						var kfact = new KeycloakFactory(context);
 						kfact.RefreshToken(owner.Username);
 						var cookie = DBCookie.FromUsernameAndIdentifier(context, owner.Username, System.Configuration.ConfigurationManager.AppSettings["PUBLISH_COOKIE_TOKEN"]);
 						context.LogDebug(context, "Publish Token (" + cookie.Expire.ToUniversalTime() + ") = " + cookie.Value);
+						context.WriteInfo("New Publish Token (" + cookie.Expire.ToUniversalTime() + ") = " + cookie.Value);
 						return cookie.Value;
 					}
 					else return accessCookie.Value;

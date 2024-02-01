@@ -84,8 +84,11 @@ namespace Terradue.Tep {
 		public OauthTokenResponse RefreshToken(string username) {
 
 			Context.LogDebug(this, "Keycloak refresh Token");
+			Context.WriteInfo("Keycloak refresh Token");
 
 			var token = LoadTokenRefresh(username);
+
+			Context.WriteInfo(token.Value);
 
 			if(string.IsNullOrEmpty(token.Value)){
 				Context.LogError(this, "Keycloak RefreshToken error : empty refresh token");
@@ -122,6 +125,7 @@ namespace Terradue.Tep {
 						using (var streamReader = new StreamReader(httpResponse.GetResponseStream())) {
 							string result = streamReader.ReadToEnd();
 							Context.LogDebug(this, "RefreshToken result =  " + result);
+							Context.WriteInfo("RefreshToken result =  " + result);
 							try {
 								return JsonSerializer.DeserializeFromString<OauthTokenResponse>(result);
 							} catch (Exception e) {
@@ -129,16 +133,21 @@ namespace Terradue.Tep {
 							}
 						}
 					}).ConfigureAwait(false).GetAwaiter().GetResult();
+
+					Context.WriteInfo("RefreshToken result ok");
 					
-					if (response.access_token != null) StoreTokenAccess(response.access_token, username, response.expires_in);
-                    if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, username);
-                    if (response.id_token != null) StoreTokenId(response.id_token, username, response.expires_in);
+					if (response.access_token != null) StoreTokenAccess(response.access_token, username, response.expires_in, token.Session);
+                    if (response.refresh_token != null) StoreTokenRefresh(response.refresh_token, username, token.Session);
+                    if (response.id_token != null) StoreTokenId(response.id_token, username, response.expires_in, token.Session);
                     Context.LogDebug(this, "Access Token valid " + response.expires_in + " seconds");
+
+					Context.WriteInfo("Access Token valid " + response.expires_in + " seconds");
                     
 					return response;
 						
 				} catch (Exception e) {
 					Context.LogError(this, "RefreshToken error : " + e.Message);					
+					Context.WriteError(e.Message);
 					throw e;
 				}
 			}
@@ -158,9 +167,14 @@ namespace Terradue.Tep {
 		/// </summary>
 		/// <param name="value">Value.</param>
 		/// <param name="expire">Expire.</param>
-		public void StoreTokenAccess(string value, string username, long expire) {
-			Context.LogDebug(this, "StoreTokenAccess - " + HttpContext.Current.Session.SessionID + " - " + username);
-			DBCookie.StoreDBCookie(Context, COOKIE_TOKEN_ACCESS, value, username, expire);            
+		public void StoreTokenAccess(string value, string username, long expire, string session = null) {
+			if (HttpContext.Current != null && HttpContext.Current.Session != null){
+				Context.LogDebug(this, "StoreTokenAccess - " + HttpContext.Current.Session.SessionID + " - " + username);
+				DBCookie.StoreDBCookie(Context, COOKIE_TOKEN_ACCESS, value, username, expire);            
+			} else {
+				Context.LogDebug(this, "StoreTokenAccess - " + session + " - " + username);
+				DBCookie.StoreDBCookie(Context, session, COOKIE_TOKEN_ACCESS, value, username, DateTime.UtcNow.AddSeconds(expire));
+			}
 		}
 
 		/// <summary>
@@ -186,9 +200,14 @@ namespace Terradue.Tep {
 		/// Stores the token refresh.
 		/// </summary>
 		/// <param name="value">Value.</param>
-		public void StoreTokenRefresh(string value, string username) {			
-			Context.LogDebug(this, "StoreTokenRefresh - " + HttpContext.Current.Session.SessionID + " - " + username);
-			DBCookie.StoreDBCookie(Context, COOKIE_TOKEN_REFRESH, value, username);
+		public void StoreTokenRefresh(string value, string username, string session = null) {			
+			if (HttpContext.Current != null && HttpContext.Current.Session != null){
+				Context.LogDebug(this, "StoreTokenRefresh - " + HttpContext.Current.Session.SessionID + " - " + username);
+				DBCookie.StoreDBCookie(Context, COOKIE_TOKEN_REFRESH, value, username);            
+			} else {
+				Context.LogDebug(this, "StoreTokenRefresh - " + session + " - " + username);
+				DBCookie.StoreDBCookie(Context, session, COOKIE_TOKEN_REFRESH, value, username, DateTime.UtcNow.AddSeconds(86400L));
+			}
 		}
 
 		/// <summary>
@@ -210,9 +229,15 @@ namespace Terradue.Tep {
 		/// Stores the token id.
 		/// </summary>
 		/// <param name="value">Value.</param>
-		public void StoreTokenId(string value, string username, long expire) {
-			Context.LogDebug(this, "StoreTokenId - " + HttpContext.Current.Session.SessionID + " - " + username);
-			DBCookie.StoreDBCookie(Context, COOKIE_TOKEN_ID, value, username, expire);
+		public void StoreTokenId(string value, string username, long expire, string session = null) {
+			if (HttpContext.Current != null && HttpContext.Current.Session != null){
+				Context.LogDebug(this, "StoreTokenId - " + HttpContext.Current.Session.SessionID + " - " + username);
+				DBCookie.StoreDBCookie(Context, COOKIE_TOKEN_ID, value, username, expire);            
+			} else {
+				Context.LogDebug(this, "StoreTokenId - " + session + " - " + username);
+				DBCookie.StoreDBCookie(Context, session, COOKIE_TOKEN_ID, value, username, DateTime.UtcNow.AddSeconds(expire));
+			}
+
 			if(Context.UserId != 0)	CookiesFactory.StoreSessionCookies(Context, value,DateTime.UtcNow.AddSeconds(expire));
 		}
 
