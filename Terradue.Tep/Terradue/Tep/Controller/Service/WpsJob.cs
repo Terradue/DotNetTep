@@ -1404,6 +1404,7 @@ namespace Terradue.Tep
         {
 
             context.LogDebug(this, string.Format("Publish"));            
+            context.WriteInfo(string.Format("Publish"));            
             if (url.Contains("{USER}")) url = url.Replace("{USER}", this.Owner.Username);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -1420,6 +1421,7 @@ namespace Terradue.Tep
             if (PublishConfig.Types == null)
             {
                 context.LogError(this, "Enable to publish - no type defined in config");
+                context.WriteError(string.Format("Enable to publish - no type defined in config"));            
                 return;
             }
 
@@ -1427,6 +1429,7 @@ namespace Terradue.Tep
             if (templateFileConfig == null || string.IsNullOrEmpty(templateFileConfig.Value))
             {
                 context.LogError(this, "Enable to publish - no type defined for service");
+                context.WriteError(string.Format("Enable to publish - no type defined for service"));            
                 return;
             }
             var templateFile = templateFileConfig.Value;
@@ -1457,6 +1460,7 @@ namespace Terradue.Tep
             }
 
             context.LogDebug(this, string.Format("publish request body - {0}", json));
+            context.WriteInfo(string.Format("publish request body - {0}", json));
             EventFactory.LogWpsJob(context, this, "Job published", "portal_job_publish");
 
             try
@@ -1497,6 +1501,7 @@ namespace Terradue.Tep
             catch (Exception e)
             {
                 context.LogError(this, "Error in publish request: " + e.Message);
+                context.WriteError("Error in publish request: " + e.Message);
                 if (e.InnerException is WebException)
                 {
                     var we = e.InnerException as WebException;
