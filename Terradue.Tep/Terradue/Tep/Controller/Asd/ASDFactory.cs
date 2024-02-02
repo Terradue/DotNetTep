@@ -72,7 +72,7 @@ namespace Terradue.Tep {
                             }
                             //check if status updated
                             if(asd.UrfInformation.Status != dbasd.Status){
-                                dbasd.CreditTotal = asd.UrfInformation.Credit;
+                                dbasd.Status = asd.UrfInformation.Status;
                                 dbasd.Store();
                             }
                             //check if overspending allowed updated
@@ -80,6 +80,9 @@ namespace Terradue.Tep {
                                 dbasd.Overspending = asd.UrfInformation.Overspending;
                                 dbasd.Store();
                             }
+                            //check if users changed
+                            dbasd.SyncUsers(asd);
+
                             asd.UrfCreditInformation.Credit = dbasd.CreditTotal;
                             asd.UrfCreditInformation.CreditRemaining = dbasd.CreditRemaining;
                             asd.UrfCreditInformation.Transactions = factory.GetServiceTransactionsForASD(dbasd.Id);
