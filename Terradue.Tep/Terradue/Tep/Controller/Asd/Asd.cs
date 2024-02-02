@@ -129,6 +129,30 @@ namespace Terradue.Tep
             }
         }
 
+        public void SyncUsers(Urf urf){
+            List<string> emails = new List<string>();
+            foreach(var contact in urf.UrfInformation.Contacts){
+                emails.Add(contact.ContactEmail);
+                var sqlcount = string.Format("SELECT count(*) FROM asd_perm WHERE id_asd = {0} AND id_usr=(SELECT id FROM usr WHERE email='{1}');",this.Id, contact.ContactEmail);
+                if(context.GetQueryIntegerValue(sqlcount) == 0){
+                    //we must insert the user
+                    var insertSql = String.Format("INSERT INTO asd_perm (id_asd,id_usr) SELECT {0},id FROM usr WHERE email='{1}';", this.Id, contact.ContactEmail);
+                    context.LogInfo(this, insertSql);                
+                    context.Execute(insertSql);
+                }
+            }
+            //check users not present anymore
+            var sqllistids = string.Format("SELECT id_usr FROM asd_perm WHERE id_asd={0} and id_usr NOT IN (SELECT id FROM usr WHERE email IN ('{1}'));", this.Id, string.Join("','",emails));
+            var ids = context.GetQueryIntegerValues(sqllistids);
+            if(ids != null){
+                foreach(var id in ids){
+                    var sqlDelete = string.Format("DELETE FROM asd_perm WHERE id_asd={0} AND id_usr={1};",this.Id, id);
+                    context.LogInfo(this, sqlDelete);                
+                    context.Execute(sqlDelete);
+                }
+            }
+        }
+
         public List<User> GetUsers(){
             var users = new List<User>();
             if(this.OwnerId != 0) users.Add(User.FromId(this.context, this.OwnerId));
