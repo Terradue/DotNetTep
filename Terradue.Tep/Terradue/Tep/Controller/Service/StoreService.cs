@@ -33,6 +33,9 @@ namespace Terradue.Tep {
         [EntityDataField("wps_name")]
         public string WpsName { get; set; }
 
+        [EntityDataField("wps_version")]
+        public string WpsVersion { get; set; }
+
         [EntityDataField("price")]
         public double Price { get; set; }
 
@@ -56,11 +59,15 @@ namespace Terradue.Tep {
             return result;
         }
 
-        public static StoreService FromWpsName(IfyContext context, string wpsname) {
-            StoreService result = new StoreService(context);
-            result.WpsName = wpsname;
-            result.Load();
-            return result;
+        public static StoreService FromWpsName(IfyContext context, string wpsname, string version = null) {
+            var services = new EntityList<StoreService>(context);
+            services.SetFilter("WpsName", wpsname);
+            if(!string.IsNullOrEmpty(version))
+                services.SetFilter("WpsVersion", new object[]{SpecialSearchValue.Null,version});
+            services.Load();
+            var items = services.GetItemsAsList();
+            if(items.Count > 0) return items[0];
+            else return null;            
         }
 
         public new void Store() {

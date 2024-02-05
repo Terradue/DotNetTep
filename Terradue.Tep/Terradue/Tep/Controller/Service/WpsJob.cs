@@ -1321,6 +1321,7 @@ namespace Terradue.Tep
             if(payPerUseEnabled){
                 var cost = this.GetCost();
                 context.LogDebug(this, string.Format("Job {0} - cost = {1}", this.Identifier, cost));
+                context.LogDebug(this, string.Format("Owner ({0}) - credit = {1} - overspending = {2}", this.Owner.Username, this.Owner.Credit, this.Owner.HasNegativeCreditAllowed ? "allowed" : "not allowed"));
                 if(cost > this.Owner.Credit && !this.Owner.HasNegativeCreditAllowed) throw new Exception(string.Format("Not enough credit to process. Remaining credit is {0} for a cost of {1}", this.Owner.Credit, cost));
             }
 

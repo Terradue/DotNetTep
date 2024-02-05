@@ -23,7 +23,7 @@ namespace Terradue.Tep {
             get {
                 if (storeservice==null)
                     try{
-                        storeservice = StoreService.FromWpsName(context, this.Name);
+                        storeservice = StoreService.FromWpsName(context, this.Name, this.Version);
                     }catch(System.Exception) {}
                 return storeservice != null ? storeservice.Price : 0;
             }
@@ -33,7 +33,7 @@ namespace Terradue.Tep {
             get {
                 if (storeservice==null)
                     try{
-                        storeservice = StoreService.FromWpsName(context, this.Name);
+                        storeservice = StoreService.FromWpsName(context, this.Name, this.Version);
                     }catch(System.Exception) {}                
                 return storeservice != null ? storeservice.PriceType : 0;
             }
@@ -43,7 +43,7 @@ namespace Terradue.Tep {
             get {
                 if (storeservice==null)
                     try{
-                        storeservice = StoreService.FromWpsName(context, this.Name);
+                        storeservice = StoreService.FromWpsName(context, this.Name, this.Version);
                     }catch(System.Exception) {}                
                 return storeservice != null ? storeservice.MaxConcurrentInputs : 0;
             }

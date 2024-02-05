@@ -106,6 +106,8 @@ namespace Terradue.Tep
             sql = string.Format("SELECT id_asd FROM asd_perm WHERE id_usr={0};", id_usr);
             ids.AddRange(context.GetQueryIntegerValues(sql).ToList<int>());
 
+            ids = ids.Distinct().ToList();
+
             foreach(var id in ids){
                 asds.Add(ASD.FromId(context, id));
             }
