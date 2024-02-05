@@ -1,4 +1,4 @@
--- VERSION 1.7.7
+-- VERSION 1.7.8
 
 USE $MAIN$;
 
@@ -511,6 +511,7 @@ CREATE TABLE IF NOT EXISTS service_store (
     identifier varchar(50) NOT NULL COMMENT 'Unique identifier',
     name varchar(100) NOT NULL COMMENT 'service name',
     wps_name varchar(100) NOT NULL COMMENT 'service wps name',
+    wps_version varchar(30) NULL DEFAULT NULL COMMENT 'service wps version',
     description TEXT NULL DEFAULT NULL COMMENT 'service description',
     abstract varchar(500) NULL DEFAULT NULL COMMENT 'service description',
     pack varchar(100) NOT NULL COMMENT 'service pack',
@@ -518,6 +519,7 @@ CREATE TABLE IF NOT EXISTS service_store (
     link varchar(200) NULL DEFAULT NULL COMMENT 'service link',
     price DOUBLE NOT NULL DEFAULT 0 COMMENT 'service price',
     price_type INT NOT NULL DEFAULT 0 COMMENT 'service price per input',
+    max_concurrent_inputs INT NOT NULL DEFAULT 0 COMMENT 'service max concurrent input',
     -- tag varchar(500) NULL DEFAULT NULL COMMENT 'service tag',
     icon_url varchar(300) NULL DEFAULT NULL COMMENT 'service icon url',
     apps varchar(400) NULL DEFAULT NULL COMMENT 'service apps',

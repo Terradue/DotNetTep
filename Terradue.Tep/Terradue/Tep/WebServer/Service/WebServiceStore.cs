@@ -60,6 +60,8 @@ namespace Terradue.Tep.Services {
         public string Apps { get; set; }
         [ApiMember(Name = "WpsName", Description = "WpsName", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsName { get; set; }    
+        [ApiMember(Name = "WpsVersion", Description = "WpsVersion", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string WpsVersion { get; set; }    
         [ApiMember(Name = "Price", Description = "Price", ParameterType = "query", DataType = "double", IsRequired = true)]
         public double Price { get; set; }
         [ApiMember(Name = "PriceType", Description = "PriceType", ParameterType = "query", DataType = "int", IsRequired = true)]
@@ -72,6 +74,7 @@ namespace Terradue.Tep.Services {
 
         public WebStoreService(StoreService entity) : base(entity) {
             this.WpsName = entity.WpsName;
+            this.WpsVersion = entity.WpsVersion;
             this.ServicePack = entity.ServicePack;
             this.ServiceLevel = entity.ServiceLevel;
             this.Description = entity.Description;
@@ -97,6 +100,7 @@ namespace Terradue.Tep.Services {
             entity.Identifier = this.Identifier;
             entity.Name = this.Name;
             entity.WpsName = this.WpsName;
+            entity.WpsVersion = this.WpsVersion;
             entity.ServicePack = this.ServicePack;
             entity.ServiceLevel = this.ServiceLevel;
             entity.Description = this.Description;
