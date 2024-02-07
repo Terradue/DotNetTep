@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Terradue.Portal;
 
 namespace Terradue.Tep {
@@ -73,6 +75,37 @@ namespace Terradue.Tep {
         public new void Store() {
             if(string.IsNullOrEmpty(this.Identifier)) this.Identifier = Guid.NewGuid().ToString();
             base.Store();
+        }
+
+        public List<ThematicApplicationCached> GetApps(){
+            // context.ConsoleDebug = true;
+            // get all services (name = wps name, version = wps version, available = true)
+            // get domain of service -> get app associated to domain
+            var services = new EntityList<WpsProcessOffering>(context);
+            services.SetFilter("Name", this.WpsName);
+            if(!string.IsNullOrEmpty(this.WpsVersion)) services.SetFilter("Version", this.WpsVersion);
+            services.SetFilter("Available", "true");
+            services.Load();
+
+            var servicesItems = services.GetItemsAsList();
+
+            context.LogDebug(this, string.Format("GetApps for service '{0}' with Version '{1}' -- found {2} services on DB", this.WpsName, this.WpsVersion, servicesItems.Count));
+
+            var apps = new List<ThematicApplicationCached>();
+            
+            foreach(var service in servicesItems){                
+                var servicetep = WpsProcessOfferingTep.FromIdentifier(context, service.Identifier);
+                var service_apps = servicetep.GetApps();
+                context.LogDebug(this, string.Format("GetApps for service '{0}' -- found {1}", service.Identifier, service_apps.Count));
+                foreach(var app in service_apps){
+                    if(!apps.Any(a => a.UId == app.UId)){
+                        context.LogDebug(this, string.Format("GetApps -- adding"));
+                        apps.Add(app);
+                    } else context.LogDebug(this, string.Format("GetApps -- not adding"));
+                }
+            }
+            context.LogDebug(context, "GetApps done for this service");
+            return apps;
         }
 
     }

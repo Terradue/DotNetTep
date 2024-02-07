@@ -767,5 +767,52 @@ namespace Terradue.Tep {
                 .SelectMany(t => list.Where(e => !t.Contains(e)),
                     (t1, t2) => t1.Concat(new T[] { t2 }));
         }
+
+        public List<ThematicApplicationCached> GetApps() {
+            var apps = new List<ThematicApplicationCached>();
+            var appsE = new EntityList<ThematicApplicationCached>(context);
+            if(this.DomainId == 0) return apps;
+
+            appsE.SetFilter("DomainId", this.DomainId);
+            appsE.Load();
+
+            var appsEItems = appsE.GetItemsAsList();
+
+            context.LogDebug(this, string.Format("Inside GetApps -- found {0} apps for domain '{1}'", appsEItems.Count, this.Domain.Name));
+            
+            foreach (var app in appsEItems){
+                var feed = app.Feed ?? ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+                var entry = feed.Items.First();
+                var appUid = ThematicAppFactory.GetExtensionFromFeed(entry,"identifier", "http://purl.org/dc/elements/1.1/");
+                context.LogDebug(this, string.Format("Inside GetApps -- app Id = {0}", appUid));
+                var offering = entry.Offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+                if (offering == null) continue;
+                
+                string wpsTags = null;
+
+                //get domain and tag for app
+                var op = offering.Operations.FirstOrDefault(o => o.Code == "ListProcess");
+                if (op != null && op.Href != null)
+                {
+                    var nvc = HttpUtility.ParseQueryString((new Uri(op.Href)).Query);
+                    var tags = nvc["tag"];
+                }
+                context.LogDebug(this, string.Format("Inside GetApps -- tag found : {0}", wpsTags == null ? "none" : wpsTags));
+                bool add = true;
+                if(!string.IsNullOrEmpty(wpsTags)){
+                    string[] tags = wpsTags.Split(",".ToArray());
+                    foreach(var tag in tags){
+                        if(!this.Tags.Contains(tag)) add = false;
+                    }
+                }
+                context.LogDebug(this, string.Format("Inside GetApps -- add app ? {0}", add ? "yes" : "no"));
+                if(add && !apps.Any(a => a.UId == appUid)){
+                    context.LogDebug(this, string.Format("Inside GetApps -- adding"));
+                    apps.Add(app);
+                }
+            }
+            
+            return apps;
+        }
     }
 }
