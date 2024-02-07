@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ServiceStack.ServiceHost;
 using Terradue.Portal;
 using Terradue.Tep;
+using Terradue.Tep.WebServer;
 using Terradue.WebService.Model;
 
 namespace Terradue.Tep.Services {
@@ -57,7 +59,7 @@ namespace Terradue.Tep.Services {
         [ApiMember(Name = "IconUrl", Description = "IconUrl", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string IconUrl { get; set; }
         [ApiMember(Name = "Apps", Description = "Apps", ParameterType = "query", DataType = "string", IsRequired = true)]
-        public string Apps { get; set; }
+        public List<KeyValuePair<string,string>> Apps { get; set; }
         [ApiMember(Name = "WpsName", Description = "WpsName", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string WpsName { get; set; }    
         [ApiMember(Name = "WpsVersion", Description = "WpsVersion", ParameterType = "query", DataType = "string", IsRequired = true)]
@@ -81,11 +83,19 @@ namespace Terradue.Tep.Services {
             this.Abstract = entity.Abstract;
             this.Link = entity.Link;
             // this.Tag = entity.Tag;
-            this.IconUrl = entity.IconUrl;
-            this.Apps = entity.Apps;
+            this.IconUrl = entity.IconUrl;            
             this.Price = entity.Price;
             this.PriceType = (int)entity.PriceType;
             this.MaxConcurrentInputs = entity.MaxConcurrentInputs;
+            this.Apps = new List<KeyValuePair<string,string>>();
+            foreach(var app in entity.GetApps()){        
+                var feed = app.Feed ?? ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+                string title = null;
+                try {
+                    title=feed.Items.First().Title.Text;
+                }catch(Exception){}
+                this.Apps.Add(new KeyValuePair<string, string>(app.UId, title ));
+            }
         }
 
         /// <summary>
@@ -108,7 +118,7 @@ namespace Terradue.Tep.Services {
             entity.Link = this.Link;
             // entity.Tag = this.Tag;
             entity.IconUrl = this.IconUrl;
-            entity.Apps = this.Apps;
+            // entity.Apps = this.Apps;
             entity.Price = this.Price;
             entity.PriceType = (PriceCalculKind)this.PriceType;
             entity.MaxConcurrentInputs = this.MaxConcurrentInputs;

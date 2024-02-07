@@ -90,6 +90,8 @@ namespace Terradue.Tep.WebServer {
 
         [ApiMember(Name = "selfUrl", Description = "self search url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string SelfUrl { get; set; }
+        [ApiMember(Name = "accessUrl", Description = "self search url of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
+        public string AccessUrl { get; set; }
 
         [ApiMember(Name = "Domain", Description = "Domain of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Domain { get; set; }
@@ -129,7 +131,7 @@ namespace Terradue.Tep.WebServer {
                 var icon = entry.Links.FirstOrDefault(l => l.RelationshipType == "icon");
                 if (icon != null) this.Icon = icon.Uri.AbsoluteUri;
 
-                SelfUrl = context.BaseUrl + "/apps/search?cache=true&uid=" + this.Identifier;
+                SelfUrl = context.BaseUrl + "/apps/search?cache=true&uid=" + this.Identifier;                
 
                 HasServices = false;
 
