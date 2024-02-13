@@ -148,9 +148,9 @@ namespace Terradue.Tep.WebServer.Services {
 						}
 
                         //publish on community index
-                        if (request.publish) {
+                        // if (request.publish) {
                             job.PublishToIndex(context.GetConfigValue("catalog-communityIndex"), context.GetConfigValue("catalog-communityUsername"), context.GetConfigValue("catalog-communityApikey"), request.id);
-                        }
+                        // }
 
                         Activity activity = new Activity(context, job, EntityOperationType.Share);
                         activity.Store();
