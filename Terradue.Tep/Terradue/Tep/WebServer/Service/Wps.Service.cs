@@ -479,19 +479,19 @@ namespace Terradue.Tep.WebServer.Services {
 						};
 						executeInput.DataInputs.Add(input);
 					}
-                    if (WpsFactory.DescribeProcessHasField(descResponse, "_T2JobInfoFeed")) {
-                        var jobinfofeed = wpsjob.GetJobAtomFeed();
-                        var jobinfo = ThematicAppCachedFactory.GetOwsContextAtomFeedAsString(jobinfofeed);
-                        var cdata = jobinfo;
-                        var input = new InputType();
-                        input.Identifier = new CodeType { Value = "_T2JobInfoFeed" };
-                        input.Data = new DataType {
-                            Item = new LiteralDataType {
-                                Value = cdata
-                            }
-                        };
-                        executeInput.DataInputs.Add(input);
-                    }
+                    // if (WpsFactory.DescribeProcessHasField(descResponse, "_T2JobInfoFeed")) {
+                    //     var jobinfofeed = wpsjob.GetJobAtomFeed();
+                    //     var jobinfo = ThematicAppCachedFactory.GetOwsContextAtomFeedAsString(jobinfofeed);
+                    //     var cdata = jobinfo;
+                    //     var input = new InputType();
+                    //     input.Identifier = new CodeType { Value = "_T2JobInfoFeed" };
+                    //     input.Data = new DataType {
+                    //         Item = new LiteralDataType {
+                    //             Value = cdata
+                    //         }
+                    //     };
+                    //     executeInput.DataInputs.Add(input);
+                    // }
                     if (WpsFactory.DescribeProcessHasField(descResponse, "_T2ResultsAnalysis")) {
                         var analysis = context.GetConfigValue("wpsDefaultValue_T2ResultsAnalysis");
                         if (string.IsNullOrEmpty(analysis)) analysis = "none";
