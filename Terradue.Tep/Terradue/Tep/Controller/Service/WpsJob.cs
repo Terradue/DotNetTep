@@ -310,8 +310,8 @@ namespace Terradue.Tep
         {
             try
             {
-                if (string.IsNullOrEmpty(index)) throw new Exception("Catalog index not set");
-                var feed = GetJobAtomFeedFromOwsUrl(appId);
+                if (string.IsNullOrEmpty(index)) throw new Exception("Catalog index not set");                
+                var feed = !string.IsNullOrEmpty(OwsUrl) ? GetJobAtomFeedFromOwsUrl(appId) : GetJobAtomFeed(appId);
 
                 if (feed != null)
                 {
@@ -2113,15 +2113,14 @@ namespace Terradue.Tep
         /// </summary>
         /// <returns>The job atom feed.</returns>
         /// <param name="feed">Feed.</param>
-        public OwsContextAtomFeed GetJobAtomFeed()
+        public OwsContextAtomFeed GetJobAtomFeed(string appId = null)
         {
 
             OwsContextAtomFeed feed = new OwsContextAtomFeed();
             OwsContextAtomEntry entry = new OwsContextAtomEntry();
 
-            entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);
-            entry.Summary = new TextSyndicationContent(TepUtility.RemoveAccents(this.Name));
-            entry.Title = new TextSyndicationContent(TepUtility.RemoveAccents(this.Name));
+            entry.ElementExtensions.Add("identifier", "http://purl.org/dc/elements/1.1/", this.Identifier);            
+            entry.Title = new TextSyndicationContent(TepUtility.RemoveAccents(this.Name));            
 
             if (this.Owner != null)
             {
@@ -2131,6 +2130,81 @@ namespace Terradue.Tep
                     Email = this.Owner.Email,
                     Uri = context.GetConfigValue("BaseUrl") + "/#!user/details/" + this.Owner.Identifier
                 });
+            }
+
+            entry.ElementExtensions.Add("creator", "http://purl.org/dc/elements/1.1/", this.Process.Name);
+
+            entry.Categories.Add(new SyndicationCategory(this.StringStatus.ToLower(), "http://www.terradue.com/api/job/status", this.StringStatus.ToLower()));
+            entry.Categories.Add(new SyndicationCategory("job", "http://www.terradue.com/api/type", "Job"));
+            entry.Categories.Add(new SyndicationCategory("wps", "http://www.terradue.com/api/job/type", "WPS"));
+
+            entry.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "results", "Job results", "application/opensearchdescription+xml", 0));    
+            
+            entry.Date = new DateTimeInterval {
+                StartDate = Convert.ToDateTime (this.CreatedTime),
+                EndDate = Convert.ToDateTime (this.EndTime)
+            };
+
+            entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry, appId ?? this.AppIdentifier));
+
+            //spatial
+            try
+            {
+                context.LogDebug(this, "GetJobAtomFeed -- get spatial");
+                var statuslocation = this.StatusLocation;                
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(statuslocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
+                    statuslocation = statuslocation.Replace("/describe", "/search");
+                else if (CatalogueFactory.IsCatalogUrl(new Uri(statuslocation))){
+                    statuslocation = statuslocation.Replace("/description", "/search");
+                    string t2apikey = null;
+                    var urlb = new UriBuilder(statuslocation);
+                    //if current user is owner
+                    if (this.OwnerId == context.UserId) 
+                    {
+                        t2apikey = UserTep.FromId(context, context.UserId).GetSessionApiKey();
+                    }
+                    //if current user is admin
+                    else if(context.UserLevel == UserLevel.Administrator) 
+                    {
+                        t2apikey = this.Owner.LoadApiKeyFromRemote();
+                    }
+                        
+                    if(!string.IsNullOrEmpty(t2apikey)){
+                        NameValueCollection query = HttpUtility.ParseQueryString(urlb.Query);
+                        query.Set("apikey", t2apikey);                    
+                        string[] queryString = Array.ConvertAll(query.AllKeys, key => string.Format("{0}={1}", key, query[key]));
+                        urlb.Query = string.Join("&", queryString);
+                        statuslocation = urlb.Uri.AbsoluteUri;
+                    }
+                }
+                
+                HttpWebRequest httpRequest = (HttpWebRequest)WebRequest.Create(statuslocation);
+                var resfeed = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(httpRequest.BeginGetResponse, httpRequest.EndGetResponse, null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var stream = httpResponse.GetResponseStream())
+                    {
+                        return ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                var resentry = resfeed.Items.First();
+                var boxs = resentry.ElementExtensions.ReadElementExtensions<string>("box", "http://www.georss.org/georss");
+                if(boxs.Count > 0){                    
+                    var box = boxs[0];                    
+                    var p = box.Split(' ');
+                    var minLat = double.Parse(p[0]);
+                    var minLon = double.Parse(p[1]);
+                    var maxLat = double.Parse(p[2]);
+                    var maxLon = double.Parse(p[3]);
+                    var wkt = string.Format("POINT({0} {1})", minLon + (maxLon - minLon) / 2, minLat + (maxLat - minLat) / 2);
+                    context.LogDebug(this, "GetJobAtomFeed -- get spatial -- wkt created = " + wkt);
+                    entry.ElementExtensions.Add("spatial", "http://purl.org/dc/terms/", wkt);            
+                }
+            }
+            catch (Exception e)
+            {
+                context.LogError(this, "GetJobAtomFeed -- get spatial -- " + e.Message);                
             }
 
             feed.Items = new List<OwsContextAtomEntry> { entry };
@@ -2176,7 +2250,7 @@ namespace Terradue.Tep
             if (entry == null) return null;
 
             //update title, as it may have change
-            entry.Title = new TextSyndicationContent(this.Name);
+            entry.Title = new TextSyndicationContent(TepUtility.RemoveAccents(this.Name));
             entry.Summary = new TextSyndicationContent(BuildOwsSummaryFromFeed(entry, appId));
 
 
@@ -2229,7 +2303,7 @@ namespace Terradue.Tep
         {
             try
             {
-                var title = this.Name;
+                var title = TepUtility.RemoveAccents(this.Name);
                 var author = entry.Authors != null && entry.Authors[0] != null ? entry.Authors[0].Name : "";
                 var creators = entry.ElementExtensions.ReadElementExtensions<string>("creator", "http://purl.org/dc/elements/1.1/");
                 var creator = creators.Count > 0 ? creators[0] : "";
@@ -2254,7 +2328,7 @@ namespace Terradue.Tep
             catch (Exception e)
             {
                 context.LogError(this, e.Message);
-                return this.Name;
+                return TepUtility.RemoveAccents(this.Name);
             }
         }
 
