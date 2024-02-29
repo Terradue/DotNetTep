@@ -12,6 +12,7 @@ using ServiceStack.Text;
 using System.IO;
 using Terradue.Artifactory.Response;
 using Terradue.Artifactory;
+using Terradue.Portal;
 
 namespace Terradue.Tep
 {
@@ -232,6 +233,50 @@ namespace Terradue.Tep
 
         }
 
+        public static void ShareOnTerrapi(IfyContext context, string s3link, List<string> users, string publishtoken){
+
+            var shareInput = new TerrapiShareRequest { 
+                path = s3link,
+                users = users
+            };
+
+            var workspaceId = "";
+
+            var url = context.GetConfigValue("terrapi-share-url");
+            url.Replace("{workspaceId}", workspaceId);
+
+            var json = JsonSerializer.SerializeToString<TerrapiShareRequest>(shareInput);
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + publishtoken);
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
+            webRequest.Timeout = 10000;
+            webRequest.Method = "POST";
+            webRequest.ContentType = "application/json";
+
+            using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+            {
+                streamWriter.Write(json);
+                streamWriter.Flush();
+                streamWriter.Close();
+
+                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                        webRequest.EndGetResponse,
+                                                            null)
+                .ContinueWith(task =>
+                {
+                    var httpResponse = (HttpWebResponse)task.Result;
+                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                    {
+                        
+                        
+                    }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();                   
+            }
+
+        }
+
     }
 
     [DataContract]
@@ -273,6 +318,14 @@ namespace Terradue.Tep
 		public List<StoreShareCommunity> communities { get; set; }
         [DataMember]
 		public List<StoreShareUser> users { get; set; }
+	}
+
+    [DataContract]
+	public class TerrapiShareRequest {
+		[DataMember]
+		public string path { get; set; }        
+        [DataMember]
+		public List<string> users { get; set; }
 	}
 
 }

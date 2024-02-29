@@ -140,12 +140,7 @@ namespace Terradue.Tep.WebServer.Services {
                         //secondly we share for all
                         job.GrantPermissionsToAll();
 
-						//share on store
-						try {
-							DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), job.StatusLocation, "results", "public");
-						} catch (Exception e) {
-							context.LogError(this, "Unable to share on STORE : " + e.Message, e);
-						}
+                        job.ShareResults();
 
                         //publish on community index
                         if (request.publish) {

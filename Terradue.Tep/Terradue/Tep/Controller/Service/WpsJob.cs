@@ -58,13 +58,7 @@ namespace Terradue.Tep
             get { return statuslocation; }
             set {
                 statuslocation = value;
-                if (StatusUrls == null) StatusUrls = "";
-                if (!string.IsNullOrEmpty(statuslocation) && !StatusUrls.Contains(statuslocation)){
-                    var urls = StatusUrls.Split(',').ToList<string>();
-                    urls.Add(statuslocation);                    
-                    StatusUrls = string.Join(",",urls);
-                    StatusUrls = StatusUrls.Trim(',');
-                }
+                AddStatusUrl(statuslocation);
             }
         }
         private string statuslocation;
@@ -415,6 +409,26 @@ namespace Terradue.Tep
             {
                 context.LogError(this, "Unable to unpublish from catalog community index (" + identifier + ") : " + e.Message);
             }
+        }
+
+        public void AddStatusUrl(string statusurl){
+            if (StatusUrls == null) StatusUrls = "";
+            if (!string.IsNullOrEmpty(statusurl) && !StatusUrls.Contains(statusurl)){
+                var urls = StatusUrls.Split(',').ToList<string>();
+                urls.Add(statusurl);                    
+                StatusUrls = string.Join(",",urls);
+                StatusUrls = StatusUrls.Trim(',');
+            }
+        }
+
+        public string GetS3Link(){
+            if(this.StacItemUrl != null && this.StacItemUrl.StartsWith("s3://")) 
+                return this.StacItemUrl;
+
+            var urls = StatusUrls.Split(',').ToList<string>();
+            foreach(var url in urls)
+                if(url.StartsWith("s3://")) return url;
+            return null;
         }
 
         /// <summary>
@@ -1089,12 +1103,20 @@ namespace Terradue.Tep
                     try{
                         var stacItem = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(remoteWpsResponseString);
                         var stacLink = stacItem.Links.FirstOrDefault(l => l.Rel == "self");
+                        var stacCatalog = stacItem.Links.FirstOrDefault(l => l.Rel == "catalog");
                         var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
 
                         if (descriptionLink != null)
                         {
                             this.StatusLocation = descriptionLink.Href;
-                            if(stacLink != null) this.StacItemUrl = stacLink.Href;
+                            if(stacLink != null){
+                                this.StacItemUrl = stacLink.Href;
+                                this.AddStatusUrl(stacLink.Href);
+                            }
+                            if(stacCatalog != null){
+                                this.AddStatusUrl(stacCatalog.Href);
+                                if(this.StacItemUrl == null) this.StacItemUrl = stacCatalog.Href;
+                            }
                             this.Status = WpsJobStatus.STAGED;
                             // this.EndTime = DateTime.UtcNow;
                             this.Store();
@@ -2916,6 +2938,21 @@ namespace Terradue.Tep
                 context.LogError(this, "GetJobInputsStacItems : " + e.Message);
             }
             return stacItems;
+        }
+
+        public void ShareResults(List<string> usernames = null) {
+            var s3link = GetS3Link();
+            if (!string.IsNullOrEmpty(s3link)) {
+                //share on terrapi
+                DataGatewayFactory.ShareOnTerrapi(context, s3link, usernames, this.PublishToken);
+            } else {
+                //share on store
+                try {
+                    DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), this.StatusLocation, "results", "public");
+                } catch (Exception e) {
+                    context.LogError(this, "Unable to share on STORE : " + e.Message, e);
+                }
+            }
         }
     }
 
