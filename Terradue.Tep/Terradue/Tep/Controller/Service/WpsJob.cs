@@ -2137,8 +2137,8 @@ namespace Terradue.Tep
             entry.Categories.Add(new SyndicationCategory(this.StringStatus.ToLower(), "http://www.terradue.com/api/job/status", this.StringStatus.ToLower()));
             entry.Categories.Add(new SyndicationCategory("job", "http://www.terradue.com/api/type", "Job"));
             entry.Categories.Add(new SyndicationCategory("wps", "http://www.terradue.com/api/job/type", "WPS"));
-
-            entry.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "results", "Job results", "application/opensearchdescription+xml", 0));    
+            
+            if (!string.IsNullOrEmpty(this.StatusLocation)) entry.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "results", "Job results", "application/opensearchdescription+xml", 0));
             
             entry.Date = new DateTimeInterval {
                 StartDate = Convert.ToDateTime (this.CreatedTime),
@@ -2188,7 +2188,7 @@ namespace Terradue.Tep
                         return ThematicAppCachedFactory.GetOwsContextAtomFeed(stream);
                     }
                 }).ConfigureAwait(false).GetAwaiter().GetResult();
-                var resentry = resfeed.Items.First();
+                var resentry = resfeed.Items.FirstOrDefault(e => e.ElementExtensions.ReadElementExtensions<string>("box", "http://www.georss.org/georss").Count > 0);
                 var boxs = resentry.ElementExtensions.ReadElementExtensions<string>("box", "http://www.georss.org/georss");
                 if(boxs.Count > 0){                    
                     var box = boxs[0];                    
