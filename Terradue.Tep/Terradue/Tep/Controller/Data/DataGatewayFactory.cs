@@ -233,7 +233,7 @@ namespace Terradue.Tep
 
         }
 
-        public static void ShareOnTerrapi(IfyContext context, string s3link, List<string> users, string publishtoken){
+        public static string ShareOnTerrapi(IfyContext context, string s3link, List<string> users, string publishtoken){
 
             var shareInput = new TerrapiShareRequest { 
                 path = s3link,
@@ -261,7 +261,7 @@ namespace Terradue.Tep
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
                                                         webRequest.EndGetResponse,
                                                             null)
                 .ContinueWith(task =>
@@ -269,14 +269,45 @@ namespace Terradue.Tep
                     var httpResponse = (HttpWebResponse)task.Result;
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                     {
-                        
-                        
+                        string result = streamReader.ReadToEnd();
+                        try
+                        {
+                            return ServiceStack.Text.JsonSerializer.DeserializeFromString<TerrapiShareResponse>(result);
+                        }
+                        catch (Exception e)
+                        {
+                            throw e;
+                        }
                     }
-                }).ConfigureAwait(false).GetAwaiter().GetResult();                   
-            }
+                }).ConfigureAwait(false).GetAwaiter().GetResult();    
 
+                return response != null ? response.self : null;
+            }
         }
 
+        public static bool UnshareOnTerrapi(IfyContext context, string shareUrl, string publishToken){
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(shareUrl);
+
+            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + publishToken);
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
+            webRequest.Timeout = 10000;
+            webRequest.Method = "DELETE";
+            webRequest.ContentType = "application/json";
+
+            System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                        webRequest.EndGetResponse,
+                                                            null)
+            .ContinueWith(task =>
+            {
+                var httpResponse = (HttpWebResponse)task.Result;
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                {
+                    string result = streamReader.ReadToEnd();                    
+                }
+            }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            return true;
+        }
     }
 
     [DataContract]
@@ -327,5 +358,86 @@ namespace Terradue.Tep
         [DataMember]
 		public List<string> users { get; set; }
 	}
+
+    [DataContract]
+    public partial class TerrapiShareResponse
+    {
+        
+        [DataMember]
+        public string storageType;
+        
+        [DataMember]
+        public string storagePointUri;
+        
+        [DataMember]
+        public string serviceUri;
+        
+        [DataMember]
+        public bool initialized;
+        
+        [DataMember]
+        public string remoteId;
+        
+        [DataMember]
+        public string resourceServer;
+        
+        [DataMember]
+        public string owner;
+        
+        [DataMember]
+        public string type;
+        
+        [DataMember]
+        public Status status;
+        
+        [DataMember]
+        public string[] resource_uris;
+        
+        [DataMember]
+        public string[] scopes;
+        
+        [DataMember]
+        public Properties properties;
+        
+        [DataMember]
+        public string platformId;
+        
+        [DataMember]
+        public string name;
+        
+        [DataMember]
+        public string self;
+        
+        [DataMember]
+        public string background_job_id;
+    }
+
+    // Type created for JSON at <<root>> --> status
+    [System.Runtime.Serialization.DataContractAttribute(Name="status")]
+    public partial class Status
+    {
+        
+        [DataMember]
+        public string statusCode;
+        
+        [DataMember]
+        public string message;
+    }
+
+    // Type created for JSON at <<root>> --> properties
+    [System.Runtime.Serialization.DataContractAttribute(Name="properties")]
+    public partial class Properties
+    {
+        
+        [DataMember]
+        public string[] additionalProp1;
+        
+        [DataMember]
+        public string[] additionalProp2;
+        
+        [DataMember]
+        public string[] additionalProp3;
+    }
+
 
 }

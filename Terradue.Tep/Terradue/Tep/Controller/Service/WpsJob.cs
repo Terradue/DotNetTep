@@ -3018,12 +3018,34 @@ namespace Terradue.Tep
             var s3link = GetS3Link();
             if (!string.IsNullOrEmpty(s3link)) {
                 //share on terrapi
-                DataGatewayFactory.ShareOnTerrapi(context, s3link, usernames, this.PublishToken);
+                var shareUrl = DataGatewayFactory.ShareOnTerrapi(context, s3link, usernames, this.PublishToken);
+                if(!string.IsNullOrEmpty(shareUrl)){
+                    this.ShareUrl = shareUrl;
+                    this.Store();
+                }
             } else {
                 //share on store
                 try {
                     DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), this.StatusLocation, "results", "public");
                 } catch (Exception e) {
+                    context.LogError(this, "Unable to share on STORE : " + e.Message, e);
+                }
+            }
+        }
+
+        public void UnshareResults() {            
+            if (!string.IsNullOrEmpty(this.ShareUrl)) {
+                //share on terrapi
+                var unshared = DataGatewayFactory.UnshareOnTerrapi(context, this.ShareUrl, this.PublishToken);
+                if(unshared){
+                    this.ShareUrl = null;
+                    this.Store();
+                }
+            } else {
+                //share on store
+                try {
+                    DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"),this.StatusLocation, "results", "private");
+                }catch(Exception e){
                     context.LogError(this, "Unable to share on STORE : " + e.Message, e);
                 }
             }

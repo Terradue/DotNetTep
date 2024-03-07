@@ -71,12 +71,7 @@ namespace Terradue.Tep.WebServer.Services {
                             item.Store();
                         }
 
-                        //share on store
-                        try {
-                            DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"),item.StatusLocation, "results", "private");
-                        }catch(Exception e){
-                            context.LogError(this, "Unable to share on STORE : " + e.Message, e);
-                        }
+                        item.UnshareResults();
 
                         //unpublish on community index
                         item.UnPublishFromIndex(context.GetConfigValue("catalog-communityIndex"), context.GetConfigValue("catalog-communityUsername"), context.GetConfigValue("catalog-communityApikey"));
