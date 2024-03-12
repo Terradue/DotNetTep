@@ -1,4 +1,4 @@
--- VERSION 1.7.8
+-- VERSION 1.7.9
 
 USE $MAIN$;
 
@@ -568,4 +568,9 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 
 -- Adding Agent action...\
 INSERT IGNORE INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`) VALUES ('inactiveUserReport', 'Report inactive users', 'This action report inactive users for the last month', 'Terradue.Tep.Actions, Terradue.Tep', 'MonthlyInactiveUserAlert',0);
+-- RESULT
+
+-- Add config
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('terrapi-share-workspace', 'string', 'terrapi share workspace default name', 'terrapi share workspace default name', 'bios-${USERNAME}-private-workspace', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('terrapi-share-url', 'string', 'terrapi share url', 'terrapi share url', 'https://api.terradue.com/core/v2/storage/workspaces/${WORKSPACEID}/share', '0');
 -- RESULT

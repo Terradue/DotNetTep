@@ -233,17 +233,15 @@ namespace Terradue.Tep
 
         }
 
-        public static string ShareOnTerrapi(IfyContext context, string s3link, List<string> users, string publishtoken){
+        public static string ShareOnTerrapi(IfyContext context, string workspaceId, string s3link, List<string> users, string publishtoken){
 
             var shareInput = new TerrapiShareRequest { 
                 path = s3link,
                 users = users
-            };
-
-            var workspaceId = "";
+            };            
 
             var url = context.GetConfigValue("terrapi-share-url");
-            url.Replace("{workspaceId}", workspaceId);
+            url.Replace("${WORKSPACEID}", workspaceId);
 
             var json = JsonSerializer.SerializeToString<TerrapiShareRequest>(shareInput);
 
@@ -261,7 +259,7 @@ namespace Terradue.Tep
                 streamWriter.Flush();
                 streamWriter.Close();
 
-                var response = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                var shareStatusUrl = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
                                                         webRequest.EndGetResponse,
                                                             null)
                 .ContinueWith(task =>
@@ -269,19 +267,19 @@ namespace Terradue.Tep
                     var httpResponse = (HttpWebResponse)task.Result;
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                     {
-                        string result = streamReader.ReadToEnd();
-                        try
+                        var result = streamReader.ReadToEnd();
+                        var location = httpResponse.Headers["Location"];
+                        if (!string.IsNullOrEmpty(location))
                         {
-                            return ServiceStack.Text.JsonSerializer.DeserializeFromString<TerrapiShareResponse>(result);
+                            context.LogDebug(context, "share location = " + location);
+                            return new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
                         }
-                        catch (Exception e)
-                        {
-                            throw e;
-                        }
+                        else
+                            return null;
                     }
-                }).ConfigureAwait(false).GetAwaiter().GetResult();    
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                return response != null ? response.self : null;
+                return shareStatusUrl;
             }
         }
 

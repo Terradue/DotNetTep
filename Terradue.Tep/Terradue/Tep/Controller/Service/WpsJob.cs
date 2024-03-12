@@ -3018,7 +3018,9 @@ namespace Terradue.Tep
             var s3link = GetS3Link();
             if (!string.IsNullOrEmpty(s3link)) {
                 //share on terrapi
-                var shareUrl = DataGatewayFactory.ShareOnTerrapi(context, s3link, usernames, this.PublishToken);
+                var workspaceId = context.GetConfigValue("terrapi-share-workspace");                
+                workspaceId = workspaceId.Replace("${USERNAME}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
+                var shareUrl = DataGatewayFactory.ShareOnTerrapi(context, workspaceId, s3link, usernames, this.PublishToken);
                 if(!string.IsNullOrEmpty(shareUrl)){
                     this.ShareUrl = shareUrl;
                     this.Store();
