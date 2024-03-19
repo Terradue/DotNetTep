@@ -206,6 +206,8 @@ namespace Terradue.Tep.WebServer.Services {
                             }
                         }
 
+                        job.ShareResults(sharedUsers);
+
 						//share on store
 						try {
 							DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), job.StatusLocation, "results", "restricted", sharedUsers, sharedCommunities);

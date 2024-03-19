@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Terradue.Stars.Interface.Router.Translator;
 using Terradue.Stars.Data.Translators;
 using Terradue.Stars.Services.Credentials;
+using System.Linq.Expressions;
 
 namespace Terradue.Tep
 {
@@ -74,6 +75,9 @@ namespace Terradue.Tep
 
         [EntityDataField("share_url")]
         public string ShareUrl { get; set; }
+
+        [EntityDataField("unshare_url")]
+        public string UnshareUrl { get; set; }
 
         [EntityDataField("status")]
         public WpsJobStatus Status { 
@@ -492,6 +496,7 @@ namespace Terradue.Tep
             newjob.OwsUrl = job.OwsUrl;
             newjob.StacItemUrl = job.StacItemUrl;
             newjob.ShareUrl = job.ShareUrl;
+            newjob.UnshareUrl = job.UnshareUrl;
             newjob.AppIdentifier = job.AppIdentifier;
             newjob.Status = job.Status;
             newjob.ArchiveStatus = job.ArchiveStatus;
@@ -1440,47 +1445,8 @@ namespace Terradue.Tep
 
             context.LogDebug(this, string.Format("publish request to {0} - type = {1}", url, type));
 
-            PublishConfiguration PublishConfig = System.Configuration.ConfigurationManager.GetSection("PublishConfiguration") as PublishConfiguration;
-            if (PublishConfig.Types == null)
-            {
-                context.LogError(this, "Enable to publish - no type defined in config");
-                context.WriteError(string.Format("Enable to publish - no type defined in config"));            
-                return;
-            }
-
-            var templateFileConfig = PublishConfig.Types[type];
-            if (templateFileConfig == null || string.IsNullOrEmpty(templateFileConfig.Value))
-            {
-                context.LogError(this, "Enable to publish - no type defined for service");
-                context.WriteError(string.Format("Enable to publish - no type defined for service"));            
-                return;
-            }
-            var templateFile = templateFileConfig.Value;
-
-            string template = File.ReadAllText(templateFile);
-            string json = template;
-            try
-            {
-                // json = template.ReplaceMacro<WpsJob>("job", this);                
-
-                if(string.IsNullOrEmpty(statuslocation)) statuslocation = this.StatusLocation;
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(statuslocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
-                    statuslocation = statuslocation.Replace("/describe", "/search");
-                else if (CatalogueFactory.IsCatalogUrl(new Uri(statuslocation)))
-                    statuslocation = statuslocation.Replace("/description", "/search");
-                json = json.Replace("${job.StatusLocation}", statuslocation);
-                json = json.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
-                json = json.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
-                json = json.Replace("${job.AppIdentifier}", this.AppIdentifier);
-                json = json.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri != null ? this.ShareUri.AbsoluteUri : "");
-                json = json.Replace("${job.Process.Name}", this.Process != null ? this.Process.Name : this.ProcessId);
-                json = json.Replace("${job.RemoteIdentifier}", this.RemoteIdentifier);
-            }
-            catch (Exception e)
-            {
-                context.LogError(this, e.StackTrace);
-                throw e;
-            }
+            string json = GetPublishJson(type, statuslocation);
+            if(json == null) throw new Exception("");
 
             context.LogDebug(this, string.Format("publish request body - {0}", json));
             context.WriteInfo(string.Format("publish request body - {0}", json));
@@ -1535,6 +1501,164 @@ namespace Terradue.Tep
                     }
                 }
             }
+        }
+
+        public void PublishShareResult(){
+            context.LogDebug(this, string.Format("Publish shared result"));
+            context.WriteInfo(string.Format("Publish shared result"));
+
+            var url = context.GetConfigValue("terrapi-publish-url"); 
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + this.PublishToken);
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();
+            webRequest.Timeout = 10000;
+            webRequest.Method = "POST";
+            webRequest.ContentType = "application/json";
+
+            var type = "share-publish-terrapi";
+
+            context.LogDebug(this, string.Format("publish request to {0} - type = {1}", url, type));
+
+            string json = GetPublishJson(type, this.StatusLocation);
+            if(json == null) throw new Exception("");
+
+            context.LogDebug(this, string.Format("publish request body - {0}", json));
+            context.WriteInfo(string.Format("publish request body - {0}", json));            
+
+            string publicationUrl = null;
+
+            try
+            {
+                using (var streamWriter = new StreamWriter(webRequest.GetRequestStream()))
+                {
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                    streamWriter.Close();
+
+                    publicationUrl = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                            webRequest.EndGetResponse,
+                                                                null)
+                    .ContinueWith(task =>
+                    {
+                        var httpResponse = (HttpWebResponse)task.Result;
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                        {
+                            var result = streamReader.ReadToEnd();
+                            var location = httpResponse.Headers["Location"];
+                            if (!string.IsNullOrEmpty(location))
+                            {
+                                context.LogDebug(this, "location = " + location);
+                                return new Uri(location, UriKind.RelativeOrAbsolute).AbsoluteUri;
+                            }
+                            else
+                                return null;
+                        }
+                    }).ConfigureAwait(false).GetAwaiter().GetResult();                   
+                }
+            }
+            catch (Exception e)
+            {
+                context.LogError(this, "Error in publish request: " + e.Message);
+                context.WriteError("Error in publish request: " + e.Message);
+                if (e.InnerException is WebException)
+                {
+                    var we = e.InnerException as WebException;
+                    using (var streamReader = new StreamReader(we.Response.GetResponseStream()))
+                    {
+                        var result = streamReader.ReadToEnd();
+                        context.LogError(this, "error publish: " + result);
+                    }
+                }
+            }
+
+            //get new catalog link
+            if(!string.IsNullOrEmpty(publicationUrl)){
+                webRequest = (HttpWebRequest)WebRequest.Create(publicationUrl);
+
+                webRequest.Headers.Set(HttpRequestHeader.Authorization, "Bearer " + this.PublishToken);
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["ProxyHost"])) webRequest.Proxy = TepUtility.GetWebRequestProxy();                                
+
+                context.LogDebug(this, string.Format("publish result url = {0}", publicationUrl));
+
+                try
+                {
+
+                    var newCatalogUrl = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse,
+                                                                webRequest.EndGetResponse,
+                                                                    null)
+                        .ContinueWith(task =>
+                        {
+                            var httpResponse = (HttpWebResponse)task.Result;
+                            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                            {
+                                var result = streamReader.ReadToEnd();
+                                var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<TerrapiPublishResponse>(result);
+                                return response.request.url;
+                            }
+                        }).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    //save new catalog url
+                    this.ShareUrl = newCatalogUrl;
+                    this.Store();
+                }            
+                catch (Exception e)
+                {
+                    context.LogError(this, "Error in publish request: " + e.Message);
+                    context.WriteError("Error in publish request: " + e.Message);
+                    if (e.InnerException is WebException)
+                    {
+                        var we = e.InnerException as WebException;
+                        using (var streamReader = new StreamReader(we.Response.GetResponseStream()))
+                        {
+                            var result = streamReader.ReadToEnd();
+                            context.LogError(this, "error publish: " + result);
+                        }
+                    }
+                }
+            }
+        }
+
+        private string GetPublishJson(string type, string statuslocation){
+            PublishConfiguration PublishConfig = System.Configuration.ConfigurationManager.GetSection("PublishConfiguration") as PublishConfiguration;
+            if (PublishConfig.Types == null)
+            {
+                context.LogError(this, "Enable to publish - no type defined in config");
+                context.WriteError(string.Format("Enable to publish - no type defined in config"));            
+                return null;
+            }
+
+            var templateFileConfig = PublishConfig.Types[type];
+            if (templateFileConfig == null || string.IsNullOrEmpty(templateFileConfig.Value))
+            {
+                context.LogError(this, "Enable to publish - no type defined for service");
+                context.WriteError(string.Format("Enable to publish - no type defined for service"));            
+                return null;
+            }
+            var templateFile = templateFileConfig.Value;
+            
+            string template = File.ReadAllText(templateFile);
+            string json = template;
+
+            try{            
+                if(string.IsNullOrEmpty(statuslocation)) statuslocation = this.StatusLocation;
+                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]) && new Uri(statuslocation).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["RecastBaseUrl"]).Host)
+                    statuslocation = statuslocation.Replace("/describe", "/search");
+                else if (CatalogueFactory.IsCatalogUrl(new Uri(statuslocation)))
+                    statuslocation = statuslocation.Replace("/description", "/search");
+                json = json.Replace("${job.StatusLocation}", statuslocation);
+                json = json.Replace("${job.Owner.TerradueCloudUsername}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
+                json = json.Replace("${job.AuthBasicHeader}", this.AuthBasicHeader);
+                json = json.Replace("${job.AppIdentifier}", this.AppIdentifier);
+                json = json.Replace("${job.ShareUri.AbsoluteUri}", this.ShareUri != null ? this.ShareUri.AbsoluteUri : "");
+                json = json.Replace("${job.Process.Name}", this.Process != null ? this.Process.Name : this.ProcessId);
+                json = json.Replace("${job.RemoteIdentifier}", this.RemoteIdentifier);
+            }catch(Exception e){
+                return null;
+            }
+
+            return json;
         }
 
         public ExecuteResponse GetExecuteResponseForSucceededJob(ExecuteResponse response = null)
@@ -2462,7 +2586,7 @@ namespace Terradue.Tep
             Uri id = new Uri(context.BaseUrl + "/" + entityType.Keyword + "/search?id=" + this.Identifier + "&key=" + this.AccessKey);
 
             AtomItem result = new AtomItem();
-            string statusloc = this.StatusLocation;
+            string statusloc = this.ShareUrl ?? this.StatusLocation;
 
             if (string.IsNullOrEmpty(parameters["basic"]) || parameters["basic"] != "true")
             {
@@ -2525,7 +2649,7 @@ namespace Terradue.Tep
             result.Links.Add(new SyndicationLink(new Uri(statusloc), "alternate", "statusLocation", "application/atom+xml", 0));
             if (!string.IsNullOrEmpty(OwsUrl)) result.Links.Add(new SyndicationLink(new Uri(OwsUrl), "alternate", "owsUrl", "application/atom+xml", 0));
             if (!string.IsNullOrEmpty(StacItemUrl)) result.Links.Add(new SyndicationLink(new Uri(StacItemUrl), "alternate", "stac item", "application/json", 0));
-            if (!string.IsNullOrEmpty(ShareUrl)) result.Links.Add(new SyndicationLink(new Uri(ShareUrl), "alternate", "share url", "application/json", 0));
+            // if (!string.IsNullOrEmpty(ShareUrl)) result.Links.Add(new SyndicationLink(new Uri(ShareUrl), "alternate", "share url", "application/json", 0));
             result.Links.Add(new SyndicationLink(new Uri(this.StatusLocation), "alternate", "statusLocationDirect", "application/atom+xml", 0));
             Uri sharedUrlUsr = null, sharedUrlCommunity = null;
 
@@ -3017,12 +3141,17 @@ namespace Terradue.Tep
         public void ShareResults(List<string> usernames = null) {
             var s3link = GetS3Link();
             if (!string.IsNullOrEmpty(s3link)) {
+                context.LogDebug(this, "Share on Terrapi");
+                //publish on catalog
+                this.PublishShareResult();
+
                 //share on terrapi
                 var workspaceId = context.GetConfigValue("terrapi-share-workspace");                
                 workspaceId = workspaceId.Replace("${USERNAME}", this.Owner != null ? this.Owner.TerradueCloudUsername : "");
+                context.LogDebug(this, "workspace Id = " + workspaceId);
                 var shareUrl = DataGatewayFactory.ShareOnTerrapi(context, workspaceId, s3link, usernames, this.PublishToken);
                 if(!string.IsNullOrEmpty(shareUrl)){
-                    this.ShareUrl = shareUrl;
+                    this.UnshareUrl = shareUrl;
                     this.Store();
                 }
             } else {
@@ -3036,11 +3165,11 @@ namespace Terradue.Tep
         }
 
         public void UnshareResults() {            
-            if (!string.IsNullOrEmpty(this.ShareUrl)) {
+            if (!string.IsNullOrEmpty(this.UnshareUrl)) {
                 //share on terrapi
-                var unshared = DataGatewayFactory.UnshareOnTerrapi(context, this.ShareUrl, this.PublishToken);
+                var unshared = DataGatewayFactory.UnshareOnTerrapi(context, this.UnshareUrl, this.PublishToken);
                 if(unshared){
-                    this.ShareUrl = null;
+                    this.UnshareUrl = null;
                     this.Store();
                 }
             } else {
@@ -3070,7 +3199,7 @@ namespace Terradue.Tep
         SUCCEEDED = 4, //wps job is succeeded
         STAGED = 5, //wps job has been staged on store
         FAILED = 6, //wps job has failed
-        PUBLISHING = 7, //wps job is a coordinator
+        PUBLISHING = 7, //wps job is publishing
         COORDINATOR = 8 //wps job is a coordinator
     }
 

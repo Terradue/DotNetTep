@@ -241,9 +241,12 @@ namespace Terradue.Tep
             };            
 
             var url = context.GetConfigValue("terrapi-share-url");
-            url.Replace("${WORKSPACEID}", workspaceId);
+            url = url.Replace("${WORKSPACEID}", workspaceId);
 
             var json = JsonSerializer.SerializeToString<TerrapiShareRequest>(shareInput);
+
+            context.LogDebug(context, "Share url : " + url);
+            context.LogDebug(context, "Share body : " + json);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
 

@@ -276,5 +276,34 @@ namespace Terradue.Tep {
         [DataMember(Name = "description")]
         public string Description { get; set; }
     }
+    [DataContract]
+    public class TerrapiPublishResponse
+    {
+        
+        [DataMember]
+        public Request request;
+    }
+
+    // Type created for JSON at <<root>> --> request
+    [DataContract]
+    public class Request
+    {
+        
+        [DataMember]
+        public string id;
+        
+        [DataMember]
+        public string catalog_id;
+        
+        [DataMember]
+        public string url;
+        
+        [DataMember]
+        public int depth;
+        
+        [DataMember]
+        public string background_job_id;
+    }
+
 }
 
