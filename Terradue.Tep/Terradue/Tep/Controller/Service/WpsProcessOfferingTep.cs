@@ -781,11 +781,12 @@ namespace Terradue.Tep {
             context.LogDebug(this, string.Format("Inside GetApps -- found {0} apps for domain '{1}'", appsEItems.Count, this.Domain.Name));
             
             foreach (var app in appsEItems){
+                try{
                 var feed = app.Feed ?? ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
                 var entry = feed.Items.First();
                 var appUid = ThematicAppFactory.GetExtensionFromFeed(entry,"identifier", "http://purl.org/dc/elements/1.1/");
                 context.LogDebug(this, string.Format("Inside GetApps -- app Id = {0}", appUid));
-                var offering = entry.Offerings.First(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+                var offering = entry.Offerings.FirstOrDefault(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
                 if (offering == null) continue;
                 
                 string wpsTags = null;
@@ -809,6 +810,9 @@ namespace Terradue.Tep {
                 if(add && !apps.Any(a => a.UId == appUid)){
                     context.LogDebug(this, string.Format("Inside GetApps -- adding"));
                     apps.Add(app);
+                }
+                }catch(System.Exception e){
+                    context.LogDebug(this, string.Format("Inside GetApps -- ", e.Message));
                 }
             }
             
