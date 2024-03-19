@@ -88,14 +88,16 @@ namespace Terradue.Tep.Services {
             this.PriceType = (int)entity.PriceType;
             this.MaxConcurrentInputs = entity.MaxConcurrentInputs;
             this.Apps = new List<KeyValuePair<string,string>>();
-            foreach(var app in entity.GetApps()){        
-                var feed = app.Feed ?? ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
-                string title = null;
-                try {
-                    title=feed.Items.First().Title.Text;
-                }catch(Exception){}
-                this.Apps.Add(new KeyValuePair<string, string>(app.UId, title ));
-            }
+            try{
+                foreach(var app in entity.GetApps()){        
+                    var feed = app.Feed ?? ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+                    string title = null;
+                    try {
+                        title=feed.Items.First().Title.Text;
+                    }catch(Exception){}
+                    this.Apps.Add(new KeyValuePair<string, string>(app.UId, title ));
+                }
+            }catch(Exception){}
         }
 
         /// <summary>
