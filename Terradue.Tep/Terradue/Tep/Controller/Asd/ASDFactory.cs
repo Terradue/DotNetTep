@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Web;
 using OpenGis.Wps;
@@ -52,7 +53,11 @@ namespace Terradue.Tep {
             if(sync && urfs != null){
                 foreach (var urf in urfs) {                    
                     if(urf.Count > 0){                        
-                        var asd = urf[0];
+                        var asd = urf[0];                        
+                        try{
+                            var orderedUrfs = urf.OrderByDescending(a => a.UrfInformation.Version).ToList();
+                            asd = orderedUrfs[0];
+                        }catch(Exception){}
                         //check if urf already stored in DB
                         var dburfs = new EntityList<ASD>(context);
                         dburfs.SetFilter("Identifier", asd.UrfInformation.Identifier);
