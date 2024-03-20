@@ -236,7 +236,7 @@ namespace Terradue.Tep
                                     break;
                             }
                         }
-                        if (process == null) throw e;
+                        if (process == null) return null;
                     }
                 }
 
@@ -2110,7 +2110,7 @@ namespace Terradue.Tep
                 });
             }
 
-            entry.ElementExtensions.Add("creator", "http://purl.org/dc/elements/1.1/", this.Process.Name);
+            entry.ElementExtensions.Add("creator", "http://purl.org/dc/elements/1.1/", this.Process != null ? this.Process.Name : this.ProcessId);
 
             entry.Categories.Add(new SyndicationCategory(this.StringStatus.ToLower(), "http://www.terradue.com/api/job/status", this.StringStatus.ToLower()));
             entry.Categories.Add(new SyndicationCategory("job", "http://www.terradue.com/api/type", "Job"));
