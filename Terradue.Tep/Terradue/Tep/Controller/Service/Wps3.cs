@@ -243,6 +243,7 @@ namespace Terradue.Tep.Wps3Utils {
 
 namespace Terradue.Tep {
 
+    [DataContract]
     public class StacLink {
         [DataMember(Name = "type")]
         public string Type { get; set; }
@@ -281,12 +282,11 @@ namespace Terradue.Tep {
     {
         
         [DataMember]
-        public Request request;
+        public TerrapiPublicationResponseRequest request;
     }
 
-    // Type created for JSON at <<root>> --> request
     [DataContract]
-    public class Request
+    public class TerrapiPublicationResponseRequest
     {
         
         [DataMember]
@@ -303,6 +303,9 @@ namespace Terradue.Tep {
         
         [DataMember]
         public string background_job_id;
+
+        [DataMember]
+        public StacLink publication_link;
     }
 
 }

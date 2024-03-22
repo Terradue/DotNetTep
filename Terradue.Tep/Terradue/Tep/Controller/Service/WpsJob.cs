@@ -1597,7 +1597,8 @@ namespace Terradue.Tep
                             {
                                 var result = streamReader.ReadToEnd();
                                 var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<TerrapiPublishResponse>(result);
-                                return response.request.url;
+                                context.LogDebug(this, string.Format("publication (id) result = {0}", result));
+                                return response.request.publication_link != null ? response.request.publication_link.Href : response.request.url;
                             }
                         }).ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -3158,6 +3159,7 @@ namespace Terradue.Tep
                 }
             } else {
                 //share on store
+                context.LogDebug(this, "Share on Store");
                 try {
                     DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"), this.StatusLocation, "results", "public");
                 } catch (Exception e) {
@@ -3168,6 +3170,7 @@ namespace Terradue.Tep
 
         public void UnshareResults() {            
             if (!string.IsNullOrEmpty(this.UnshareUrl)) {
+                context.LogDebug(this, "Unshare on Terrapi");
                 //share on terrapi
                 var unshared = DataGatewayFactory.UnshareOnTerrapi(context, this.UnshareUrl, this.PublishToken);
                 if(unshared){
@@ -3176,6 +3179,7 @@ namespace Terradue.Tep
                 }
             } else {
                 //share on store
+                context.LogDebug(this, "Unshare on Store");
                 try {
                     DataGatewayFactory.ShareOnStore(context.GetConfigValue("SiteName"),this.StatusLocation, "results", "private");
                 }catch(Exception e){
