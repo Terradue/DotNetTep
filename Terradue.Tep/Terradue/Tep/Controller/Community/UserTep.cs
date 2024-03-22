@@ -1067,8 +1067,11 @@ namespace Terradue.Tep {
                         sharedUsersIds = s.GetAuthorizedUserIds(permissionOnly, privilegeOnly).ToList();              
                         sharedUsersIds.Remove(s.Owner.Id);                        
                     }
-                }
-                return new KeyValuePair<string, string>("Id", string.Join(",", sharedUsersIds));
+                }                
+                if(sharedUsersIds.Count > 0)
+                    return new KeyValuePair<string, string>("Id", string.Join(",", sharedUsersIds));
+                else 
+                    return new KeyValuePair<string, string>("Id","0");//there is no shared users, so we dont want any result
             default:
                 return base.GetFilterForParameter(parameter, value);
             }
