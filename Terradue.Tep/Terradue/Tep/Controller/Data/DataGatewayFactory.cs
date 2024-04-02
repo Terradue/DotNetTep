@@ -235,6 +235,9 @@ namespace Terradue.Tep
 
         public static string ShareOnTerrapi(IfyContext context, string workspaceId, string s3link, List<string> users, string publishtoken){
 
+            //we want to share the directory, not the catalog.json
+            s3link = s3link.Substring(0,s3link.LastIndexOf("/"));
+
             var shareInput = new TerrapiShareRequest { 
                 path = s3link,
                 users = users
