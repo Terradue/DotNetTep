@@ -222,7 +222,7 @@ namespace Terradue.Tep {
                     foreach(var urfusr in urf.Contacts){
                         try{
                             if(emails.Contains(urfusr.ContactEmail)){
-                                var usr = UserTep.FromIdentifier(context, urfusr.ContactEmail);
+                                var usr = UserTep.FromEmail(context, urfusr.ContactEmail);
                                 var asdrecord = string.Format("/nASD Identifier: {0} ({1}/{2} euros remaining)", asd.Identifier, asd.CreditRemaining, asd.CreditTotal);
                                 if(list[urfusr.ContactEmail] != null){
                                     list[urfusr.ContactEmail] += asdrecord;
