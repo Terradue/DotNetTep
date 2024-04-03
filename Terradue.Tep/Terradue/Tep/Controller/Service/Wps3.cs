@@ -283,6 +283,8 @@ namespace Terradue.Tep {
         
         [DataMember]
         public TerrapiPublicationResponseRequest request;
+        [DataMember]
+        public List<StacLink> links;
     }
 
     [DataContract]
@@ -304,8 +306,7 @@ namespace Terradue.Tep {
         [DataMember]
         public string background_job_id;
 
-        [DataMember]
-        public StacLink publication_link;
+        
     }
 
 }

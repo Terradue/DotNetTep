@@ -1596,15 +1596,32 @@ namespace Terradue.Tep
                             using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                             {
                                 var result = streamReader.ReadToEnd();
-                                var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<TerrapiPublishResponse>(result);
+                                var response = ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItem>(result);
                                 context.LogDebug(this, string.Format("publication (id) result = {0}", result));
-                                return response.request.publication_link != null ? response.request.publication_link.Href : response.request.url;
+                                if(response == null){
+                                    context.LogDebug(this,"Response is null");
+                                    return null;
+                                }
+                                if(response.Links == null){
+                                    context.LogDebug(this,"Links is null");
+                                    return null;
+                                }
+                                try{
+                                    context.LogDebug(this, string.Format("Found {0} links", response.Links.Count));
+                                    var descriptionLink = response.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
+                                    return descriptionLink.Href;
+                                }catch(Exception e){
+                                    context.LogError(this, e.Message);
+                                    return null;
+                                }
                             }
                         }).ConfigureAwait(false).GetAwaiter().GetResult();
 
                     //save new catalog url
-                    this.ShareUrl = newCatalogUrl;
-                    this.Store();
+                    if(newCatalogUrl != null){
+                        this.ShareUrl = newCatalogUrl;
+                        this.Store();
+                    }
                 }            
                 catch (Exception e)
                 {
