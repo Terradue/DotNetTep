@@ -1111,7 +1111,7 @@ namespace Terradue.Tep
                         var stacCatalog = stacItem.Links.FirstOrDefault(l => l.Rel == "catalog");
                         var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
 
-                        if (descriptionLink != null)
+                        if (stacItem.Status == "completed" && descriptionLink != null)
                         {
                             this.StatusLocation = descriptionLink.Href;
                             if(stacLink != null){
