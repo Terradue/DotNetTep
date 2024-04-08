@@ -243,6 +243,7 @@ namespace Terradue.Tep.Wps3Utils {
 
 namespace Terradue.Tep {
 
+    [DataContract]
     public class StacLink {
         [DataMember(Name = "type")]
         public string Type { get; set; }
@@ -276,5 +277,37 @@ namespace Terradue.Tep {
         [DataMember(Name = "description")]
         public string Description { get; set; }
     }
+    [DataContract]
+    public class TerrapiPublishResponse
+    {
+        
+        [DataMember]
+        public TerrapiPublicationResponseRequest request;
+        [DataMember]
+        public List<StacLink> links;
+    }
+
+    [DataContract]
+    public class TerrapiPublicationResponseRequest
+    {
+        
+        [DataMember]
+        public string id;
+        
+        [DataMember]
+        public string catalog_id;
+        
+        [DataMember]
+        public string url;
+        
+        [DataMember]
+        public int depth;
+        
+        [DataMember]
+        public string background_job_id;
+
+        
+    }
+
 }
 
