@@ -361,7 +361,7 @@ namespace Terradue.Tep {
 					Item = new ComplexDataType {
 						mimeType = "application/xml",
 						Reference = new OutputReferenceType {
-                            href = wpsjob.StatusLocation,
+                            href = wpsjob.ShareUrl ?? wpsjob.StatusLocation,
 							mimeType = "application/opensearchdescription+xml"
 						}
 					}

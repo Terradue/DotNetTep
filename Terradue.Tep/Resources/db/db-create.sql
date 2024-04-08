@@ -1,4 +1,4 @@
--- VERSION 1.7.8
+-- VERSION 1.7.9
 
 USE $MAIN$;
 
@@ -97,6 +97,7 @@ CREATE TABLE wpsjob (
     ows_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps job ows url',
     stacitem_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps Stac Item url',
     share_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps Share url',
+    unshare_url varchar(400) NULL DEFAULT NULL COMMENT 'Wps unshare url',
     app_identifier varchar(50) NULL DEFAULT NULL COMMENT 'Wps job app identifier',
     created_time datetime NOT NULL COMMENT 'Wps created date',
     access_key VARCHAR(50) NULL DEFAULT NULL COMMENT 'Access key',    
@@ -568,4 +569,10 @@ INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional
 
 -- Adding Agent action...\
 INSERT IGNORE INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`) VALUES ('inactiveUserReport', 'Report inactive users', 'This action report inactive users for the last month', 'Terradue.Tep.Actions, Terradue.Tep', 'MonthlyInactiveUserAlert',0);
+-- RESULT
+
+-- Add config
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('terrapi-share-workspace', 'string', 'terrapi share workspace default name', 'terrapi share workspace default name', 'bios-${USERNAME}-private-workspace', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('terrapi-share-url', 'string', 'terrapi share url', 'terrapi share url', 'https://api.terradue.com/core/v2/storage/workspaces/${WORKSPACEID}/share', '0');
+INSERT IGNORE INTO config (`name`, `type`, `caption`, `hint`, `value`, `optional`) VALUES ('terrapi-publish-url', 'string', 'terrapi publish url', 'terrapi publish url', 'https://api.terradue.com/core/v2/services/datacast/cast', '0');
 -- RESULT
