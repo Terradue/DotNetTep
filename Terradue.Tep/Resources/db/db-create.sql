@@ -1,4 +1,4 @@
--- VERSION 1.7.9
+-- VERSION 1.8
 
 USE $MAIN$;
 
@@ -60,6 +60,20 @@ INSERT INTO priv (id_type, identifier, operation, pos, name, enable_log) VALUES
     (@type_id, 'datapackage-m', 'm', @priv_pos + 4, 'DataPackage: change', 1),
     (@type_id, 'datapackage-d', 'd', @priv_pos + 5, 'DataPackage: delete', 1),
     (@type_id, 'datapackage-p', 'p', @priv_pos + 6, 'DataPackage: make public', 1)
+;
+-- RESULT
+
+-- Adding type for thematic applications ... \
+CALL add_type($ID$, 'Terradue.Tep.ThematicApplicationCached, Terradue.Tep', NULL, 'Thematic Apps cached', 'Thematic Apps cached', 'apps');
+-- RESULT
+SET @type_id = (SELECT LAST_INSERT_ID());
+
+-- Adding privileges for thematic applications ... \
+SET @priv_pos = (SELECT MAX(pos) FROM priv);
+INSERT INTO priv (id_type, identifier, operation, pos, name, enable_log) VALUES
+    (@type_id, 'app_cache-s', 's', @priv_pos + 1, 'Thematic application: search', 1),
+    (@type_id, 'app_cache-v', 'v', @priv_pos + 1, 'Thematic application: view', 1),
+    (@type_id, 'app_cache-u', 'u', @priv_pos + 1, 'Thematic application: use', 1)
 ;
 -- RESULT
 
@@ -170,7 +184,9 @@ INSERT INTO role_priv (id_role, id_priv) SELECT @role_id, id FROM priv WHERE ide
     'wpsjob-m',
     'wpsjob-p',
     'wpsjob-d',
-    'wpsjob-s'
+    'wpsjob-s',
+    'app_cache-v',
+    'app_cache-s'
 );
 -- RESULT
 
@@ -194,7 +210,9 @@ INSERT INTO role_priv (id_role, id_priv) SELECT @role_id, id FROM priv WHERE ide
     'wpsjob-v',
     'wpsjob-s',
     'service-v',
-    'service-s'
+    'service-s',
+    'app_cache-v',
+    'app_cache-s'
 );
 -- RESULT
 
@@ -207,7 +225,9 @@ INSERT INTO role_priv (id_role, id_priv) SELECT @role_id, id FROM priv WHERE ide
     'wpsjob-v',
     'wpsjob-s',
     'service-v',
-    'service-s'
+    'service-s',
+    'app_cache-v',
+    'app_cache-s'
 );
 -- RESULT
 
@@ -236,13 +256,12 @@ INSERT INTO `role` (`identifier`, `name`, `description`) VALUES ('ictprovider', 
 
 /*****************************************************************************/
 
--- Adding type for Communities ... \
-SET @type_id = (SELECT id FROM type WHERE class='Terradue.Portal.Domain, Terradue.Portal');
-INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicCommunity, Terradue.Tep', 'Thematic community', 'Thematic community', 'community');
-SET @type_id = (SELECT id FROM type WHERE class='Terradue.Tep.DataPackage, Terradue.Tep');
-INSERT INTO type (id_super, class, caption_sg, caption_pl, keyword) VALUES (@type_id, 'Terradue.Tep.ThematicApplication, Terradue.Tep', 'Thematic application', 'Thematic application', 'application');
+-- Adding type for communities ... \
+CALL add_type($ID$, 'Terradue.Tep.ThematicCommunity, Terradue.Tep', 'Terradue.Portal.Domain, Terradue.Portal', 'Thematic community', 'Thematic community', 'community');
 -- RESULT
 
+-- Adding type for thematic applications ... \
+CALL add_type($ID$, 'Terradue.Tep.ThematicApplication, Terradue.Tep', 'Terradue.Tep.DataPackage, Terradue.Tep', 'Thematic application', 'Thematic application', 'application');
 -- RESULT
 
 -- Adding discuss url for domains
@@ -346,9 +365,6 @@ CREATE TABLE app_cache (
     CONSTRAINT fk_appcache_domain FOREIGN KEY (id_domain) REFERENCES domain(id) ON DELETE CASCADE,
     UNIQUE INDEX `uq_uid_domain` (`uid` ASC, `id_domain` ASC)
 ) Engine=InnoDB COMMENT 'Thematic Apps cache';
-
-INSERT INTO type (class, caption_sg, caption_pl, keyword) VALUES ('Terradue.Tep.ThematicApplicationCached, Terradue.Tep', 'Thematic Apps cached', 'Thematic Apps cached', 'apps');
--- RESULT
 
 -- Adding action...\
 INSERT INTO action (`identifier`, `name`, `description`, `class`, `method`, `enabled`, `time_interval`) VALUES ('RefreshThematicAppsCache', 'Refresh thematic apps cached', 'This action refresh the cached thematic apps', 'Terradue.Tep.Actions, Terradue.Tep', 'RefreshThematicAppsCache',1,'1D');
