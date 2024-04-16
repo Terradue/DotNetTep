@@ -213,18 +213,27 @@ namespace Terradue.Tep {
             string sql = String.Format("SELECT email FROM usr WHERE id IN (SELECT id_usr FROM (SELECT id_usr, MAX(log_time) as lastlog FROM usrsession GROUP BY id_usr) as t1 WHERE t1.lastlog < '{0}') AND level > 1;", date);
             var emails = context.GetQueryStringValues(sql).ToList();
 
+            context.WriteInfo(string.Format("Inactive users last month: {0}",String.Join(",",emails)));
+
             var urfs = ASDFactory.GetActiveASDsFromUseremails(context, emails.ToList());            
-            var list = new Dictionary<string,string>();                    
+            var list = new Dictionary<string,string>();
+
+            context.WriteInfo(string.Format("Active ASDs: {0}",String.Join(",",(from x in urfs select x.Identifier))));
             
             foreach(var urf in urfs){
                 try{
+                    context.WriteInfo(string.Format("Loading ASD '{0}'", urf.Identifier));
                     var asd = ASD.FromIdentifier(context, urf.Identifier);
+                    context.WriteInfo(string.Format("Loaded"));
+                    if(urf.Contacts == null) continue;
                     foreach(var urfusr in urf.Contacts){
                         try{
+                            context.WriteInfo(string.Format("ContactEmail = {0}",urfusr.ContactEmail));
                             if(emails.Contains(urfusr.ContactEmail)){
                                 var usr = UserTep.FromEmail(context, urfusr.ContactEmail);
                                 var asdrecord = string.Format("/nASD Identifier: {0} ({1}/{2} euros remaining)", asd.Identifier, asd.CreditRemaining, asd.CreditTotal);
-                                if(list[urfusr.ContactEmail] != null){
+                                context.WriteInfo(asdrecord);
+                                if(list.ContainsKey(urfusr.ContactEmail)){
                                     list[urfusr.ContactEmail] += asdrecord;
                                 } else {
                                     var usrLink = string.Format("{0}/#!user/admin/{1}", context.GetConfigValue("BaseUrl"), usr.Username);                        
