@@ -1067,7 +1067,7 @@ namespace Terradue.Tep
                     int retries = 0;
                         while (retries++ < 5 && remoteWpsResponseString == null)
                     {
-                        tryt
+                        try
                         {
                             System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(executeHttpRequest.BeginGetResponse, executeHttpRequest.EndGetResponse, null)
                             .ContinueWith(task =>
