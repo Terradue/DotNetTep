@@ -24,6 +24,16 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "access", Description = "Define if the service shall be public or private", ParameterType = "query", DataType = "string", IsRequired = false)]
         public string Access { get; set; }
 
+        [ApiMember(Name = "domainIds", Description = "Domain IDs in case of multiple-domain assignment", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public List<int> DomainIds { get; set; }
+
+        public new WpsProcessOffering ToEntity(IfyContext context, WpsProcessOffering input)
+        {
+            WpsProcessOffering entity = base.ToEntity(context, input);
+            if (this.DomainIds != null) entity.DomainIds = this.DomainIds;
+            entity.Commercial = this.Commercial;
+            return entity;
+        }
     }
 
     [Route("/service/wps/tags", "GET", Summary = "GET all existing services tags", Notes = "")]

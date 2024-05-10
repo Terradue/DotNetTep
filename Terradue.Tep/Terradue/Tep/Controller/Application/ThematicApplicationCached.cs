@@ -736,6 +736,9 @@ namespace Terradue.Tep
             // get the apps from the communities
             if (withCommunitiesApps)
             {
+                // Check whether multi-domain apps are enabled
+                EntityType appType = EntityType.GetEntityType(typeof(ThematicApplicationCached));
+
                 this.LogInfo(string.Format("RefreshCachedApps -- Get the apps from communities"));
                 var communities = new EntityList<ThematicCommunity>(context);
                 communities.SetFilter("Kind", (int)DomainKind.Public + "," + (int)DomainKind.Private + "," + (int)DomainKind.Hidden);
@@ -743,6 +746,24 @@ namespace Terradue.Tep
                 foreach (var community in communities.Items)
                 {
                     var ids = CreateOrUpdateCachedAppsFromCommunity(community);
+                    string[] idsstr = new string[ids.Count];
+                    for (int i = 0; i < ids.Count; i++) idsstr[i] = ids[i].ToString();
+                    // TODO improve
+                    if (appType.CanHaveMultipleDomains)
+                    {
+                        context.Execute(String.Format("DELETE FROM domainassign WHERE id_type={0} AND id_domain={1};", appType.Id, community.Id));
+                        if (ids.Count != 0)
+                        {
+                            string values = null;
+                            foreach (int id in ids)
+                            {
+                                if (values == null) values = String.Empty;
+                                else values += ", ";
+                                values += String.Format("({0}, {1}, {2})", appType.Id, id, community.Id);
+                            }
+                            context.Execute(String.Format("INSERT INTO domainassign (id_type, id, id_domain) VALUES {0};", values));
+                        }
+                    }
                     upIds.AddRange(ids);
                 }
             }

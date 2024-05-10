@@ -72,8 +72,8 @@ SET @type_id = (SELECT LAST_INSERT_ID());
 SET @priv_pos = (SELECT MAX(pos) FROM priv);
 INSERT INTO priv (id_type, identifier, operation, pos, name, enable_log) VALUES
     (@type_id, 'app_cache-s', 's', @priv_pos + 1, 'Thematic application: search', 1),
-    (@type_id, 'app_cache-v', 'v', @priv_pos + 1, 'Thematic application: view', 1),
-    (@type_id, 'app_cache-u', 'u', @priv_pos + 1, 'Thematic application: use', 1)
+    (@type_id, 'app_cache-v', 'v', @priv_pos + 2, 'Thematic application: view', 1),
+    (@type_id, 'app_cache-u', 'u', @priv_pos + 3, 'Thematic application: use', 1)
 ;
 -- RESULT
 
