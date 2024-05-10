@@ -1111,7 +1111,8 @@ namespace Terradue.Tep
                         var stacCatalog = stacItem.Links.FirstOrDefault(l => l.Rel == "catalog");
                         var descriptionLink = stacItem.Links.FirstOrDefault(l => l.Rel == "search" && (l.Type == "application/opensearchdescription+xml" || l.Type == "application/xml+opensearchdescription"));
 
-                        if (stacItem.Status == "completed" && descriptionLink != null)
+                        //for supervisor cases, status is not present, for terrapi cases status is present and should be completed
+                        if ((stacItem.Status == null || stacItem.Status == "completed") && descriptionLink != null)
                         {
                             this.StatusLocation = descriptionLink.Href;
                             if(stacLink != null){
