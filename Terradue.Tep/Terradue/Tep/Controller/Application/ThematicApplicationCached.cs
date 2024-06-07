@@ -319,6 +319,91 @@ namespace Terradue.Tep
             }
         }
 
+        // TODO: integrate SQL in Terradue.Portal.Entity
+        public static void SyncServiceDomains(IfyContext context)
+        {
+            EntityList<ThematicApplicationCached> apps = new EntityList<ThematicApplicationCached>(context);
+            apps.Load();
+
+            EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering>(context);
+            services.Load();
+
+            Dictionary<int, string[]> appKeywords = new Dictionary<int, string[]>();
+            Dictionary<int, string[]> serviceKeywords = new Dictionary<int, string[]>();
+
+            Dictionary<int, List<int>> serviceDomains = new Dictionary<int, List<int>>();
+
+            
+
+            
+            foreach (ThematicApplicationCached app in apps)
+            {
+                var feed = ThematicAppCachedFactory.GetOwsContextAtomFeed(app.TextFeed);
+                var entry = feed.Items.FirstOrDefault();
+
+                if (entry.Offerings == null) continue;
+
+                var offering = entry.Offerings.FirstOrDefault(p => p.Code == "http://www.opengis.net/spec/owc/1.0/req/atom/wps");
+                if (offering == null || offering.Operations == null) continue;
+
+                var op = offering.Operations.FirstOrDefault(o => o.Code == "ListProcess");
+                if (op != null && op.Href != null)
+                {
+                    var nvc = HttpUtility.ParseQueryString((new Uri(op.Href)).Query);
+                    foreach (var key in nvc.AllKeys)
+                    {
+                        if (key == "tag") appKeywords[app.Id] = nvc[key].Split(',');
+                    }
+                }
+            }
+            foreach (Service service in services)
+            {
+                string tags = service.Tags;
+                serviceKeywords[service.Id] = (tags == null ? new string[0] : tags.Split(','));
+            }
+
+            // Loop over services, find assigned apps and add their domains
+            foreach (KeyValuePair<int, string[]> skvp in serviceKeywords)
+            {
+                int serviceId = skvp.Key;
+                string[] keywords = skvp.Value;
+                serviceDomains[serviceId] = new List<int>();
+                foreach (string keyword in keywords)
+                {
+                    foreach (ThematicApplicationCached app in apps)
+                    {
+                        if (!appKeywords.ContainsKey(app.Id)) continue;
+                        if (appKeywords[app.Id].Contains(keyword))
+                        {
+                            // Add this apps domains
+                            foreach (int domainId in app.DomainIds)
+                            {
+                                if (!serviceDomains[serviceId].Contains(domainId)) serviceDomains[serviceId].Add(domainId);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (serviceDomains.Count != 0)
+            {
+                EntityType serviceType = EntityType.GetEntityType(typeof(Service));
+                context.Execute(String.Format("DELETE FROM domainassign WHERE id_type={0} AND id IN ({1});", serviceType.Id, String.Join(",", serviceDomains.Keys)));
+                string values = null;
+                foreach (KeyValuePair<int, List<int>> kvp in serviceDomains)
+                {
+                    int serviceId = kvp.Key;
+                    foreach (int domainId in kvp.Value) {
+                        if (values == null) values = String.Empty;
+                        else values += ", ";
+                        values += String.Format("({0}, {1}, {2})", serviceType.Id, serviceId, domainId);
+                    }
+                }
+                context.Execute(String.Format("INSERT INTO domainassign (id_type, id, id_domain) VALUES {0};", values));
+            }
+        }
+
+
         /// <summary>
         /// Synchronize WPS services
         /// </summary>
@@ -738,6 +823,7 @@ namespace Terradue.Tep
             {
                 // Check whether multi-domain apps are enabled
                 EntityType appType = EntityType.GetEntityType(typeof(ThematicApplicationCached));
+                bool multiDomain = appType.CanHaveMultipleDomains;
 
                 this.LogInfo(string.Format("RefreshCachedApps -- Get the apps from communities"));
                 var communities = new EntityList<ThematicCommunity>(context);
@@ -746,10 +832,8 @@ namespace Terradue.Tep
                 foreach (var community in communities.Items)
                 {
                     var ids = CreateOrUpdateCachedAppsFromCommunity(community);
-                    string[] idsstr = new string[ids.Count];
-                    for (int i = 0; i < ids.Count; i++) idsstr[i] = ids[i].ToString();
                     // TODO improve
-                    if (appType.CanHaveMultipleDomains)
+                    if (multiDomain)
                     {
                         context.Execute(String.Format("DELETE FROM domainassign WHERE id_type={0} AND id_domain={1};", appType.Id, community.Id));
                         if (ids.Count != 0)
@@ -796,6 +880,8 @@ namespace Terradue.Tep
                     app.Delete();
                 }
             }
+            
+            SyncServiceDomains(context);
         }
 
         /// <summary>
