@@ -96,6 +96,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "Domain", Description = "Domain of the app", ParameterType = "query", DataType = "string", IsRequired = true)]
         public string Domain { get; set; }
 
+        [ApiMember(Name = "Domains", Description = "Domain of the app (if multiple)", ParameterType = "query", DataType = "List<string>", IsRequired = true)]
+        public List<string> Domains { get; set; }
+
         [ApiMember(Name = "HasServices", Description = "does the app have services", ParameterType = "query", DataType = "bool", IsRequired = true)]
         public bool HasServices { get; set; }
 

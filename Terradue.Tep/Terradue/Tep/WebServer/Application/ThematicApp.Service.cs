@@ -346,7 +346,7 @@ namespace Terradue.Tep.WebServer.Services {
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
                 context.Close ();
-                throw e;
+                throw;
             }
             HttpResult hr = new HttpResult (osd, "application/opensearchdescription+xml");
             return hr;
@@ -380,7 +380,7 @@ namespace Terradue.Tep.WebServer.Services {
 			} catch (Exception e) {
                 context.LogError(this, e.Message, e);
                 context.Close();
-                throw e;
+                throw;
             }
 			return new WebResponseBool(true);
         }
@@ -398,7 +398,7 @@ namespace Terradue.Tep.WebServer.Services {
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
                 context.Close();
-                throw e;
+                throw;
             }
             return new WebResponseBool(result);
 		}
@@ -413,10 +413,18 @@ namespace Terradue.Tep.WebServer.Services {
                 EntityList<ThematicApplicationCached> apps = new EntityList<ThematicApplicationCached>(context);
                 apps.Load();
 
+                EntityType appType = EntityType.GetEntityType(typeof(ThematicApplicationCached));
+                Dictionary<int, List<string>> appDomains = null;
+                if (appType != null && appType.CanHaveMultipleDomains)
+                {
+                    appDomains = appType.GetDomainIdentifiersForItems(context);
+                }
+
                 foreach(var item in apps.GetItemsAsList()) {
                     var app = new WebThematicAppTep(item, context);
                     if (request.services && app.HasServices) {
                         EntityList<WpsProcessOffering> services = new EntityList<WpsProcessOffering>(context);
+                        
                         if (!string.IsNullOrEmpty(app.WpsServiceDomain)) {
                             try {
                                 var dm = Domain.FromIdentifier(context, app.WpsServiceDomain);
@@ -450,6 +458,10 @@ namespace Terradue.Tep.WebServer.Services {
                         }
                         app.Services = appServices;
                     }
+                    if (appDomains != null && appDomains.ContainsKey(app.Id))
+                    {
+                        app.Domains = appDomains[app.Id];
+                    }
                     result.Add(app);
                 }
 
@@ -457,7 +469,7 @@ namespace Terradue.Tep.WebServer.Services {
             } catch (Exception e) {
                 context.LogError(this, e.Message, e);
                 context.Close();
-                throw e;
+                throw;
             }
             return result;
         }
