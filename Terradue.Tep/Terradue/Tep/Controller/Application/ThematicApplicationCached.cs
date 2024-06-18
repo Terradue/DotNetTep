@@ -16,7 +16,7 @@ using Terradue.Util;
 
 namespace Terradue.Tep
 {
-    [EntityTable("app_cache", EntityTableConfiguration.Custom, HasDomainReference = true, AllowsKeywordSearch = true)]
+    [EntityTable("app_cache", EntityTableConfiguration.Custom, IdentifierField = "uid", HasDomainReference = true, AllowsKeywordSearch = true, AutoCheckIdentifiers = false)]
     public class ThematicApplicationCached : EntitySearchable
     {
 
@@ -24,7 +24,10 @@ namespace Terradue.Tep
         public string TextFeed { get; set; }
 
         [EntityDataField("uid", IsUsedInKeywordSearch = true)]
-        public string UId { get; set; }
+        public string UId { 
+            get { return Identifier; }
+            set { Identifier = value; }
+        }
 
         [EntityDataField("cat_index")]
         public string Index { get; set; }
@@ -332,8 +335,6 @@ namespace Terradue.Tep
             Dictionary<int, string[]> serviceKeywords = new Dictionary<int, string[]>();
 
             Dictionary<int, List<int>> serviceDomains = new Dictionary<int, List<int>>();
-
-            
 
             
             foreach (ThematicApplicationCached app in apps)
