@@ -16,13 +16,17 @@ namespace Terradue.Tep.WebServer {
         /// <param name="connectionString">Connection string.</param>
         /// <param name="baseUrl">Base URL.</param>
         /// <param name="applicationName">Application name.</param>
-        public TepLocalContext(string connectionString, string baseUrl, string applicationName) : base(connectionString,baseUrl,applicationName) {}
+        public TepLocalContext(string connectionString, string baseUrl, string applicationName) : base(connectionString,baseUrl,applicationName) {
+            this.DynamicDbConnectionsGlobal = true;
+        }
         /// <summary>
         /// Initializes a new instance of the <see cref="Terradue.Tep.WebServer.Common.TepQWLocalContext"/> class.
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="console">Console.</param>
-        public TepLocalContext(string connectionString, bool console) : base(connectionString,console){}
+        public TepLocalContext(string connectionString, bool console) : base(connectionString, console){
+            this.DynamicDbConnectionsGlobal = true;
+        }
     }
 
     /// <summary>
