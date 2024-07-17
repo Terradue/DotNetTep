@@ -1070,6 +1070,39 @@ namespace Terradue.Tep.WebServer.Services {
 
                 WpsProcessOffering wps = (WpsProcessOffering)Service.FromIdentifier(context, request.Identifier);
 
+                List<int> domainIds = new List<int>();
+
+                string[] domainIdStrs = null;
+                bool singleDomainReceived = false, multipleDomainsReceived = false;
+                if (request.Domains != null && request.Domains.Count != 0) {
+                    domainIdStrs = request.Domains.ToArray();
+                    multipleDomainsReceived = true;
+                } else if (request.DomainId != null && (request.DomainId.Contains(",") || !Int32.TryParse(request.DomainId, out int did))) {
+                    domainIdStrs = request.DomainId.Split(',');
+                    singleDomainReceived = (domainIdStrs.Length == 1);
+                    multipleDomainsReceived = (domainIdStrs.Length > 1);
+                }
+
+                if (domainIdStrs != null) {
+                    EntityType domainEntityType = new EntityType(typeof(Domain));
+                    foreach (string d in domainIdStrs) {
+                        int did;
+                        if (Int32.TryParse(d, out did)) domainIds.Add(did);
+                        else if (domainEntityType.TryGetItemIdFromIdentifier(context, d, out did)) domainIds.Add(did);
+                    }
+                }
+
+                // Reset the single domain reference (only to be set if a valid single reference was received)
+                request.DomainId = null;
+                request.DomainIds = null;
+
+                if (domainIds.Count != 0) {
+                    // Set the single domain reference (only if a valid single domain reference was received)
+                    if (singleDomainReceived) request.DomainId = domainIds[0].ToString();
+                    // Set the multiple domain references (later ignored if not activated for WPS services)
+                    if (multipleDomainsReceived) request.DomainIds = domainIds;
+                }
+
                 if(request.Access != null){
                     switch(request.Access){
                         case "public":

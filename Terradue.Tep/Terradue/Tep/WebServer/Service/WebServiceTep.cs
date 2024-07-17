@@ -27,6 +27,9 @@ namespace Terradue.Tep.WebServer {
         [ApiMember(Name = "domainIds", Description = "Domain IDs in case of multiple-domain assignment", ParameterType = "query", DataType = "string", IsRequired = false)]
         public List<int> DomainIds { get; set; }
 
+        [ApiMember(Name = "domains", Description = "Domain identifiers in case of multiple-domain assignment", ParameterType = "query", DataType = "string", IsRequired = false)]
+        public List<string> Domains { get; set; }
+
         public new WpsProcessOffering ToEntity(IfyContext context, WpsProcessOffering input)
         {
             WpsProcessOffering entity = base.ToEntity(context, input);
