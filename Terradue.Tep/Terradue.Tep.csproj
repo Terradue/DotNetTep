@@ -39,7 +39,7 @@
     <PackageReference Include="ServiceStack.OrmLite.SqlServer" Version="3.9.71"/>
     <PackageReference Include="ServiceStack.Redis" Version="3.9.71"/>
     <PackageReference Include="Terradue.Authentication" Version="2.0.1"/>
-    <PackageReference Include="Terradue.Portal" Version="2.15.4"/>
+    <PackageReference Include="Terradue.Portal" Version="2.15.5"/>
     <PackageReference Include="Terradue.WebService.Model" Version="2.0.6"/>
     <PackageReference Include="Terradue.OpenNebula" Version="2.0.0"/>
     <PackageReference Include="Terradue.Cloud" Version="1.3.5"/>
