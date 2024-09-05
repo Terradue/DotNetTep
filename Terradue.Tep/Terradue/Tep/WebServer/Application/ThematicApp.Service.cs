@@ -452,10 +452,7 @@ namespace Terradue.Tep.WebServer.Services {
                             }
                         }
                         if (app.WpsServiceTags != null && app.WpsServiceTags.Count > 0) {
-                            IEnumerable<IEnumerable<string>> permutations = WpsProcessOfferingTep.GetPermutations(app.WpsServiceTags, app.WpsServiceTags.Count());
-                            var r1 = permutations.Select(subset => string.Join("*", subset.Select(t => t).ToArray())).ToArray();
-                            var tagsresult = string.Join(",", r1.Select(t => "*" + t + "*"));
-                            services.SetFilter("Tags", tagsresult);
+                            services.SetFilter("Tags", string.Join(",", app.WpsServiceTags));
                         }
                         services.SetFilter("Available", "true");
                         services.Load();
