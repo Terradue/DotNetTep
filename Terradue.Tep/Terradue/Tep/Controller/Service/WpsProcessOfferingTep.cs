@@ -191,10 +191,7 @@ namespace Terradue.Tep {
             EntityList<WpsProcessOffering> dbProcesses = new EntityList<WpsProcessOffering>(context);
             dbProcesses.SetFilter("DomainId", domain.Id);
             if (tags != null && tags.Count() > 0) {
-                IEnumerable<IEnumerable<string>> permutations = GetPermutations(tags, tags.Count());
-                var r1 = permutations.Select(subset => string.Join("*", subset.Select(t => t).ToArray())).ToArray();
-                var tagsresult = string.Join(",", r1.Select(t => "*" + t + "*"));
-                dbProcesses.SetFilter("Tags", tagsresult);
+                dbProcesses.SetFilter("Tags", string.Join(",", tags));
             }
             dbProcesses.Load();
             return dbProcesses.GetItemsAsList();
@@ -729,11 +726,8 @@ namespace Terradue.Tep {
                                                                         break;
                                                                     case "tag":
                                                                         if (!string.IsNullOrEmpty(nvc[key])) {
-                                                                            var tags = nvc[key].Split(",".ToArray());
-                                                                            IEnumerable<IEnumerable<string>> permutations = GetPermutations(tags, tags.Count());
-                                                                            var r1 = permutations.Select(subset => string.Join("*", subset.Select(t => t).ToArray())).ToArray();
-                                                                            var tagsresult = string.Join(",", r1.Select(t => "*" + t + "*"));
-                                                                            result.Add(new KeyValuePair<string, string>("Tags", tagsresult));
+                                                                            var tags = nvc[key].Replace(" ", string.Empty).Split(",".ToArray());
+                                                                            result.Add(new KeyValuePair<string, string>("Tags", string.Join(",", tags)));
                                                                         }
                                                                         break;
                                                                     default:
