@@ -185,6 +185,11 @@ namespace Terradue.Tep.WebServer.Services {
   
         public object Get (ThematicAppByCommunitySearchRequestTep request)
         {
+            // Attention: the result produced by this request handler can be empty if the portal database
+            // does not define roles and privileges properly.
+            // All roles that should be able to see a community's applications listed in the Communities page
+            // must have the following privileges assigned (via role_priv table):
+            // app_cache-s (for searching) and app_cache-v (for viewing)
             IfyWebContext context = TepWebContext.GetWebContext (PagePrivileges.EverybodyView);
             context.Open ();
             context.LogInfo (this, string.Format ("/community/{{domain}}/apps/search GET domain='{0}'",request.Domain));
@@ -193,13 +198,13 @@ namespace Terradue.Tep.WebServer.Services {
             IOpenSearchResultCollection result;
             OpenSearchEngine ose = MasterCatalogue.OpenSearchEngine;
             HttpRequest httpRequest = HttpContext.Current.Request;         
-            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);    
+            Type responseType = OpenSearchFactory.ResolveTypeFromRequest(httpRequest.QueryString, httpRequest.Headers, ose);
 
             if (request.cache) {
 
                 bool isjoined = domain.IsUserJoined(context.UserId);
 
-                    EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);
+                EntityList<ThematicApplicationCached> appsCached = new EntityList<ThematicApplicationCached>(context);
                 if (isjoined) {
                     appsCached.SetFilter("DomainId", domain.Id.ToString());
                 } else {
