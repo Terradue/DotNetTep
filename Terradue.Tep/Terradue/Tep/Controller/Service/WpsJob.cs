@@ -858,7 +858,7 @@ namespace Terradue.Tep
         public void UpdateStatusFromExecuteResponse(ExecuteResponse response)
         {
 
-            //check remote identifier if not set
+            context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, status = {0}", this.Status));
             if (string.IsNullOrEmpty(this.RemoteIdentifier) && !string.IsNullOrEmpty(response.statusLocation))
             {
                 this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
@@ -872,9 +872,15 @@ namespace Terradue.Tep
             else if (response.Status.Item is ProcessStartedType){                
                 var item = response.Status.Item as ProcessStartedType;
                 if (item.percentCompleted == "99" && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
+                {
+                    context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = PUBLISHING");
                     this.Status = WpsJobStatus.PUBLISHING;                
+                }
                 else 
+                {
+                    context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = STARTED");
                     this.Status = WpsJobStatus.STARTED;
+                }
             }
             else if (response.Status.Item is ProcessSucceededType)
             {
@@ -994,6 +1000,7 @@ namespace Terradue.Tep
         /// <returns>The execute response.</returns>
         public object GetStatusLocationContent()
         {           
+            context.LogDebug(this, String.Format("PUB: GetStatusLocationContent: {0}", this.Status));
             switch(this.Status){                 
                 case WpsJobStatus.FAILED:
                     return ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(this);
@@ -1030,6 +1037,7 @@ namespace Terradue.Tep
                 }
             }
 
+            context.LogDebug(this, "PUB: BEFORE LoadExecuteResponseForRunningWpsjob");
             return this.LoadExecuteResponseForRunningWpsjob();
         }
 
@@ -1373,10 +1381,13 @@ namespace Terradue.Tep
             object jobresponse;
             try
             {
+                context.LogDebug(this, "PUB: GetStatusLocationContent (BEFORE)");
                 jobresponse = this.GetStatusLocationContent();
+                context.LogDebug(this, String.Format("PUB: GetStatusLocationContent (AFTER): {0}", jobresponse.GetType().FullName));
             }
             catch (Exception esl)
             {
+                context.LogDebug(this, String.Format("PUB: GetStatusLocationContent Exception: {0}\n{1}", esl.Message, esl.StackTrace));
                 throw esl;
             }
             //if needed, add Accounting
@@ -1389,6 +1400,7 @@ namespace Terradue.Tep
             if (jobresponse is ExecuteResponse && this.Status != WpsJobStatus.STAGED)
             {
                 var execResponse = jobresponse as ExecuteResponse;
+                context.LogDebug(this, "PUB: BEFORE UpdateStatusFromExecuteResponse");
                 this.UpdateStatusFromExecuteResponse(execResponse);
                 this.Store();
             }
@@ -1483,6 +1495,7 @@ namespace Terradue.Tep
                                         
                     if(!string.IsNullOrEmpty(resultdescription)){
                         this.StatusLocation = resultdescription;
+                        context.LogDebug(this, "PUB: Publish, set status = PUBLISHING");
                         this.Status = WpsJobStatus.PUBLISHING;
                         this.Store();
                     }
@@ -1904,7 +1917,9 @@ namespace Terradue.Tep
                             wps3factory = (IWps3Factory)ci.Invoke(new object[] { context });
                         }
 
+                        context.LogDebug(this, "PUB: GetResultDescriptionFromS3Link (BEFORE)");
                         var resultdescription = wps3factory.GetResultDescriptionFromS3Link(context, this, s3link);
+                        context.LogDebug(this, String.Format("PUB: GetResultDescriptionFromS3Link (AFTER): {0}", resultdescription));
 
                         if (outputs != null && wfoutput != null)
                         {
@@ -1933,8 +1948,13 @@ namespace Terradue.Tep
                         {
                             if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(resultdescription).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
                             {
+                                context.LogDebug(this, String.Format("PUB: WPS stage URL: {0}", System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]));
                                 this.StatusLocation = resultdescription;
                                 return ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(this);
+                            }
+                            else
+                            {
+                                context.LogDebug(this, "PUB: WPS stage URL not matching");
                             }
                         }
                         catch (Exception) { }
@@ -1942,6 +1962,7 @@ namespace Terradue.Tep
                     break;
             }
 
+            context.LogDebug(this, "PUB: default response");
             return response;
         }
 
