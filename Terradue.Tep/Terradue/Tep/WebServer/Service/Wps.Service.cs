@@ -682,25 +682,31 @@ namespace Terradue.Tep.WebServer.Services {
                 ExecuteResponse execResponse = null;                
 
                 if (wpsjob.Status == WpsJobStatus.STAGED) {
+                    context.LogDebug(this, "PUB: job status is STAGED");
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 } 
                 else if (wpsjob.Status == WpsJobStatus.COORDINATOR && ProductionResultHelper.IsUrlRecastUrl(wpsjob.StatusLocation)){
+                    context.LogDebug(this, "PUB: job status is COORDINATOR");
                     execResponse = ProductionResultHelper.CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                 }
                 else if (wpsjob.Status == WpsJobStatus.FAILED){
+                    context.LogDebug(this, "PUB: job status is FAILED");
                     execResponse = ProductionResultHelper.CreateExecuteResponseForFailedWpsjob(wpsjob);
                 }
                 // else if (wpsjob.Status == WpsJobStatus.PUBLISHING && wpsjob.OwnerId != context.UserId){
                 //     execResponse = ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(wpsjob);
                 // }
                 else {
+                    context.LogDebug(this, String.Format("PUB: job status is other: {0}", wpsjob.Status));
                     object jobresponse;
                     try {
                         jobresponse = wpsjob.UpdateStatus();
                     }catch(Exception esl){
+                        context.LogDebug(this, String.Format("PUB: jobresponse exception: {0}\n{1}", esl.Message, esl.StackTrace));
                         throw esl;
                     }
 
+                    context.LogDebug(this, String.Format("PUB: jobresponse: {0}", jobresponse.GetType().FullName));
                     if (jobresponse is HttpResult) return jobresponse;                    
                     else if (jobresponse is ExceptionReport) {
                         stream = new System.IO.MemoryStream();
@@ -717,11 +723,14 @@ namespace Terradue.Tep.WebServer.Services {
                     else if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
                     else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
 
+                    context.LogDebug(this, "PUB: jobresponse is ExecuteResponse");
                     execResponse.statusLocation = context.BaseUrl + "/wps/RetrieveResultServlet?id=" + wpsjob.Identifier;
 
                     //get job recast response
                     try {
+                        context.LogDebug(this, "PUB: GetWpsjobRecastResponse (BEFORE)");
 						var recastResponse = ProductionResultHelper.GetWpsjobRecastResponse(context, wpsjob, execResponse);
+                        context.LogDebug(this, "PUB: GetWpsjobRecastResponse (AFTER)");
 						execResponse = recastResponse;
 					}catch(Exception e){
 						context.LogError(this, e.Message, e);

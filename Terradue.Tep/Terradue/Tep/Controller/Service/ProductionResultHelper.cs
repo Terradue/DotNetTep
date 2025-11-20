@@ -181,6 +181,7 @@ namespace Terradue.Tep {
             }
 
             if (execResponse == null) {
+                log.DebugFormat("GetWpsjobRecastResponse -- ExecuteResponse is null");
 				var jobresponse = wpsjob.GetStatusLocationContent();
 				if (jobresponse is ExecuteResponse) execResponse = jobresponse as ExecuteResponse;
 				else throw new Exception("Error while creating Execute Response of job " + wpsjob.Identifier);
@@ -192,7 +193,9 @@ namespace Terradue.Tep {
             }
 			
 			if (execResponse.Status.Item is ProcessSucceededType) {
+                log.DebugFormat("GetWpsjobRecastResponse -- status is Succeeded");
 				var resultUrl = WpsJob.GetResultUrl(execResponse);
+                log.DebugFormat("GetWpsjobRecastResponse -- result URL: {0}", resultUrl);
 				if (resultUrl == null) return UpdateProcessOutputs(context, execResponse, wpsjob);
 				var url = new Uri(resultUrl);
 
@@ -205,6 +208,7 @@ namespace Terradue.Tep {
 
                 //case url is supervisor status url
                 if(supervisorBaseUrl != null && url.Host == new Uri(supervisorBaseUrl).Host){
+                    log.DebugFormat("GetWpsjobRecastResponse -- supervisor status URL");
                     wpsjob.StatusLocation = resultUrl;
 					// wpsjob.Status = WpsJobStatus.SUCCEEDED;
 					wpsjob.Store();
@@ -213,15 +217,18 @@ namespace Terradue.Tep {
                 } else if(resultUrl.StartsWith(string.Format("{0}/t2api/describe", recastBaseUrl))){
                     wpsjob.StatusLocation = resultUrl;
                     if(!string.IsNullOrEmpty(wpsjob.PublishType) && !string.IsNullOrEmpty(wpsjob.PublishUrl)){
+                        log.DebugFormat("GetWpsjobRecastResponse -- publish");
                         wpsjob.Publish(wpsjob.PublishUrl, wpsjob.PublishType);
                         wpsjob.Store();
                         return CreateExecuteResponseForPublishingWpsjob(wpsjob);
                     } else {
+                        log.DebugFormat("GetWpsjobRecastResponse -- staged");
 					    wpsjob.Status = WpsJobStatus.STAGED;
                         wpsjob.Store();
                         return CreateExecuteResponseForStagedWpsjob(context, wpsjob, execResponse);
                     }					
                 } else {
+                    log.DebugFormat("GetWpsjobRecastResponse -- old sandboxes");
                     //case old sandboxes
     				r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/wps\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/results");
     				m = r.Match(url.AbsolutePath);
@@ -249,6 +256,7 @@ namespace Terradue.Tep {
 
                     } else {
                         //case new sandboxes
+                        log.DebugFormat("GetWpsjobRecastResponse -- new sandboxes");
                         r = new System.Text.RegularExpressions.Regex(@"^\/sbws\/production\/run\/(?<workflow>[a-zA-Z0-9_\-]+)\/(?<runid>[a-zA-Z0-9_\-]+)\/products");
                         m = r.Match(url.AbsolutePath);
                         if (m.Success) {
@@ -302,7 +310,9 @@ namespace Terradue.Tep {
                 }
 
                 try {
+                    log.DebugFormat("GetWpsjobRecastResponse -- GetWpsjobRecastStatus");
                     var recaststatus = GetWpsjobRecastStatus(recaststatusurl);
+                    log.DebugFormat("GetWpsjobRecastResponse -- recast status = {0}", recaststatus.status);
                     //error during recast
                     if (recaststatus.status == statusError){
                         log.ErrorFormat("Recasting job {0} - url = {1} - message = {2}", wpsjob.Identifier, recaststatusurl, recaststatus.message);
@@ -434,6 +444,7 @@ namespace Terradue.Tep {
             var exceptionReport = new ExceptionReport {
                 Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { wpsjob.Logs } } }
             };
+            Console.WriteLine("PUB: CreateExeciteResponseForPublishingWpsjob");
             response.Status = new StatusType {
                 ItemElementName = ItemChoiceType.ProcessStarted,
                 Item = new ProcessStartedType() { Value = JOB_PUBLISHING_MESSAGE, percentCompleted = "99" },
