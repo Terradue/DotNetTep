@@ -445,7 +445,7 @@ namespace Terradue.Tep {
             var exceptionReport = new ExceptionReport {
                 Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { wpsjob.Logs } } }
             };
-            Console.WriteLine("PUB: CreateExeciteResponseForPublishingWpsjob (99%)");
+            Console.WriteLine("PUB: CreateExecuteResponseForPublishingWpsjob (99%)");
             response.Status = new StatusType {
                 ItemElementName = ItemChoiceType.ProcessStarted,
                 Item = new ProcessStartedType() { Value = JOB_PUBLISHING_MESSAGE, percentCompleted = "99" },

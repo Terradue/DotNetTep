@@ -86,7 +86,7 @@ namespace Terradue.Tep
             } 
             set {
                 status = value;
-                context.LogDebug(this, string.Format("WPSJOB status SET to {0} -- owner = {1} ; current user = {2}", StringStatus, this.Owner != null ? this.Owner.Username : "", this.context.Username));
+                context.LogDebug(this, string.Format("WPSJOB {0} status SET to {1} -- owner = {2} ; current user = {3}", this.Identifier, StringStatus, this.Owner != null ? this.Owner.Username : "", this.context.Username));
             }
         }
         private WpsJobStatus status;
@@ -866,11 +866,19 @@ namespace Terradue.Tep
 
             if (this.Status == WpsJobStatus.PUBLISHING) return;
 
+            context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, response.status = {0}", response.Status));
+            if (response.Status != null && response.Status.Item != null)
+            {
+                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, response.status = {0}", response.Status.Item.GetType().FullName));
+            }
+
             //check execute response status
             if (response.Status == null) this.Status = WpsJobStatus.NONE;
             else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
             else if (response.Status.Item is ProcessStartedType){                
                 var item = response.Status.Item as ProcessStartedType;
+                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, percent completed = {0}", item.percentCompleted));
+                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, message = {0}, {1}", item.Value, ProductionResultHelper.JOB_PUBLISHING_MESSAGE));
                 if (item.percentCompleted == "99" && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
                 {
                     context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = PUBLISHING");
@@ -887,6 +895,7 @@ namespace Terradue.Tep
                 if (IsResponseFromCoordinator(response)) this.Status = WpsJobStatus.COORDINATOR;
                 else
                 {
+                    context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, ProcessSucceeded");
                     //log event (job succeeded) - if was not already succeeded
                     if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
                     {
@@ -902,6 +911,7 @@ namespace Terradue.Tep
                             message = (response.Status.Item as ProcessSucceededType).Value;
                         }
                         catch (Exception) { }
+                        context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = SUCCEEDED");
                         this.Status = WpsJobStatus.SUCCEEDED;
 
                         //credit has been used
@@ -1716,6 +1726,7 @@ namespace Terradue.Tep
                 response.version = "3.0.0";
             }
 
+            context.LogDebug(this, "PUB: GetExecuteResponseForSucceededJob - ProcessSucceeded");
             response.Status = new StatusType
             {
                 ItemElementName = ItemChoiceType.ProcessSucceeded,
@@ -1747,6 +1758,7 @@ namespace Terradue.Tep
                 response.version = "3.0.0";
             }
 
+            context.LogDebug(this, "PUB: GetExecuteResponseForStagedJob - ProcessSucceeded");
             response.Status = new StatusType
             {
                 ItemElementName = ItemChoiceType.ProcessSucceeded,
