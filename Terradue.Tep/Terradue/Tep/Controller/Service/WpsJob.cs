@@ -1776,7 +1776,7 @@ namespace Terradue.Tep
 
         public object GetExecuteResponseFromWps3StatusInfo(IO.Swagger.Model.StatusInfo statusInfo)
         {
-
+            context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo");
             WpsProcessOfferingTep wps = null;
             try
             {
@@ -1797,6 +1797,7 @@ namespace Terradue.Tep
             switch (statusInfo.Status)
             {
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Accepted:
+                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Accepted");
                     response.Status = new StatusType
                     {
                         ItemElementName = ItemChoiceType.ProcessAccepted,
@@ -1805,6 +1806,7 @@ namespace Terradue.Tep
                     };
                     break;
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Running:
+                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Running");
                     response.Status = new StatusType
                     {
                         ItemElementName = ItemChoiceType.ProcessStarted,
@@ -1814,6 +1816,7 @@ namespace Terradue.Tep
                     break;
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Dismissed:
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Failed:
+                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Dismissed/Failed");
                     var exceptionReport = new ExceptionReport
                     {
                         Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { statusInfo.Message } } }
@@ -1826,6 +1829,7 @@ namespace Terradue.Tep
                     };
                     break;
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Successful:
+                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Successful (99%)");
                     response.Status = new StatusType
                     {
                         // ItemElementName = ItemChoiceType.ProcessSucceeded,
