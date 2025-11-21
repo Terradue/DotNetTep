@@ -351,6 +351,7 @@ namespace Terradue.Tep {
         /// <param name="context">Context.</param>
         /// <param name="wpsjob">Wpsjob.</param>
         public static ExecuteResponse CreateExecuteResponseForStagedWpsjob(IfyContext context, WpsJob wpsjob, ExecuteResponse response = null){            
+            context.LogDebug(wpsjob, "PUB: CreateExecuteResponseForStagedWpsjob - ProcessSucceeded");
             if (response == null){
                 response = new ExecuteResponse();
                 response.Status = new StatusType { 
@@ -444,7 +445,7 @@ namespace Terradue.Tep {
             var exceptionReport = new ExceptionReport {
                 Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { wpsjob.Logs } } }
             };
-            Console.WriteLine("PUB: CreateExeciteResponseForPublishingWpsjob");
+            Console.WriteLine("PUB: CreateExeciteResponseForPublishingWpsjob (99%)");
             response.Status = new StatusType {
                 ItemElementName = ItemChoiceType.ProcessStarted,
                 Item = new ProcessStartedType() { Value = JOB_PUBLISHING_MESSAGE, percentCompleted = "99" },
