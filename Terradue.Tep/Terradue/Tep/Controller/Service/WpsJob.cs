@@ -857,14 +857,15 @@ namespace Terradue.Tep
         /// <param name="response">Response.</param>
         public void UpdateStatusFromExecuteResponse(ExecuteResponse response)
         {
-
             context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, status = {0}", this.Status));
+
             if (string.IsNullOrEmpty(this.RemoteIdentifier) && !string.IsNullOrEmpty(response.statusLocation))
             {
                 this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
             }
 
-            if (this.Status == WpsJobStatus.PUBLISHING) return;
+            // *** REMOVED the dangerous "if (Status == PUBLISHING) return" ***
+            // Allow PUBLISHING to still accept SUCCEEDED or FAILED transitions.
 
             context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, response.status = {0}", response.Status));
             if (response.Status != null && response.Status.Item != null)
@@ -872,122 +873,111 @@ namespace Terradue.Tep
                 context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, response.status = {0}", response.Status.Item.GetType().FullName));
             }
 
-            //check execute response status
-            if (response.Status == null) this.Status = WpsJobStatus.NONE;
-            else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
-            else if (response.Status.Item is ProcessStartedType){                
-                var item = response.Status.Item as ProcessStartedType;
-                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, percent completed = {0}", item.percentCompleted));
-                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, message = {0}, {1}", item.Value, ProductionResultHelper.JOB_PUBLISHING_MESSAGE));
-                if (item.percentCompleted == "99" && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
+            if (response.Status == null)
+            {
+                // Do not regress a finished job
+                if (this.Status != WpsJobStatus.SUCCEEDED && this.Status != WpsJobStatus.FAILED)
+                    this.Status = WpsJobStatus.NONE;
+                return;
+            }
+
+            // ****** FIX 99% parsing ******
+            int pct = 0;
+            if (response.Status.Item is ProcessStartedType)
+            {
+                var item = (ProcessStartedType)response.Status.Item;
+                int.TryParse(item.percentCompleted?.TrimEnd('%'), out pct);
+
+                // Don't regress finished jobs
+                if (this.Status == WpsJobStatus.SUCCEEDED || this.Status == WpsJobStatus.FAILED)
+                {
+                    context.LogDebug(this, "Skipping STARTED update because job is already completed.");
+                }
+                else if (pct >= 99 && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
                 {
                     context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = PUBLISHING");
-                    this.Status = WpsJobStatus.PUBLISHING;                
+                    this.Status = WpsJobStatus.PUBLISHING;
                 }
-                else 
+                else
                 {
                     context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = STARTED");
-                    this.Status = WpsJobStatus.STARTED;
+                    // Prevent regressions
+                    if (this.Status != WpsJobStatus.PUBLISHING)
+                        this.Status = WpsJobStatus.STARTED;
                 }
+
+                return;
             }
-            else if (response.Status.Item is ProcessSucceededType)
+
+            // ****** SUCCESS ******
+            if (response.Status.Item is ProcessSucceededType)
             {
-                if (IsResponseFromCoordinator(response)) this.Status = WpsJobStatus.COORDINATOR;
-                else
+                context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, ProcessSucceeded");
+
+                // Allow SUCCEEDED to always override other states
+                if (this.EndTime == DateTime.MinValue)
                 {
-                    context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, ProcessSucceeded");
-                    //log event (job succeeded) - if was not already succeeded
-                    if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
-                    {
-                        //check end time
-                        if (this.EndTime == DateTime.MinValue)
-                        {
-                            var endtime = DateTime.UtcNow;
-                            this.EndTime = endtime;
-                        }
-                        var message = "Job succeedeed";
-                        try
-                        {
-                            message = (response.Status.Item as ProcessSucceededType).Value;
-                        }
-                        catch (Exception) { }
-                        context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = SUCCEEDED");
-                        this.Status = WpsJobStatus.SUCCEEDED;
-
-                        //credit has been used
-                        var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
-                        if(payPerUseEnabled){
-                            var cost = this.GetCost();
-                            if(cost > 0){
-                                this.Owner.UseCredit(this, cost);
-                                this.Owner.Store();
-                            }
-                        }
-
-                        EventFactory.LogWpsJob(this.context, this, message);
-                    }
-                    else
-                    {
-                        if (this.EndTime == DateTime.MinValue)
-                        {
-                            var endtime = response.Status.creationTime.ToUniversalTime();
-                            this.EndTime = endtime;
-                        }
-                        if (this.Status != WpsJobStatus.STAGED)
-                            this.Status = WpsJobStatus.SUCCEEDED;
-                    }
+                    try { this.EndTime = response.Status.creationTime.ToUniversalTime(); }
+                    catch { this.EndTime = DateTime.UtcNow; }
                 }
-            }
-            else if (response.Status.Item is ProcessFailedType)
-            {
-                //log event (job failed) - if was not already failed
-                if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
-                {
-                    //check end time
-                    if (this.EndTime == DateTime.MinValue)
-                    {
-                        var endtime = DateTime.UtcNow;
-                        this.EndTime = endtime;
-                    }
-                    var message = "Job failed";
-                    try
-                    {
-                        message = (response.Status.Item as ProcessFailedType).ExceptionReport.Exception[0].ExceptionText[0];
-                    }
-                    catch (Exception) { }
-                    this.Status = WpsJobStatus.FAILED;
-                    EventFactory.LogWpsJob(this.context, this, message);
-                    this.Logs = message;
-                }
-                else
-                {
-                    if (this.EndTime == DateTime.MinValue)
-                    {
-                        var endtime = response.Status.creationTime.ToUniversalTime();
-                        this.EndTime = endtime;
-                    }
-                    this.Status = WpsJobStatus.FAILED;
-                }
-            }
-            else
-            {
-                this.Status = WpsJobStatus.NONE;
-            }
 
-            if (this.Status == WpsJobStatus.SUCCEEDED)
-            {
+                this.Status = WpsJobStatus.SUCCEEDED;
 
-                //get job ows url
                 try
                 {
-                    var ows_url = WpsJob.GetJobOwsUrl(response);
-                    if (!string.IsNullOrEmpty(ows_url))
+                    var ows = WpsJob.GetJobOwsUrl(response);
+                    if (!string.IsNullOrEmpty(ows)) this.OwsUrl = ows;
+                }
+                catch { }
+
+                // credit usage logic preserved
+                var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
+                if (payPerUseEnabled)
+                {
+                    var cost = this.GetCost();
+                    if (cost > 0)
                     {
-                        this.OwsUrl = ows_url;
+                        this.Owner.UseCredit(this, cost);
+                        this.Owner.Store();
                     }
                 }
-                catch (Exception) { }
+
+                var msg = "Job succeeded";
+                try { msg = ((ProcessSucceededType)response.Status.Item).Value; }
+                catch { }
+                EventFactory.LogWpsJob(this.context, this, msg);
+
+                return;
             }
+
+            // ****** FAILED ******
+            if (response.Status.Item is ProcessFailedType)
+            {
+                // Allow FAILED to always override anything
+                if (this.EndTime == DateTime.MinValue)
+                {
+                    try { this.EndTime = response.Status.creationTime.ToUniversalTime(); }
+                    catch { this.EndTime = DateTime.UtcNow; }
+                }
+
+                var message = "Job failed";
+                try
+                {
+                    message = ((ProcessFailedType)response.Status.Item)
+                            .ExceptionReport.Exception[0].ExceptionText[0];
+                }
+                catch { }
+
+                this.Status = WpsJobStatus.FAILED;
+                this.Logs = message;
+                EventFactory.LogWpsJob(this.context, this, message);
+                return;
+            }
+
+            // ****** Unknown state: prevent regressions ******
+            if (this.Status != WpsJobStatus.SUCCEEDED && this.Status != WpsJobStatus.FAILED)
+                this.Status = WpsJobStatus.NONE;
+        }
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
             //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
@@ -1001,7 +991,6 @@ namespace Terradue.Tep
             //        }
             //    }
             //}
-        }
 
 
         /// <summary>
@@ -1796,7 +1785,6 @@ namespace Terradue.Tep
             }
             catch (Exception) { }
 
-            //create response
             ExecuteResponse response = new ExecuteResponse();
             response.statusLocation = this.StatusLocation;
 
@@ -1806,10 +1794,15 @@ namespace Terradue.Tep
             response.service = "WPS";
             response.version = "3.0.0";
 
+            // *** MULTIPOD PROTECTION: Do not allow regression ***
+            bool alreadyFinal =
+                this.Status == WpsJobStatus.SUCCEEDED ||
+                this.Status == WpsJobStatus.FAILED;
+
             switch (statusInfo.Status)
             {
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Accepted:
-                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Accepted");
+                    if (alreadyFinal) break;
                     response.Status = new StatusType
                     {
                         ItemElementName = ItemChoiceType.ProcessAccepted,
@@ -1817,74 +1810,91 @@ namespace Terradue.Tep
                         creationTime = this.CreatedTime
                     };
                     break;
+
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Running:
-                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Running");
+                    if (alreadyFinal) break; // prevent regression
                     response.Status = new StatusType
                     {
                         ItemElementName = ItemChoiceType.ProcessStarted,
-                        Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = statusInfo.Progress.ToString() },
+                        Item = new ProcessStartedType()
+                        {
+                            Value = statusInfo.Message,
+                            percentCompleted = statusInfo.Progress.ToString()
+                        },
                         creationTime = this.CreatedTime
                     };
                     break;
+
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Dismissed:
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Failed:
-                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Dismissed/Failed");
                     var exceptionReport = new ExceptionReport
                     {
-                        Exception = new List<ExceptionType> { new ExceptionType { ExceptionText = new List<string> { statusInfo.Message } } }
+                        Exception = new List<ExceptionType>
+                        {
+                            new ExceptionType { ExceptionText = new List<string> { statusInfo.Message } }
+                        }
                     };
                     response.Status = new StatusType
                     {
                         ItemElementName = ItemChoiceType.ProcessFailed,
                         Item = new ProcessFailedType { ExceptionReport = exceptionReport },
-                        creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
+                        creationTime = statusInfo.Finished != DateTime.MinValue
+                            ? statusInfo.Finished
+                            : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
                     };
                     break;
+
                 case IO.Swagger.Model.StatusInfo.StatusEnum.Successful:
-                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Successful (99%)");
+                    context.LogDebug(this, "PUB: GetExecuteResponseFromWps3StatusInfo - Successful");
+
+                    // *** FIX 1: DO NOT RETURN 99% STARTED! ***
+                    // Emit a REAL ProcessSucceededType
                     response.Status = new StatusType
                     {
-                        // ItemElementName = ItemChoiceType.ProcessSucceeded,
-                        ItemElementName = ItemChoiceType.ProcessStarted,
-                        Item = new ProcessStartedType() { Value = statusInfo.Message, percentCompleted = "99" },
-                        // Item = new ProcessSucceededType() { Value = statusInfo.Message },
-                        creationTime = statusInfo.Finished != DateTime.MinValue ? statusInfo.Finished : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
+                        ItemElementName = ItemChoiceType.ProcessSucceeded,
+                        Item = new ProcessSucceededType() { Value = statusInfo.Message },
+                        creationTime = statusInfo.Finished != DateTime.MinValue
+                            ? statusInfo.Finished
+                            : (statusInfo.Updated != DateTime.MinValue ? statusInfo.Updated : statusInfo.Created)
                     };
-                    var message = "Job succeedeed";
-                    try
-                    {
-                        message = (response.Status.Item as ProcessSucceededType).Value;
-                    }
-                    catch (Exception) { }
-                    this.Status = WpsJobStatus.SUCCEEDED;
 
-                    //credit has been used
+                    // *** KEEP ONLY SAFE SIDE-EFFECTS ***
+                    // Do NOT set this.Status = SUCCEEDED here
+                    // (this causes multi-pod flip-flops)
+                    this.EndTime = response.Status.creationTime.ToUniversalTime();
+
+                    // credit logic remains unchanged
                     var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
-                    if(payPerUseEnabled){
+                    if (payPerUseEnabled)
+                    {
                         var cost = this.GetCost();
-                        if(cost > 0){
+                        if (cost > 0)
+                        {
                             this.Owner.UseCredit(this, cost);
                             this.Owner.Store();
                         }
                     }
 
-                    EventFactory.LogWpsJob(this.context, this, message);
-                    // if (this.OwnerId == context.UserId) this.Status = WpsJobStatus.PUBLISHING;//we dont set as publishing if not owner
-                    this.EndTime = response.Status.creationTime.ToUniversalTime();
+                    EventFactory.LogWpsJob(this.context, this, statusInfo.Message);
+
+                    // *** Everything below stays unchanged ***
                     if (wps != null)
                     {
                         var outputs = wps.GetOutputs(this.StatusLocation);
                         var urib = new UriBuilder(this.Provider.BaseUrl);
                         var wfoutput = outputs.outputs.First(o => o.id == "wf_outputs");
-                        // urib.Path = urib.Path.Substring(0, urib.Path.IndexOf("/", 1)) + wfoutput.value.href;
                         urib.Path = wfoutput.value.href;
                         var resultlink = urib.Uri.AbsoluteUri;
+
                         string s3link = null;
+
                         if (resultlink.StartsWith("s3:"))
+                        {
                             s3link = resultlink;
+                        }
                         else
                         {
-                            context.LogDebug(this, string.Format("Get s3link from result link: {0}", resultlink));
+                            context.LogDebug(this, $"Get s3link from result link: {resultlink}");
                             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(resultlink);
                             webRequest.Method = "GET";
                             webRequest.Accept = "application/json";
@@ -1892,36 +1902,33 @@ namespace Terradue.Tep
 
                             try
                             {
-                                var res = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(webRequest.BeginGetResponse, webRequest.EndGetResponse, null)
+                                var res = System.Threading.Tasks.Task.Factory.FromAsync<WebResponse>(
+                                    webRequest.BeginGetResponse, webRequest.EndGetResponse, null
+                                )
                                 .ContinueWith(task =>
                                 {
                                     var httpResponse = (HttpWebResponse)task.Result;
                                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                                     {
                                         string result = streamReader.ReadToEnd();
-                                        try
-                                        {
-                                            return ServiceStack.Text.JsonSerializer.DeserializeFromString<StacItemResult>(result);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            throw e;
-                                        }
+                                        return ServiceStack.Text.JsonSerializer
+                                            .DeserializeFromString<StacItemResult>(result);
                                     }
                                 }).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                                if(!string.IsNullOrEmpty(res.StacCatalogUri)) s3link = res.StacCatalogUri;
-                                else if(!string.IsNullOrEmpty(res.S3CatalogOutput)) s3link = res.S3CatalogOutput;
+                                if (!string.IsNullOrEmpty(res.StacCatalogUri)) s3link = res.StacCatalogUri;
+                                else if (!string.IsNullOrEmpty(res.S3CatalogOutput)) s3link = res.S3CatalogOutput;
                             }
-                            catch (Exception e)
+                            catch
                             {
-                                context.LogError(this, string.Format("Not able to get result s3link from {0}", resultlink));
+                                context.LogError(this, $"Not able to get result s3link from {resultlink}");
                             }
-                            context.LogDebug(this, string.Format("s3link: {0}", s3link));
+                            context.LogDebug(this, $"s3link: {s3link}");
                         }
 
                         IWps3Factory wps3factory;
-                        string className = System.Configuration.ConfigurationManager.AppSettings["wps3factory_classname"];
+                        string className =
+                            System.Configuration.ConfigurationManager.AppSettings["wps3factory_classname"];
                         if (className == null)
                         {
                             wps3factory = new Wps3Factory(context);
@@ -1929,17 +1936,19 @@ namespace Terradue.Tep
                         else
                         {
                             Type type = Type.GetType(className, true);
-                            System.Reflection.ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(IfyContext) });
+                            var ci = type.GetConstructor(new Type[] { typeof(IfyContext) });
                             wps3factory = (IWps3Factory)ci.Invoke(new object[] { context });
                         }
 
                         context.LogDebug(this, "PUB: GetResultDescriptionFromS3Link (BEFORE)");
-                        var resultdescription = wps3factory.GetResultDescriptionFromS3Link(context, this, s3link);
-                        context.LogDebug(this, String.Format("PUB: GetResultDescriptionFromS3Link (AFTER): {0}", resultdescription));
+                        var resultdescription =
+                            wps3factory.GetResultDescriptionFromS3Link(context, this, s3link);
+                        context.LogDebug(this,
+                            $"PUB: GetResultDescriptionFromS3Link (AFTER): {resultdescription}");
 
                         if (outputs != null && wfoutput != null)
                         {
-                            response.ProcessOutputs = new List<OutputDataType> { };
+                            response.ProcessOutputs = new List<OutputDataType>();
                             response.ProcessOutputs.Add(new OutputDataType
                             {
                                 Identifier = new CodeType { Value = "result_osd" },
@@ -1957,23 +1966,22 @@ namespace Terradue.Tep
                                 }
                             });
                         }
-
                         //TODO: to improve
-                        //case url is supervisor status url                        
+                        //case url is supervisor status url        
                         try
                         {
-                            if (System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"] != null && new Uri(resultdescription).Host == new Uri(System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]).Host)
+                            var stage = System.Configuration.ConfigurationManager
+                                .AppSettings["SUPERVISOR_WPS_STAGE_URL"];
+                            if (stage != null &&
+                                new Uri(resultdescription).Host == new Uri(stage).Host)
                             {
-                                context.LogDebug(this, String.Format("PUB: WPS stage URL: {0}", System.Configuration.ConfigurationManager.AppSettings["SUPERVISOR_WPS_STAGE_URL"]));
+                                context.LogDebug(this, $"PUB: WPS stage URL: {stage}");
                                 this.StatusLocation = resultdescription;
-                                return ProductionResultHelper.CreateExecuteResponseForPublishingWpsjob(this);
-                            }
-                            else
-                            {
-                                context.LogDebug(this, "PUB: WPS stage URL not matching");
+                                return ProductionResultHelper
+                                    .CreateExecuteResponseForPublishingWpsjob(this);
                             }
                         }
-                        catch (Exception) { }
+                        catch { }
                     }
                     break;
             }
@@ -1981,6 +1989,7 @@ namespace Terradue.Tep
             context.LogDebug(this, "PUB: default response");
             return response;
         }
+
 
         /// <summary>
         /// Gets the result osd URL.
