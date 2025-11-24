@@ -857,14 +857,15 @@ namespace Terradue.Tep
         /// <param name="response">Response.</param>
         public void UpdateStatusFromExecuteResponse(ExecuteResponse response)
         {
-
             context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, status = {0}", this.Status));
+
             if (string.IsNullOrEmpty(this.RemoteIdentifier) && !string.IsNullOrEmpty(response.statusLocation))
             {
                 this.RemoteIdentifier = GetRemoteIdentifierFromStatusLocation(response.statusLocation.ToLower());
             }
 
-            if (this.Status == WpsJobStatus.PUBLISHING) return;
+            // *** REMOVED the dangerous "if (Status == PUBLISHING) return" ***
+            // Allow PUBLISHING to still accept SUCCEEDED or FAILED transitions.
 
             context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, response.status = {0}", response.Status));
             if (response.Status != null && response.Status.Item != null)
@@ -872,122 +873,111 @@ namespace Terradue.Tep
                 context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, response.status = {0}", response.Status.Item.GetType().FullName));
             }
 
-            //check execute response status
-            if (response.Status == null) this.Status = WpsJobStatus.NONE;
-            else if (response.Status.Item is ProcessAcceptedType) this.Status = WpsJobStatus.ACCEPTED;
-            else if (response.Status.Item is ProcessStartedType){                
-                var item = response.Status.Item as ProcessStartedType;
-                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, percent completed = {0}", item.percentCompleted));
-                context.LogDebug(this, String.Format("PUB: UpdateStatusFromExecuteResponse, message = {0}, {1}", item.Value, ProductionResultHelper.JOB_PUBLISHING_MESSAGE));
-                if (item.percentCompleted == "99" && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
+            if (response.Status == null)
+            {
+                // Do not regress a finished job
+                if (this.Status != WpsJobStatus.SUCCEEDED && this.Status != WpsJobStatus.FAILED)
+                    this.Status = WpsJobStatus.NONE;
+                return;
+            }
+
+            // ****** FIX 99% parsing ******
+            int pct = 0;
+            if (response.Status.Item is ProcessStartedType)
+            {
+                var item = (ProcessStartedType)response.Status.Item;
+                int.TryParse(item.percentCompleted?.TrimEnd('%'), out pct);
+
+                // Don't regress finished jobs
+                if (this.Status == WpsJobStatus.SUCCEEDED || this.Status == WpsJobStatus.FAILED)
+                {
+                    context.LogDebug(this, "Skipping STARTED update because job is already completed.");
+                }
+                else if (pct >= 99 && item.Value == ProductionResultHelper.JOB_PUBLISHING_MESSAGE)
                 {
                     context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = PUBLISHING");
-                    this.Status = WpsJobStatus.PUBLISHING;                
+                    this.Status = WpsJobStatus.PUBLISHING;
                 }
-                else 
+                else
                 {
                     context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = STARTED");
-                    this.Status = WpsJobStatus.STARTED;
+                    // Prevent regressions
+                    if (this.Status != WpsJobStatus.PUBLISHING)
+                        this.Status = WpsJobStatus.STARTED;
                 }
+
+                return;
             }
-            else if (response.Status.Item is ProcessSucceededType)
+
+            // ****** SUCCESS ******
+            if (response.Status.Item is ProcessSucceededType)
             {
-                if (IsResponseFromCoordinator(response)) this.Status = WpsJobStatus.COORDINATOR;
-                else
+                context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, ProcessSucceeded");
+
+                // Allow SUCCEEDED to always override other states
+                if (this.EndTime == DateTime.MinValue)
                 {
-                    context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, ProcessSucceeded");
-                    //log event (job succeeded) - if was not already succeeded
-                    if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
-                    {
-                        //check end time
-                        if (this.EndTime == DateTime.MinValue)
-                        {
-                            var endtime = DateTime.UtcNow;
-                            this.EndTime = endtime;
-                        }
-                        var message = "Job succeedeed";
-                        try
-                        {
-                            message = (response.Status.Item as ProcessSucceededType).Value;
-                        }
-                        catch (Exception) { }
-                        context.LogDebug(this, "PUB: UpdateStatusFromExecuteResponse, set status = SUCCEEDED");
-                        this.Status = WpsJobStatus.SUCCEEDED;
-
-                        //credit has been used
-                        var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
-                        if(payPerUseEnabled){
-                            var cost = this.GetCost();
-                            if(cost > 0){
-                                this.Owner.UseCredit(this, cost);
-                                this.Owner.Store();
-                            }
-                        }
-
-                        EventFactory.LogWpsJob(this.context, this, message);
-                    }
-                    else
-                    {
-                        if (this.EndTime == DateTime.MinValue)
-                        {
-                            var endtime = response.Status.creationTime.ToUniversalTime();
-                            this.EndTime = endtime;
-                        }
-                        if (this.Status != WpsJobStatus.STAGED)
-                            this.Status = WpsJobStatus.SUCCEEDED;
-                    }
+                    try { this.EndTime = response.Status.creationTime.ToUniversalTime(); }
+                    catch { this.EndTime = DateTime.UtcNow; }
                 }
-            }
-            else if (response.Status.Item is ProcessFailedType)
-            {
-                //log event (job failed) - if was not already failed
-                if (this.Status == WpsJobStatus.ACCEPTED || this.Status == WpsJobStatus.STARTED)
-                {
-                    //check end time
-                    if (this.EndTime == DateTime.MinValue)
-                    {
-                        var endtime = DateTime.UtcNow;
-                        this.EndTime = endtime;
-                    }
-                    var message = "Job failed";
-                    try
-                    {
-                        message = (response.Status.Item as ProcessFailedType).ExceptionReport.Exception[0].ExceptionText[0];
-                    }
-                    catch (Exception) { }
-                    this.Status = WpsJobStatus.FAILED;
-                    EventFactory.LogWpsJob(this.context, this, message);
-                    this.Logs = message;
-                }
-                else
-                {
-                    if (this.EndTime == DateTime.MinValue)
-                    {
-                        var endtime = response.Status.creationTime.ToUniversalTime();
-                        this.EndTime = endtime;
-                    }
-                    this.Status = WpsJobStatus.FAILED;
-                }
-            }
-            else
-            {
-                this.Status = WpsJobStatus.NONE;
-            }
 
-            if (this.Status == WpsJobStatus.SUCCEEDED)
-            {
+                this.Status = WpsJobStatus.SUCCEEDED;
 
-                //get job ows url
                 try
                 {
-                    var ows_url = WpsJob.GetJobOwsUrl(response);
-                    if (!string.IsNullOrEmpty(ows_url))
+                    var ows = WpsJob.GetJobOwsUrl(response);
+                    if (!string.IsNullOrEmpty(ows)) this.OwsUrl = ows;
+                }
+                catch { }
+
+                // credit usage logic preserved
+                var payPerUseEnabled = context.GetConfigBooleanValue("payperuse-enabled");
+                if (payPerUseEnabled)
+                {
+                    var cost = this.GetCost();
+                    if (cost > 0)
                     {
-                        this.OwsUrl = ows_url;
+                        this.Owner.UseCredit(this, cost);
+                        this.Owner.Store();
                     }
                 }
-                catch (Exception) { }
+
+                var msg = "Job succeeded";
+                try { msg = ((ProcessSucceededType)response.Status.Item).Value; }
+                catch { }
+                EventFactory.LogWpsJob(this.context, this, msg);
+
+                return;
             }
+
+            // ****** FAILED ******
+            if (response.Status.Item is ProcessFailedType)
+            {
+                // Allow FAILED to always override anything
+                if (this.EndTime == DateTime.MinValue)
+                {
+                    try { this.EndTime = response.Status.creationTime.ToUniversalTime(); }
+                    catch { this.EndTime = DateTime.UtcNow; }
+                }
+
+                var message = "Job failed";
+                try
+                {
+                    message = ((ProcessFailedType)response.Status.Item)
+                            .ExceptionReport.Exception[0].ExceptionText[0];
+                }
+                catch { }
+
+                this.Status = WpsJobStatus.FAILED;
+                this.Logs = message;
+                EventFactory.LogWpsJob(this.context, this, message);
+                return;
+            }
+
+            // ****** Unknown state: prevent regressions ******
+            if (this.Status != WpsJobStatus.SUCCEEDED && this.Status != WpsJobStatus.FAILED)
+                this.Status = WpsJobStatus.NONE;
+        }
 
             //if(this.Status == WpsJobStatus.COORDINATOR){
             //    var coordinatorsOutput = response.ProcessOutputs.First(po => po.Identifier.Value.Equals("coordinatorIds"));
@@ -1001,7 +991,6 @@ namespace Terradue.Tep
             //        }
             //    }
             //}
-        }
 
 
         /// <summary>
